@@ -411,6 +411,7 @@ import {
   Shield,
   Network,
 } from "lucide-react";
+import Sidebar from "../component/Sidebar";
 
 const BuildScenario = () => {
   const [open, setOpen] = useState(false);
@@ -479,7 +480,9 @@ const BuildScenario = () => {
 
   return (
     <div className="flex">
-      <div className="w-64 bg-gray-800 min-h-screen"></div>
+      <div className="w-64  min-h-screen">
+        <Sidebar/>
+      </div>
 
       <div className="flex-1 min-h-screen bg-gray-50 font-sans text-gray-800 flex flex-col">
         <div className="p-6">
