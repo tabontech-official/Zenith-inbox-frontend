@@ -117,7 +117,7 @@ const Sidebar = () => {
             '/scenarios' // Set the route here
           )}
 
-          {/* {renderNavLink(
+          {renderNavLink(
             'templates',
             'Templates',
             <svg
@@ -136,7 +136,7 @@ const Sidebar = () => {
               <path d="M10 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2z" />
             </svg>,
             '/templates' 
-          )} */}
+          )}
 
           {renderNavLink(
             'connections',

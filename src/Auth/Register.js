@@ -1,20 +1,41 @@
 import React, { useState } from "react";
-import {
-  FaEye,
-  FaEyeSlash,
-  FaFacebookF,
-  FaGithub,
-  FaGoogle,
-} from "react-icons/fa";
+import { FaEye, FaEyeSlash, FaGoogle, FaFacebookF, FaGithub } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import axios from "axios"; // Import axios for making API calls
 
 const RegisterPage = () => {
   const [showPassword, setShowPassword] = useState(false);
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [sellerName, setSellerName] = useState("");
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleClick = () => {
-    navigate('/login');
+    navigate("/login");
   };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      // Call the backend API to create the user
+      const response = await axios.post("http://localhost:5000/auth/signUp", {
+        fullName,
+        email,
+        password,
+      });
+
+      // If signup is successful, handle the response (redirect or show success message)
+      if (response.status === 201) {
+        navigate("/login"); // Redirect to login page on success
+      }
+    } catch (error) {
+      // Handle error if the user already exists or any other error
+      setError(error.response?.data?.error || "Signup failed. Please try again.");
+    }
+  };
+
   return (
     <div className="min-h-screen flex">
       <div className="w-full lg:w-1/2 bg-white p-10 flex flex-col justify-center">
@@ -29,7 +50,6 @@ const RegisterPage = () => {
             <button className="bg-[#2D477A]  px-4 rounded-full flex items-center justify-center">
               <FaFacebookF className="text-white font-[15px]" />
             </button>
-
             <button className="bg-gray-800  px-4 rounded-full flex items-center justify-center">
               <FaGithub className="text-white font-[15px]" />
             </button>
@@ -37,50 +57,65 @@ const RegisterPage = () => {
 
           <div className="text-center text-gray-500 text-sm my-4">or</div>
 
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">
-              Full Name <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              className="w-full border rounded px-3 py-2"
-              placeholder="John Doe"
-            />
-          </div>
+          {error && <p className="text-red-500 text-sm mb-4">{error}</p>} {/* Show error message */}
 
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">
-              Email <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="email"
-              className="w-full border rounded px-3 py-2"
-              placeholder="you@example.com"
-            />
-          </div>
-
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">
-              Password <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
+          <form onSubmit={handleSubmit}>
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1">
+                Full Name <span className="text-red-500">*</span>
+              </label>
               <input
-                type={showPassword ? "text" : "password"}
+                type="text"
                 className="w-full border rounded px-3 py-2"
-                placeholder="••••••••"
+                placeholder="John Doe"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                required
               />
-              <span
-                className="absolute right-3 top-2.5 cursor-pointer text-gray-500"
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? <FaEyeSlash /> : <FaEye />}
-              </span>
             </div>
-          </div>
 
-          <button className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-lg font-semibold mt-4 transition">
-            Sign up
-          </button>
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1">
+                Email <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="email"
+                className="w-full border rounded px-3 py-2"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1">
+                Password <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  className="w-full border rounded px-3 py-2"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+                <span
+                  className="absolute right-3 top-2.5 cursor-pointer text-gray-500"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <FaEyeSlash /> : <FaEye />}
+                </span>
+              </div>
+            </div>
+
+           
+
+            <button className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-lg font-semibold mt-4 transition">
+              Sign up
+            </button>
+          </form>
 
           <p className="text-center text-sm text-gray-600 mt-4">
             Already have an account?{" "}

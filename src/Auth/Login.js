@@ -1,70 +1,103 @@
 import React, { useState } from "react";
-import {
-  FaEye,
-  FaEyeSlash,
-  FaFacebookF,
-  FaGithub,
-  FaKey,
-  FaGoogle,
-} from "react-icons/fa";
+import { FaEye, FaEyeSlash, FaFacebookF, FaGithub, FaKey, FaGoogle } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";  // Import Axios for API requests
 
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleClick = () => {
-    navigate('/register');
+    navigate("/register");
   };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      // Call the backend API to authenticate the user
+      const response = await axios.post("http://localhost:5000/auth/signIn", {
+        email,
+        password,
+      });
+
+      // If login is successful, navigate to the organization page
+      if (response.status === 200) {
+        navigate("/organization");
+      }
+    } catch (error) {
+      // Handle any errors during login
+      setError(error.response?.data?.error || "Login failed. Please try again.");
+    }
+  };
+
   return (
     <div className="min-h-screen flex">
       <div className="w-full lg:w-1/2 bg-white p-10 flex flex-col justify-center">
         <div className="max-w-md w-full mx-auto">
           <h2 className="text-3xl font-semibold mb-6 text-gray-800">Sign in</h2>
 
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">
-              Email <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="email"
-              className="w-full border rounded px-3 py-2"
-              placeholder="you@example.com"
-            />
-          </div>
+          {/* Error Message */}
+          {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">
-              Password <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
+          {/* Login Form */}
+          <form onSubmit={handleSubmit}>
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1">
+                Email <span className="text-red-500">*</span>
+              </label>
               <input
-                type={showPassword ? "text" : "password"}
+                type="email"
                 className="w-full border rounded px-3 py-2"
-                placeholder="••••••••"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
               />
-              <span
-                className="absolute right-3 top-2.5 cursor-pointer text-gray-500"
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? <FaEyeSlash /> : <FaEye />}
-              </span>
             </div>
-          </div>
 
-          <button className="w-full bg-gradient-to-r from-pink-500 to-purple-600 text-white py-3 rounded-lg font-semibold mt-4">
-            Sign in
-          </button>
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1">
+                Password <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  className="w-full border rounded px-3 py-2"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+                <span
+                  className="absolute right-3 top-2.5 cursor-pointer text-gray-500"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <FaEyeSlash /> : <FaEye />}
+                </span>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              className="w-full bg-gradient-to-r from-pink-500 to-purple-600 text-white py-3 rounded-lg font-semibold mt-4"
+            >
+              Sign in
+            </button>
+          </form>
 
           <p 
-      className="text-center text-sm text-pink-500 mt-3 cursor-pointer hover:underline"
-      onClick={handleClick}
-    >
-      CREATE AN ACCOUNT
-    </p>
+            className="text-center text-sm text-pink-500 mt-3 cursor-pointer hover:underline"
+            onClick={handleClick}
+          >
+            CREATE AN ACCOUNT
+          </p>
 
           <div className="my-6 border-t" />
 
+          {/* Social Media Login Buttons */}
           <div className="space-y-3">
             <button className="w-full flex items-center justify-center border px-4 py-3 rounded-lg bg-white hover:bg-gray-100 transition">
               <FaGoogle className="text-red-500 w-5 h-5 mr-2" />
@@ -101,6 +134,7 @@ const LoginPage = () => {
         </div>
       </div>
 
+      {/* Image Section */}
       <div className="hidden lg:flex w-2/3 bg-gradient-to-br from-purple-600 to-fuchsia-600 text-white items-center justify-center relative p-0">
         <div className="w-full text-center">
           <img

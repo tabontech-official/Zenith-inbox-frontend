@@ -7,6 +7,7 @@ import Organization from "./pages/Organization";
 import ConnectionsPage from "./pages/Connection";
 import AllScenariosPage from "./pages/AllScenariosPage ";
 import BuildScenario from "./pages/BuildScenario";
+import Template from "./pages/Template";
 
 function App() {
   return (
@@ -19,6 +20,8 @@ function App() {
         <Route path="/connection" element={<ConnectionsPage />} />
         <Route path="/scenarios" element={<AllScenariosPage />} />
         <Route path="/scenarios/add" element={<BuildScenario />} />
+                <Route path="/templates" element={<Template />} />
+
       </Routes>
     </Router>
   );
