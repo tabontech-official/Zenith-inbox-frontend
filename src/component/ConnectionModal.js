@@ -104,10 +104,12 @@ const ConnectionModal = ({ isOpen, onClose }) => {
   );
   const [advancedSettings, setAdvancedSettings] = useState(false);
 
-  const handleGoogleSignIn = () => {
-    // Redirect user to the backend route that handles OAuth flow
-    window.location.href = "https://email-syncing-backend.vercel.app/auth/google"; // Adjust the URL based on your backend route
-  };
+ const handleGoogleSignIn = () => {
+  const userId = localStorage.getItem("userid"); // this should already be set when user logs in
+
+  
+  window.location.href = `https://email-syncing-backend.vercel.app/auth/google?userId=${userId}`;
+};
 
   if (!isOpen) {
     return null;
