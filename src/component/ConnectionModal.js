@@ -106,7 +106,7 @@ const ConnectionModal = ({ isOpen, onClose }) => {
 
   const handleGoogleSignIn = () => {
     // Redirect user to the backend route that handles OAuth flow
-    window.location.href = "http://localhost:5000/auth/google"; // Adjust the URL based on your backend route
+    window.location.href = "https://email-syncing-backend.vercel.app/auth/google"; // Adjust the URL based on your backend route
   };
 
   if (!isOpen) {

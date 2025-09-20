@@ -18,7 +18,7 @@ const LoginPage = () => {
     e.preventDefault();
     try {
       // Call the backend API to authenticate the user
-      const response = await axios.post("http://localhost:5000/auth/signIn", {
+      const response = await axios.post("https://email-syncing-backend.vercel.app/auth/signIn", {
         email,
         password,
       });
