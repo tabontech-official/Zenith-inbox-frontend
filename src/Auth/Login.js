@@ -31,7 +31,7 @@ const LoginPage = () => {
   //   }
   // };
 
-  const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
   e.preventDefault();
   try {
     const response = await axios.post(
@@ -40,15 +40,11 @@ const LoginPage = () => {
     );
 
     if (response.status === 200) {
-      const { token, user } = response.data;
+      const { token, data } = response.data;
 
-      // Save everything in localStorage
-      localStorage.setItem("token", token);
-      localStorage.setItem("userid", user._id);
-      localStorage.setItem("email", user.email);
-      localStorage.setItem("name", user.name || "");
+      localStorage.setItem("usertoken", token);
+      localStorage.setItem("userid", data._id);
 
-      // Navigate to dashboard
       navigate("/organization");
     }
   } catch (error) {
