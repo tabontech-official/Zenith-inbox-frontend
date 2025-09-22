@@ -14,24 +14,49 @@ const LoginPage = () => {
     navigate("/register");
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      // Call the backend API to authenticate the user
-      const response = await axios.post("https://email-syncing-backend.vercel.app/auth/signIn", {
-        email,
-        password,
-      });
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+  //   try {
+  //     const response = await axios.post("https://email-syncing-backend.vercel.app/auth/signIn", {
+  //       email,
+  //       password,
+  //     });
 
-      // If login is successful, navigate to the organization page
-      if (response.status === 200) {
-        navigate("/organization");
-      }
-    } catch (error) {
-      // Handle any errors during login
-      setError(error.response?.data?.error || "Login failed. Please try again.");
+  //     if (response.status === 200) {
+  //       navigate("/organization");
+  //     }
+  //   } catch (error) {
+  //     // Handle any errors during login
+  //     setError(error.response?.data?.error || "Login failed. Please try again.");
+  //   }
+  // };
+
+  const handleSubmit = async (e) => {
+  e.preventDefault();
+  try {
+    const response = await axios.post(
+      "https://email-syncing-backend.vercel.app/auth/signIn",
+      { email, password }
+    );
+
+    if (response.status === 200) {
+      const { token, user } = response.data;
+
+      // Save everything in localStorage
+      localStorage.setItem("token", token);
+      localStorage.setItem("userid", user._id);
+      localStorage.setItem("email", user.email);
+      localStorage.setItem("name", user.name || "");
+
+      // Navigate to dashboard
+      navigate("/organization");
     }
-  };
+  } catch (error) {
+    setError(
+      error.response?.data?.error || "Login failed. Please try again."
+    );
+  }
+};
 
   return (
     <div className="min-h-screen flex">
