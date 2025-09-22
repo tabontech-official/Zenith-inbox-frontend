@@ -23,7 +23,7 @@
 //           return;
 //         }
 //         const res = await axios.get(
-//           `http://localhost:5000/auth/getConnection/${userId}`
+//           `https://email-syncing-backend.vercel.app/auth/getConnection/${userId}`
 //         );
 //         setConnections(res.data);
 //       } catch (err) {
@@ -126,7 +126,7 @@ const ConnectionsPage = () => {
           return;
         }
         const res = await axios.get(
-          `http://localhost:5000/auth/getConnection/${userId}`
+          `https://email-syncing-backend.vercel.app/auth/getConnection/${userId}`
         );
         setConnections(res.data);
       } catch (err) {
