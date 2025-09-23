@@ -12,9 +12,14 @@ import {
 } from "lucide-react";
 import Sidebar from "../component/Sidebar";
 import { TfiEmail } from "react-icons/tfi";
+import { FaGoogle } from "react-icons/fa";
+import ConnectionModal from "../component/ConnectionModal";
 
 const AllScenariosPage = () => {
   const [open, setOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const openModal = () => setIsModalOpen(true);
+  const closeModal = () => setIsModalOpen(false);
   const [selectedApp, setSelectedApp] = useState(null);
   const [selectedModule, setSelectedModule] = useState(null);
   const [savedModule, setSavedModule] = useState(null);
@@ -29,23 +34,24 @@ const AllScenariosPage = () => {
   const [branchModules, setBranchModules] = useState({});
   const [editingBranch, setEditingBranch] = useState(null);
   const modalRef = useRef(null);
+const [chips, setChips] = useState([]);
 
-  // useEffect(() => {
-  //   function handleClickOutside(event) {
-  //     if (modalRef.current && !modalRef.current.contains(event.target)) {
-  //       // Close all open boxes if clicked outside
-  //       setOpen(false);
-  //       setShowFilterDialog(false);
-  //       setShowDataPanel(false);
-  //       setSelectedModule(null);
-  //     }
-  //   }
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (modalRef.current && !modalRef.current.contains(event.target)) {
+        // Close all open boxes if clicked outside
+        setOpen(false);
+        setShowFilterDialog(false);
+        setShowDataPanel(false);
+        // setSelectedModule(null);
+      }
+    }
 
-  //   document.addEventListener("mousedown", handleClickOutside);
-  //   return () => {
-  //     document.removeEventListener("mousedown", handleClickOutside);
-  //   };
-  // }, []);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const apps = [
     // { name: "Flow Control", color: "bg-green-400", icon: <Settings /> },
@@ -505,19 +511,39 @@ const AllScenariosPage = () => {
                   />
                 </div>
 
-                
-
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Condition
                   </label>
                   <div className="border rounded p-3 bg-blue-50 border-l-4 border-l-blue-500">
-                    <input
-                      type="text"
-                      className="w-full border rounded px-3 py-2 text-sm mb-2"
-                      placeholder="Enter text or use expressions"
-                      onClick={handleConditionClick}
-                    />
+                   <div
+  className="w-full border rounded px-3 py-2 text-sm mb-2 flex flex-wrap items-center gap-2 min-h-[40px] cursor-text"
+  onClick={handleConditionClick}
+>
+  {chips.map((chip, index) => (
+    <span
+      key={index}
+      className="bg-red-500 text-white text-xs px-2 py-1 rounded flex items-center"
+    >
+      {chip}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          setChips((prev) => prev.filter((_, i) => i !== index));
+        }}
+        className="ml-2 text-white hover:text-gray-200"
+      >
+        ✕
+      </button>
+    </span>
+  ))}
+  <input
+    type="text"
+    className="flex-1 outline-none text-sm"
+    placeholder="Type or select..."
+  />
+</div>
+
                     <div className="flex items-center justify-between">
                       <select className="border rounded px-3 py-1 text-sm">
                         <option>Text operators: Equal to</option>
@@ -616,7 +642,10 @@ const AllScenariosPage = () => {
                           <div key={fieldIndex}>
                             <div
                               className="text-xs bg-pink-600 text-white px-2 py-1 rounded cursor-pointer hover:bg-pink-700 inline-block"
-                              onClick={() => setShowDataPanel(false)}
+onClick={() => {
+  setChips((prev) => [...prev, field.name]);
+  setShowDataPanel(false);
+}}
                             >
                               {field.name}
                             </div>
@@ -625,6 +654,10 @@ const AllScenariosPage = () => {
                                 {field.subFields.map((subField, subIndex) => (
                                   <div
                                     key={subIndex}
+                                    onClick={() => {
+  setChips((prev) => [...prev, subField]);
+  setShowDataPanel(false);
+}}
                                     className="text-xs bg-pink-500 text-white px-2 py-1 rounded cursor-pointer hover:bg-pink-600 inline-block mr-1"
                                   >
                                     {subField}
@@ -642,103 +675,9 @@ const AllScenariosPage = () => {
             </div>
           )}
 
-          {/* Module Configuration Modal */}
-          {/* {(selectedModule === "delay" || selectedModule === "sendEmail") && (
-            <div className="absolute top-10 right-10 bg-white rounded-lg shadow-xl w-[500px] border z-20">
-              <div className="flex justify-between items-center px-4 py-2 bg-gradient-to-r from-pink-600 to-pink-400 text-white rounded-t-lg">
-                <h3 className="font-semibold">
-                  {selectedApp?.name || "Module"}
-                </h3>
-                <div className="space-x-2 text-sm">
-                  <button>⋮</button>
-                  <button>?</button>
-                  <button onClick={() => setSelectedModule(null)}>✕</button>
-                </div>
-              </div>
-
-              <div className="p-4">
-                {selectedModule === "delay" ? (
-                  <>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Delay <span className="text-red-500">*</span>
-                    </label>
-                    <div className="flex space-x-2">
-                      <input
-                        type="number"
-                        className="w-20 border rounded px-2 py-1 text-sm"
-                        placeholder="5"
-                        defaultValue="5"
-                      />
-                      <select className="border rounded px-2 py-1 text-sm">
-                        <option value="seconds">Seconds</option>
-                        <option value="minutes">Minutes</option>
-                        <option value="hours">Hours</option>
-                      </select>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-2">
-                      Suspend the execution of the scenario for the specified
-                      duration.
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Connection <span className="text-red-500">*</span>
-                    </label>
-                    <select className="w-full border rounded px-2 py-1 text-sm">
-                      <option value="gmail-connection">
-                        My Gmail Connection
-                      </option>
-                    </select>
-                    <div className="mt-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        To <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="email"
-                        className="w-full border rounded px-2 py-1 text-sm"
-                        placeholder="recipient@example.com"
-                      />
-                    </div>
-                    <div className="mt-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Subject <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        className="w-full border rounded px-2 py-1 text-sm"
-                        placeholder="Email subject"
-                      />
-                    </div>
-                  </>
-                )}
-
-                <div className="mt-4">
-                  <label className="flex items-center text-sm text-gray-600">
-                    <input type="checkbox" className="mr-2" /> Advanced settings
-                  </label>
-                </div>
-              </div>
-
-              <div className="flex justify-end space-x-2 px-4 py-2 border-t">
-                <button
-                  className="px-4 py-2 text-sm border rounded"
-                  onClick={() => setSelectedModule(null)}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="px-4 py-2 text-sm bg-purple-600 text-white rounded"
-                  onClick={handleSave}
-                >
-                  Save
-                </button>
-              </div>
-            </div>
-          )} */}
           {(selectedModule === "delay" || selectedModule === "sendEmail") && (
             <div className="absolute top-10 right-10 bg-white rounded-lg shadow-xl w-[500px] border z-20">
-              <div className="flex justify-between items-center px-4 py-2 bg-gradient-to-r from-pink-600 to-pink-400 text-white rounded-t-lg">
+              <div className="flex justify-between items-center px-4 py-2 bg-gradient-to-r from-[#e45341] to-[#f46654] text-white rounded-t-lg">
                 <h3 className="font-semibold">
                   {selectedApp?.name || "Module"}
                 </h3>
@@ -750,7 +689,6 @@ const AllScenariosPage = () => {
               </div>
 
               <div className="p-4">
-                {/* --- Delay Module --- */}
                 {selectedModule === "delay" ? (
                   <>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -812,6 +750,13 @@ const AllScenariosPage = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Connection <span className="text-red-500">*</span>
                     </label>
+                    <button
+                      onClick={openModal}
+                      className="flex mb-4 items-center px-5 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#f55641] to-[#f0614e] rounded-lg shadow hover:from-[#e45341] hover:to-[#f04f3a] focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
+                    >
+                      <FaGoogle className="h-5 w-5 mr-2" />
+                      Create Connection
+                    </button>
                     <select className="w-full border rounded px-2 py-1 text-sm">
                       <option value="gmail-connection">
                         My Gmail Connection
@@ -857,8 +802,8 @@ const AllScenariosPage = () => {
                   Cancel
                 </button>
                 <button
-                  className="px-4 py-2 text-sm bg-purple-600 text-white rounded"
                   onClick={handleSave}
+                  className="px-4 py-2 text-sm bg-purple-600 text-white rounded hover:bg-purple-700"
                 >
                   Save
                 </button>
@@ -867,6 +812,7 @@ const AllScenariosPage = () => {
           )}
         </div>
       </div>
+      <ConnectionModal isOpen={isModalOpen} onClose={closeModal} />
     </div>
   );
 };

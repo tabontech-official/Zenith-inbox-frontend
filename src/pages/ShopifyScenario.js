@@ -60,25 +60,26 @@ const ShopifyScenariosPage = () => {
   const [branchModules, setBranchModules] = useState({});
   const [editingBranch, setEditingBranch] = useState(null);
   const [editorValue, setEditorValue] = useState("");
+  const [activeConditionTarget, setActiveConditionTarget] = useState(null);
 
   const modalRef = useRef(null);
 
-    useEffect(() => {
-      function handleClickOutside(event) {
-        if (modalRef.current && !modalRef.current.contains(event.target)) {
-          // Close all open boxes if clicked outside
-          setOpen(false);
-          setShowFilterDialog(false);
-          setShowDataPanel(false);
-          setSelectedModule(null);
-        }
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (modalRef.current && !modalRef.current.contains(event.target)) {
+        // Close all open boxes if clicked outside
+        setOpen(false);
+        setShowFilterDialog(false);
+        setShowDataPanel(false);
+        setSelectedModule(null);
       }
+    }
 
-      document.addEventListener("mousedown", handleClickOutside);
-      return () => {
-        document.removeEventListener("mousedown", handleClickOutside);
-      };
-    }, []);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const apps = [
     {
@@ -195,22 +196,19 @@ const ShopifyScenariosPage = () => {
         { name: "Headers", type: "object" },
       ],
     },
-    // {
-    //   module: "Webhooks",
-    //   type: "Custom mailhook",
-    //   fields: [
-    //     { name: "Date", type: "date" },
-    //     { name: "Subject", type: "text" },
-    //     { name: "Text", type: "text" },
-    //     { name: "HTML content", type: "html" },
-    //     {
-    //       name: "Sender",
-    //       type: "object",
-    //       subFields: ["Name", "Email address"],
-    //     },
-    //   ],
-    // },
   ];
+
+  const handleInsertField = (fieldName) => {
+    if (activeConditionTarget === "input") {
+      const inputEl = document.getElementById("condition-input");
+      if (inputEl) {
+        inputEl.value = inputEl.value + ` {{${fieldName}}} `;
+      }
+    } else if (activeConditionTarget === "quill") {
+      setEditorValue((prev) => prev + ` {{${fieldName}}} `);
+    }
+    setShowDataPanel(false);
+  };
 
   useState(() => {
     setSavedModule({
@@ -628,10 +626,14 @@ const ShopifyScenariosPage = () => {
                   </label>
                   <div className="border rounded p-3 bg-blue-50 border-l-4 border-l-blue-500">
                     <input
+                      id="condition-input"
                       type="text"
                       className="w-full border rounded px-3 py-2 text-sm mb-2"
                       placeholder="Enter text or use expressions"
-                      onClick={handleConditionClick}
+                      onClick={() => {
+                        setActiveConditionTarget("input");
+                        setShowDataPanel(true);
+                      }}
                     />
                     <div className="flex items-center justify-between">
                       <select className="border rounded px-3 py-1 text-sm">
@@ -664,14 +666,17 @@ const ShopifyScenariosPage = () => {
                     Condition
                   </label>
                   <div
-                    onClick={handleConditionClick}
+                    onClick={() => {
+                      setActiveConditionTarget("quill");
+                      setShowDataPanel(true);
+                    }}
                     className="border rounded p-3 bg-blue-50 border-l-4 border-l-blue-500"
                   >
                     <ReactQuill
                       theme="snow"
                       value={editorValue}
                       onChange={setEditorValue}
-                      className="bg-white rounded " // Tailwind ka height class
+                      className="bg-white rounded"
                       placeholder="Enter rich text or use expressions..."
                     />
                   </div>
@@ -748,17 +753,20 @@ const ShopifyScenariosPage = () => {
                         {module.fields.map((field, fieldIndex) => (
                           <div key={fieldIndex}>
                             <div
+                              key={fieldIndex}
                               className="text-xs bg-pink-600 text-white px-2 py-1 rounded cursor-pointer hover:bg-pink-700 inline-block"
-                              onClick={() => setShowDataPanel(false)}
+                              onClick={() => handleInsertField(field.name)}
                             >
                               {field.name}
                             </div>
+
                             {field.subFields && (
                               <div className="ml-4 mt-1 space-y-1">
                                 {field.subFields.map((subField, subIndex) => (
                                   <div
                                     key={subIndex}
                                     className="text-xs bg-pink-500 text-white px-2 py-1 rounded cursor-pointer hover:bg-pink-600 inline-block mr-1"
+                                    onClick={() => handleInsertField(subField)}
                                   >
                                     {subField}
                                   </div>
@@ -774,132 +782,136 @@ const ShopifyScenariosPage = () => {
               </div>
             </div>
           )}
-        {selectedApp && (
-  <div className="absolute top-10 right-10 bg-white rounded-lg shadow-xl w-[600px] border z-20">
-    {/* Header */}
-    <div className="flex justify-between items-center px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-400 text-white rounded-t-lg">
-      <h3 className="font-semibold">{selectedApp.name}</h3>
-      <div className="space-x-2 text-sm">
-        <button>⋮</button>
-        <button>?</button>
-        <button onClick={() => setSelectedApp(null)}>✕</button>
-      </div>
-    </div>
+          {selectedApp && (
+            <div className="absolute top-10 right-10 bg-white rounded-lg shadow-xl w-[600px] border z-20">
+              <div className="flex justify-between items-center px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-400 text-white rounded-t-lg">
+                <h3 className="font-semibold">{selectedApp.name}</h3>
+                <div className="space-x-2 text-sm">
+                  <button>⋮</button>
+                  <button>?</button>
+                  <button onClick={() => setSelectedApp(null)}>✕</button>
+                </div>
+              </div>
 
-    {/* Body */}
-    <div className="p-4 space-y-4">
-      {selectedApp.name === "Delay" ? (
-        <>
-          {/* --- Delay Form --- */}
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Delay <span className="text-red-500">*</span>
-          </label>
-          <div className="flex space-x-2">
-            <input
-              type="number"
-              className="w-20 border rounded px-2 py-1 text-sm"
-              placeholder="5"
-              defaultValue="5"
-            />
-            <select className="border rounded px-2 py-1 text-sm">
-              <option value="seconds">Seconds</option>
-              <option value="minutes">Minutes</option>
-              <option value="hours">Hours</option>
-            </select>
-          </div>
-          <p className="text-xs text-gray-500 mt-2">
-            Suspend the execution of the scenario for the specified duration.
-          </p>
-        </>
-      ) : (
-        <>
-          {/* --- Default Form (Label + Conditions) --- */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Label
-            </label>
-            <input
-              type="text"
-              className="w-full border rounded px-3 py-2 text-sm"
-              placeholder="Enter label"
-            />
-          </div>
+              <div className="p-4 space-y-4">
+                {selectedApp.name === "Delay" ? (
+                  <>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Delay <span className="text-red-500">*</span>
+                    </label>
+                    <div className="flex space-x-2">
+                      <input
+                        type="number"
+                        className="w-20 border rounded px-2 py-1 text-sm"
+                        placeholder="5"
+                        defaultValue="5"
+                      />
+                      <select className="border rounded px-2 py-1 text-sm">
+                        <option value="seconds">Seconds</option>
+                        <option value="minutes">Minutes</option>
+                        <option value="hours">Hours</option>
+                      </select>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-2">
+                      Suspend the execution of the scenario for the specified
+                      duration.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Label
+                      </label>
+                      <input
+                        type="text"
+                        className="w-full border rounded px-3 py-2 text-sm"
+                        placeholder="Enter label"
+                      />
+                    </div>
 
-          {/* Condition (normal input) */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Condition
-            </label>
-            <div className="border rounded p-3 bg-blue-50 border-l-4 border-l-blue-500">
-              <input
-                type="text"
-                className="w-full border rounded px-3 py-2 text-sm mb-2"
-                placeholder="Enter text or use expressions"
-                onClick={handleConditionClick}
-              />
-              <div className="flex items-center justify-between">
-                <select className="border rounded px-3 py-1 text-sm">
-                  <option>Text operators: Equal to</option>
-                  <option>Text operators: Contains</option>
-                  <option>Text operators: Does not contain</option>
-                </select>
-                <button className="text-gray-400 hover:text-gray-600">
-                  <X className="w-4 h-4" />
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Condition
+                      </label>
+                      <div className="border rounded p-3 bg-blue-50 border-l-4 border-l-blue-500">
+                        <input
+                          id="condition-input"
+                          type="text"
+                          className="w-full border rounded px-3 py-2 text-sm mb-2"
+                          placeholder="Enter text or use expressions"
+                          onClick={() => {
+                            setActiveConditionTarget("input");
+                            setShowDataPanel(true);
+                          }}
+                        />
+
+                        <div className="flex items-center justify-between">
+                          <select className="border rounded px-3 py-1 text-sm">
+                            <option>Text operators: Equal to</option>
+                            <option>Text operators: Contains</option>
+                            <option>Text operators: Does not contain</option>
+                          </select>
+                          <button className="text-gray-400 hover:text-gray-600">
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                        <input
+                          type="text"
+                          className="w-full border rounded px-3 py-2 text-sm mt-2"
+                          placeholder="Enter value"
+                        />
+                      </div>
+                      <div className="flex space-x-2 mt-2">
+                        <button className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700">
+                          Add AND rule
+                        </button>
+                        <button className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700">
+                          Add OR rule
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Condition
+                      </label>
+                      <div
+                        onClick={() => {
+                          setActiveConditionTarget("quill");
+                          setShowDataPanel(true);
+                        }}
+                        className="border rounded p-3 bg-blue-50 border-l-4 border-l-blue-500"
+                      >
+                        <ReactQuill
+                          theme="snow"
+                          value={editorValue}
+                          onChange={setEditorValue}
+                          className="bg-white rounded"
+                          placeholder="Enter rich text or use expressions..."
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <div className="flex justify-end space-x-2 px-4 py-2 border-t bg-gray-50">
+                <button
+                  className="px-4 py-2 text-sm border rounded hover:bg-gray-100"
+                  onClick={() => setSelectedApp(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSave}
+                  className="px-4 py-2 text-sm bg-purple-600 text-white rounded hover:bg-purple-700"
+                >
+                  Save
                 </button>
               </div>
-              <input
-                type="text"
-                className="w-full border rounded px-3 py-2 text-sm mt-2"
-                placeholder="Enter value"
-              />
             </div>
-            <div className="flex space-x-2 mt-2">
-              <button className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700">
-                Add AND rule
-              </button>
-              <button className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700">
-                Add OR rule
-              </button>
-            </div>
-          </div>
-
-          {/* Condition with Rich Text Editor */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Condition
-            </label>
-            <div onClick={handleConditionClick} className="border rounded p-3 bg-blue-50 border-l-4 border-l-blue-500">
-              <ReactQuill
-                theme="snow"
-                value={editorValue}
-                onChange={setEditorValue}
-                className="bg-white rounded "
-                placeholder="Enter rich text or use expressions..."
-              />
-            </div>
-          </div>
-        </>
-      )}
-    </div>
-
-    {/* Footer */}
-    <div className="flex justify-end space-x-2 px-4 py-2 border-t bg-gray-50">
-      <button
-        className="px-4 py-2 text-sm border rounded hover:bg-gray-100"
-        onClick={() => setSelectedApp(null)}
-      >
-        Cancel
-      </button>
-      <button
-        onClick={handleSave}
-        className="px-4 py-2 text-sm bg-purple-600 text-white rounded hover:bg-purple-700"
-      >
-        Save
-      </button>
-    </div>
-  </div>
-)}
-
+          )}
         </div>
       </div>
     </div>
