@@ -1,22 +1,26 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import {
   FiGrid,
   FiLayers,
   FiFileText,
-  FiLink,
-} from "react-icons/fi"; // Icons
+  FiChevronDown,
+  FiChevronRight,
+} from "react-icons/fi";
 
 const Sidebar = () => {
-  const [activeLink, setActiveLink] = useState("organization");
+  const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isScenariosOpen, setIsScenariosOpen] = useState(false); // dropdown toggle
 
-  const renderNavLink = (name, label, Icon, to) => (
+  // Function to check active route
+  const isActive = (path) => location.pathname === path;
+
+  const renderNavLink = (label, Icon, to) => (
     <Link
       to={to}
-      onClick={() => setActiveLink(name)}
       className={`flex items-center space-x-3 p-3 rounded-lg cursor-pointer transition-colors duration-200 ${
-        activeLink === name
+        isActive(to)
           ? "bg-white text-purple-700 font-semibold shadow"
           : "text-gray-200 hover:bg-purple-700 hover:text-white"
       }`}
@@ -47,14 +51,42 @@ const Sidebar = () => {
         <div className="text-xs text-gray-200 uppercase font-medium mb-2">
           Main
         </div>
-        {renderNavLink("organization", "Organization", FiGrid, "/organization")}
+        {renderNavLink("Organization", FiGrid, "/organization")}
 
         <div className="text-xs text-gray-200 uppercase font-medium mt-6 mb-2">
           Automations
         </div>
-        {renderNavLink("scenarios", "Scenarios", FiLayers, "/scenarios")}
-        {renderNavLink("templates", "Templates", FiFileText, "/templates")}
-        {/* {renderNavLink("connections", "Connections", FiLink, "/connection")} */}
+
+        {/* Scenarios with Dropdown */}
+        <div>
+          <button
+            onClick={() => setIsScenariosOpen(!isScenariosOpen)}
+            className={`w-full flex items-center justify-between p-3 rounded-lg transition-colors duration-200 ${
+              location.pathname.startsWith("/scenarios")
+                ? "bg-white text-purple-700 font-semibold shadow"
+                : "text-gray-200 hover:bg-purple-700 hover:text-white"
+            }`}
+          >
+            <div className="flex items-center space-x-3">
+              <FiLayers className="w-5 h-5" />
+              <span>Scenarios</span>
+            </div>
+            {isScenariosOpen ? (
+              <FiChevronDown className="w-4 h-4" />
+            ) : (
+              <FiChevronRight className="w-4 h-4" />
+            )}
+          </button>
+
+          {isScenariosOpen && (
+            <div className="ml-8 mt-1 space-y-1">
+              {renderNavLink("Shopify Scenario", FiLayers, "/scenarios/shopify")}
+              {renderNavLink("Others", FiLayers, "/scenarios/others")}
+            </div>
+          )}
+        </div>
+
+        {renderNavLink("Templates", FiFileText, "/templates")}
       </div>
 
       {/* Footer */}

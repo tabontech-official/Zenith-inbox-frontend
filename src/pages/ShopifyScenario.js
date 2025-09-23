@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Plus,
   Search,
@@ -11,9 +11,40 @@ import {
   Clock,
 } from "lucide-react";
 import Sidebar from "../component/Sidebar";
-import { TfiEmail } from "react-icons/tfi";
+import {
+  FiAlertCircle,
+  FiCode,
+  FiHome,
+  FiShuffle,
+  FiFileText,
+  FiSearch,
+  FiTrendingUp,
+  FiCpu,
+  FiSettings,
+  FiBox,
+  FiShare2,
+  FiType,
+  FiGlobe,
+  FiCreditCard,
+  FiLink,
+  FiBarChart2,
+  FiActivity,
+  FiImage,
+  FiBriefcase,
+  FiClipboard,
+  FiPercent,
+  FiCamera,
+  FiMail,
+  FiBox as FiBox3D,
+  FiMonitor,
+  FiVideo,
+  FiBookOpen,
+  FiPackage,
+} from "react-icons/fi";
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
 
-const AllScenariosPage = () => {
+const ShopifyScenariosPage = () => {
   const [open, setOpen] = useState(false);
   const [selectedApp, setSelectedApp] = useState(null);
   const [selectedModule, setSelectedModule] = useState(null);
@@ -28,13 +59,119 @@ const AllScenariosPage = () => {
   const [routerHovered, setRouterHovered] = useState(false);
   const [branchModules, setBranchModules] = useState({});
   const [editingBranch, setEditingBranch] = useState(null);
+  const [editorValue, setEditorValue] = useState("");
+
+  const modalRef = useRef(null);
+
+    useEffect(() => {
+      function handleClickOutside(event) {
+        if (modalRef.current && !modalRef.current.contains(event.target)) {
+          // Close all open boxes if clicked outside
+          setOpen(false);
+          setShowFilterDialog(false);
+          setShowDataPanel(false);
+          setSelectedModule(null);
+        }
+      }
+
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+      };
+    }, []);
 
   const apps = [
-    // { name: "Flow Control", color: "bg-green-400", icon: <Settings /> },
-    // { name: "Router", color: "bg-green-400", icon: <GitBranch /> },
-    { name: "Gmail", color: "bg-red-500", icon: <Mail /> },
-    { name: "Email", color: "bg-red-500", icon: <TfiEmail /> },
+    {
+      name: "Troubleshooting",
+      color: "bg-purple-500",
+      icon: <FiAlertCircle />,
+    },
     { name: "Delay", color: "bg-blue-500", icon: <Clock /> },
+
+    { name: "Theme customization", color: "bg-indigo-500", icon: <FiCode /> },
+    { name: "Store build or redesign", color: "bg-blue-500", icon: <FiHome /> },
+    { name: "Store migration", color: "bg-teal-500", icon: <FiShuffle /> },
+    {
+      name: "Website and marketing content",
+      color: "bg-pink-500",
+      icon: <FiFileText />,
+    },
+    { name: "SEO", color: "bg-green-500", icon: <FiSearch /> },
+    {
+      name: "Site performance and speed",
+      color: "bg-yellow-500",
+      icon: <FiTrendingUp />,
+    },
+    {
+      name: "Custom apps and integrations",
+      color: "bg-red-500",
+      icon: <FiCpu />,
+    },
+    {
+      name: "Store settings configuration",
+      color: "bg-orange-500",
+      icon: <FiSettings />,
+    },
+    {
+      name: "Product and collection setup",
+      color: "bg-lime-500",
+      icon: <FiBox />,
+    },
+    {
+      name: "Social media marketing",
+      color: "bg-cyan-500",
+      icon: <FiShare2 />,
+    },
+    { name: "Product descriptions", color: "bg-violet-500", icon: <FiType /> },
+    {
+      name: "Search engine advertising",
+      color: "bg-emerald-500",
+      icon: <FiGlobe />,
+    },
+    {
+      name: "POS setup and migration",
+      color: "bg-fuchsia-500",
+      icon: <FiCreditCard />,
+    },
+    { name: "Custom domain setup", color: "bg-rose-500", icon: <FiLink /> },
+    {
+      name: "Conversion rate optimization",
+      color: "bg-sky-500",
+      icon: <FiBarChart2 />,
+    },
+    {
+      name: "Analytics and tracking",
+      color: "bg-slate-500",
+      icon: <FiActivity />,
+    },
+    { name: "Sales channel setup", color: "bg-amber-500", icon: <FiGlobe /> },
+    {
+      name: "Logo and visual branding",
+      color: "bg-purple-400",
+      icon: <FiImage />,
+    },
+    {
+      name: "Business strategy guidance",
+      color: "bg-green-400",
+      icon: <FiBriefcase />,
+    },
+    {
+      name: "Website audit and optimization strategy",
+      color: "bg-indigo-400",
+      icon: <FiClipboard />,
+    },
+    { name: "Sales tax guidance", color: "bg-orange-400", icon: <FiPercent /> },
+    { name: "Product photography", color: "bg-pink-400", icon: <FiCamera /> },
+    { name: "Email marketing", color: "bg-blue-400", icon: <FiMail /> },
+    { name: "3D modelling", color: "bg-teal-400", icon: <FiBox3D /> },
+    { name: "Banner ads", color: "bg-yellow-400", icon: <FiMonitor /> },
+    { name: "Video and illustrations", color: "bg-red-400", icon: <FiVideo /> },
+    { name: "Content marketing", color: "bg-lime-400", icon: <FiBookOpen /> },
+    {
+      name: "Product sourcing guidance",
+      color: "bg-fuchsia-400",
+      icon: <FiPackage />,
+    },
   ];
 
   const availableData = [
@@ -58,21 +195,21 @@ const AllScenariosPage = () => {
         { name: "Headers", type: "object" },
       ],
     },
-    {
-      module: "Webhooks",
-      type: "Custom mailhook",
-      fields: [
-        { name: "Date", type: "date" },
-        { name: "Subject", type: "text" },
-        { name: "Text", type: "text" },
-        { name: "HTML content", type: "html" },
-        {
-          name: "Sender",
-          type: "object",
-          subFields: ["Name", "Email address"],
-        },
-      ],
-    },
+    // {
+    //   module: "Webhooks",
+    //   type: "Custom mailhook",
+    //   fields: [
+    //     { name: "Date", type: "date" },
+    //     { name: "Subject", type: "text" },
+    //     { name: "Text", type: "text" },
+    //     { name: "HTML content", type: "html" },
+    //     {
+    //       name: "Sender",
+    //       type: "object",
+    //       subFields: ["Name", "Email address"],
+    //     },
+    //   ],
+    // },
   ];
 
   useState(() => {
@@ -93,7 +230,7 @@ const AllScenariosPage = () => {
     });
     setShowRouterBranches(true);
     setRouterBranches([
-      { id: 1, hasModule: false, condition: null, modules: [] },
+      // { id: 1, hasModule: false, condition: null, modules: [] },
       { id: 2, hasModule: false, condition: null, modules: [] },
     ]);
   }, []);
@@ -166,6 +303,24 @@ const AllScenariosPage = () => {
   const addModuleToBranch = (branchIndex) => {
     setEditingBranch(branchIndex);
     setOpen(true);
+  };
+  const renderConnectionLine = (startX, startY, endX, endY) => {
+    return (
+      <svg
+        className="absolute top-0 left-0 w-full h-full pointer-events-none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <line
+          x1={startX}
+          y1={startY}
+          x2={endX}
+          y2={endY}
+          stroke="gray"
+          strokeWidth="2"
+          strokeDasharray="5,5"
+        />
+      </svg>
+    );
   };
 
   return (
@@ -251,21 +406,31 @@ const AllScenariosPage = () => {
             </div>
 
             {showRouterBranches && (
-              <div className="ml-12 flex flex-col space-y-8">
+              <div className="relative ml-12 flex flex-col space-y-12">
                 {routerBranches.map((branch, branchIndex) => (
-                  <div key={branch.id} className="flex items-center">
-                    <div className="flex items-center mr-4">
-                      <div className="w-8 h-1 bg-green-300"></div>
-                      <div className="flex items-center space-x-1">
-                        <div className="w-2 h-2 rounded-full bg-green-400"></div>
-                        <div className="w-2 h-2 rounded-full bg-green-300"></div>
-                        <div className="w-2 h-2 rounded-full bg-green-200"></div>
-                        <div className="text-xs text-green-500 ml-1">🔧</div>
-                      </div>
+                  <div key={branch.id} className="flex items-center relative">
+                    {/* Dotted Connection from Router to Branch */}
+                    <div className="absolute -left-16 top-1/2 transform -translate-y-1/2 flex items-center">
+                      {Array.from({ length: 6 }).map((_, i) => (
+                        <div
+                          key={i}
+                          className={`w-3 h-3 rounded-full ml-2 ${
+                            i === 0
+                              ? "bg-green-500"
+                              : i === 1
+                              ? "bg-green-400"
+                              : i === 2
+                              ? "bg-green-300"
+                              : i === 3
+                              ? "bg-green-200"
+                              : "bg-green-100"
+                          }`}
+                        ></div>
+                      ))}
                     </div>
 
-                    <div className="flex items-center space-x-4">
-                      {branch.modules &&
+                    <div className="flex items-center space-x-6 ml-12">
+                      {branch.modules && branch.modules.length > 0 ? (
                         branch.modules.map((module, moduleIndex) => (
                           <React.Fragment key={module.id}>
                             <div className="relative">
@@ -294,17 +459,18 @@ const AllScenariosPage = () => {
                               </button>
                             </div>
 
+                            {/* Connection dots between modules */}
                             {moduleIndex < branch.modules.length - 1 && (
-                              <div className="flex items-center">
-                                <div className="w-2 h-2 rounded-full bg-gray-400 mr-1"></div>
-                                <div className="w-2 h-2 rounded-full bg-gray-300 mr-1"></div>
-                                <div className="w-2 h-2 rounded-full bg-gray-200"></div>
+                              <div className="flex items-center ml-4">
+                                <div className="w-2 h-2 rounded-full bg-gray-400"></div>
+                                <div className="w-2 h-2 rounded-full bg-gray-300 ml-2"></div>
+                                <div className="w-2 h-2 rounded-full bg-gray-200 ml-2"></div>
                               </div>
                             )}
                           </React.Fragment>
-                        ))}
-
-                      {(!branch.modules || branch.modules.length === 0) && (
+                        ))
+                      ) : (
+                        // Default Plus button if no module in branch
                         <button
                           onClick={() => handleBranchPlusClick(branchIndex)}
                           className="w-20 h-20 flex items-center justify-center rounded-full bg-gray-300 text-gray-600 shadow-lg border-2 border-gray-200 hover:bg-gray-400 hover:text-white transition-colors"
@@ -313,7 +479,8 @@ const AllScenariosPage = () => {
                         </button>
                       )}
 
-                      <button
+                      {/* Filter Button */}
+                      {/* <button
                         onClick={() => {
                           setSelectedBranchIndex(branchIndex);
                           setShowFilterDialog(true);
@@ -321,7 +488,7 @@ const AllScenariosPage = () => {
                         className="ml-2 px-3 py-1 bg-blue-100 text-blue-700 text-xs rounded hover:bg-blue-200 transition-colors border border-blue-300"
                       >
                         + Filter
-                      </button>
+                      </button> */}
                     </div>
                   </div>
                 ))}
@@ -330,7 +497,10 @@ const AllScenariosPage = () => {
           </div>
 
           {open && (
-            <div className="absolute left-1/2 translate-x-36 bg-white rounded-lg shadow-lg w-96 z-10">
+            <div
+              ref={modalRef}
+              className="absolute left-1/2 translate-x-36 bg-white rounded-lg shadow-lg w-96 z-10"
+            >
               {!selectedApp ? (
                 <>
                   <div className="p-4 border-b">
@@ -385,11 +555,13 @@ const AllScenariosPage = () => {
                     <h2 className="text-lg font-semibold">
                       {selectedApp.name}
                     </h2>
-                    <span className="text-xs text-purple-600 mt-1 px-2 py-0.5 rounded bg-purple-100">
-                      Built-in
+
+                    <span className="text-xs text-white mt-1 px-2 py-0.5 rounded bg-purple-600">
+                      Customize Template
                     </span>
                   </div>
 
+                  {/* Actions */}
                   <div className="p-4 border-b">
                     <h3 className="text-xs font-semibold text-gray-500 mb-2">
                       ACTIONS
@@ -410,14 +582,10 @@ const AllScenariosPage = () => {
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-gray-700">
-                          {selectedApp.name === "Delay"
-                            ? "Sleep"
-                            : "Send an email"}
+                          {"Customize template"}
                         </p>
                         <p className="text-xs text-gray-500">
-                          {selectedApp.name === "Delay"
-                            ? "Suspend the execution of a scenario."
-                            : "Send an email via Gmail."}
+                          {`Use this template for ${selectedApp.name}.`}
                         </p>
                       </div>
                     </div>
@@ -428,7 +596,10 @@ const AllScenariosPage = () => {
           )}
 
           {showFilterDialog && (
-            <div className="absolute top-10 right-10 bg-white rounded-lg shadow-xl w-[500px] border z-20">
+            <div
+              ref={modalRef}
+              className="absolute top-10 right-10 bg-white rounded-lg shadow-xl w-[500px] border z-20"
+            >
               <div className="flex justify-between items-center px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-400 text-white rounded-t-lg">
                 <h3 className="font-semibold">Set up a filter</h3>
                 <div className="flex items-center space-x-2 text-sm">
@@ -449,35 +620,6 @@ const AllScenariosPage = () => {
                     className="w-full border rounded px-3 py-2 text-sm"
                     placeholder="Enter label"
                   />
-                </div>
-
-                <div>
-                  <p className="text-sm text-gray-700 mb-3">
-                    Set the route as a fallback. A fallback route is a backup
-                    route that is used if the source data didn't go through any
-                    other route. One router can have only one fallback route.
-                  </p>
-                  <div className="flex items-center space-x-4">
-                    <label className="flex items-center">
-                      <input
-                        type="radio"
-                        name="fallback"
-                        value="yes"
-                        className="mr-2"
-                      />
-                      Yes
-                    </label>
-                    <label className="flex items-center">
-                      <input
-                        type="radio"
-                        name="fallback"
-                        value="no"
-                        className="mr-2"
-                        defaultChecked
-                      />
-                      No
-                    </label>
-                  </div>
                 </div>
 
                 <div>
@@ -516,6 +658,24 @@ const AllScenariosPage = () => {
                     </button>
                   </div>
                 </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Condition
+                  </label>
+                  <div
+                    onClick={handleConditionClick}
+                    className="border rounded p-3 bg-blue-50 border-l-4 border-l-blue-500"
+                  >
+                    <ReactQuill
+                      theme="snow"
+                      value={editorValue}
+                      onChange={setEditorValue}
+                      className="bg-white rounded " // Tailwind ka height class
+                      placeholder="Enter rich text or use expressions..."
+                    />
+                  </div>
+                </div>
               </div>
 
               <div className="flex justify-end space-x-2 px-4 py-3 border-t bg-gray-50">
@@ -532,9 +692,11 @@ const AllScenariosPage = () => {
             </div>
           )}
 
-          {/* Data Panel */}
           {showDataPanel && (
-            <div className="absolute top-10 left-10 bg-white rounded-lg shadow-xl w-80 border z-30">
+            <div
+              ref={modalRef}
+              className="absolute top-10 left-10 bg-white rounded-lg shadow-xl w-80 border z-30"
+            >
               <div className="p-3 border-b bg-gray-50">
                 <div className="flex items-center justify-between">
                   <h4 className="font-semibold text-sm">Search items</h4>
@@ -612,236 +774,136 @@ const AllScenariosPage = () => {
               </div>
             </div>
           )}
+        {selectedApp && (
+  <div className="absolute top-10 right-10 bg-white rounded-lg shadow-xl w-[600px] border z-20">
+    {/* Header */}
+    <div className="flex justify-between items-center px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-400 text-white rounded-t-lg">
+      <h3 className="font-semibold">{selectedApp.name}</h3>
+      <div className="space-x-2 text-sm">
+        <button>⋮</button>
+        <button>?</button>
+        <button onClick={() => setSelectedApp(null)}>✕</button>
+      </div>
+    </div>
 
-          {/* Module Configuration Modal */}
-          {/* {(selectedModule === "delay" || selectedModule === "sendEmail") && (
-            <div className="absolute top-10 right-10 bg-white rounded-lg shadow-xl w-[500px] border z-20">
-              <div className="flex justify-between items-center px-4 py-2 bg-gradient-to-r from-pink-600 to-pink-400 text-white rounded-t-lg">
-                <h3 className="font-semibold">
-                  {selectedApp?.name || "Module"}
-                </h3>
-                <div className="space-x-2 text-sm">
-                  <button>⋮</button>
-                  <button>?</button>
-                  <button onClick={() => setSelectedModule(null)}>✕</button>
-                </div>
-              </div>
+    {/* Body */}
+    <div className="p-4 space-y-4">
+      {selectedApp.name === "Delay" ? (
+        <>
+          {/* --- Delay Form --- */}
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Delay <span className="text-red-500">*</span>
+          </label>
+          <div className="flex space-x-2">
+            <input
+              type="number"
+              className="w-20 border rounded px-2 py-1 text-sm"
+              placeholder="5"
+              defaultValue="5"
+            />
+            <select className="border rounded px-2 py-1 text-sm">
+              <option value="seconds">Seconds</option>
+              <option value="minutes">Minutes</option>
+              <option value="hours">Hours</option>
+            </select>
+          </div>
+          <p className="text-xs text-gray-500 mt-2">
+            Suspend the execution of the scenario for the specified duration.
+          </p>
+        </>
+      ) : (
+        <>
+          {/* --- Default Form (Label + Conditions) --- */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Label
+            </label>
+            <input
+              type="text"
+              className="w-full border rounded px-3 py-2 text-sm"
+              placeholder="Enter label"
+            />
+          </div>
 
-              <div className="p-4">
-                {selectedModule === "delay" ? (
-                  <>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Delay <span className="text-red-500">*</span>
-                    </label>
-                    <div className="flex space-x-2">
-                      <input
-                        type="number"
-                        className="w-20 border rounded px-2 py-1 text-sm"
-                        placeholder="5"
-                        defaultValue="5"
-                      />
-                      <select className="border rounded px-2 py-1 text-sm">
-                        <option value="seconds">Seconds</option>
-                        <option value="minutes">Minutes</option>
-                        <option value="hours">Hours</option>
-                      </select>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-2">
-                      Suspend the execution of the scenario for the specified
-                      duration.
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Connection <span className="text-red-500">*</span>
-                    </label>
-                    <select className="w-full border rounded px-2 py-1 text-sm">
-                      <option value="gmail-connection">
-                        My Gmail Connection
-                      </option>
-                    </select>
-                    <div className="mt-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        To <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="email"
-                        className="w-full border rounded px-2 py-1 text-sm"
-                        placeholder="recipient@example.com"
-                      />
-                    </div>
-                    <div className="mt-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Subject <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        className="w-full border rounded px-2 py-1 text-sm"
-                        placeholder="Email subject"
-                      />
-                    </div>
-                  </>
-                )}
-
-                <div className="mt-4">
-                  <label className="flex items-center text-sm text-gray-600">
-                    <input type="checkbox" className="mr-2" /> Advanced settings
-                  </label>
-                </div>
-              </div>
-
-              <div className="flex justify-end space-x-2 px-4 py-2 border-t">
-                <button
-                  className="px-4 py-2 text-sm border rounded"
-                  onClick={() => setSelectedModule(null)}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="px-4 py-2 text-sm bg-purple-600 text-white rounded"
-                  onClick={handleSave}
-                >
-                  Save
+          {/* Condition (normal input) */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Condition
+            </label>
+            <div className="border rounded p-3 bg-blue-50 border-l-4 border-l-blue-500">
+              <input
+                type="text"
+                className="w-full border rounded px-3 py-2 text-sm mb-2"
+                placeholder="Enter text or use expressions"
+                onClick={handleConditionClick}
+              />
+              <div className="flex items-center justify-between">
+                <select className="border rounded px-3 py-1 text-sm">
+                  <option>Text operators: Equal to</option>
+                  <option>Text operators: Contains</option>
+                  <option>Text operators: Does not contain</option>
+                </select>
+                <button className="text-gray-400 hover:text-gray-600">
+                  <X className="w-4 h-4" />
                 </button>
               </div>
+              <input
+                type="text"
+                className="w-full border rounded px-3 py-2 text-sm mt-2"
+                placeholder="Enter value"
+              />
             </div>
-          )} */}
-          {(selectedModule === "delay" || selectedModule === "sendEmail") && (
-            <div className="absolute top-10 right-10 bg-white rounded-lg shadow-xl w-[500px] border z-20">
-              <div className="flex justify-between items-center px-4 py-2 bg-gradient-to-r from-pink-600 to-pink-400 text-white rounded-t-lg">
-                <h3 className="font-semibold">
-                  {selectedApp?.name || "Module"}
-                </h3>
-                <div className="space-x-2 text-sm">
-                  <button>⋮</button>
-                  <button>?</button>
-                  <button onClick={() => setSelectedModule(null)}>✕</button>
-                </div>
-              </div>
-
-              <div className="p-4">
-                {/* --- Delay Module --- */}
-                {selectedModule === "delay" ? (
-                  <>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Delay <span className="text-red-500">*</span>
-                    </label>
-                    <div className="flex space-x-2">
-                      <input
-                        type="number"
-                        className="w-20 border rounded px-2 py-1 text-sm"
-                        placeholder="5"
-                        defaultValue="5"
-                      />
-                      <select className="border rounded px-2 py-1 text-sm">
-                        <option value="seconds">Seconds</option>
-                        <option value="minutes">Minutes</option>
-                        <option value="hours">Hours</option>
-                      </select>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-2">
-                      Suspend the execution of the scenario for the specified
-                      duration.
-                    </p>
-                  </>
-                ) : selectedApp?.name === "Email" ? (
-                  <>
-                    {/* --- Custom SMTP Email Module --- */}
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      SMTP Server <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      className="w-full border rounded px-2 py-1 text-sm"
-                      placeholder="smtp.example.com"
-                    />
-
-                    <div className="mt-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        To <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="email"
-                        className="w-full border rounded px-2 py-1 text-sm"
-                        placeholder="recipient@example.com"
-                      />
-                    </div>
-
-                    <div className="mt-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Subject <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        className="w-full border rounded px-2 py-1 text-sm"
-                        placeholder="Email subject"
-                      />
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    {/* --- Gmail Module (default email module) --- */}
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Connection <span className="text-red-500">*</span>
-                    </label>
-                    <select className="w-full border rounded px-2 py-1 text-sm">
-                      <option value="gmail-connection">
-                        My Gmail Connection
-                      </option>
-                    </select>
-
-                    <div className="mt-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        To <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="email"
-                        className="w-full border rounded px-2 py-1 text-sm"
-                        placeholder="recipient@example.com"
-                      />
-                    </div>
-
-                    <div className="mt-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Subject <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        className="w-full border rounded px-2 py-1 text-sm"
-                        placeholder="Email subject"
-                      />
-                    </div>
-                  </>
-                )}
-
-                <div className="mt-4">
-                  <label className="flex items-center text-sm text-gray-600">
-                    <input type="checkbox" className="mr-2" /> Advanced settings
-                  </label>
-                </div>
-              </div>
-
-              <div className="flex justify-end space-x-2 px-4 py-2 border-t">
-                <button
-                  className="px-4 py-2 text-sm border rounded"
-                  onClick={() => setSelectedModule(null)}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="px-4 py-2 text-sm bg-purple-600 text-white rounded"
-                  onClick={handleSave}
-                >
-                  Save
-                </button>
-              </div>
+            <div className="flex space-x-2 mt-2">
+              <button className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700">
+                Add AND rule
+              </button>
+              <button className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700">
+                Add OR rule
+              </button>
             </div>
-          )}
+          </div>
+
+          {/* Condition with Rich Text Editor */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Condition
+            </label>
+            <div onClick={handleConditionClick} className="border rounded p-3 bg-blue-50 border-l-4 border-l-blue-500">
+              <ReactQuill
+                theme="snow"
+                value={editorValue}
+                onChange={setEditorValue}
+                className="bg-white rounded "
+                placeholder="Enter rich text or use expressions..."
+              />
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+
+    {/* Footer */}
+    <div className="flex justify-end space-x-2 px-4 py-2 border-t bg-gray-50">
+      <button
+        className="px-4 py-2 text-sm border rounded hover:bg-gray-100"
+        onClick={() => setSelectedApp(null)}
+      >
+        Cancel
+      </button>
+      <button
+        onClick={handleSave}
+        className="px-4 py-2 text-sm bg-purple-600 text-white rounded hover:bg-purple-700"
+      >
+        Save
+      </button>
+    </div>
+  </div>
+)}
+
         </div>
       </div>
     </div>
   );
 };
 
-export default AllScenariosPage;
+export default ShopifyScenariosPage;

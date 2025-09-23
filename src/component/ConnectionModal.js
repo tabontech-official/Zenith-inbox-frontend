@@ -14,7 +14,7 @@
 //   const userId = localStorage.getItem("userid"); // this should already be set when user logs in
 
   
-//   window.location.href = `https://email-syncing-backend.vercel.app/auth/google?userId=${userId}`;
+//   window.location.href = `http://localhost:5000/auth/google?userId=${userId}`;
 // };
 
 //   if (!isOpen) {
@@ -134,7 +134,7 @@ const ConnectionModal = ({ isOpen, onClose }) => {
 
   const handleGoogleSignIn = () => {
     const userId = localStorage.getItem("userid"); // already set when user logs in
-    window.location.href = `https://email-syncing-backend.vercel.app/auth/google?userId=${userId}`;
+    window.location.href = `http://localhost:5000/auth/google?userId=${userId}`;
   };
 
   if (!isOpen) return null;
