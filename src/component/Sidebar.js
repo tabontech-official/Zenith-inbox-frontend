@@ -54,7 +54,7 @@ const Sidebar = () => {
         </div>
         {renderNavLink("scenarios", "Scenarios", FiLayers, "/scenarios")}
         {renderNavLink("templates", "Templates", FiFileText, "/templates")}
-        {renderNavLink("connections", "Connections", FiLink, "/connection")}
+        {/* {renderNavLink("connections", "Connections", FiLink, "/connection")} */}
       </div>
 
       {/* Footer */}

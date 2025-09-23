@@ -1,38 +1,23 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Sidebar from "../component/Sidebar";
 import { Link } from "react-router-dom";
-import { FiMail, FiCheckCircle, FiClock, FiAlertCircle } from "react-icons/fi";
+import {
+  FiMail,
+  FiCheckCircle,
+  FiClock,
+  FiAlertCircle,
+  FiZap,
+} from "react-icons/fi";
 import { MdOutlineEmail } from "react-icons/md";
+import axios from "axios";
 
 const Organization = () => {
   const [automationOn, setAutomationOn] = useState(true);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [emails, setEmails] = useState([]);
 
-  // Dummy Stats
-  const stats = {
-    totalEmails: 124,
-    processed: 98,
-    pending: 20,
-    failed: 6,
-    templates: 12,
-  };
-
-  const recentEmails = [
-    {
-      id: 1,
-      from: "malikrehan@tabontech.com",
-      subject: "Shopify Partner Directory: Custom domain setup",
-      date: "Sep 20, 2025, 10:32 AM",
-      status: "Processed",
-    },
-    {
-      id: 2,
-      from: "john@brandstore.com",
-      subject: "Shopify Partner Directory: SEO Optimization",
-      date: "Sep 19, 2025, 02:18 PM",
-      status: "Pending",
-    },
-  ];
-
+  // ✅ Static Automations
   const recentAutomation = [
     {
       id: 1,
@@ -47,6 +32,40 @@ const Organization = () => {
       sentAt: "Sep 19, 2025, 02:20 PM",
     },
   ];
+
+  // Fetch user
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const userId = localStorage.getItem("userid");
+        const res = await axios.get(
+          `https://email-syncing-backend.vercel.app/auth/getUsers/${userId}`
+        );
+        setUser(res.data.data);
+      } catch (error) {
+        console.error("Error fetching user:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUser();
+  }, []);
+
+  // Fetch recent emails
+  useEffect(() => {
+    const fetchEmails = async () => {
+      try {
+        const userId = localStorage.getItem("userid");
+        const res = await axios.get(
+          `https://email-syncing-backend.vercel.app/api/emails?userId=${userId}`
+        );
+        setEmails(res.data);
+      } catch (error) {
+        console.error("Error fetching emails:", error);
+      }
+    };
+    fetchEmails();
+  }, []);
 
   const renderStatCard = (icon, label, value, color) => (
     <div className="bg-white p-6 rounded-lg shadow hover:shadow-md transition">
@@ -67,9 +86,46 @@ const Organization = () => {
   return (
     <div className="flex bg-gray-100 min-h-screen font-inter antialiased">
       <Sidebar />
-
-      {/* Main */}
       <main className="flex-1 md:ml-64 p-6 overflow-auto">
+        {/* Mailhook */}
+        {/* Mailhook */}
+        <div className="mb-6 bg-white p-4 rounded-lg shadow">
+          {loading ? (
+            <p className="text-gray-500">Loading user data...</p>
+          ) : user ? (
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-sm text-gray-600">Your Mailhook</h2>
+                <p className="text-lg font-semibold text-purple-600">
+                  {user.mailhook}
+                </p>
+              </div>
+
+              {/* Verify Button / Status */}
+              {user.isVerified ? (
+                <span className="flex items-center gap-1 text-green-600 font-medium">
+                  <FiCheckCircle /> Verified
+                </span>
+              ) : (
+                <button
+                  onClick={() => {
+                    if (user.verificationUrl) {
+                      window.open(user.verificationUrl, "_blank");
+                    } else {
+                      alert("No verification link found.");
+                    }
+                  }}
+                  className="bg-green-500 text-white px-3 py-1 rounded-lg hover:bg-green-600 transition"
+                >
+                  Verify
+                </button>
+              )}
+            </div>
+          ) : (
+            <p className="text-red-500">Failed to load user</p>
+          )}
+        </div>
+
         {/* Header */}
         <header className="flex flex-col md:flex-row md:items-center md:justify-between pb-6 border-b border-gray-200">
           <h1 className="text-2xl font-bold text-gray-800">
@@ -81,8 +137,7 @@ const Organization = () => {
                 Manage Templates
               </button>
             </Link>
-
-            {/* Toggle Button */}
+            {/* Toggle */}
             <label className="relative inline-flex items-center cursor-pointer">
               <input
                 type="checkbox"
@@ -101,10 +156,30 @@ const Organization = () => {
 
         {/* Stats */}
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
-          {renderStatCard(<MdOutlineEmail />, "Total Emails", stats.totalEmails, "bg-indigo-500")}
-          {renderStatCard(<FiCheckCircle />, "Processed", stats.processed, "bg-green-500")}
-          {renderStatCard(<FiClock />, "Pending", stats.pending, "bg-yellow-500")}
-          {renderStatCard(<FiAlertCircle />, "Failed", stats.failed, "bg-red-500")}
+          {renderStatCard(
+            <MdOutlineEmail />,
+            "Total Emails",
+            emails.length,
+            "bg-indigo-500"
+          )}
+          {renderStatCard(
+            <FiCheckCircle />,
+            "Processed",
+            emails.filter((e) => e.status === "Processed").length,
+            "bg-green-500"
+          )}
+          {renderStatCard(
+            <FiClock />,
+            "Pending",
+            emails.filter((e) => e.status === "Pending").length,
+            "bg-yellow-500"
+          )}
+          {renderStatCard(
+            <FiAlertCircle />,
+            "Failed",
+            emails.filter((e) => e.status === "Failed").length,
+            "bg-red-500"
+          )}
         </section>
 
         {/* Recent Emails */}
@@ -123,35 +198,43 @@ const Organization = () => {
                 </tr>
               </thead>
               <tbody>
-                {recentEmails.map((email) => (
-                  <tr key={email.id} className="border-b hover:bg-gray-50">
-                    <td className="p-3">{email.from}</td>
-                    <td className="p-3">{email.subject}</td>
-                    <td className="p-3">{email.date}</td>
-                    <td className="p-3">
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          email.status === "Processed"
-                            ? "bg-green-100 text-green-700"
-                            : email.status === "Pending"
-                            ? "bg-yellow-100 text-yellow-700"
-                            : "bg-red-100 text-red-700"
-                        }`}
-                      >
-                        {email.status}
-                      </span>
+                {emails.length > 0 ? (
+                  emails.map((email, idx) => (
+                    <tr key={idx} className="border-b hover:bg-gray-50">
+                      <td className="p-3">{email.from}</td>
+                      <td className="p-3">{email.subject}</td>
+                      <td className="p-3">{email.date}</td>
+                      <td className="p-3">
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            email.status === "Processed"
+                              ? "bg-green-100 text-green-700"
+                              : email.status === "Pending"
+                              ? "bg-yellow-100 text-yellow-700"
+                              : "bg-red-100 text-red-700"
+                          }`}
+                        >
+                          {email.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="4" className="p-3 text-center text-gray-500">
+                      No recent emails found
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
         </section>
 
-        {/* Recent Automation */}
+        {/* Recent Automations (Static) */}
         <section className="mt-10">
           <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-            ⚡ Recent Automations
+            <FiZap className="text-yellow-500" /> Recent Automations
           </h2>
           <div className="bg-white rounded-lg shadow overflow-hidden">
             <table className="w-full text-left text-sm">

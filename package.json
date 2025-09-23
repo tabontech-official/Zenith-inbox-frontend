@@ -6,6 +6,11 @@
       "@fortawesome/free-solid-svg-icons": "^6.6.0",
       "@fortawesome/react-fontawesome": "^0.2.2",
       "@headlessui/react": "^2.1.8",
+      "@projectstorm/react-diagrams": "^7.0.4",
+      "@reactflow/background": "^11.3.14",
+      "@reactflow/controls": "^11.2.14",
+      "@reactflow/core": "^11.11.4",
+      "@reactflow/minimap": "^11.7.14",
       "@testing-library/jest-dom": "^5.17.0",
       "@testing-library/react": "^13.4.0",
       "@testing-library/user-event": "^13.5.0",
@@ -44,6 +49,7 @@
       "react-scripts": "5.0.1",
       "react-sortablejs": "^6.1.4",
       "react-toastify": "^11.0.5",
+      "reactflow": "^11.11.4",
       "sanitize-html": "^2.13.1",
       "web-vitals": "^2.1.4"
    },

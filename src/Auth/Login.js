@@ -63,7 +63,6 @@ const handleSubmit = async (e) => {
           {/* Error Message */}
           {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
-          {/* Login Form */}
           <form onSubmit={handleSubmit}>
             <div className="mb-4">
               <label className="block text-sm font-medium mb-1">
