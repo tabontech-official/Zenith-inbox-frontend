@@ -46,7 +46,7 @@ const AllScenariosPage = () => {
   const [smtpConnection, setSmtpConnection] = useState(null);
 
   const [dataPanelFor, setDataPanelFor] = useState(null);
-  const quillRef = useRef(null); // 👈 quill instance reference
+  const quillRef = useRef(null);
 
   const [selectedBranchIndex, setSelectedBranchIndex] = useState(null);
   const [routerHovered, setRouterHovered] = useState(false);
@@ -56,7 +56,7 @@ const AllScenariosPage = () => {
   const [chips, setChips] = useState([]);
   const [filters, setFilters] = useState({});
 
-  const smtpQuillRef = useRef(null); // 👈 separate ref for SMTP editor
+  const smtpQuillRef = useRef(null);
 
   const handleConnectionTemplateChange = (connectionId, content) => {
     setConnectionTemplates((prev) => ({
@@ -65,12 +65,12 @@ const AllScenariosPage = () => {
     }));
   };
   const handleInsertField = (fieldName) => {
-    const quill = quillRef.current.getEditor(); // get Quill editor instance
-    const range = quill.getSelection(true); // get cursor position
+    const quill = quillRef.current.getEditor();
+    const range = quill.getSelection(true);
 
     if (range) {
       quill.insertText(range.index, `{{${fieldName}}}`, "user");
-      quill.setSelection(range.index + fieldName.length + 4); // cursor ko aage shift karo
+      quill.setSelection(range.index + fieldName.length + 4);
     }
   };
 
@@ -78,7 +78,6 @@ const AllScenariosPage = () => {
     setSelectedBranchIndex(branchIndex);
     setSelectedModuleIndex(moduleIndex);
 
-    // const key = `${branchIndex}-${moduleIndex ?? "branch"}`;
     const key = `${branchIndex}-${moduleIndex ?? "branch"}-${
       selectedConnection || "none"
     }`;
@@ -293,7 +292,7 @@ const AllScenariosPage = () => {
       const draft = getDraft();
       if (draft) {
         e.preventDefault();
-        e.returnValue = ""; // Chrome ke liye zaroori
+        e.returnValue = "";
         setShowDraftModal(true);
         return "";
       }
@@ -327,10 +326,7 @@ const AllScenariosPage = () => {
                 routerBranches,
               };
 
-              console.log(
-                "🚀 Final payload:",
-                JSON.stringify(payload, null, 2)
-              ); // ✅ check karne ke liye
+              console.log(" Final payload:", JSON.stringify(payload, null, 2));
 
               const url = scenarioId
                 ? `http://localhost:5000/scenario/detail/${scenarioId}`
@@ -428,7 +424,6 @@ const AllScenariosPage = () => {
               <div className="relative ml-12 flex flex-col space-y-12">
                 {routerBranches.map((branch, branchIndex) => (
                   <div key={branch.id} className="flex items-center relative">
-                    {/* Dotted Connection */}
                     <div className="absolute -left-16 top-1/2 transform -translate-y-1/2 flex items-center">
                       {Array.from({ length: 6 }).map((_, i) => (
                         <div key={i} className="ml-2">
@@ -479,7 +474,6 @@ const AllScenariosPage = () => {
                                 <div className="absolute -top-1 -right-1 w-6 h-6 bg-black bg-opacity-80 text-white rounded-full flex items-center justify-center text-xs font-bold border border-white">
                                   {3 + moduleIndex}
                                 </div>
-                                {/* Edit button */}
                                 <button
                                   onClick={() => {
                                     setEditingBranch(branchIndex);
@@ -502,7 +496,6 @@ const AllScenariosPage = () => {
 
                                     setEditorContent(module.template || "");
 
-                                    // ✅ Yahan connection set karo
                                     setSelectedConnection(
                                       module.connectionId || ""
                                     );
