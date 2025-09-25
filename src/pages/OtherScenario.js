@@ -55,23 +55,71 @@ const AllScenariosPage = () => {
   const modalRef = useRef(null);
   const [chips, setChips] = useState([]);
   const [filters, setFilters] = useState({});
+  const [filterLabel, setFilterLabel] = useState("");
 
-  const smtpQuillRef = useRef(null);
+  const [conditions, setConditions] = useState([
+    { field: "", operator: "Equal to", value: "", join: null },
+  ]);
 
-  const handleConnectionTemplateChange = (connectionId, content) => {
-    setConnectionTemplates((prev) => ({
-      ...prev,
-      [connectionId]: content,
-    }));
-  };
-  const handleInsertField = (fieldName) => {
-    const quill = quillRef.current.getEditor();
-    const range = quill.getSelection(true);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get("status");
+    const connectionId = params.get("connectionId");
 
-    if (range) {
-      quill.insertText(range.index, `{{${fieldName}}}`, "user");
-      quill.setSelection(range.index + fieldName.length + 4);
+    if (status === "success" && connectionId) {
+      console.log("🔗 Gmail connection created:", connectionId);
+
+      // store in localStorage so modules can use it
+      localStorage.setItem("gmailConnectionId", connectionId);
+
+      // clear query params from URL
+      window.history.replaceState({}, document.title, "/scenarios/others");
     }
+  }, []);
+
+  const handleAddCondition = (joinType) => {
+    setConditions((prev) => [
+      ...prev,
+      { field: "", operator: "Equal to", value: "", join: joinType },
+    ]);
+  };
+
+  const handleSaveFilter = () => {
+    const key = `${selectedBranchIndex}-${selectedModuleIndex ?? "branch"}`;
+
+    // Save filter in local filters state
+    setFilters((prev) => ({
+      ...prev,
+      [key]: { label: filterLabel, conditions, template: editorContent },
+    }));
+
+    // Save filter in routerBranches
+    const updatedBranches = [...routerBranches];
+    if (selectedModuleIndex === null) {
+      updatedBranches[selectedBranchIndex].filter = {
+        label: filterLabel,
+        conditions, // ✅ structured objects
+        template: editorContent,
+      };
+    } else {
+      updatedBranches[selectedBranchIndex].modules[selectedModuleIndex].filter =
+        {
+          label: filterLabel,
+          conditions, // ✅ structured objects
+          template: editorContent,
+        };
+    }
+
+    setRouterBranches(updatedBranches);
+    setShowFilterDialog(false);
+  };
+
+  const handleUpdateCondition = (index, key, value) => {
+    setConditions((prev) => {
+      const updated = [...prev];
+      updated[index][key] = value;
+      return updated;
+    });
   };
 
   const openFilterModal = (branchIndex, moduleIndex = null) => {
@@ -82,10 +130,19 @@ const AllScenariosPage = () => {
       selectedConnection || "none"
     }`;
 
-    const existing = filters[key] || { conditions: [], template: "" };
+    const existing = filters[key] || {
+      label: "",
+      conditions: [],
+      template: "",
+    };
 
-    setChips(existing.conditions);
-    setEditorContent(existing.template);
+    setFilterLabel(existing.label || "");
+    setConditions(
+      existing.conditions && existing.conditions.length > 0
+        ? existing.conditions
+        : [{ field: "", operator: "Equal to", value: "", join: null }]
+    );
+    setEditorContent(existing.template || "");
 
     setShowFilterDialog(true);
   };
@@ -116,20 +173,11 @@ const AllScenariosPage = () => {
       module: "Gmail",
       type: "Send an Email",
       fields: [
-        { name: "Message ID", type: "text" },
+        { name: "From", type: "text" },
+        { name: "To", type: "text" },
         { name: "Subject", type: "text" },
+        { name: "Body", type: "html" },
         { name: "Date", type: "date" },
-        { name: "HTML content", type: "html" },
-        {
-          name: "Sender",
-          type: "object",
-          subFields: ["Name", "Email address"],
-        },
-        { name: "Recipients[]", type: "array" },
-        { name: "Copy Recipients[]", type: "array" },
-        { name: "Blind copy recipients[]", type: "array" },
-        { name: "Attachments[]", type: "array" },
-        { name: "Headers", type: "object" },
       ],
     },
   ];
@@ -190,7 +238,10 @@ const AllScenariosPage = () => {
           },
           type,
           description,
-          connectionId: selectedConnection || smtpConnection,
+          connectionId:
+            localStorage.getItem("gmailConnectionId") ||
+            selectedConnection ||
+            smtpConnection,
           template: editorContent || modules[selectedModuleIndex].template,
           ...extra,
         };
@@ -206,8 +257,10 @@ const AllScenariosPage = () => {
           },
           type,
           description,
-          connectionId: selectedConnection || smtpConnection,
-          template: editorContent || "",
+          connectionId:
+            localStorage.getItem("gmailConnectionId") ||
+            selectedConnection ||
+            smtpConnection, // ✅ FIXED          template: editorContent || "",
           ...extra,
         });
         console.log("➕ New module added");
@@ -239,7 +292,7 @@ const AllScenariosPage = () => {
       hasModule: false,
       condition: null,
       modules: [],
-      filter: null,
+      filter: { label: "", conditions: [], template: "" }, // ✅ fix
     };
 
     setRouterBranches([...routerBranches, newBranch]);
@@ -697,7 +750,7 @@ const AllScenariosPage = () => {
             </div>
           )}
 
-          {showFilterDialog && (
+          {/* {showFilterDialog && (
             <div
               ref={modalRef}
               className="absolute top-10 right-10 bg-white rounded-lg shadow-xl w-[700px] border z-20"
@@ -807,6 +860,141 @@ const AllScenariosPage = () => {
 
                     setShowFilterDialog(false);
                   }}
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          )} */}
+          {showFilterDialog && (
+            <div
+              ref={modalRef}
+              className="absolute top-10 right-10 bg-white rounded-lg shadow-xl w-[700px] border z-20"
+            >
+              {/* Header */}
+              <div className="flex justify-between items-center px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-400 text-white rounded-t-lg">
+                <h3 className="font-semibold">Set up a filter</h3>
+                <div className="flex items-center space-x-2 text-sm">
+                  <button>⋮</button>
+                  <button>⚙</button>
+                  <button>?</button>
+                  <button onClick={() => setShowFilterDialog(false)}>✕</button>
+                </div>
+              </div>
+
+              <div className="p-4 space-y-4">
+                {/* Label Input */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Label
+                  </label>
+                  <input
+                    type="text"
+                    value={filterLabel}
+                    onChange={(e) => setFilterLabel(e.target.value)}
+                    className="w-full border rounded px-3 py-2 text-sm"
+                    placeholder="Enter label"
+                  />
+                </div>
+
+                {/* Conditions */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Conditions
+                  </label>
+
+                  {conditions.map((cond, index) => (
+                    <div
+                      key={index}
+                      className="border rounded p-3 bg-blue-50 border-l-4 border-l-blue-500 mb-3"
+                    >
+                      {/* Join (AND/OR) */}
+                      {cond.join && (
+                        <div className="text-xs font-bold text-gray-600 mb-2">
+                          {cond.join}
+                        </div>
+                      )}
+
+                      {/* Field */}
+                      <select
+                        value={cond.field}
+                        onChange={(e) =>
+                          handleUpdateCondition(index, "field", e.target.value)
+                        }
+                        className="border rounded px-3 py-1 text-sm w-full mb-2"
+                      >
+                        <option value="">-- Select Field --</option>
+                        <option value="From">From</option>
+                        <option value="To">To</option>
+                        <option value="Subject">Subject</option>
+                        <option value="Body">Body</option>
+                      </select>
+
+                      {/* Operator */}
+                      <select
+                        value={cond.operator}
+                        onChange={(e) =>
+                          handleUpdateCondition(
+                            index,
+                            "operator",
+                            e.target.value
+                          )
+                        }
+                        className="border rounded px-3 py-1 text-sm w-full mb-2"
+                      >
+                        <option>Equal to</option>
+                        <option>Contains</option>
+                        <option>Does not contain</option>
+                      </select>
+
+                      {/* Value */}
+                      <input
+                        type="text"
+                        value={cond.value}
+                        onChange={(e) =>
+                          handleUpdateCondition(index, "value", e.target.value)
+                        }
+                        className="w-full border rounded px-3 py-2 text-sm"
+                        placeholder="Enter value"
+                      />
+
+                      {/* Remove Button */}
+                      <button
+                        onClick={() =>
+                          setConditions((prev) =>
+                            prev.filter((_, i) => i !== index)
+                          )
+                        }
+                        className="text-red-500 text-xs mt-2"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+
+                  {/* Add Condition Buttons */}
+                  <div className="flex space-x-2 mt-4">
+                    <button
+                      onClick={() => handleAddCondition("AND")}
+                      className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700"
+                    >
+                      + Add AND Condition
+                    </button>
+                    <button
+                      onClick={() => handleAddCondition("OR")}
+                      className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+                    >
+                      + Add OR Condition
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="flex justify-end space-x-2 px-4 py-3 border-t bg-gray-50">
+                <button
+                  onClick={handleSaveFilter} // ✅ just call the function
+                  className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
                 >
                   Save
                 </button>
