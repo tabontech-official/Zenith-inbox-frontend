@@ -39,6 +39,10 @@ const AllScenariosPage = () => {
   const [routerBranches, setRouterBranches] = useState([
     { id: 2, hasModule: false, condition: null, modules: [], filter: null },
   ]);
+  const [scenarioName, setScenarioName] = useState("");
+  const [scenarioDescription, setScenarioDescription] = useState("");
+  const [scenarioId, setScenarioId] = useState(null);
+  const [showDraftModal, setShowDraftModal] = useState(false);
   const [smtpConnection, setSmtpConnection] = useState(null);
 
   const [dataPanelFor, setDataPanelFor] = useState(null);
@@ -50,6 +54,7 @@ const AllScenariosPage = () => {
   const [editingBranch, setEditingBranch] = useState(null);
   const modalRef = useRef(null);
   const [chips, setChips] = useState([]);
+  const [filters, setFilters] = useState({});
 
   const smtpQuillRef = useRef(null); // 👈 separate ref for SMTP editor
 
@@ -73,17 +78,16 @@ const AllScenariosPage = () => {
     setSelectedBranchIndex(branchIndex);
     setSelectedModuleIndex(moduleIndex);
 
-    const branch = routerBranches[branchIndex];
-    let existingFilter = null;
+    // const key = `${branchIndex}-${moduleIndex ?? "branch"}`;
+    const key = `${branchIndex}-${moduleIndex ?? "branch"}-${
+      selectedConnection || "none"
+    }`;
 
-    if (moduleIndex === null) {
-      existingFilter = branch.filter;
-    } else {
-      existingFilter = branch.modules[moduleIndex]?.filter;
-    }
+    const existing = filters[key] || { conditions: [], template: "" };
 
-    setChips(existingFilter?.conditions || []);
-    setEditorContent(existingFilter?.template || ""); // 👈 editorContent sync
+    setChips(existing.conditions);
+    setEditorContent(existing.template);
+
     setShowFilterDialog(true);
   };
 
@@ -153,19 +157,21 @@ const AllScenariosPage = () => {
     ]);
   }, []);
 
+  const [delayValue, setDelayValue] = useState(5);
+  const [delayUnit, setDelayUnit] = useState("seconds");
   const handleSave = () => {
     if (editingBranch !== null) {
-      const updatedBranches = [...routerBranches];
-      if (!updatedBranches[editingBranch].modules) {
-        updatedBranches[editingBranch].modules = [];
-      }
+      const updated = [...routerBranches];
+      const modules = updated[editingBranch].modules || [];
 
       let type = "";
       let description = "";
+      let extra = {};
 
       if (selectedModule === "delay") {
         type = "Delay";
-        description = "Delay execution";
+        description = `Delay execution for ${delayValue} ${delayUnit}`;
+        extra = { delayValue, delayUnit };
       } else if (selectedApp?.name === "Email") {
         type = "Custom Email";
         description = "Send an email using custom SMTP";
@@ -174,23 +180,50 @@ const AllScenariosPage = () => {
         description = "Send an email via Gmail";
       }
 
-      updatedBranches[editingBranch].modules.push({
-        id: Date.now(), // unique
-        app: selectedApp,
-        type,
-        description,
-        connectionId: selectedConnection || smtpConnection, // store selected connection
-        template: "", // each module has its own template
-      });
+      if (selectedModuleIndex !== null) {
+        // ✅ USER IS EDITING AN EXISTING MODULE
+        modules[selectedModuleIndex] = {
+          ...modules[selectedModuleIndex],
+          app: {
+            name: selectedApp.name,
+            color: selectedApp.color,
+            icon: selectedApp.name,
+          },
+          type,
+          description,
+          connectionId: selectedConnection || smtpConnection,
+          template: editorContent || modules[selectedModuleIndex].template,
+          ...extra,
+        };
+        console.log("✏️ Module updated:", modules[selectedModuleIndex]);
+      } else {
+        // ✅ NEW MODULE ADD
+        modules.push({
+          id: Date.now(),
+          app: {
+            name: selectedApp.name,
+            color: selectedApp.color,
+            icon: selectedApp.name,
+          },
+          type,
+          description,
+          connectionId: selectedConnection || smtpConnection,
+          template: editorContent || "",
+          ...extra,
+        });
+        console.log("➕ New module added");
+      }
 
-      setRouterBranches(updatedBranches);
+      updated[editingBranch].modules = modules;
+      setRouterBranches(updated);
       setEditingBranch(null);
+      setSelectedModuleIndex(null);
+      setOpen(false);
+      setSelectedModule(null);
+      setSelectedApp(null);
     }
-
-    setSelectedModule(null);
-    setOpen(false);
-    setSelectedApp(null);
   };
+
   const quillRefs = useRef({});
 
   const handleRouterHover = () => {
@@ -233,6 +266,44 @@ const AllScenariosPage = () => {
     setOpen(true);
   };
 
+  const LOCAL_KEY = "scenario_draft";
+
+  const saveDraft = (data) => {
+    localStorage.setItem(LOCAL_KEY, JSON.stringify(data));
+  };
+
+  const getDraft = () => {
+    const data = localStorage.getItem(LOCAL_KEY);
+    return data ? JSON.parse(data) : null;
+  };
+
+  const clearDraft = () => {
+    localStorage.removeItem(LOCAL_KEY);
+  };
+  useEffect(() => {
+    const draft = {
+      name: scenarioName,
+      description: scenarioDescription,
+      routerBranches,
+    };
+    saveDraft(draft);
+  }, [routerBranches, scenarioName, scenarioDescription]);
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      const draft = getDraft();
+      if (draft) {
+        e.preventDefault();
+        e.returnValue = ""; // Chrome ke liye zaroori
+        setShowDraftModal(true);
+        return "";
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, []);
   return (
     <div className="flex">
       <div className="w-64 min-h-screen bg-gray-100">
@@ -241,16 +312,54 @@ const AllScenariosPage = () => {
 
       <div className="flex-1 min-h-screen bg-gray-50 font-sans text-gray-800 flex flex-col">
         <div className="p-6">
-          <button className="flex items-center px-4 py-2 text-sm text-gray-700 bg-white border border-gray-200 rounded-md shadow-sm hover:bg-gray-100">
+          {/* <button className="flex items-center px-4 py-2 text-sm text-gray-700 bg-white border border-gray-200 rounded-md shadow-sm hover:bg-gray-100">
             <ArrowLeft className="mr-2 w-4 h-4" />
             New scenario
             <Settings className="ml-2 w-4 h-4" />
+          </button> */}
+          <button
+            onClick={async () => {
+              const payload = {
+                userId: localStorage.getItem("userid"),
+                name: scenarioName,
+                description: scenarioDescription,
+                type: "other",
+                routerBranches,
+              };
+
+              console.log(
+                "🚀 Final payload:",
+                JSON.stringify(payload, null, 2)
+              ); // ✅ check karne ke liye
+
+              const url = scenarioId
+                ? `http://localhost:5000/scenario/detail/${scenarioId}`
+                : `http://localhost:5000/scenario`;
+
+              await fetch(url, {
+                method: scenarioId ? "PUT" : "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+              });
+
+              clearDraft();
+              alert("Scenario saved successfully!");
+            }}
+            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+          >
+            Save Scenario
           </button>
         </div>
+        <input
+          type="text"
+          value={scenarioName}
+          onChange={(e) => setScenarioName(e.target.value)}
+          placeholder="Enter scenario name"
+          className="border rounded px-3 py-2 text-sm mb-4"
+        />
 
         <div className="flex-1 flex items-center justify-center relative">
           <div className="flex items-center justify-center w-full">
-            {/* Webhook Module */}
             <div className="relative">
               <div className="w-48 h-48 hover:border-red-600 cursor-pointer flex flex-col items-center justify-center rounded-full bg-red-500 text-white shadow-lg border-4 border-red-300 relative">
                 <Cloud className="w-16 h-16 mb-1" />
@@ -374,6 +483,12 @@ const AllScenariosPage = () => {
                                 <button
                                   onClick={() => {
                                     setEditingBranch(branchIndex);
+                                    setSelectedModuleIndex(moduleIndex);
+
+                                    const module =
+                                      routerBranches[branchIndex].modules[
+                                        moduleIndex
+                                      ];
 
                                     if (module.type === "Delay") {
                                       setSelectedModule("delay");
@@ -384,6 +499,13 @@ const AllScenariosPage = () => {
                                     }
 
                                     setSelectedApp(module.app);
+
+                                    setEditorContent(module.template || "");
+
+                                    // ✅ Yahan connection set karo
+                                    setSelectedConnection(
+                                      module.connectionId || ""
+                                    );
                                   }}
                                   className="absolute -top-2 -left-2 w-6 h-6 bg-yellow-400 text-white rounded-full flex items-center justify-center hover:bg-yellow-500"
                                 >
@@ -661,52 +783,35 @@ const AllScenariosPage = () => {
                     />
                   </div>
                 </div>
-
-                {/* Rich Text Editor for Template */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Response Template
-                  </label>
-                  <ReactQuill
-                    theme="snow"
-                    value={editorContent}
-                    onChange={setEditorContent}
-                    className="h-40 mb-2"
-                  />
-
-                  <p className="text-xs text-gray-500 mt-1">
-                    Example: <code>Hello {"{customer.name}"}</code>
-                    <br />
-                    You can manually type conditions like{" "}
-                    <code>{"{order.id}"}</code> or <code>{"{email}"}</code>.
-                  </p>
-                </div>
               </div>
 
               <div className="flex justify-end space-x-2 px-4 py-3 border-t bg-gray-50">
                 <button
-                  className="px-4 py-2 text-sm bg-purple-600 text-white rounded hover:bg-purple-700"
                   onClick={() => {
+                    const key = `${selectedBranchIndex}-${
+                      selectedModuleIndex ?? "branch"
+                    }`;
+                    setFilters((prev) => ({
+                      ...prev,
+                      [key]: { conditions: chips, template: editorContent },
+                    }));
+
                     const updatedBranches = [...routerBranches];
-                    const branch = updatedBranches[selectedBranchIndex];
-
-                    if (!branch) return;
-
                     if (selectedModuleIndex === null) {
-                      branch.filter = {
-                        label: "My Filter",
+                      updatedBranches[selectedBranchIndex].filter = {
                         conditions: chips,
-                        template: editorContent, // 👈 save editorContent
+                        template: editorContent,
                       };
                     } else {
-                      branch.modules[selectedModuleIndex].filter = {
-                        label: "My Filter",
+                      updatedBranches[selectedBranchIndex].modules[
+                        selectedModuleIndex
+                      ].filter = {
                         conditions: chips,
-                        template: editorContent, // 👈 save editorContent
+                        template: editorContent,
                       };
                     }
-
                     setRouterBranches(updatedBranches);
+
                     setShowFilterDialog(false);
                   }}
                 >
@@ -812,19 +917,19 @@ const AllScenariosPage = () => {
                       <input
                         type="number"
                         className="w-20 border rounded px-2 py-1 text-sm"
-                        placeholder="5"
-                        defaultValue="5"
+                        value={delayValue}
+                        onChange={(e) => setDelayValue(e.target.value)}
                       />
-                      <select className="border rounded px-2 py-1 text-sm">
+                      <select
+                        className="border rounded px-2 py-1 text-sm"
+                        value={delayUnit}
+                        onChange={(e) => setDelayUnit(e.target.value)}
+                      >
                         <option value="seconds">Seconds</option>
                         <option value="minutes">Minutes</option>
                         <option value="hours">Hours</option>
                       </select>
                     </div>
-                    <p className="text-xs text-gray-500 mt-2">
-                      Suspend the execution of the scenario for the specified
-                      duration.
-                    </p>
                   </>
                 )}
 
@@ -862,33 +967,58 @@ const AllScenariosPage = () => {
 
                         <ReactQuill
                           theme="snow"
-                          value={connectionTemplates[selectedConnection] || ""}
-                          onChange={(content) =>
-                            setConnectionTemplates((prev) => ({
-                              ...prev,
-                              [selectedConnection]: content,
-                            }))
-                          }
-                          className="h-40 mb-2"
+                          value={editorContent}
+                          onChange={(value) => {
+                            console.log(
+                              "📝 Quill change:",
+                              value,
+                              "| Branch:",
+                              editingBranch,
+                              "| Module:",
+                              selectedModuleIndex
+                            );
+                            setEditorContent(value);
+                          }}
                         />
 
                         <p className="text-xs text-gray-500 mt-1">
-                          Example: <code>Hello {"{customer.name}"}</code> <br />
+                          Example: <code>Hello {"{customer.name}"}</code>
+                          <br />
                           You can manually type conditions like{" "}
+                          <code>{"{order.id}"}</code> or{" "}
                           <code>{"{email}"}</code>.
                         </p>
 
                         <button
                           onClick={() => {
+                            console.log(
+                              "💾 Saving template:",
+                              editorContent,
+                              "to branch",
+                              editingBranch,
+                              "module",
+                              selectedModuleIndex
+                            );
+
                             const updated = [...routerBranches];
-                            updated[editingBranch].modules[
-                              updated[editingBranch].modules.length - 1
-                            ].template =
-                              connectionTemplates[selectedConnection] || "";
-                            setRouterBranches(updated);
-                            alert("Template saved for " + selectedConnection);
+                            if (
+                              updated[editingBranch] &&
+                              updated[editingBranch].modules[
+                                selectedModuleIndex
+                              ]
+                            ) {
+                              updated[editingBranch].modules[
+                                selectedModuleIndex
+                              ].template = editorContent;
+                              setRouterBranches(updated);
+                              console.log(
+                                "✅ Updated routerBranches:",
+                                updated[editingBranch].modules[
+                                  selectedModuleIndex
+                                ]
+                              );
+                            }
                           }}
-                          className="mt-2 px-3 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700"
                         >
                           Save Template
                         </button>
@@ -951,10 +1081,21 @@ const AllScenariosPage = () => {
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           {selectedConnection} - Response Template
                         </label>
+
                         <ReactQuill
                           theme="snow"
                           value={editorContent}
-                          onChange={setEditorContent}
+                          onChange={(value) => {
+                            console.log(
+                              "📝 Quill change:",
+                              value,
+                              "| Branch:",
+                              editingBranch,
+                              "| Module:",
+                              selectedModuleIndex
+                            );
+                            setEditorContent(value);
+                          }}
                           className="h-40 mb-2"
                         />
 
@@ -968,16 +1109,40 @@ const AllScenariosPage = () => {
 
                         <button
                           onClick={() => {
-                            const moduleIndex =
-                              routerBranches[editingBranch].modules.length - 1;
-                            setDataPanelFor(
-                              `module:${editingBranch}:${moduleIndex}`
+                            console.log(
+                              "💾 Saving template:",
+                              editorContent,
+                              "to branch",
+                              editingBranch,
+                              "module",
+                              selectedModuleIndex
                             );
-                            setShowDataPanel(true);
+
+                            const updated = [...routerBranches];
+                            if (
+                              updated[editingBranch] &&
+                              updated[editingBranch].modules[
+                                selectedModuleIndex
+                              ]
+                            ) {
+                              updated[editingBranch].modules[
+                                selectedModuleIndex
+                              ].template = editorContent;
+                              setRouterBranches(updated);
+                              console.log(
+                                "✅ Updated routerBranches:",
+                                updated[editingBranch].modules[
+                                  selectedModuleIndex
+                                ]
+                              );
+                              alert(
+                                `✅ Template saved for module [${editingBranch}-${selectedModuleIndex}]`
+                              );
+                            }
                           }}
-                          className="mt-2 px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+                          className="mt-2 px-3 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700"
                         >
-                          Insert Data
+                          Save Template
                         </button>
                       </div>
                     )}
@@ -1031,6 +1196,42 @@ const AllScenariosPage = () => {
           )}
         </div>
       </div>
+      {showDraftModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded shadow-lg w-96">
+            <h3 className="text-lg font-semibold mb-4">Unsaved Changes</h3>
+            <p className="mb-6">
+              You have unsaved scenario changes. Do you want to restore or
+              discard?
+            </p>
+            <div className="flex justify-end space-x-2">
+              <button
+                onClick={() => {
+                  clearDraft();
+                  setShowDraftModal(false);
+                }}
+                className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+              >
+                Discard
+              </button>
+              <button
+                onClick={() => {
+                  const draft = getDraft();
+                  if (draft) {
+                    setRouterBranches(draft.routerBranches || []);
+                    setScenarioName(draft.name || "");
+                    setScenarioDescription(draft.description || "");
+                  }
+                  setShowDraftModal(false);
+                }}
+                className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+              >
+                Restore
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <ConnectionModal isOpen={isModalOpen} onClose={closeModal} />
     </div>
   );
