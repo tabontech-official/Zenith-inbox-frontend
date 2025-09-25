@@ -70,23 +70,22 @@ const AllScenariosPage = () => {
   };
 
   const openFilterModal = (branchIndex, moduleIndex = null) => {
-  setSelectedBranchIndex(branchIndex);
-  setSelectedModuleIndex(moduleIndex);
+    setSelectedBranchIndex(branchIndex);
+    setSelectedModuleIndex(moduleIndex);
 
-  const branch = routerBranches[branchIndex];
-  let existingFilter = null;
+    const branch = routerBranches[branchIndex];
+    let existingFilter = null;
 
-  if (moduleIndex === null) {
-    existingFilter = branch.filter;
-  } else {
-    existingFilter = branch.modules[moduleIndex]?.filter;
-  }
+    if (moduleIndex === null) {
+      existingFilter = branch.filter;
+    } else {
+      existingFilter = branch.modules[moduleIndex]?.filter;
+    }
 
-  setChips(existingFilter?.conditions || []);
-  setEditorContent(existingFilter?.template || ""); // 👈 editorContent sync
-  setShowFilterDialog(true);
-};
-
+    setChips(existingFilter?.conditions || []);
+    setEditorContent(existingFilter?.template || ""); // 👈 editorContent sync
+    setShowFilterDialog(true);
+  };
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -233,33 +232,7 @@ const AllScenariosPage = () => {
     setEditingBranch(branchIndex);
     setOpen(true);
   };
-  const renderConnectionLine = (startX, startY, endX, endY) => {
-    return (
-      <svg
-        className="absolute top-0 left-0 w-full h-full pointer-events-none"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <line
-          x1={startX}
-          y1={startY}
-          x2={endX}
-          y2={endY}
-          stroke="gray"
-          strokeWidth="2"
-          strokeDasharray="5,5"
-        />
-      </svg>
-    );
-  };
-  const handleInsertFieldSMTP = (fieldName) => {
-    const quill = smtpQuillRef.current.getEditor();
-    const range = quill.getSelection(true);
 
-    if (range) {
-      quill.insertText(range.index, `{{${fieldName}}}`, "user");
-      quill.setSelection(range.index + fieldName.length + 4);
-    }
-  };
   return (
     <div className="flex">
       <div className="w-64 min-h-screen bg-gray-100">
@@ -690,53 +663,55 @@ const AllScenariosPage = () => {
                 </div>
 
                 {/* Rich Text Editor for Template */}
-                <div onClick={handleTemplateClick}>
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Response Template
                   </label>
-               <ReactQuill
-  ref={(el) =>
-    (quillRefs.current[`${editingBranch}-${selectedModuleIndex}`] = el)
-  }
-  theme="snow"
-  value={editorContent}          // 👈 bind only to editorContent
-  onChange={setEditorContent}    // 👈 update state only
-  className="h-40 mb-12"
-/>
+                  <ReactQuill
+                    theme="snow"
+                    value={editorContent}
+                    onChange={setEditorContent}
+                    className="h-40 mb-2"
+                  />
 
+                  <p className="text-xs text-gray-500 mt-1">
+                    Example: <code>Hello {"{customer.name}"}</code>
+                    <br />
+                    You can manually type conditions like{" "}
+                    <code>{"{order.id}"}</code> or <code>{"{email}"}</code>.
+                  </p>
                 </div>
               </div>
 
               <div className="flex justify-end space-x-2 px-4 py-3 border-t bg-gray-50">
-             <button
-  className="px-4 py-2 text-sm bg-purple-600 text-white rounded hover:bg-purple-700"
-  onClick={() => {
-    const updatedBranches = [...routerBranches];
-    const branch = updatedBranches[selectedBranchIndex];
+                <button
+                  className="px-4 py-2 text-sm bg-purple-600 text-white rounded hover:bg-purple-700"
+                  onClick={() => {
+                    const updatedBranches = [...routerBranches];
+                    const branch = updatedBranches[selectedBranchIndex];
 
-    if (!branch) return;
+                    if (!branch) return;
 
-    if (selectedModuleIndex === null) {
-      branch.filter = {
-        label: "My Filter",
-        conditions: chips,
-        template: editorContent, // 👈 save editorContent
-      };
-    } else {
-      branch.modules[selectedModuleIndex].filter = {
-        label: "My Filter",
-        conditions: chips,
-        template: editorContent, // 👈 save editorContent
-      };
-    }
+                    if (selectedModuleIndex === null) {
+                      branch.filter = {
+                        label: "My Filter",
+                        conditions: chips,
+                        template: editorContent, // 👈 save editorContent
+                      };
+                    } else {
+                      branch.modules[selectedModuleIndex].filter = {
+                        label: "My Filter",
+                        conditions: chips,
+                        template: editorContent, // 👈 save editorContent
+                      };
+                    }
 
-    setRouterBranches(updatedBranches);
-    setShowFilterDialog(false);
-  }}
->
-  Save
-</button>
-
+                    setRouterBranches(updatedBranches);
+                    setShowFilterDialog(false);
+                  }}
+                >
+                  Save
+                </button>
               </div>
             </div>
           )}
@@ -879,33 +854,43 @@ const AllScenariosPage = () => {
                     </div>
 
                     {/* Editor bind with current module */}
-                    {editingBranch !== null && smtpConnection && (
+                    {editingBranch !== null && selectedConnection && (
                       <div className="mt-4">
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          {smtpConnection} - Response Template
+                          {selectedConnection} - Response Template
                         </label>
-                      <ReactQuill
-  ref={(el) =>
-    (quillRefs.current[`${editingBranch}-${selectedModuleIndex}`] = el)
-  }
-  theme="snow"
-  value={editorContent}          // 👈 bind only to editorContent
-  onChange={setEditorContent}    // 👈 update state only
-  className="h-40 mb-12"
-/>
+
+                        <ReactQuill
+                          theme="snow"
+                          value={connectionTemplates[selectedConnection] || ""}
+                          onChange={(content) =>
+                            setConnectionTemplates((prev) => ({
+                              ...prev,
+                              [selectedConnection]: content,
+                            }))
+                          }
+                          className="h-40 mb-2"
+                        />
+
+                        <p className="text-xs text-gray-500 mt-1">
+                          Example: <code>Hello {"{customer.name}"}</code> <br />
+                          You can manually type conditions like{" "}
+                          <code>{"{email}"}</code>.
+                        </p>
 
                         <button
                           onClick={() => {
-                            const moduleIndex =
-                              routerBranches[editingBranch].modules.length - 1;
-                            setDataPanelFor(
-                              `module:${editingBranch}:${moduleIndex}`
-                            );
-                            setShowDataPanel(true);
+                            const updated = [...routerBranches];
+                            updated[editingBranch].modules[
+                              updated[editingBranch].modules.length - 1
+                            ].template =
+                              connectionTemplates[selectedConnection] || "";
+                            setRouterBranches(updated);
+                            alert("Template saved for " + selectedConnection);
                           }}
-                          className="mt-2 px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+                          className="mt-2 px-3 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700"
                         >
-                          Insert Data
+                          Save Template
                         </button>
                       </div>
                     )}
@@ -966,15 +951,20 @@ const AllScenariosPage = () => {
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           {selectedConnection} - Response Template
                         </label>
-                     <ReactQuill
-  ref={(el) =>
-    (quillRefs.current[`${editingBranch}-${selectedModuleIndex}`] = el)
-  }
-  theme="snow"
-  value={editorContent}          // 👈 bind only to editorContent
-  onChange={setEditorContent}    // 👈 update state only
-  className="h-40 mb-12"
-/>
+                        <ReactQuill
+                          theme="snow"
+                          value={editorContent}
+                          onChange={setEditorContent}
+                          className="h-40 mb-2"
+                        />
+
+                        <p className="text-xs text-gray-500 mt-1">
+                          Example: <code>Hello {"{customer.name}"}</code>
+                          <br />
+                          You can manually type conditions like{" "}
+                          <code>{"{order.id}"}</code> or{" "}
+                          <code>{"{email}"}</code>.
+                        </p>
 
                         <button
                           onClick={() => {
