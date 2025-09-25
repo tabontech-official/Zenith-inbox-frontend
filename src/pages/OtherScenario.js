@@ -9,6 +9,9 @@ import {
   GitBranch,
   X,
   Clock,
+  Trash,
+  Pencil,
+  Funnel,
 } from "lucide-react";
 import Sidebar from "../component/Sidebar";
 import { TfiEmail } from "react-icons/tfi";
@@ -28,18 +31,20 @@ const AllScenariosPage = () => {
   const [showRouterBranches, setShowRouterBranches] = useState(false);
   const [showFilterDialog, setShowFilterDialog] = useState(false);
   const [showDataPanel, setShowDataPanel] = useState(false);
-  const [routerBranches, setRouterBranches] = useState([]);
+  // const [routerBranches, setRouterBranches] = useState([]);
+  const [routerBranches, setRouterBranches] = useState([
+    { id: 2, hasModule: false, condition: null, modules: [], filter: null },
+  ]);
   const [selectedBranchIndex, setSelectedBranchIndex] = useState(null);
   const [routerHovered, setRouterHovered] = useState(false);
   const [branchModules, setBranchModules] = useState({});
   const [editingBranch, setEditingBranch] = useState(null);
   const modalRef = useRef(null);
-const [chips, setChips] = useState([]);
+  const [chips, setChips] = useState([]);
 
   useEffect(() => {
     function handleClickOutside(event) {
       if (modalRef.current && !modalRef.current.contains(event.target)) {
-        // Close all open boxes if clicked outside
         setOpen(false);
         setShowFilterDialog(false);
         setShowDataPanel(false);
@@ -54,8 +59,6 @@ const [chips, setChips] = useState([]);
   }, []);
 
   const apps = [
-    // { name: "Flow Control", color: "bg-green-400", icon: <Settings /> },
-    // { name: "Router", color: "bg-green-400", icon: <GitBranch /> },
     { name: "Gmail", color: "bg-red-500", icon: <Mail /> },
     { name: "Email", color: "bg-red-500", icon: <TfiEmail /> },
     { name: "Delay", color: "bg-blue-500", icon: <Clock /> },
@@ -173,7 +176,9 @@ const [chips, setChips] = useState([]);
       hasModule: false,
       condition: null,
       modules: [],
+      filter: null, // initially no filter
     };
+
     setRouterBranches([...routerBranches, newBranch]);
   };
 
@@ -299,20 +304,43 @@ const [chips, setChips] = useState([]);
                     {/* Dotted Connection from Router to Branch */}
                     <div className="absolute -left-16 top-1/2 transform -translate-y-1/2 flex items-center">
                       {Array.from({ length: 6 }).map((_, i) => (
-                        <div
-                          key={i}
-                          className={`w-3 h-3 rounded-full ml-2 ${
-                            i === 0
-                              ? "bg-green-500"
-                              : i === 1
-                              ? "bg-green-400"
-                              : i === 2
-                              ? "bg-green-300"
-                              : i === 3
-                              ? "bg-green-200"
-                              : "bg-green-100"
-                          }`}
-                        ></div>
+                        <div key={i} className="ml-2">
+                          {i === 3 ? ( // middle dot for filter
+                            branch.filter ? (
+                              <button
+                                onClick={() => {
+                                  setSelectedBranchIndex(branchIndex);
+                                  setShowFilterDialog(true);
+                                }}
+                                className="w-5 h-5 flex items-center justify-center bg-blue-500 text-white rounded-full hover:bg-blue-600"
+                              >
+                                <Funnel className="w-3 h-3" />
+                              </button>
+                            ) : (
+                              <div
+                                onClick={() => {
+                                  setSelectedBranchIndex(branchIndex);
+                                  setShowFilterDialog(true);
+                                }}
+                                className="w-3 h-3 rounded-full bg-blue-400 cursor-pointer hover:bg-blue-500"
+                              ></div>
+                            )
+                          ) : (
+                            <div
+                              className={`w-3 h-3 rounded-full ${
+                                i === 0
+                                  ? "bg-green-500"
+                                  : i === 1
+                                  ? "bg-green-400"
+                                  : i === 2
+                                  ? "bg-green-300"
+                                  : i === 4
+                                  ? "bg-green-200"
+                                  : "bg-green-100"
+                              }`}
+                            ></div>
+                          )}
+                        </div>
                       ))}
                     </div>
 
@@ -328,6 +356,42 @@ const [chips, setChips] = useState([]);
                                 <div className="absolute -top-1 -right-1 w-6 h-6 bg-black bg-opacity-80 text-white rounded-full flex items-center justify-center text-xs font-bold border border-white">
                                   {3 + moduleIndex}
                                 </div>
+                                {/* Edit button */}
+                        <button
+  onClick={() => {
+    setEditingBranch(branchIndex);
+
+    if (module.type === "Delay") {
+      setSelectedModule("delay");
+    } else if (module.type === "Custom Email") {
+      setSelectedModule("customEmail");  // ✅ correctly map custom email
+    } else {
+      setSelectedModule("sendEmail");
+    }
+
+    setSelectedApp(module.app);
+  }}
+  className="absolute -top-2 -left-2 w-6 h-6 bg-yellow-400 text-white rounded-full flex items-center justify-center hover:bg-yellow-500"
+>
+  <Pencil className="w-3 h-3" />
+</button>
+
+                                {/* Delete button */}
+                                <button
+                                  onClick={() => {
+                                    const updatedBranches = [...routerBranches];
+                                    updatedBranches[branchIndex].modules =
+                                      updatedBranches[
+                                        branchIndex
+                                      ].modules.filter(
+                                        (_, i) => i !== moduleIndex
+                                      );
+                                    setRouterBranches(updatedBranches);
+                                  }}
+                                  className="absolute -bottom-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600"
+                                >
+                                  <Trash className="w-3 h-3" />
+                                </button>
                               </div>
                               <div className="mt-2 text-center">
                                 <p className="text-xs font-medium text-gray-800">
@@ -367,7 +431,7 @@ const [chips, setChips] = useState([]);
                       )}
 
                       {/* Filter Button */}
-                      <button
+                      {/* <button
                         onClick={() => {
                           setSelectedBranchIndex(branchIndex);
                           setShowFilterDialog(true);
@@ -375,7 +439,7 @@ const [chips, setChips] = useState([]);
                         className="ml-2 px-3 py-1 bg-blue-100 text-blue-700 text-xs rounded hover:bg-blue-200 transition-colors border border-blue-300"
                       >
                         + Filter
-                      </button>
+                      </button> */}
                     </div>
                   </div>
                 ))}
@@ -516,33 +580,35 @@ const [chips, setChips] = useState([]);
                     Condition
                   </label>
                   <div className="border rounded p-3 bg-blue-50 border-l-4 border-l-blue-500">
-                   <div
-  className="w-full border rounded px-3 py-2 text-sm mb-2 flex flex-wrap items-center gap-2 min-h-[40px] cursor-text"
-  onClick={handleConditionClick}
->
-  {chips.map((chip, index) => (
-    <span
-      key={index}
-      className="bg-red-500 text-white text-xs px-2 py-1 rounded flex items-center"
-    >
-      {chip}
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          setChips((prev) => prev.filter((_, i) => i !== index));
-        }}
-        className="ml-2 text-white hover:text-gray-200"
-      >
-        ✕
-      </button>
-    </span>
-  ))}
-  <input
-    type="text"
-    className="flex-1 outline-none text-sm"
-    placeholder="Type or select..."
-  />
-</div>
+                    <div
+                      className="w-full border rounded px-3 py-2 text-sm mb-2 flex flex-wrap items-center gap-2 min-h-[40px] cursor-text"
+                      onClick={handleConditionClick}
+                    >
+                      {chips.map((chip, index) => (
+                        <span
+                          key={index}
+                          className="bg-red-500 text-white text-xs px-2 py-1 rounded flex items-center"
+                        >
+                          {chip}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setChips((prev) =>
+                                prev.filter((_, i) => i !== index)
+                              );
+                            }}
+                            className="ml-2 text-white hover:text-gray-200"
+                          >
+                            ✕
+                          </button>
+                        </span>
+                      ))}
+                      <input
+                        type="text"
+                        className="flex-1 outline-none text-sm"
+                        placeholder="Type or select..."
+                      />
+                    </div>
 
                     <div className="flex items-center justify-between">
                       <select className="border rounded px-3 py-1 text-sm">
@@ -572,15 +638,21 @@ const [chips, setChips] = useState([]);
               </div>
 
               <div className="flex justify-end space-x-2 px-4 py-3 border-t bg-gray-50">
-                <button
-                  className="px-4 py-2 text-sm border rounded hover:bg-gray-100"
-                  onClick={() => setShowFilterDialog(false)}
-                >
-                  Cancel
-                </button>
-                <button className="px-4 py-2 text-sm bg-purple-600 text-white rounded hover:bg-purple-700">
-                  Save
-                </button>
+               <button
+  className="px-4 py-2 text-sm bg-purple-600 text-white rounded hover:bg-purple-700"
+  onClick={() => {
+    const updatedBranches = [...routerBranches];
+    updatedBranches[selectedBranchIndex].filter = {
+      label: "My Filter", 
+      conditions: chips,   
+    };
+    setRouterBranches(updatedBranches);
+    setShowFilterDialog(false);
+  }}
+>
+  Save
+</button>
+
               </div>
             </div>
           )}
@@ -642,10 +714,10 @@ const [chips, setChips] = useState([]);
                           <div key={fieldIndex}>
                             <div
                               className="text-xs bg-pink-600 text-white px-2 py-1 rounded cursor-pointer hover:bg-pink-700 inline-block"
-onClick={() => {
-  setChips((prev) => [...prev, field.name]);
-  setShowDataPanel(false);
-}}
+                              onClick={() => {
+                                setChips((prev) => [...prev, field.name]);
+                                setShowDataPanel(false);
+                              }}
                             >
                               {field.name}
                             </div>
@@ -655,9 +727,9 @@ onClick={() => {
                                   <div
                                     key={subIndex}
                                     onClick={() => {
-  setChips((prev) => [...prev, subField]);
-  setShowDataPanel(false);
-}}
+                                      setChips((prev) => [...prev, subField]);
+                                      setShowDataPanel(false);
+                                    }}
                                     className="text-xs bg-pink-500 text-white px-2 py-1 rounded cursor-pointer hover:bg-pink-600 inline-block mr-1"
                                   >
                                     {subField}
