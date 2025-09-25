@@ -17,7 +17,8 @@ import Sidebar from "../component/Sidebar";
 import { TfiEmail } from "react-icons/tfi";
 import { FaGoogle } from "react-icons/fa";
 import ConnectionModal from "../component/ConnectionModal";
-
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
 const AllScenariosPage = () => {
   const [open, setOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -31,10 +32,18 @@ const AllScenariosPage = () => {
   const [showRouterBranches, setShowRouterBranches] = useState(false);
   const [showFilterDialog, setShowFilterDialog] = useState(false);
   const [showDataPanel, setShowDataPanel] = useState(false);
-  // const [routerBranches, setRouterBranches] = useState([]);
+  const [selectedModuleIndex, setSelectedModuleIndex] = useState(null);
+  const [editorContent, setEditorContent] = useState("");
+  const [selectedConnection, setSelectedConnection] = useState(null);
+  const [connectionTemplates, setConnectionTemplates] = useState({});
   const [routerBranches, setRouterBranches] = useState([
     { id: 2, hasModule: false, condition: null, modules: [], filter: null },
   ]);
+  const [smtpConnection, setSmtpConnection] = useState(null);
+
+  const [dataPanelFor, setDataPanelFor] = useState(null);
+  const quillRef = useRef(null); // 👈 quill instance reference
+
   const [selectedBranchIndex, setSelectedBranchIndex] = useState(null);
   const [routerHovered, setRouterHovered] = useState(false);
   const [branchModules, setBranchModules] = useState({});
@@ -42,13 +51,49 @@ const AllScenariosPage = () => {
   const modalRef = useRef(null);
   const [chips, setChips] = useState([]);
 
+  const smtpQuillRef = useRef(null); // 👈 separate ref for SMTP editor
+
+  const handleConnectionTemplateChange = (connectionId, content) => {
+    setConnectionTemplates((prev) => ({
+      ...prev,
+      [connectionId]: content,
+    }));
+  };
+  const handleInsertField = (fieldName) => {
+    const quill = quillRef.current.getEditor(); // get Quill editor instance
+    const range = quill.getSelection(true); // get cursor position
+
+    if (range) {
+      quill.insertText(range.index, `{{${fieldName}}}`, "user");
+      quill.setSelection(range.index + fieldName.length + 4); // cursor ko aage shift karo
+    }
+  };
+
+  const openFilterModal = (branchIndex, moduleIndex = null) => {
+  setSelectedBranchIndex(branchIndex);
+  setSelectedModuleIndex(moduleIndex);
+
+  const branch = routerBranches[branchIndex];
+  let existingFilter = null;
+
+  if (moduleIndex === null) {
+    existingFilter = branch.filter;
+  } else {
+    existingFilter = branch.modules[moduleIndex]?.filter;
+  }
+
+  setChips(existingFilter?.conditions || []);
+  setEditorContent(existingFilter?.template || ""); // 👈 editorContent sync
+  setShowFilterDialog(true);
+};
+
+
   useEffect(() => {
     function handleClickOutside(event) {
       if (modalRef.current && !modalRef.current.contains(event.target)) {
         setOpen(false);
         setShowFilterDialog(false);
         setShowDataPanel(false);
-        // setSelectedModule(null);
       }
     }
 
@@ -85,21 +130,6 @@ const AllScenariosPage = () => {
         { name: "Headers", type: "object" },
       ],
     },
-    {
-      module: "Webhooks",
-      type: "Custom mailhook",
-      fields: [
-        { name: "Date", type: "date" },
-        { name: "Subject", type: "text" },
-        { name: "Text", type: "text" },
-        { name: "HTML content", type: "html" },
-        {
-          name: "Sender",
-          type: "object",
-          subFields: ["Name", "Email address"],
-        },
-      ],
-    },
   ];
 
   useState(() => {
@@ -120,7 +150,6 @@ const AllScenariosPage = () => {
     });
     setShowRouterBranches(true);
     setRouterBranches([
-      // { id: 1, hasModule: false, condition: null, modules: [] },
       { id: 2, hasModule: false, condition: null, modules: [] },
     ]);
   }, []);
@@ -147,10 +176,12 @@ const AllScenariosPage = () => {
       }
 
       updatedBranches[editingBranch].modules.push({
+        id: Date.now(), // unique
         app: selectedApp,
         type,
         description,
-        id: Date.now(),
+        connectionId: selectedConnection || smtpConnection, // store selected connection
+        template: "", // each module has its own template
       });
 
       setRouterBranches(updatedBranches);
@@ -161,6 +192,7 @@ const AllScenariosPage = () => {
     setOpen(false);
     setSelectedApp(null);
   };
+  const quillRefs = useRef({});
 
   const handleRouterHover = () => {
     setRouterHovered(true);
@@ -176,7 +208,7 @@ const AllScenariosPage = () => {
       hasModule: false,
       condition: null,
       modules: [],
-      filter: null, // initially no filter
+      filter: null,
     };
 
     setRouterBranches([...routerBranches, newBranch]);
@@ -189,9 +221,14 @@ const AllScenariosPage = () => {
   };
 
   const handleConditionClick = () => {
+    setDataPanelFor("condition");
     setShowDataPanel(true);
   };
 
+  const handleTemplateClick = () => {
+    setDataPanelFor("template");
+    setShowDataPanel(true);
+  };
   const addModuleToBranch = (branchIndex) => {
     setEditingBranch(branchIndex);
     setOpen(true);
@@ -214,7 +251,15 @@ const AllScenariosPage = () => {
       </svg>
     );
   };
+  const handleInsertFieldSMTP = (fieldName) => {
+    const quill = smtpQuillRef.current.getEditor();
+    const range = quill.getSelection(true);
 
+    if (range) {
+      quill.insertText(range.index, `{{${fieldName}}}`, "user");
+      quill.setSelection(range.index + fieldName.length + 4);
+    }
+  };
   return (
     <div className="flex">
       <div className="w-64 min-h-screen bg-gray-100">
@@ -301,29 +346,25 @@ const AllScenariosPage = () => {
               <div className="relative ml-12 flex flex-col space-y-12">
                 {routerBranches.map((branch, branchIndex) => (
                   <div key={branch.id} className="flex items-center relative">
-                    {/* Dotted Connection from Router to Branch */}
+                    {/* Dotted Connection */}
                     <div className="absolute -left-16 top-1/2 transform -translate-y-1/2 flex items-center">
                       {Array.from({ length: 6 }).map((_, i) => (
                         <div key={i} className="ml-2">
-                          {i === 3 ? ( // middle dot for filter
+                          {i === 3 && branch.modules[0]?.type !== "Delay" ? (
                             branch.filter ? (
                               <button
-                                onClick={() => {
-                                  setSelectedBranchIndex(branchIndex);
-                                  setShowFilterDialog(true);
-                                }}
+                                onClick={() => openFilterModal(branchIndex)}
                                 className="w-5 h-5 flex items-center justify-center bg-blue-500 text-white rounded-full hover:bg-blue-600"
                               >
                                 <Funnel className="w-3 h-3" />
                               </button>
                             ) : (
                               <div
-                                onClick={() => {
-                                  setSelectedBranchIndex(branchIndex);
-                                  setShowFilterDialog(true);
-                                }}
-                                className="w-3 h-3 rounded-full bg-blue-400 cursor-pointer hover:bg-blue-500"
-                              ></div>
+                                onClick={() => openFilterModal(branchIndex)}
+                                className="w-5 h-5 flex items-center justify-center bg-blue-100 text-blue-600 rounded-full cursor-pointer hover:bg-blue-200"
+                              >
+                                <Plus className="w-3 h-3" />
+                              </div>
                             )
                           ) : (
                             <div
@@ -357,26 +398,25 @@ const AllScenariosPage = () => {
                                   {3 + moduleIndex}
                                 </div>
                                 {/* Edit button */}
-                        <button
-  onClick={() => {
-    setEditingBranch(branchIndex);
+                                <button
+                                  onClick={() => {
+                                    setEditingBranch(branchIndex);
 
-    if (module.type === "Delay") {
-      setSelectedModule("delay");
-    } else if (module.type === "Custom Email") {
-      setSelectedModule("customEmail");  // ✅ correctly map custom email
-    } else {
-      setSelectedModule("sendEmail");
-    }
+                                    if (module.type === "Delay") {
+                                      setSelectedModule("delay");
+                                    } else if (module.type === "Custom Email") {
+                                      setSelectedModule("customEmail");
+                                    } else {
+                                      setSelectedModule("sendEmail");
+                                    }
 
-    setSelectedApp(module.app);
-  }}
-  className="absolute -top-2 -left-2 w-6 h-6 bg-yellow-400 text-white rounded-full flex items-center justify-center hover:bg-yellow-500"
->
-  <Pencil className="w-3 h-3" />
-</button>
+                                    setSelectedApp(module.app);
+                                  }}
+                                  className="absolute -top-2 -left-2 w-6 h-6 bg-yellow-400 text-white rounded-full flex items-center justify-center hover:bg-yellow-500"
+                                >
+                                  <Pencil className="w-3 h-3" />
+                                </button>
 
-                                {/* Delete button */}
                                 <button
                                   onClick={() => {
                                     const updatedBranches = [...routerBranches];
@@ -411,17 +451,45 @@ const AllScenariosPage = () => {
                             </div>
 
                             {/* Connection dots between modules */}
+
                             {moduleIndex < branch.modules.length - 1 && (
-                              <div className="flex items-center ml-4">
-                                <div className="w-2 h-2 rounded-full bg-gray-400"></div>
-                                <div className="w-2 h-2 rounded-full bg-gray-300 ml-2"></div>
-                                <div className="w-2 h-2 rounded-full bg-gray-200 ml-2"></div>
+                              <div className="flex items-center ml-4 space-x-2">
+                                {Array.from({ length: 4 }).map((_, i) => (
+                                  <div key={i}>
+                                    {i === 1 ? (
+                                      module.filter ? (
+                                        <button
+                                          onClick={() =>
+                                            openFilterModal(
+                                              branchIndex,
+                                              moduleIndex
+                                            )
+                                          }
+                                          className="w-6 h-6 flex items-center justify-center bg-blue-500 text-white rounded-full hover:bg-blue-600"
+                                        >
+                                          <Funnel className="w-3 h-3" />
+                                        </button>
+                                      ) : (
+                                        <div
+                                          onClick={() =>
+                                            openFilterModal(
+                                              branchIndex,
+                                              moduleIndex
+                                            )
+                                          }
+                                          className="w-3 h-3 rounded-full bg-blue-400 cursor-pointer hover:bg-blue-500"
+                                        ></div>
+                                      )
+                                    ) : (
+                                      <div className="w-3 h-3 rounded-full bg-gray-300"></div>
+                                    )}
+                                  </div>
+                                ))}
                               </div>
                             )}
                           </React.Fragment>
                         ))
                       ) : (
-                        // Default Plus button if no module in branch
                         <button
                           onClick={() => handleBranchPlusClick(branchIndex)}
                           className="w-20 h-20 flex items-center justify-center rounded-full bg-gray-300 text-gray-600 shadow-lg border-2 border-gray-200 hover:bg-gray-400 hover:text-white transition-colors"
@@ -429,17 +497,6 @@ const AllScenariosPage = () => {
                           <Plus className="w-6 h-6" />
                         </button>
                       )}
-
-                      {/* Filter Button */}
-                      {/* <button
-                        onClick={() => {
-                          setSelectedBranchIndex(branchIndex);
-                          setShowFilterDialog(true);
-                        }}
-                        className="ml-2 px-3 py-1 bg-blue-100 text-blue-700 text-xs rounded hover:bg-blue-200 transition-colors border border-blue-300"
-                      >
-                        + Filter
-                      </button> */}
                     </div>
                   </div>
                 ))}
@@ -518,11 +575,15 @@ const AllScenariosPage = () => {
 
                     <div
                       className="flex items-start cursor-pointer hover:bg-gray-50 p-2 rounded"
-                      onClick={() =>
-                        setSelectedModule(
-                          selectedApp.name === "Delay" ? "delay" : "sendEmail"
-                        )
-                      }
+                      onClick={() => {
+                        if (selectedApp.name === "Delay") {
+                          setSelectedModule("delay");
+                        } else if (selectedApp.name === "Email") {
+                          setSelectedModule("customEmail");
+                        } else {
+                          setSelectedModule("sendEmail");
+                        }
+                      }}
                     >
                       <div
                         className={`w-8 h-8 flex items-center justify-center rounded-full text-white mr-3 ${selectedApp.color}`}
@@ -551,7 +612,7 @@ const AllScenariosPage = () => {
           {showFilterDialog && (
             <div
               ref={modalRef}
-              className="absolute top-10 right-10 bg-white rounded-lg shadow-xl w-[500px] border z-20"
+              className="absolute top-10 right-10 bg-white rounded-lg shadow-xl w-[700px] border z-20"
             >
               <div className="flex justify-between items-center px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-400 text-white rounded-t-lg">
                 <h3 className="font-semibold">Set up a filter</h3>
@@ -626,26 +687,49 @@ const AllScenariosPage = () => {
                       placeholder="Enter value"
                     />
                   </div>
-                  <div className="flex space-x-2 mt-2">
-                    <button className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700">
-                      Add AND rule
-                    </button>
-                    <button className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700">
-                      Add OR rule
-                    </button>
-                  </div>
+                </div>
+
+                {/* Rich Text Editor for Template */}
+                <div onClick={handleTemplateClick}>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Response Template
+                  </label>
+               <ReactQuill
+  ref={(el) =>
+    (quillRefs.current[`${editingBranch}-${selectedModuleIndex}`] = el)
+  }
+  theme="snow"
+  value={editorContent}          // 👈 bind only to editorContent
+  onChange={setEditorContent}    // 👈 update state only
+  className="h-40 mb-12"
+/>
+
                 </div>
               </div>
 
               <div className="flex justify-end space-x-2 px-4 py-3 border-t bg-gray-50">
-               <button
+             <button
   className="px-4 py-2 text-sm bg-purple-600 text-white rounded hover:bg-purple-700"
   onClick={() => {
     const updatedBranches = [...routerBranches];
-    updatedBranches[selectedBranchIndex].filter = {
-      label: "My Filter", 
-      conditions: chips,   
-    };
+    const branch = updatedBranches[selectedBranchIndex];
+
+    if (!branch) return;
+
+    if (selectedModuleIndex === null) {
+      branch.filter = {
+        label: "My Filter",
+        conditions: chips,
+        template: editorContent, // 👈 save editorContent
+      };
+    } else {
+      branch.modules[selectedModuleIndex].filter = {
+        label: "My Filter",
+        conditions: chips,
+        template: editorContent, // 👈 save editorContent
+      };
+    }
+
     setRouterBranches(updatedBranches);
     setShowFilterDialog(false);
   }}
@@ -684,59 +768,41 @@ const AllScenariosPage = () => {
 
                   {availableData.map((module, moduleIndex) => (
                     <div key={moduleIndex} className="mb-4">
-                      <div className="flex items-center mb-2">
-                        <div
-                          className={`w-6 h-6 flex items-center justify-center rounded-full text-white text-xs mr-2 ${
-                            module.module === "Gmail"
-                              ? "bg-red-500"
-                              : "bg-pink-500"
-                          }`}
-                        >
-                          {module.module === "Gmail" ? (
-                            <Mail className="w-3 h-3" />
-                          ) : (
-                            "🔗"
-                          )}
-                        </div>
-                        <span className="text-sm font-medium">
-                          {module.module}
-                        </span>
-                        <span className="text-xs text-gray-500 ml-1">
-                          {moduleIndex + 1}
-                        </span>
-                        <span className="text-xs text-gray-600 ml-2">
-                          - {module.type}
-                        </span>
-                      </div>
-
+                      ...
                       <div className="ml-8 space-y-1">
                         {module.fields.map((field, fieldIndex) => (
                           <div key={fieldIndex}>
                             <div
                               className="text-xs bg-pink-600 text-white px-2 py-1 rounded cursor-pointer hover:bg-pink-700 inline-block"
                               onClick={() => {
-                                setChips((prev) => [...prev, field.name]);
+                                if (dataPanelFor === "condition") {
+                                  setChips((prev) => [...prev, field.name]);
+                                } else if (
+                                  dataPanelFor?.startsWith("module:")
+                                ) {
+                                  const [_, bIndex, mIndex] =
+                                    dataPanelFor.split(":");
+                                  const quill =
+                                    quillRefs.current[
+                                      `${bIndex}-${mIndex}`
+                                    ]?.getEditor();
+                                  if (quill) {
+                                    const range = quill.getSelection(true);
+                                    quill.insertText(
+                                      range.index,
+                                      `{{${field.name}}}`,
+                                      "user"
+                                    );
+                                    quill.setSelection(
+                                      range.index + field.name.length + 4
+                                    );
+                                  }
+                                }
                                 setShowDataPanel(false);
                               }}
                             >
                               {field.name}
                             </div>
-                            {field.subFields && (
-                              <div className="ml-4 mt-1 space-y-1">
-                                {field.subFields.map((subField, subIndex) => (
-                                  <div
-                                    key={subIndex}
-                                    onClick={() => {
-                                      setChips((prev) => [...prev, subField]);
-                                      setShowDataPanel(false);
-                                    }}
-                                    className="text-xs bg-pink-500 text-white px-2 py-1 rounded cursor-pointer hover:bg-pink-600 inline-block mr-1"
-                                  >
-                                    {subField}
-                                  </div>
-                                ))}
-                              </div>
-                            )}
                           </div>
                         ))}
                       </div>
@@ -746,8 +812,9 @@ const AllScenariosPage = () => {
               </div>
             </div>
           )}
-
-          {(selectedModule === "delay" || selectedModule === "sendEmail") && (
+          {(selectedModule === "delay" ||
+            selectedModule === "sendEmail" ||
+            selectedModule === "customEmail") && (
             <div className="absolute top-10 right-10 bg-white rounded-lg shadow-xl w-[500px] border z-20">
               <div className="flex justify-between items-center px-4 py-2 bg-gradient-to-r from-[#e45341] to-[#f46654] text-white rounded-t-lg">
                 <h3 className="font-semibold">
@@ -761,7 +828,7 @@ const AllScenariosPage = () => {
               </div>
 
               <div className="p-4">
-                {selectedModule === "delay" ? (
+                {selectedModule === "delay" && (
                   <>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Delay <span className="text-red-500">*</span>
@@ -784,7 +851,9 @@ const AllScenariosPage = () => {
                       duration.
                     </p>
                   </>
-                ) : selectedApp?.name === "Email" ? (
+                )}
+
+                {selectedModule === "customEmail" && (
                   <>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       SMTP Server <span className="text-red-500">*</span>
@@ -794,6 +863,52 @@ const AllScenariosPage = () => {
                       className="w-full border rounded px-2 py-1 text-sm"
                       placeholder="smtp.example.com"
                     />
+
+                    <div className="mt-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Connection
+                      </label>
+                      <select
+                        className="w-full border rounded px-2 py-1 text-sm"
+                        onChange={(e) => setSmtpConnection(e.target.value)}
+                      >
+                        <option value="">Select SMTP Connection</option>
+                        <option value="smtp-connection-1">My SMTP 1</option>
+                        <option value="smtp-connection-2">My SMTP 2</option>
+                      </select>
+                    </div>
+
+                    {/* Editor bind with current module */}
+                    {editingBranch !== null && smtpConnection && (
+                      <div className="mt-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          {smtpConnection} - Response Template
+                        </label>
+                      <ReactQuill
+  ref={(el) =>
+    (quillRefs.current[`${editingBranch}-${selectedModuleIndex}`] = el)
+  }
+  theme="snow"
+  value={editorContent}          // 👈 bind only to editorContent
+  onChange={setEditorContent}    // 👈 update state only
+  className="h-40 mb-12"
+/>
+
+                        <button
+                          onClick={() => {
+                            const moduleIndex =
+                              routerBranches[editingBranch].modules.length - 1;
+                            setDataPanelFor(
+                              `module:${editingBranch}:${moduleIndex}`
+                            );
+                            setShowDataPanel(true);
+                          }}
+                          className="mt-2 px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+                        >
+                          Insert Data
+                        </button>
+                      </div>
+                    )}
 
                     <div className="mt-4">
                       <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -817,7 +932,9 @@ const AllScenariosPage = () => {
                       />
                     </div>
                   </>
-                ) : (
+                )}
+
+                {selectedModule === "sendEmail" && (
                   <>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Connection <span className="text-red-500">*</span>
@@ -829,11 +946,51 @@ const AllScenariosPage = () => {
                       <FaGoogle className="h-5 w-5 mr-2" />
                       Create Connection
                     </button>
-                    <select className="w-full border rounded px-2 py-1 text-sm">
+
+                    <select
+                      className="w-full border rounded px-2 py-1 text-sm"
+                      onChange={(e) => setSelectedConnection(e.target.value)}
+                    >
+                      <option value="">Select a Connection</option>
                       <option value="gmail-connection">
                         My Gmail Connection
                       </option>
+                      <option value="smtp-connection">
+                        My SMTP Connection
+                      </option>
                     </select>
+
+                    {/* Editor bind with current module */}
+                    {editingBranch !== null && selectedConnection && (
+                      <div className="mt-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          {selectedConnection} - Response Template
+                        </label>
+                     <ReactQuill
+  ref={(el) =>
+    (quillRefs.current[`${editingBranch}-${selectedModuleIndex}`] = el)
+  }
+  theme="snow"
+  value={editorContent}          // 👈 bind only to editorContent
+  onChange={setEditorContent}    // 👈 update state only
+  className="h-40 mb-12"
+/>
+
+                        <button
+                          onClick={() => {
+                            const moduleIndex =
+                              routerBranches[editingBranch].modules.length - 1;
+                            setDataPanelFor(
+                              `module:${editingBranch}:${moduleIndex}`
+                            );
+                            setShowDataPanel(true);
+                          }}
+                          className="mt-2 px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+                        >
+                          Insert Data
+                        </button>
+                      </div>
+                    )}
 
                     <div className="mt-4">
                       <label className="block text-sm font-medium text-gray-700 mb-2">
