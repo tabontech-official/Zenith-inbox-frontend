@@ -19,10 +19,11 @@ import { FaEnvelope, FaGoogle, FaMicrosoft } from "react-icons/fa";
 import ConnectionModal from "../component/ConnectionModal";
 import ReactQuill from "react-quill";
 import toast from "react-hot-toast";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 import "react-quill/dist/quill.snow.css";
 const OthersScenariosPage = () => {
+  const navigate=useNavigate()
   const { id } = useParams();
   const [open, setOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -475,6 +476,8 @@ const OthersScenariosPage = () => {
 
               clearDraft();
               toast.success("Scenario saved successfully!");
+              localStorage.removeItem("scenario_draft")
+              navigate('/scenarios/all')
             }}
             className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
           >
