@@ -23,7 +23,7 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import "react-quill/dist/quill.snow.css";
 const OthersScenariosPage = () => {
-  const navigate=useNavigate()
+  const navigate = useNavigate();
   const { id } = useParams();
   const [open, setOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -392,15 +392,6 @@ const OthersScenariosPage = () => {
     setOpen(true);
   };
 
-  const handleConditionClick = () => {
-    setDataPanelFor("condition");
-    setShowDataPanel(true);
-  };
-
-  const handleTemplateClick = () => {
-    setDataPanelFor("template");
-    setShowDataPanel(true);
-  };
   const addModuleToBranch = (branchIndex) => {
     setEditingBranch(branchIndex);
     setOpen(true);
@@ -428,6 +419,8 @@ const OthersScenariosPage = () => {
     };
     saveDraft(draft);
   }, [routerBranches, scenarioName, scenarioDescription]);
+
+  
   useEffect(() => {
     const handleBeforeUnload = (e) => {
       const draft = getDraft();
@@ -476,8 +469,8 @@ const OthersScenariosPage = () => {
 
               clearDraft();
               toast.success("Scenario saved successfully!");
-              localStorage.removeItem("scenario_draft")
-              navigate('/scenarios/all')
+              localStorage.removeItem("scenario_draft");
+              navigate("/scenarios/all");
             }}
             className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
           >
@@ -517,7 +510,6 @@ const OthersScenariosPage = () => {
               </div>
             </div>
 
-            {/* Connection Line */}
             <div className="flex items-center mx-8">
               <div className="w-4 h-4 rounded-full bg-pink-400"></div>
               <div className="w-4 h-4 rounded-full bg-pink-300 ml-2"></div>
@@ -851,122 +843,6 @@ const OthersScenariosPage = () => {
             </div>
           )}
 
-          {/* {showFilterDialog && (
-            <div
-              ref={modalRef}
-              className="absolute top-10 right-10 bg-white rounded-lg shadow-xl w-[700px] border z-20"
-            >
-              <div className="flex justify-between items-center px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-400 text-white rounded-t-lg">
-                <h3 className="font-semibold">Set up a filter</h3>
-                <div className="flex items-center space-x-2 text-sm">
-                  <button>⋮</button>
-                  <button>⚙</button>
-                  <button>?</button>
-                  <button onClick={() => setShowFilterDialog(false)}>✕</button>
-                </div>
-              </div>
-
-              <div className="p-4 space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Label
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full border rounded px-3 py-2 text-sm"
-                    placeholder="Enter label"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Condition
-                  </label>
-                  <div className="border rounded p-3 bg-blue-50 border-l-4 border-l-blue-500">
-                    <div
-                      className="w-full border rounded px-3 py-2 text-sm mb-2 flex flex-wrap items-center gap-2 min-h-[40px] cursor-text"
-                      onClick={handleConditionClick}
-                    >
-                      {chips.map((chip, index) => (
-                        <span
-                          key={index}
-                          className="bg-red-500 text-white text-xs px-2 py-1 rounded flex items-center"
-                        >
-                          {chip}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setChips((prev) =>
-                                prev.filter((_, i) => i !== index)
-                              );
-                            }}
-                            className="ml-2 text-white hover:text-gray-200"
-                          >
-                            ✕
-                          </button>
-                        </span>
-                      ))}
-                      <input
-                        type="text"
-                        className="flex-1 outline-none text-sm"
-                        placeholder="Type or select..."
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <select className="border rounded px-3 py-1 text-sm">
-                        <option>Text operators: Equal to</option>
-                        <option>Text operators: Contains</option>
-                        <option>Text operators: Does not contain</option>
-                      </select>
-                      <button className="text-gray-400 hover:text-gray-600">
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                    <input
-                      type="text"
-                      className="w-full border rounded px-3 py-2 text-sm mt-2"
-                      placeholder="Enter value"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex justify-end space-x-2 px-4 py-3 border-t bg-gray-50">
-                <button
-                  onClick={() => {
-                    const key = `${selectedBranchIndex}-${
-                      selectedModuleIndex ?? "branch"
-                    }`;
-                    setFilters((prev) => ({
-                      ...prev,
-                      [key]: { conditions: chips, template: editorContent },
-                    }));
-
-                    const updatedBranches = [...routerBranches];
-                    if (selectedModuleIndex === null) {
-                      updatedBranches[selectedBranchIndex].filter = {
-                        conditions: chips,
-                        template: editorContent,
-                      };
-                    } else {
-                      updatedBranches[selectedBranchIndex].modules[
-                        selectedModuleIndex
-                      ].filter = {
-                        conditions: chips,
-                        template: editorContent,
-                      };
-                    }
-                    setRouterBranches(updatedBranches);
-
-                    setShowFilterDialog(false);
-                  }}
-                >
-                  Save
-                </button>
-              </div>
-            </div>
-          )} */}
           {showFilterDialog && (
             <div
               ref={modalRef}
