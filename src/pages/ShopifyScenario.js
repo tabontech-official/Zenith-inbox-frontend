@@ -10,6 +10,8 @@ import {
   X,
   Clock,
 } from "lucide-react";
+import { CiLink } from "react-icons/ci";
+
 import Sidebar from "../component/Sidebar";
 import {
   FiAlertCircle,
@@ -620,46 +622,7 @@ const ShopifyScenariosPage = () => {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Condition
-                  </label>
-                  <div className="border rounded p-3 bg-blue-50 border-l-4 border-l-blue-500">
-                    <input
-                      id="condition-input"
-                      type="text"
-                      className="w-full border rounded px-3 py-2 text-sm mb-2"
-                      placeholder="Enter text or use expressions"
-                      onClick={() => {
-                        setActiveConditionTarget("input");
-                        setShowDataPanel(true);
-                      }}
-                    />
-                    <div className="flex items-center justify-between">
-                      <select className="border rounded px-3 py-1 text-sm">
-                        <option>Text operators: Equal to</option>
-                        <option>Text operators: Contains</option>
-                        <option>Text operators: Does not contain</option>
-                      </select>
-                      <button className="text-gray-400 hover:text-gray-600">
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                    <input
-                      type="text"
-                      className="w-full border rounded px-3 py-2 text-sm mt-2"
-                      placeholder="Enter value"
-                    />
-                  </div>
-                  <div className="flex space-x-2 mt-2">
-                    <button className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700">
-                      Add AND rule
-                    </button>
-                    <button className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700">
-                      Add OR rule
-                    </button>
-                  </div>
-                </div>
+            
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -735,7 +698,8 @@ const ShopifyScenariosPage = () => {
                           {module.module === "Gmail" ? (
                             <Mail className="w-3 h-3" />
                           ) : (
-                            "🔗"
+                            <CiLink />
+
                           )}
                         </div>
                         <span className="text-sm font-medium">
@@ -830,47 +794,7 @@ const ShopifyScenariosPage = () => {
                       />
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Condition
-                      </label>
-                      <div className="border rounded p-3 bg-blue-50 border-l-4 border-l-blue-500">
-                        <input
-                          id="condition-input"
-                          type="text"
-                          className="w-full border rounded px-3 py-2 text-sm mb-2"
-                          placeholder="Enter text or use expressions"
-                          onClick={() => {
-                            setActiveConditionTarget("input");
-                            setShowDataPanel(true);
-                          }}
-                        />
-
-                        <div className="flex items-center justify-between">
-                          <select className="border rounded px-3 py-1 text-sm">
-                            <option>Text operators: Equal to</option>
-                            <option>Text operators: Contains</option>
-                            <option>Text operators: Does not contain</option>
-                          </select>
-                          <button className="text-gray-400 hover:text-gray-600">
-                            <X className="w-4 h-4" />
-                          </button>
-                        </div>
-                        <input
-                          type="text"
-                          className="w-full border rounded px-3 py-2 text-sm mt-2"
-                          placeholder="Enter value"
-                        />
-                      </div>
-                      <div className="flex space-x-2 mt-2">
-                        <button className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700">
-                          Add AND rule
-                        </button>
-                        <button className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700">
-                          Add OR rule
-                        </button>
-                      </div>
-                    </div>
+                    
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">

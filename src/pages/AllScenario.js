@@ -349,16 +349,13 @@ const AllScenariosPage = () => {
 
   return (
     <div className="flex min-h-screen">
-      {/* Sidebar */}
       <div className="w-64 border-r bg-gradient-to-b from-purple-600 to-purple-800">
         <Sidebar />
       </div>
 
-      {/* Main Content */}
       <div className="flex-1 flex flex-col bg-gray-50">
-        {/* Header */}
         <div className="flex justify-between items-center p-6 border-b bg-white shadow-sm">
-          <h1 className="text-2xl font-bold text-gray-800">All Scenarios</h1>
+          <h1 className="text-2xl font-semibold text-gray-800">All Scenarios</h1>
           <button
             onClick={() => navigate("/scenarios/add")}
             className="flex items-center bg-purple-600 text-white px-4 py-2 rounded-lg shadow hover:bg-purple-700 transition"
@@ -367,7 +364,6 @@ const AllScenariosPage = () => {
           </button>
         </div>
 
-        {/* Tabs */}
         <div className="px-6 pt-4">
           <div className="flex space-x-8 border-b">
             <button
