@@ -11,9 +11,8 @@ import {
 const Sidebar = () => {
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isScenariosOpen, setIsScenariosOpen] = useState(false); // dropdown toggle
+  const [isScenariosOpen, setIsScenariosOpen] = useState(false);
 
-  // Function to check active route
   const isActive = (path) => location.pathname === path;
 
   const renderNavLink = (label, Icon, to) => (
@@ -80,16 +79,20 @@ const Sidebar = () => {
 
           {isScenariosOpen && (
             <div className="ml-8 mt-1 space-y-1">
-              {renderNavLink("Shopify Scenario", FiLayers, "/scenarios/shopify")}
+              {renderNavLink(
+                "Shopify Scenario",
+                FiLayers,
+                "/scenarios/shopify"
+              )}
               {renderNavLink("Others", FiLayers, "/scenarios/others")}
             </div>
           )}
         </div>
 
         {renderNavLink("Templates", FiFileText, "/templates")}
+        {renderNavLink("Connection", FiFileText, "/connection")}
       </div>
 
-      {/* Footer */}
       <div className="mt-auto text-xs text-gray-300 border-t border-purple-500 pt-4">
         © 2025 MailHook
       </div>

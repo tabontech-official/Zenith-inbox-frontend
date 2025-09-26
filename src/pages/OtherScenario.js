@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import Sidebar from "../component/Sidebar";
 import { TfiEmail } from "react-icons/tfi";
-import { FaGoogle } from "react-icons/fa";
+import { FaEnvelope, FaGoogle, FaMicrosoft } from "react-icons/fa";
 import ConnectionModal from "../component/ConnectionModal";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
@@ -24,6 +24,8 @@ const AllScenariosPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
+  const [connections, setConnections] = useState([]);
+
   const [selectedApp, setSelectedApp] = useState(null);
   const [selectedModule, setSelectedModule] = useState(null);
   const [savedModule, setSavedModule] = useState(null);
@@ -36,6 +38,8 @@ const AllScenariosPage = () => {
   const [editorContent, setEditorContent] = useState("");
   const [selectedConnection, setSelectedConnection] = useState(null);
   const [connectionTemplates, setConnectionTemplates] = useState({});
+  const [selectedConnections, setSelectedConnections] = useState([]);
+
   const [routerBranches, setRouterBranches] = useState([
     { id: 2, hasModule: false, condition: null, modules: [], filter: null },
   ]);
@@ -47,6 +51,7 @@ const AllScenariosPage = () => {
 
   const [dataPanelFor, setDataPanelFor] = useState(null);
   const quillRef = useRef(null);
+  const [showDropdown, setShowDropdown] = useState(false);
 
   const [selectedBranchIndex, setSelectedBranchIndex] = useState(null);
   const [routerHovered, setRouterHovered] = useState(false);
@@ -56,6 +61,7 @@ const AllScenariosPage = () => {
   const [chips, setChips] = useState([]);
   const [filters, setFilters] = useState({});
   const [filterLabel, setFilterLabel] = useState("");
+  const [connectionSubjects, setConnectionSubjects] = useState({});
 
   const [conditions, setConditions] = useState([
     { field: "", operator: "Equal to", value: "", join: null },
@@ -122,6 +128,31 @@ const AllScenariosPage = () => {
     });
   };
 
+  // const openFilterModal = (branchIndex, moduleIndex = null) => {
+  //   setSelectedBranchIndex(branchIndex);
+  //   setSelectedModuleIndex(moduleIndex);
+
+  //   const key = `${branchIndex}-${moduleIndex ?? "branch"}-${
+  //     selectedConnection || "none"
+  //   }`;
+
+  //   const existing = filters[key] || {
+  //     label: "",
+  //     conditions: [],
+  //     template: "",
+  //   };
+
+  //   setFilterLabel(existing.label || "");
+  //   setConditions(
+  //     existing.conditions && existing.conditions.length > 0
+  //       ? existing.conditions
+  //       : [{ field: "", operator: "Equal to", value: "", join: null }]
+  //   );
+  //   setEditorContent(existing.template || "");
+
+  //   setShowFilterDialog(true);
+  // };
+
   const openFilterModal = (branchIndex, moduleIndex = null) => {
     setSelectedBranchIndex(branchIndex);
     setSelectedModuleIndex(moduleIndex);
@@ -130,11 +161,15 @@ const AllScenariosPage = () => {
       selectedConnection || "none"
     }`;
 
-    const existing = filters[key] || {
-      label: "",
-      conditions: [],
-      template: "",
-    };
+    let existing =
+      filters[key] ||
+      (moduleIndex === null
+        ? routerBranches[branchIndex].filter
+        : routerBranches[branchIndex].modules[moduleIndex].filter);
+
+    if (!existing) {
+      existing = { label: "", conditions: [], template: "" };
+    }
 
     setFilterLabel(existing.label || "");
     setConditions(
@@ -162,6 +197,22 @@ const AllScenariosPage = () => {
     };
   }, []);
 
+  const userId = localStorage.getItem("userid");
+
+  useEffect(() => {
+    const fetchConnections = async () => {
+      try {
+        const res = await fetch(
+          `http://localhost:5000/auth/getConnection/${userId}`
+        );
+        const data = await res.json();
+        setConnections(data);
+      } catch (err) {
+        console.error(" Error fetching connections:", err);
+      }
+    };
+    fetchConnections();
+  }, [userId]);
   const apps = [
     { name: "Gmail", color: "bg-red-500", icon: <Mail /> },
     { name: "Email", color: "bg-red-500", icon: <TfiEmail /> },
@@ -206,50 +257,44 @@ const AllScenariosPage = () => {
 
   const [delayValue, setDelayValue] = useState(5);
   const [delayUnit, setDelayUnit] = useState("seconds");
+
   const handleSave = () => {
-    if (editingBranch !== null) {
-      const updated = [...routerBranches];
-      const modules = updated[editingBranch].modules || [];
+  if (editingBranch !== null) {
+    const updated = [...routerBranches];
+    const modules = updated[editingBranch].modules || [];
 
-      let type = "";
-      let description = "";
-      let extra = {};
+    let type = "";
+    let description = "";
+    let extra = {};
 
-      if (selectedModule === "delay") {
-        type = "Delay";
-        description = `Delay execution for ${delayValue} ${delayUnit}`;
-        extra = { delayValue, delayUnit };
-      } else if (selectedApp?.name === "Email") {
-        type = "Custom Email";
-        description = "Send an email using custom SMTP";
-      } else {
-        type = "Send an Email";
-        description = "Send an email via Gmail";
-      }
+    if (selectedModule === "delay") {
+      // ✅ Delay Module
+      type = "Delay";
+      description = `Delay execution for ${delayValue} ${delayUnit}`;
+      extra = { delayValue, delayUnit };
 
-      if (selectedModuleIndex !== null) {
-        // ✅ USER IS EDITING AN EXISTING MODULE
-        modules[selectedModuleIndex] = {
-          ...modules[selectedModuleIndex],
-          app: {
-            name: selectedApp.name,
-            color: selectedApp.color,
-            icon: selectedApp.name,
-          },
-          type,
-          description,
-          connectionId:
-            localStorage.getItem("gmailConnectionId") ||
-            selectedConnection ||
-            smtpConnection,
-          template: editorContent || modules[selectedModuleIndex].template,
-          ...extra,
-        };
-        console.log("✏️ Module updated:", modules[selectedModuleIndex]);
-      } else {
-        // ✅ NEW MODULE ADD
+      modules.push({
+        id: Date.now(),
+        app: {
+          name: selectedApp.name,
+          color: selectedApp.color,
+          icon: selectedApp.name,
+        },
+        type,
+        description,
+        ...extra,
+      });
+    } 
+    
+    else if (selectedModule === "customEmail") {
+      // ✅ Outlook (Custom SMTP)
+      type = "Custom Email";
+      description = "Send an email using custom SMTP";
+
+      // Multiple Outlook connections handle karein
+      selectedConnections.forEach((connId) => {
         modules.push({
-          id: Date.now(),
+          id: Date.now() + Math.random(),
           app: {
             name: selectedApp.name,
             color: selectedApp.color,
@@ -257,24 +302,49 @@ const AllScenariosPage = () => {
           },
           type,
           description,
-          connectionId:
-            localStorage.getItem("gmailConnectionId") ||
-            selectedConnection ||
-            smtpConnection, // ✅ FIXED          template: editorContent || "",
-          ...extra,
+          connectionId: connId, // Outlook connection ka _id
+          template: connectionTemplates[connId] || "",
+          subject: connectionSubjects[connId] || "",
         });
-        console.log("➕ New module added");
-      }
+      });
+    } 
+    
+    else {
+      // ✅ Gmail
+      type = "Send an Email";
+      description = "Send an email via Gmail";
 
-      updated[editingBranch].modules = modules;
-      setRouterBranches(updated);
-      setEditingBranch(null);
-      setSelectedModuleIndex(null);
-      setOpen(false);
-      setSelectedModule(null);
-      setSelectedApp(null);
+      // Multiple Gmail connections handle karein
+      selectedConnections.forEach((connId) => {
+        modules.push({
+          id: Date.now() + Math.random(),
+          app: {
+            name: selectedApp.name,
+            color: selectedApp.color,
+            icon: selectedApp.name,
+          },
+          type,
+          description,
+          connectionId: connId, // Gmail connection ka _id
+          template: connectionTemplates[connId] || "",
+          subject: connectionSubjects[connId] || "",
+        });
+      });
     }
-  };
+
+    updated[editingBranch].modules = modules;
+    setRouterBranches(updated);
+
+    // Reset states
+    setEditingBranch(null);
+    setSelectedModuleIndex(null);
+    setOpen(false);
+    setSelectedModule(null);
+    setSelectedApp(null);
+    setSelectedConnections([]);
+  }
+};
+
 
   const quillRefs = useRef({});
 
@@ -399,13 +469,13 @@ const AllScenariosPage = () => {
             Save Scenario
           </button>
         </div>
-        <input
+        {/* <input
           type="text"
           value={scenarioName}
           onChange={(e) => setScenarioName(e.target.value)}
           placeholder="Enter scenario name"
           className="border rounded px-3 py-2 text-sm mb-4"
-        />
+        /> */}
 
         <div className="flex-1 flex items-center justify-center relative">
           <div className="flex items-center justify-center w-full">
@@ -547,11 +617,27 @@ const AllScenariosPage = () => {
 
                                     setSelectedApp(module.app);
 
-                                    setEditorContent(module.template || "");
+                                    // ✅ Restore multiple connections
+                                    const connectionsToRestore = Array.isArray(
+                                      module.connectionId
+                                    )
+                                      ? module.connectionId
+                                      : [module.connectionId];
 
-                                    setSelectedConnection(
-                                      module.connectionId || ""
+                                    setSelectedConnections(
+                                      connectionsToRestore
                                     );
+
+                                    connectionsToRestore.forEach((connId) => {
+                                      setConnectionSubjects((prev) => ({
+                                        ...prev,
+                                        [connId]: module.subject || "",
+                                      }));
+                                      setConnectionTemplates((prev) => ({
+                                        ...prev,
+                                        [connId]: module.template || "",
+                                      }));
+                                    });
                                   }}
                                   className="absolute -top-2 -left-2 w-6 h-6 bg-yellow-400 text-white rounded-full flex items-center justify-center hover:bg-yellow-500"
                                 >
@@ -1114,220 +1200,274 @@ const AllScenariosPage = () => {
                   </>
                 )}
 
-                {selectedModule === "customEmail" && (
-                  <>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      SMTP Server <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      className="w-full border rounded px-2 py-1 text-sm"
-                      placeholder="smtp.example.com"
-                    />
+{selectedModule === "customEmail" && (
+  <>
+    <label className="block text-sm font-medium text-gray-700 mb-2">
+      Outlook Connection <span className="text-red-500">*</span>
+    </label>
 
-                    <div className="mt-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Connection
-                      </label>
-                      <select
-                        className="w-full border rounded px-2 py-1 text-sm"
-                        onChange={(e) => setSmtpConnection(e.target.value)}
-                      >
-                        <option value="">Select SMTP Connection</option>
-                        <option value="smtp-connection-1">My SMTP 1</option>
-                        <option value="smtp-connection-2">My SMTP 2</option>
-                      </select>
-                    </div>
+    {/* Multi-select dropdown with Outlook icons */}
+    <div className="relative w-full mb-4">
+      <button
+        type="button"
+        onClick={() => setShowDropdown(!showDropdown)}
+        className="w-full flex justify-between items-center border rounded px-3 py-2 text-sm bg-white shadow-sm"
+      >
+        {selectedConnections.length > 0 ? (
+          <span className="flex flex-wrap gap-2">
+            {selectedConnections.map((id) => {
+              const conn = connections.find(
+                (c) => c._id === id && c.provider === "outlook"
+              );
+              if (!conn) return null;
+              return (
+                <span
+                  key={id}
+                  className="flex items-center px-2 py-1 bg-purple-100 rounded text-xs"
+                >
+                  <FaMicrosoft className="text-blue-600 mr-1" />
+                  Outlook: {conn.email}
+                </span>
+              );
+            })}
+          </span>
+        ) : (
+          "Select Outlook Connections"
+        )}
+        <span>▾</span>
+      </button>
 
-                    {/* Editor bind with current module */}
-                    {editingBranch !== null && selectedConnection && (
-                      <div className="mt-4">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          {selectedConnection} - Response Template
-                        </label>
+      {showDropdown && (
+        <ul className="absolute z-10 mt-1 w-full border rounded bg-white shadow-lg max-h-60 overflow-y-auto">
+          {connections
+            .filter((conn) => conn.provider === "outlook") // ✅ sirf Outlook connections dikhayega
+            .map((conn) => {
+              const isSelected = selectedConnections.includes(conn._id);
+              return (
+                <li
+                  key={conn._id}
+                  onClick={() => {
+                    setSelectedConnections((prev) =>
+                      isSelected
+                        ? prev.filter((id) => id !== conn._id)
+                        : [...prev, conn._id]
+                    );
+                  }}
+                  className={`flex items-center px-3 py-2 cursor-pointer hover:bg-gray-100 text-sm ${
+                    isSelected ? "bg-purple-100" : ""
+                  }`}
+                >
+                  <FaMicrosoft className="text-blue-600 mr-2" />
+                  Outlook: {conn.email}
+                </li>
+              );
+            })}
+        </ul>
+      )}
+    </div>
 
-                        <ReactQuill
-                          theme="snow"
-                          value={editorContent}
-                          onChange={(value) => {
-                            console.log(
-                              "📝 Quill change:",
-                              value,
-                              "| Branch:",
-                              editingBranch,
-                              "| Module:",
-                              selectedModuleIndex
-                            );
-                            setEditorContent(value);
-                          }}
-                        />
+    {/* Multiple editors - one per selected Outlook connection */}
+    {selectedConnections.map((connId) => {
+      const conn = connections.find(
+        (c) => c._id === connId && c.provider === "outlook"
+      );
+      if (!conn) return null;
 
-                        <p className="text-xs text-gray-500 mt-1">
-                          Example: <code>Hello {"{customer.name}"}</code>
-                          <br />
-                          You can manually type conditions like{" "}
-                          <code>{"{order.id}"}</code> or{" "}
-                          <code>{"{email}"}</code>.
-                        </p>
+      return (
+        <div key={connId} className="mb-6 border rounded p-3 bg-gray-50">
+          <h4 className="flex items-center mb-2 text-sm font-semibold text-gray-700">
+            <FaMicrosoft className="text-blue-600 mr-2" />
+            Outlook: {conn.email}
+          </h4>
 
-                        <button
-                          onClick={() => {
-                            console.log(
-                              "💾 Saving template:",
-                              editorContent,
-                              "to branch",
-                              editingBranch,
-                              "module",
-                              selectedModuleIndex
-                            );
+          {/* Subject field */}
+          <input
+            type="text"
+            value={connectionSubjects[connId] || ""}
+            onChange={(e) =>
+              setConnectionSubjects((prev) => ({
+                ...prev,
+                [connId]: e.target.value,
+              }))
+            }
+            className="w-full border rounded px-2 py-1 text-sm mb-3"
+            placeholder="Email subject"
+          />
 
-                            const updated = [...routerBranches];
-                            if (
-                              updated[editingBranch] &&
-                              updated[editingBranch].modules[
-                                selectedModuleIndex
-                              ]
-                            ) {
-                              updated[editingBranch].modules[
-                                selectedModuleIndex
-                              ].template = editorContent;
-                              setRouterBranches(updated);
-                              console.log(
-                                "✅ Updated routerBranches:",
-                                updated[editingBranch].modules[
-                                  selectedModuleIndex
-                                ]
-                              );
-                            }
-                          }}
-                        >
-                          Save Template
-                        </button>
-                      </div>
-                    )}
+          {/* Rich Text Template editor */}
+          <ReactQuill
+            theme="snow"
+            value={connectionTemplates[connId] || ""}
+            onChange={(value) =>
+              setConnectionTemplates((prev) => ({
+                ...prev,
+                [connId]: value,
+              }))
+            }
+            className="h-40 mb-2"
+          />
 
-                    <div className="mt-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        To <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="email"
-                        className="w-full border rounded px-2 py-1 text-sm"
-                        placeholder="recipient@example.com"
-                      />
-                    </div>
+          <p className="text-xs text-gray-500 mt-1">
+            Example: <code>Hello {"{customer.name}"}</code>
+            <br />
+            You can use dynamic variables like{" "}
+            <code>{"{order.id}"}</code> or <code>{"{email}"}</code>.
+          </p>
+        </div>
+      );
+    })}
 
-                    <div className="mt-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Subject <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        className="w-full border rounded px-2 py-1 text-sm"
-                        placeholder="Email subject"
-                      />
-                    </div>
-                  </>
-                )}
+    {/* Recipient field (shared) */}
+    <div className="mt-4">
+      <label className="block text-sm font-medium text-gray-700 mb-2">
+        To <span className="text-red-500">*</span>
+      </label>
+      <input
+        type="email"
+        className="w-full border rounded px-2 py-1 text-sm"
+        placeholder="recipient@example.com"
+      />
+    </div>
+  </>
+)}
+
+
+
 
                 {selectedModule === "sendEmail" && (
                   <>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Connection <span className="text-red-500">*</span>
                     </label>
-                    <button
-                      onClick={openModal}
-                      className="flex mb-4 items-center px-5 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#f55641] to-[#f0614e] rounded-lg shadow hover:from-[#e45341] hover:to-[#f04f3a] focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
-                    >
-                      <FaGoogle className="h-5 w-5 mr-2" />
-                      Create Connection
-                    </button>
 
-                    <select
-                      className="w-full border rounded px-2 py-1 text-sm"
-                      onChange={(e) => setSelectedConnection(e.target.value)}
-                    >
-                      <option value="">Select a Connection</option>
-                      <option value="gmail-connection">
-                        My Gmail Connection
-                      </option>
-                      <option value="smtp-connection">
-                        My SMTP Connection
-                      </option>
-                    </select>
-
-                    {/* Editor bind with current module */}
-                    {editingBranch !== null && selectedConnection && (
-                      <div className="mt-4">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          {selectedConnection} - Response Template
-                        </label>
-
-                        <ReactQuill
-                          theme="snow"
-                          value={editorContent}
-                          onChange={(value) => {
-                            console.log(
-                              "📝 Quill change:",
-                              value,
-                              "| Branch:",
-                              editingBranch,
-                              "| Module:",
-                              selectedModuleIndex
-                            );
-                            setEditorContent(value);
-                          }}
-                          className="h-40 mb-2"
-                        />
-
-                        <p className="text-xs text-gray-500 mt-1">
-                          Example: <code>Hello {"{customer.name}"}</code>
-                          <br />
-                          You can manually type conditions like{" "}
-                          <code>{"{order.id}"}</code> or{" "}
-                          <code>{"{email}"}</code>.
-                        </p>
-
-                        <button
-                          onClick={() => {
-                            console.log(
-                              "💾 Saving template:",
-                              editorContent,
-                              "to branch",
-                              editingBranch,
-                              "module",
-                              selectedModuleIndex
-                            );
-
-                            const updated = [...routerBranches];
-                            if (
-                              updated[editingBranch] &&
-                              updated[editingBranch].modules[
-                                selectedModuleIndex
-                              ]
-                            ) {
-                              updated[editingBranch].modules[
-                                selectedModuleIndex
-                              ].template = editorContent;
-                              setRouterBranches(updated);
-                              console.log(
-                                "✅ Updated routerBranches:",
-                                updated[editingBranch].modules[
-                                  selectedModuleIndex
-                                ]
+                    {/* Multi-select dropdown with icons */}
+                    <div className="relative w-full mb-4">
+                      <button
+                        type="button"
+                        onClick={() => setShowDropdown(!showDropdown)}
+                        className="w-full flex justify-between items-center border rounded px-3 py-2 text-sm bg-white shadow-sm"
+                      >
+                        {selectedConnections.length > 0 ? (
+                          <span className="flex flex-wrap gap-2">
+                            {selectedConnections.map((id) => {
+                              const conn = connections.find(
+                                (c) => c._id === id
                               );
-                              alert(
-                                `✅ Template saved for module [${editingBranch}-${selectedModuleIndex}]`
+                              if (!conn) return null;
+                              return (
+                                <span
+                                  key={id}
+                                  className="flex items-center px-2 py-1 bg-purple-100 rounded text-xs"
+                                >
+                                  {conn.provider === "gmail" ? (
+                                    <FaGoogle className="text-red-500 mr-1" />
+                                  ) : (
+                                    <FaEnvelope className="text-blue-500 mr-1" />
+                                  )}
+                                  {conn.provider === "gmail"
+                                    ? `Gmail: ${conn.email}`
+                                    : `SMTP: ${conn.name || conn.email}`}
+                                </span>
                               );
-                            }
-                          }}
-                          className="mt-2 px-3 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700"
+                            })}
+                          </span>
+                        ) : (
+                          "Select Connections"
+                        )}
+                        <span>▾</span>
+                      </button>
+
+                      {showDropdown && (
+                        <ul className="absolute z-10 mt-1 w-full border rounded bg-white shadow-lg max-h-60 overflow-y-auto">
+                          {connections
+                            .filter((conn) => conn.provider === "gmail") // ✅ sirf Gmail dikhayega
+                            .map((conn) => {
+                              const isSelected = selectedConnections.includes(
+                                conn._id
+                              );
+                              return (
+                                <li
+                                  key={conn._id}
+                                  onClick={() => {
+                                    setSelectedConnections((prev) =>
+                                      isSelected
+                                        ? prev.filter((id) => id !== conn._id)
+                                        : [...prev, conn._id]
+                                    );
+                                  }}
+                                  className={`flex items-center px-3 py-2 cursor-pointer hover:bg-gray-100 text-sm ${
+                                    isSelected ? "bg-purple-100" : ""
+                                  }`}
+                                >
+                                  <FaGoogle className="text-red-500 mr-2" />
+                                  Gmail: {conn.email}
+                                </li>
+                              );
+                            })}
+                        </ul>
+                      )}
+                    </div>
+
+                    {/* Multiple editors - one for each selected connection */}
+                    {selectedConnections.map((connId) => {
+                      const conn = connections.find((c) => c._id === connId);
+                      if (!conn) return null;
+
+                      return (
+                        <div
+                          key={connId}
+                          className="mb-6 border rounded p-3 bg-gray-50"
                         >
-                          Save Template
-                        </button>
-                      </div>
-                    )}
+                          <h4 className="flex items-center mb-2 text-sm font-semibold text-gray-700">
+                            {conn.provider === "gmail" ? (
+                              <FaGoogle className="text-red-500 mr-2" />
+                            ) : (
+                              <FaEnvelope className="text-blue-500 mr-2" />
+                            )}
+                            {conn.provider === "gmail"
+                              ? `Gmail: ${conn.email}`
+                              : `SMTP: ${conn.name || conn.email}`}
+                          </h4>
 
+                          {/* Subject field */}
+                          <input
+                            type="text"
+                            value={connectionSubjects[connId] || ""}
+                            onChange={(e) =>
+                              setConnectionSubjects((prev) => ({
+                                ...prev,
+                                [connId]: e.target.value,
+                              }))
+                            }
+                            className="w-full border rounded px-2 py-1 text-sm mb-3"
+                            placeholder="Email subject"
+                          />
+
+                          {/* Template editor */}
+                          <ReactQuill
+                            theme="snow"
+                            value={connectionTemplates[connId] || ""}
+                            onChange={(value) =>
+                              setConnectionTemplates((prev) => ({
+                                ...prev,
+                                [connId]: value,
+                              }))
+                            }
+                            className="h-40 mb-2"
+                          />
+
+                          <p className="text-xs text-gray-500 mt-1">
+                            Example: <code>Hello {"{customer.name}"}</code>
+                            <br />
+                            You can use dynamic variables like{" "}
+                            <code>{"{order.id}"}</code> or{" "}
+                            <code>{"{email}"}</code>.
+                          </p>
+                        </div>
+                      );
+                    })}
+
+                    {/* Recipient field (shared) */}
                     <div className="mt-4">
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         To <span className="text-red-500">*</span>
@@ -1336,17 +1476,6 @@ const AllScenariosPage = () => {
                         type="email"
                         className="w-full border rounded px-2 py-1 text-sm"
                         placeholder="recipient@example.com"
-                      />
-                    </div>
-
-                    <div className="mt-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Subject <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        className="w-full border rounded px-2 py-1 text-sm"
-                        placeholder="Email subject"
                       />
                     </div>
                   </>
