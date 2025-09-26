@@ -6,6 +6,9 @@ import {
   FiFileText,
   FiChevronDown,
   FiChevronRight,
+  FiZap,       // ⚡
+  FiSettings,  // ⚙
+  FiGitBranch, // 🌿
 } from "react-icons/fi";
 
 const Sidebar = () => {
@@ -79,18 +82,15 @@ const Sidebar = () => {
 
           {isScenariosOpen && (
             <div className="ml-8 mt-1 space-y-1">
-              {renderNavLink(
-                "Shopify Scenario",
-                FiLayers,
-                "/scenarios/shopify"
-              )}
-              {renderNavLink("Others", FiLayers, "/scenarios/others")}
+              {renderNavLink("All Scenarios", FiZap, "/scenarios/all")}
+              {renderNavLink("Shopify Scenario", FiGitBranch, "/scenarios/shopify")}
+              {renderNavLink("Others", FiSettings, "/scenarios/others")}
             </div>
           )}
         </div>
 
         {renderNavLink("Templates", FiFileText, "/templates")}
-        {renderNavLink("Connection", FiFileText, "/connection")}
+        {renderNavLink("Connection", FiZap, "/connection")}
       </div>
 
       <div className="mt-auto text-xs text-gray-300 border-t border-purple-500 pt-4">
