@@ -3,7 +3,6 @@ import { Plus, Layers, Mail, Clock, Server } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../component/Sidebar";
 
-// ✅ Fallback Name Generator
 const getScenarioName = (scenario) => {
   if (scenario.name && scenario.name.trim() !== "") return scenario.name;
 
@@ -18,7 +17,6 @@ const getScenarioName = (scenario) => {
   return "Untitled Scenario";
 };
 
-// ✅ Fallback Description Generator
 const getScenarioDescription = (scenario) => {
   if (scenario.description && scenario.description.trim() !== "")
     return scenario.description;
@@ -29,7 +27,6 @@ const getScenarioDescription = (scenario) => {
   return "No description available";
 };
 
-// ✅ Icon by Module
 const getScenarioIcon = (scenario) => {
   const modules = scenario.routerBranches?.[0]?.modules || [];
   if (modules.some((m) => m.app?.name === "Gmail"))
@@ -42,7 +39,7 @@ const getScenarioIcon = (scenario) => {
 };
 
 const AllScenariosPage = () => {
-  const [activeTab, setActiveTab] = useState("shopify");
+  const [activeTab, setActiveTab] = useState("others");
   const [shopifyScenarios, setShopifyScenarios] = useState([]);
   const [otherScenarios, setOtherScenarios] = useState([]);
   const navigate = useNavigate();
@@ -53,7 +50,7 @@ const AllScenariosPage = () => {
     const fetchScenarios = async () => {
       try {
         const res = await fetch(
-          `http://localhost:5000/scenario/user/${userId}`
+          `https://email-syncing-backend.vercel.app/scenario/user/${userId}`
         );
         const data = await res.json();
         setShopifyScenarios(data.filter((s) => s.type === "shopify"));
@@ -148,6 +145,19 @@ const AllScenariosPage = () => {
         {/* Tabs */}
         <div className="px-6 pt-4">
           <div className="flex space-x-8 border-b">
+             <button
+              onClick={() => setActiveTab("others")}
+              className={`pb-3 font-medium transition relative ${
+                activeTab === "others"
+                  ? "text-purple-600"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              Others
+              {activeTab === "others" && (
+                <span className="absolute left-0 right-0 bottom-0 h-0.5 bg-purple-600 rounded"></span>
+              )}
+            </button>
             <button
               onClick={() => setActiveTab("shopify")}
               className={`pb-3 font-medium transition relative ${
@@ -161,23 +171,10 @@ const AllScenariosPage = () => {
                 <span className="absolute left-0 right-0 bottom-0 h-0.5 bg-purple-600 rounded"></span>
               )}
             </button>
-            <button
-              onClick={() => setActiveTab("others")}
-              className={`pb-3 font-medium transition relative ${
-                activeTab === "others"
-                  ? "text-purple-600"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              Others
-              {activeTab === "others" && (
-                <span className="absolute left-0 right-0 bottom-0 h-0.5 bg-purple-600 rounded"></span>
-              )}
-            </button>
+           
           </div>
         </div>
 
-        {/* Content */}
         <div className="flex-1 p-6">
           {activeTab === "shopify"
             ? renderCards(shopifyScenarios)

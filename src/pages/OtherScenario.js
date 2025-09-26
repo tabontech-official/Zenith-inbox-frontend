@@ -23,7 +23,7 @@ import { useParams } from "react-router-dom";
 
 import "react-quill/dist/quill.snow.css";
 const OthersScenariosPage = () => {
-   const { id } = useParams();
+  const { id } = useParams();
   const [open, setOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const openModal = () => setIsModalOpen(true);
@@ -87,11 +87,13 @@ const OthersScenariosPage = () => {
     }
   }, []);
 
-   useEffect(() => {
+  useEffect(() => {
     if (id) {
       const fetchScenario = async () => {
         try {
-          const res = await fetch(`http://localhost:5000/scenario/detail/${id}`);
+          const res = await fetch(
+            `https://email-syncing-backend.vercel.app/scenario/detail/${id}`
+          );
           const data = await res.json();
 
           if (data) {
@@ -227,7 +229,7 @@ const OthersScenariosPage = () => {
     const fetchConnections = async () => {
       try {
         const res = await fetch(
-          `http://localhost:5000/auth/getConnection/${userId}`
+          `https://email-syncing-backend.vercel.app/auth/getConnection/${userId}`
         );
         const data = await res.json();
         setConnections(data);
@@ -341,7 +343,7 @@ const OthersScenariosPage = () => {
             },
             type,
             description,
-            connectionId: connId, 
+            connectionId: connId,
             template: connectionTemplates[connId] || "",
             subject: connectionSubjects[connId] || "",
           });
@@ -449,41 +451,35 @@ const OthersScenariosPage = () => {
 
       <div className="flex-1 min-h-screen bg-gray-50 font-sans text-gray-800 flex flex-col">
         <div className="p-6">
-          {/* <button className="flex items-center px-4 py-2 text-sm text-gray-700 bg-white border border-gray-200 rounded-md shadow-sm hover:bg-gray-100">
-            <ArrowLeft className="mr-2 w-4 h-4" />
-            New scenario
-            <Settings className="ml-2 w-4 h-4" />
-          </button> */}
-       <button
-  onClick={async () => {
-    const payload = {
-      userId: localStorage.getItem("userid"),
-      name: scenarioName,
-      description: scenarioDescription,
-      type: "other",
-      routerBranches,
-    };
+          <button
+            onClick={async () => {
+              const payload = {
+                userId: localStorage.getItem("userid"),
+                name: scenarioName,
+                description: scenarioDescription,
+                type: "other",
+                routerBranches,
+              };
 
-    console.log(" Final payload:", JSON.stringify(payload, null, 2));
+              console.log(" Final payload:", JSON.stringify(payload, null, 2));
 
-    const url = scenarioId
-      ? `http://localhost:5000/scenario/detail/${scenarioId}`
-      : `http://localhost:5000/scenario`;
+              const url = scenarioId
+                ? `https://email-syncing-backend.vercel.app/scenario/detail/${scenarioId}`
+                : `https://email-syncing-backend.vercel.app/scenario`;
 
-    await fetch(url, {
-      method: scenarioId ? "PUT" : "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+              await fetch(url, {
+                method: scenarioId ? "PUT" : "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+              });
 
-    clearDraft();
-    toast.success("Scenario saved successfully!");
-  }}
-  className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
->
-  {scenarioId ? "Update Scenario" : "Save Scenario"}
-</button>
-
+              clearDraft();
+              toast.success("Scenario saved successfully!");
+            }}
+            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+          >
+            {scenarioId ? "Update Scenario" : "Save Scenario"}
+          </button>
         </div>
         {/* <input
           type="text"
