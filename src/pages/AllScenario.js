@@ -50,7 +50,7 @@
 //     const fetchScenarios = async () => {
 //       try {
 //         const res = await fetch(
-//           `http://localhost:5000/scenario/user/${userId}`
+//           `https://email-syncing-backend.vercel.app/scenario/user/${userId}`
 //         );
 //         const data = await res.json();
 //         setShopifyScenarios(data.filter((s) => s.type === "shopify"));
@@ -243,7 +243,7 @@ const AllScenariosPage = () => {
 
     try {
       const res = await fetch(
-        `http://localhost:5000/scenario/user/${userId}`
+        `https://email-syncing-backend.vercel.app/scenario/user/${userId}`
       );
       const data = await res.json();
       setShopifyScenarios(data.filter((s) => s.type === "shopify"));
@@ -265,7 +265,7 @@ const AllScenariosPage = () => {
     if (!selectedScenario) return;
     try {
       await fetch(
-        `http://localhost:5000/scenario/detail/${selectedScenario._id}`,
+        `https://email-syncing-backend.vercel.app/scenario/detail/${selectedScenario._id}`,
         { method: "DELETE" }
       );
       setDeleteModalOpen(false);

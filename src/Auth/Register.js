@@ -20,7 +20,7 @@ const RegisterPage = () => {
     e.preventDefault();
     try {
       // Call the backend API to create the user
-      const response = await axios.post("http://localhost:5000/auth/signUp", {
+      const response = await axios.post("https://email-syncing-backend.vercel.app/auth/signUp", {
         fullName,
         email,
         password,
