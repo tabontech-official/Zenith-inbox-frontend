@@ -101,7 +101,7 @@ const ShopifyScenariosPage = () => {
       try {
         const userId = localStorage.getItem("userid");
         const res = await axios.get(
-          `http://localhost:5000/auth/getUsers/${userId}`
+          `https://email-syncing-backend.vercel.app/auth/getUsers/${userId}`
         );
         setUser(res.data.data);
       } catch (error) {
@@ -151,7 +151,7 @@ const ShopifyScenariosPage = () => {
     const fetchConnections = async () => {
       try {
         const res = await fetch(
-          `http://localhost:5000/auth/getConnection/${localStorage.getItem(
+          `https://email-syncing-backend.vercel.app/auth/getConnection/${localStorage.getItem(
             "userid"
           )}`
         );
@@ -169,7 +169,7 @@ const ShopifyScenariosPage = () => {
       const fetchTemplates = async () => {
         try {
           const res = await fetch(
-            `http://localhost:5000/template/all?userId=${localStorage.getItem(
+            `https://email-syncing-backend.vercel.app/template/all?userId=${localStorage.getItem(
               "userid"
             )}&platform=shopify&service=${selectedApp.name}`
           );
@@ -239,8 +239,8 @@ const ShopifyScenariosPage = () => {
     };
 
     const url = scenarioId
-      ? `http://localhost:5000/scenario/detail/${scenarioId}`
-      : `http://localhost:5000/scenario`;
+      ? `https://email-syncing-backend.vercel.app/scenario/detail/${scenarioId}`
+      : `https://email-syncing-backend.vercel.app/scenario`;
 
     await fetch(url, {
       method: scenarioId ? "PUT" : "POST",
@@ -285,7 +285,7 @@ const ShopifyScenariosPage = () => {
       const fetchScenario = async () => {
         try {
           const res = await fetch(
-            `http://localhost:5000/scenario/detail/${id}`
+            `https://email-syncing-backend.vercel.app/scenario/detail/${id}`
           );
           const data = await res.json();
           if (data) {
@@ -314,9 +314,29 @@ const ShopifyScenariosPage = () => {
       } else if (selectedApp?.name === "Email") {
         type = "Custom Email";
         description = "Send an email using custom SMTP/Outlook";
+
+        // ✅ Mandatory validation
+        if (!selectedConnection) {
+          toast.error("Please select a connection before saving.");
+          return;
+        }
+        if (!selectedTemplate) {
+          toast.error("Please select a template before saving.");
+          return;
+        }
       } else if (selectedApp?.name === "Gmail") {
         type = "Send an Email";
         description = "Send an email via Gmail";
+
+        // ✅ Mandatory validation
+        if (!selectedConnection) {
+          toast.error("Please select a connection before saving.");
+          return;
+        }
+        if (!selectedTemplate) {
+          toast.error("Please select a template before saving.");
+          return;
+        }
       }
 
       if (editingModuleId) {
@@ -865,6 +885,7 @@ const ShopifyScenariosPage = () => {
                                 onChange={(e) =>
                                   setSelectedTemplate(e.target.value)
                                 }
+                                className="w-full border-none outline-none text-sm py-2 px-3 bg-transparent"
                               >
                                 <option value="">-- Select Template --</option>
                                 {templates.slice(0, 3).map((tpl) => (
@@ -879,8 +900,13 @@ const ShopifyScenariosPage = () => {
 
                         <div className="mb-4 w-full">
                           <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                            <FiUsers className="mr-2 text-gray-500" /> CC
+                            <FiUsers className="mr-2 text-gray-500" />
+                            CC
+                            <span className="ml-1 text-xs text-gray-500 font-normal">
+                              (Optional)
+                            </span>
                           </label>
+
                           <div className="flex flex-wrap items-center border rounded-lg px-3 py-2 focus-within:ring-2 focus-within:ring-purple-500 w-full">
                             {ccList.map((email, index) => (
                               <span
@@ -913,6 +939,9 @@ const ShopifyScenariosPage = () => {
                         <div className="w-full">
                           <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
                             <FiUsers className="mr-2 text-gray-500" /> BCC
+                            <span className="ml-1 text-xs text-gray-500 font-normal">
+                              (Optional)
+                            </span>
                           </label>
                           <div className="flex flex-wrap items-center border rounded-lg px-3 py-2 focus-within:ring-2 focus-within:ring-purple-500 w-full">
                             {bccList.map((email, index) => (
