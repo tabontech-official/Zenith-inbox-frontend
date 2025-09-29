@@ -56,7 +56,7 @@ export default function Template() {
   const fetchTemplates = async () => {
     try {
       const userId = localStorage.getItem("userid");
-      const res = await axios.get("https://email-syncing-backend.vercel.app/template/all", {
+      const res = await axios.get("http://localhost:5000/template/all", {
         params: { userId },
       });
       setTemplates(res.data);
@@ -104,7 +104,7 @@ export default function Template() {
 
   const handleDelete = async () => {
     try {
-      await axios.delete(`https://email-syncing-backend.vercel.app/template/delete/${deleteId}`);
+      await axios.delete(`http://localhost:5000/template/delete/${deleteId}`);
       toast.success(" Template deleted successfully!");
       fetchTemplates();
     } catch (err) {
@@ -122,12 +122,12 @@ export default function Template() {
 
       if (editingId) {
         await axios.put(
-          `https://email-syncing-backend.vercel.app/template/update/${editingId}`,
+          `http://localhost:5000/template/update/${editingId}`,
           payload
         );
         toast.success(" Template updated successfully!");
       } else {
-        await axios.post("https://email-syncing-backend.vercel.app/template/create", payload);
+        await axios.post("http://localhost:5000/template/create", payload);
         toast.success(" Template created successfully!");
       }
 
@@ -146,7 +146,7 @@ export default function Template() {
 
   const handleToggle = async (id, currentStatus) => {
     try {
-      await axios.put(`https://email-syncing-backend.vercel.app/template/update/${id}`, {
+      await axios.put(`http://localhost:5000/template/update/${id}`, {
         active: !currentStatus,
       });
       toast.info(
@@ -164,7 +164,7 @@ export default function Template() {
       <ToastContainer position="top-right" autoClose={3000} />
       <div className="flex-1 min-h-screen bg-gray-50 lg:ml-64">
         {/* Header */}
-        <header className="flex items-center justify-between p-6 bg-white border-b">
+        {/* <header className="flex items-center justify-between p-6 bg-white border-b">
           <h1 className="text-2xl font-bold text-gray-800 tracking-tight">
             Service Templates
           </h1>
@@ -173,7 +173,9 @@ export default function Template() {
               setEditingId(null);
               setPlatform("");
               setService("");
-              setConditions([{ field: "subject", operator: "contains", value: "" }]);
+              setConditions([
+                { field: "subject", operator: "contains", value: "" },
+              ]);
               setContent("");
               setIsDrawerOpen(true);
             }}
@@ -181,6 +183,17 @@ export default function Template() {
           >
             + Create Template
           </button>
+        </header> */}
+        <header className="flex items-center justify-between px-8 py-5 bg-white border-b shadow-sm">
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-800 tracking-tight">
+              Service Templates
+            </h1>
+
+            <p className="text-sm text-gray-500 mt-1">
+              Manage, customize, and activate your Shopify service templates
+            </p>
+          </div>
         </header>
 
         {/* Table */}
@@ -189,16 +202,22 @@ export default function Template() {
             <table className="w-full border-collapse">
               <thead className="bg-gray-100 border-b">
                 <tr>
-                  {["Type", "Service", "Conditions", "Template", "Active", "Actions"].map(
-                    (h) => (
-                      <th
-                        key={h}
-                        className="p-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wide"
-                      >
-                        {h}
-                      </th>
-                    )
-                  )}
+                  {[
+                    "Type",
+                    "Name",
+                    "Service",
+                    "Conditions",
+                    "Template",
+                    "Active",
+                    "Actions",
+                  ].map((h) => (
+                    <th
+                      key={h}
+                      className="p-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wide"
+                    >
+                      {h}
+                    </th>
+                  ))}
                 </tr>
               </thead>
 
@@ -207,6 +226,8 @@ export default function Template() {
                   templates.map((t) => (
                     <tr key={t._id} className="border-b hover:bg-gray-50">
                       <td className="p-3 text-sm">{t.platform}</td>
+                      <td className="p-3 text-sm">{t.name || "-"}</td>
+
                       <td className="p-3 text-sm">{t.service || "-"}</td>
                       <td className="p-3 text-sm text-gray-600">
                         {t.conditions
@@ -235,12 +256,12 @@ export default function Template() {
                         >
                           Edit
                         </button>
-                        <button
+                        {/* <button
                           onClick={() => confirmDelete(t._id)}
                           className="text-red-600 hover:underline text-sm"
                         >
                           Delete
-                        </button>
+                        </button> */}
                       </td>
                     </tr>
                   ))
@@ -317,30 +338,36 @@ export default function Template() {
             </div>
 
             <div className="flex-1 overflow-y-auto p-6">
-              {/* Type */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Type
                 </label>
-                <select
+                {/* <select
                   value={platform}
+                  disabled
                   onChange={(e) => setPlatform(e.target.value)}
                   className="w-full p-2 border rounded-lg"
                 >
                   <option value="">-- Select Type --</option>
                   <option value="shopify">Shopify</option>
                   <option value="other">Other</option>
-                </select>
+                </select> */}
+                <input
+                  type="text"
+                  value={platform || "-"}
+                  readOnly
+                  className="w-full p-2 border rounded-lg bg-gray-100 text-gray-700 "
+                />
               </div>
 
-              {/* Service */}
               {platform === "shopify" && (
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Service
                   </label>
-                  <select
+                  {/* <select
                     value={service}
+                    disabled
                     onChange={(e) => setService(e.target.value)}
                     className="w-full p-2 border rounded-lg"
                   >
@@ -350,18 +377,23 @@ export default function Template() {
                         {srv}
                       </option>
                     ))}
-                  </select>
+                  </select> */}
+                  <input
+                    type="text"
+                    value={service || "-"}
+                    readOnly
+                    className="w-full p-2 border rounded-lg bg-gray-100 text-gray-700 "
+                  />
                 </div>
               )}
 
               {/* Conditions */}
-              <div className="mb-6">
+              {/* <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Conditions
                 </label>
                 {conditions.map((c, index) => (
                   <div key={index} className="flex gap-2 mb-2">
-                    {/* Field Selector */}
                     <select
                       value={c.field}
                       onChange={(e) =>
@@ -375,7 +407,6 @@ export default function Template() {
                       <option value="recipient">Recipient</option>
                     </select>
 
-                    {/* Operator Selector */}
                     <select
                       value={c.operator}
                       onChange={(e) =>
@@ -389,7 +420,6 @@ export default function Template() {
                       <option value="starts_with">Starts With</option>
                     </select>
 
-                    {/* Value Input */}
                     <input
                       type="text"
                       value={c.value}
@@ -414,9 +444,8 @@ export default function Template() {
                 >
                   + Add Condition
                 </button>
-              </div>
+              </div> */}
 
-              {/* Template Editor */}
               <div className="mb-8">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Template Response

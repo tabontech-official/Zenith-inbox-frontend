@@ -42,6 +42,8 @@ import {
   FiVideo,
   FiBookOpen,
   FiPackage,
+  FiUsers,
+  FiUserX,
 } from "react-icons/fi";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
@@ -63,8 +65,79 @@ const ShopifyScenariosPage = () => {
   const [editingBranch, setEditingBranch] = useState(null);
   const [editorValue, setEditorValue] = useState("");
   const [activeConditionTarget, setActiveConditionTarget] = useState(null);
-
+  const [connections, setConnections] = useState([]); // fetched connections
+  const [selectedConnection, setSelectedConnection] = useState("");
+  const [subject, setSubject] = useState("");
+  const [body, setBody] = useState("");
+  const [templates, setTemplates] = useState([]);
+  const [selectedTemplate, setSelectedTemplate] = useState("");
+  const [cc, setCc] = useState("");
+  const [bcc, setBcc] = useState("");
   const modalRef = useRef(null);
+  const [ccList, setCcList] = useState([]);
+  const [bccList, setBccList] = useState([]);
+  const [ccInput, setCcInput] = useState("");
+  const [bccInput, setBccInput] = useState("");
+  const handleAddEmail = (e, type) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      const value = type === "cc" ? ccInput.trim() : bccInput.trim();
+
+      if (value && /\S+@\S+\.\S+/.test(value)) {
+        if (type === "cc") {
+          setCcList([...ccList, value]);
+          setCcInput("");
+        } else {
+          setBccList([...bccList, value]);
+          setBccInput("");
+        }
+      }
+    }
+  };
+
+  const handleRemoveEmail = (type, index) => {
+    if (type === "cc") {
+      setCcList(ccList.filter((_, i) => i !== index));
+    } else {
+      setBccList(bccList.filter((_, i) => i !== index));
+    }
+  };
+
+  useEffect(() => {
+    const fetchConnections = async () => {
+      try {
+        const res = await fetch(
+          `http://localhost:5000/auth/getConnection/${localStorage.getItem(
+            "userid"
+          )}`
+        );
+        const data = await res.json();
+        setConnections(data);
+      } catch (err) {
+        console.error("Error fetching connections:", err);
+      }
+    };
+    fetchConnections();
+  }, []);
+
+  useEffect(() => {
+    if (selectedApp?.name) {
+      const fetchTemplates = async () => {
+        try {
+          const res = await fetch(
+            `http://localhost:5000/template/all?userId=${localStorage.getItem(
+              "userid"
+            )}&platform=shopify&service=${selectedApp.name}`
+          );
+          const data = await res.json();
+          setTemplates(data);
+        } catch (err) {
+          console.error("Error fetching templates:", err);
+        }
+      };
+      fetchTemplates();
+    }
+  }, [selectedApp]);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -595,157 +668,6 @@ const ShopifyScenariosPage = () => {
             </div>
           )}
 
-          {showFilterDialog && (
-            <div
-              ref={modalRef}
-              className="absolute top-10 right-10 bg-white rounded-lg shadow-xl w-[500px] border z-20"
-            >
-              <div className="flex justify-between items-center px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-400 text-white rounded-t-lg">
-                <h3 className="font-semibold">Set up a filter</h3>
-                <div className="flex items-center space-x-2 text-sm">
-                  <button>⋮</button>
-                  <button>⚙</button>
-                  <button>?</button>
-                  <button onClick={() => setShowFilterDialog(false)}>✕</button>
-                </div>
-              </div>
-
-              <div className="p-4 space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Label
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full border rounded px-3 py-2 text-sm"
-                    placeholder="Enter label"
-                  />
-                </div>
-
-            
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Condition
-                  </label>
-                  <div
-                    onClick={() => {
-                      setActiveConditionTarget("quill");
-                      setShowDataPanel(true);
-                    }}
-                    className="border rounded p-3 bg-blue-50 border-l-4 border-l-blue-500"
-                  >
-                    <ReactQuill
-                      theme="snow"
-                      value={editorValue}
-                      onChange={setEditorValue}
-                      className="bg-white rounded"
-                      placeholder="Enter rich text or use expressions..."
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex justify-end space-x-2 px-4 py-3 border-t bg-gray-50">
-                <button
-                  className="px-4 py-2 text-sm border rounded hover:bg-gray-100"
-                  onClick={() => setShowFilterDialog(false)}
-                >
-                  Cancel
-                </button>
-                <button className="px-4 py-2 text-sm bg-purple-600 text-white rounded hover:bg-purple-700">
-                  Save
-                </button>
-              </div>
-            </div>
-          )}
-
-          {showDataPanel && (
-            <div
-              ref={modalRef}
-              className="absolute top-10 left-10 bg-white rounded-lg shadow-xl w-80 border z-30"
-            >
-              <div className="p-3 border-b bg-gray-50">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-semibold text-sm">Search items</h4>
-                  <button onClick={() => setShowDataPanel(false)}>
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-                <input
-                  type="text"
-                  className="w-full border rounded px-2 py-1 text-sm mt-2"
-                  placeholder="Search..."
-                />
-              </div>
-
-              <div className="max-h-96 overflow-y-auto">
-                <div className="p-2">
-                  <button className="text-xs text-gray-500 hover:text-gray-700 mb-2">
-                    ▼ Collapse all
-                  </button>
-
-                  {availableData.map((module, moduleIndex) => (
-                    <div key={moduleIndex} className="mb-4">
-                      <div className="flex items-center mb-2">
-                        <div
-                          className={`w-6 h-6 flex items-center justify-center rounded-full text-white text-xs mr-2 ${
-                            module.module === "Gmail"
-                              ? "bg-red-500"
-                              : "bg-pink-500"
-                          }`}
-                        >
-                          {module.module === "Gmail" ? (
-                            <Mail className="w-3 h-3" />
-                          ) : (
-                            <CiLink />
-
-                          )}
-                        </div>
-                        <span className="text-sm font-medium">
-                          {module.module}
-                        </span>
-                        <span className="text-xs text-gray-500 ml-1">
-                          {moduleIndex + 1}
-                        </span>
-                        <span className="text-xs text-gray-600 ml-2">
-                          - {module.type}
-                        </span>
-                      </div>
-
-                      <div className="ml-8 space-y-1">
-                        {module.fields.map((field, fieldIndex) => (
-                          <div key={fieldIndex}>
-                            <div
-                              key={fieldIndex}
-                              className="text-xs bg-pink-600 text-white px-2 py-1 rounded cursor-pointer hover:bg-pink-700 inline-block"
-                              onClick={() => handleInsertField(field.name)}
-                            >
-                              {field.name}
-                            </div>
-
-                            {field.subFields && (
-                              <div className="ml-4 mt-1 space-y-1">
-                                {field.subFields.map((subField, subIndex) => (
-                                  <div
-                                    key={subIndex}
-                                    className="text-xs bg-pink-500 text-white px-2 py-1 rounded cursor-pointer hover:bg-pink-600 inline-block mr-1"
-                                    onClick={() => handleInsertField(subField)}
-                                  >
-                                    {subField}
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
           {selectedApp && (
             <div className="absolute top-10 right-10 bg-white rounded-lg shadow-xl w-[600px] border z-20">
               <div className="flex justify-between items-center px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-400 text-white rounded-t-lg">
@@ -783,40 +705,167 @@ const ShopifyScenariosPage = () => {
                   </>
                 ) : (
                   <>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Label
-                      </label>
-                      <input
-                        type="text"
-                        className="w-full border rounded px-3 py-2 text-sm"
-                        placeholder="Enter label"
-                      />
-                    </div>
+  {/* Select Connection */}
+  <div className="mb-4">
+    <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+      <FiMail className="mr-2 text-gray-500" /> Select Connection
+    </label>
+    <div className="flex items-center border rounded-lg px-2 py-1 focus-within:ring-2 focus-within:ring-purple-500">
+      {selectedConnection ? (
+        <span className="flex items-center bg-purple-100 text-purple-700 text-sm px-2 py-1 rounded-full mr-2">
+          <FiMail className="mr-1" />
+          {connections.find((c) => c._id === selectedConnection)?.provider.toUpperCase()} -{" "}
+          {connections.find((c) => c._id === selectedConnection)?.email ||
+            connections.find((c) => c._id === selectedConnection)?.name}
+          <button
+            type="button"
+            onClick={() => setSelectedConnection("")}
+            className="ml-2 text-xs text-red-500 hover:text-red-700"
+          >
+            <FiUserX />
+          </button>
+        </span>
+      ) : (
+        <select
+          value={selectedConnection}
+          onChange={(e) => setSelectedConnection(e.target.value)}
+          className="flex-1 border-none outline-none text-sm py-1 px-2 bg-transparent"
+        >
+          <option value="">-- Select Connection --</option>
+          {connections
+            .filter(
+              (c) =>
+                c.provider === "gmail" ||
+                c.provider === "outlook" ||
+                c.provider === "smtp"
+            )
+            .map((c) => (
+              <option key={c._id} value={c._id}>
+                {c.provider.toUpperCase()} - {c.email || c.name}
+              </option>
+            ))}
+        </select>
+      )}
+    </div>
+  </div>
 
-                    
+  {/* Select Template */}
+  <div className="mb-4">
+    <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+      <FiFileText className="mr-2 text-gray-500" /> Select Template
+    </label>
+    <div className="flex items-center border rounded-lg px-2 py-1 focus-within:ring-2 focus-within:ring-purple-500">
+      {selectedTemplate ? (
+        <span className="flex items-center bg-blue-100 text-blue-700 text-sm px-2 py-1 rounded-full mr-2">
+          <FiFileText className="mr-1" />
+          {templates.find((t) => t._id === selectedTemplate)?.name}
+          <button
+            type="button"
+            onClick={() => setSelectedTemplate("")}
+            className="ml-2 text-xs text-red-500 hover:text-red-700"
+          >
+            <FiUserX />
+          </button>
+        </span>
+      ) : (
+        <select
+          value={selectedTemplate}
+          onChange={(e) => setSelectedTemplate(e.target.value)}
+          className="flex-1 border-none outline-none text-sm py-1 px-2 bg-transparent"
+        >
+          <option value="">-- Select Template --</option>
+          {templates
+            .filter((t) => t.service === selectedApp?.name)
+            .map((t) => (
+              <option key={t._id} value={t._id}>
+                {t.name}
+              </option>
+            ))}
+        </select>
+      )}
+    </div>
+  </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Condition
-                      </label>
-                      <div
-                        onClick={() => {
-                          setActiveConditionTarget("quill");
-                          setShowDataPanel(true);
-                        }}
-                        className="border rounded p-3 bg-blue-50 border-l-4 border-l-blue-500"
-                      >
-                        <ReactQuill
-                          theme="snow"
-                          value={editorValue}
-                          onChange={setEditorValue}
-                          className="bg-white rounded"
-                          placeholder="Enter rich text or use expressions..."
-                        />
-                      </div>
-                    </div>
-                  </>
+  {/* Subject */}
+  <div className="mb-4">
+    <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+      <FiFileText className="mr-2 text-gray-500" /> Subject
+    </label>
+    <input
+      type="text"
+      value={subject}
+      onChange={(e) => setSubject(e.target.value)}
+      className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+      placeholder="Enter subject"
+    />
+  </div>
+
+  {/* CC */}
+  <div className="mb-4">
+    <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+      <FiUsers className="mr-2 text-gray-500" /> CC
+    </label>
+    <div className="flex flex-wrap items-center border rounded-lg px-2 py-1 focus-within:ring-2 focus-within:ring-purple-500">
+      {ccList.map((email, index) => (
+        <span
+          key={index}
+          className="flex items-center bg-blue-100 text-blue-700 text-sm px-2 py-1 rounded-full mr-2 mb-1"
+        >
+          <FiMail className="mr-1" />
+          {email}
+          <button
+            type="button"
+            onClick={() => handleRemoveEmail("cc", index)}
+            className="ml-1 text-xs text-red-500 hover:text-red-700"
+          >
+            <FiUserX />
+          </button>
+        </span>
+      ))}
+      <input
+        type="text"
+        value={ccInput}
+        onChange={(e) => setCcInput(e.target.value)}
+        onKeyDown={(e) => handleAddEmail(e, "cc")}
+        className="flex-1 outline-none text-sm py-1 px-2"
+        placeholder="Type and press Enter"
+      />
+    </div>
+  </div>
+
+  {/* BCC */}
+  <div>
+    <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+      <FiUsers className="mr-2 text-gray-500" /> BCC
+    </label>
+    <div className="flex flex-wrap items-center border rounded-lg px-2 py-1 focus-within:ring-2 focus-within:ring-purple-500">
+      {bccList.map((email, index) => (
+        <span
+          key={index}
+          className="flex items-center bg-green-100 text-green-700 text-sm px-2 py-1 rounded-full mr-2 mb-1"
+        >
+          <FiMail className="mr-1" />
+          {email}
+          <button
+            type="button"
+            onClick={() => handleRemoveEmail("bcc", index)}
+            className="ml-1 text-xs text-red-500 hover:text-red-700"
+          >
+            <FiUserX />
+          </button>
+        </span>
+      ))}
+      <input
+        type="text"
+        value={bccInput}
+        onChange={(e) => setBccInput(e.target.value)}
+        onKeyDown={(e) => handleAddEmail(e, "bcc")}
+        className="flex-1 outline-none text-sm py-1 px-2"
+        placeholder="Type and press Enter"
+      />
+    </div>
+  </div>
+</>
                 )}
               </div>
 
