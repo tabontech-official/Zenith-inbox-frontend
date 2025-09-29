@@ -795,7 +795,6 @@ const ShopifyScenariosPage = () => {
                           </div>
                         </div>
 
-                        {/* CC */}
                         <div className="mb-4 w-full">
                           <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
                             <FiUsers className="mr-2 text-gray-500" /> CC
@@ -886,9 +885,14 @@ const ShopifyScenariosPage = () => {
           )}
 
           {showWebhookInfo && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
-              <div className="bg-white rounded-lg shadow-lg w-[500px] p-6 relative transform animate-slideUp">
-                {/* Close Button */}
+            <div
+              className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn"
+              onClick={() => setShowWebhookInfo(false)}
+            >
+              <div
+                className="bg-white rounded-lg shadow-lg w-[500px] p-6 relative transform animate-slideUp"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <button
                   onClick={() => setShowWebhookInfo(false)}
                   className="absolute top-3 right-3 text-gray-400 hover:text-gray-700 transition-colors"
@@ -896,12 +900,10 @@ const ShopifyScenariosPage = () => {
                   <X className="w-5 h-5" />
                 </button>
 
-                {/* Heading */}
                 <h2 className="text-lg font-semibold text-gray-800 mb-4">
                   Webhook Mailhook Instructions
                 </h2>
 
-                {/* Instructions */}
                 <p className="text-sm text-gray-600 mb-4 leading-relaxed">
                   This is your <strong>email forwarding mailhook</strong>.{" "}
                   <br />
@@ -911,7 +913,6 @@ const ShopifyScenariosPage = () => {
                   All forwarded emails will be delivered here.
                 </p>
 
-                {/* Webhook URL */}
                 {loading ? (
                   <p className="text-gray-500 text-sm">Loading webhook...</p>
                 ) : (
@@ -923,7 +924,6 @@ const ShopifyScenariosPage = () => {
                   </div>
                 )}
 
-                {/* Copy Button */}
                 <button
                   onClick={handleCopy}
                   className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors text-sm"
