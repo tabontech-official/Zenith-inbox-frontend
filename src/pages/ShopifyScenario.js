@@ -72,6 +72,8 @@ const ShopifyScenariosPage = () => {
   const [selectedConnection, setSelectedConnection] = useState("");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
+  const [delayValue, setDelayValue] = useState("5");
+  const [delayUnit, setDelayUnit] = useState("seconds");
 
   const [templates, setTemplates] = useState([]);
   const [selectedTemplate, setSelectedTemplate] = useState("");
@@ -265,17 +267,17 @@ const ShopifyScenariosPage = () => {
 
       if (selectedModule === "delay") {
         type = "Delay";
-        description = "Delay execution";
+        description = `Wait ${delayValue} ${delayUnit}`;
       } else if (selectedApp?.name === "Email") {
         type = "Custom Email";
-        description = "Send an email using custom SMTP";
-      } else {
+        description = "Send an email using custom SMTP/Outlook";
+      } else if (selectedApp?.name === "Gmail") {
         type = "Send an Email";
         description = "Send an email via Gmail";
       }
 
       if (editingModuleId) {
-        // 🔄 Update existing
+        // 🔄 Update existing module
         const moduleIndex = updatedBranches[editingBranch].modules.findIndex(
           (m) => m.id === editingModuleId
         );
@@ -290,71 +292,85 @@ const ShopifyScenariosPage = () => {
             subject,
             cc: ccList,
             bcc: bccList,
+            delayValue,
+            delayUnit,
           };
         }
       } else {
-        // ➕ Add new
+        // ➕ Add new module
         updatedBranches[editingBranch].modules.push({
+          id: Date.now(),
           app: selectedApp,
           type,
           description,
-          id: Date.now(),
           connection: selectedConnection,
           template: selectedTemplate,
           subject,
           cc: ccList,
           bcc: bccList,
+          delayValue,
+          delayUnit,
         });
       }
 
       setRouterBranches(updatedBranches);
       setEditingBranch(null);
-      setEditingModuleId(null); // reset
+      setEditingModuleId(null);
     }
 
+    // Reset UI states
     setSelectedModule(null);
     setOpen(false);
     setSelectedApp(null);
+    setSelectedConnection("");
+    setSelectedTemplate("");
+    setSubject("");
+    setCcList([]);
+    setBccList([]);
+    setDelayValue("5");
+    setDelayUnit("seconds");
   };
 
- const handleCancel = () => {
-  setSelectedApp(null);
-  setEditingBranch(null);
-  setEditingModuleId(null);
+  const handleCancel = () => {
+    setSelectedApp(null);
+    setEditingBranch(null);
+    setEditingModuleId(null);
 
-  setSelectedConnection("");
-  setSelectedTemplate("");
-  setSubject("");
-  setCcList([]);
-  setBccList([]);
-  setCcInput("");
-  setBccInput("");
-};
-
+    setSelectedConnection("");
+    setSelectedTemplate("");
+    setSubject("");
+    setCcList([]);
+    setBccList([]);
+    setCcInput("");
+    setBccInput("");
+    setDelayValue("5");
+    setDelayUnit("seconds");
+    setOpen(false);
+  };
 
   const handleRemoveModule = (branchIndex, moduleId) => {
-  const updatedBranches = [...routerBranches];
-  updatedBranches[branchIndex].modules = updatedBranches[branchIndex].modules.filter(
-    (m) => m.id !== moduleId
-  );
-  setRouterBranches(updatedBranches);
+    const updatedBranches = [...routerBranches];
+    updatedBranches[branchIndex].modules = updatedBranches[
+      branchIndex
+    ].modules.filter((m) => m.id !== moduleId);
+    setRouterBranches(updatedBranches);
 
-  // 🔄 Reset form states when module removed
-  setSelectedConnection("");
-  setSelectedTemplate("");
-  setSubject("");
-  setCcList([]);
-  setBccList([]);
-  setCcInput("");
-  setBccInput("");
-};
+    // 🔄 Reset form states when module removed
+    setSelectedConnection("");
+    setSelectedTemplate("");
+    setSubject("");
+    setCcList([]);
+    setBccList([]);
+    setCcInput("");
+    setBccInput("");
+  };
 
   const [editingModuleId, setEditingModuleId] = useState(null);
 
   const handleEditModule = (branchIndex, module) => {
     setSelectedBranchIndex(branchIndex);
     setEditingBranch(branchIndex);
-    setEditingModuleId(module.id); // 👈 id store kar li
+    setEditingModuleId(module.id);
     setOpen(true);
 
     // load saved values
@@ -364,6 +380,8 @@ const ShopifyScenariosPage = () => {
     setSubject(module.subject || "");
     setCcList(module.cc || []);
     setBccList(module.bcc || []);
+    setDelayValue(module.delayValue || "5");
+    setDelayUnit(module.delayUnit || "seconds");
   };
 
   const handleRouterHover = () => {
@@ -434,7 +452,6 @@ const ShopifyScenariosPage = () => {
 
         <div className="flex-1 flex items-center justify-center relative">
           <div className="flex items-center justify-center w-full">
-            {/* Webhook Module */}
             <div className="relative">
               <div
                 onClick={() => setShowWebhookInfo(true)}
@@ -461,7 +478,6 @@ const ShopifyScenariosPage = () => {
               </div>
             </div>
 
-            {/* Connection Line */}
             <div className="flex items-center mx-8">
               <div className="w-4 h-4 rounded-full bg-pink-400"></div>
               <div className="w-4 h-4 rounded-full bg-pink-300 ml-2"></div>
@@ -481,14 +497,14 @@ const ShopifyScenariosPage = () => {
                   2
                 </div>
 
-                {routerHovered && (
+                {/* {routerHovered && (
                   <button
                     onClick={addRouterBranch}
                     className="absolute -right-6 top-1/2 transform -translate-y-1/2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg border-2 border-green-300 hover:bg-gray-100 transition-all"
                   >
                     <Plus className="w-4 h-4 text-green-600" />
                   </button>
-                )}
+                )} */}
               </div>
 
               <div className="mt-4 text-center">
@@ -506,7 +522,6 @@ const ShopifyScenariosPage = () => {
               <div className="relative ml-12 flex flex-col space-y-12">
                 {routerBranches.map((branch, branchIndex) => (
                   <div key={branch.id} className="flex items-center relative">
-                    {/* Dotted Connection from Router to Branch */}
                     <div className="absolute -left-16 top-1/2 transform -translate-y-1/2 flex items-center">
                       {Array.from({ length: 6 }).map((_, i) => (
                         <div
@@ -532,28 +547,14 @@ const ShopifyScenariosPage = () => {
                           <React.Fragment key={module.id}>
                             <div className="relative">
                               <div
-                                className={`w-20 h-20 flex flex-col items-center justify-center rounded-full ${module.app.color} text-white shadow-lg border-2 border-opacity-50`}
+                                className={`w-24 h-24 flex flex-col items-center justify-center rounded-full ${module.app.color} text-white shadow-lg border-2 border-opacity-50`}
                               >
-                                {module.app.icon}
+                                {React.cloneElement(module.app.icon, {
+                                  className: "w-8 h-8",
+                                })}
                                 <div className="absolute -top-1 -right-1 w-6 h-6 bg-black bg-opacity-80 text-white rounded-full flex items-center justify-center text-xs font-bold border border-white">
                                   {3 + moduleIndex}
                                 </div>
-                                <div className="mt-2 text-center">
-                                  <p className="text-xs font-medium text-gray-800">
-                                    {module.app.name}
-                                  </p>
-                                  <p className="text-[10px] text-gray-500">
-                                    {module.connection
-                                      ? connections
-                                          .find(
-                                            (c) => c._id === module.connection
-                                          )
-                                          ?.provider.toUpperCase()
-                                      : ""}
-                                  </p>
-                                </div>
-
-                                {/* Edit/Remove Icons */}
                               </div>
 
                               <div className="mt-2 text-center">
@@ -564,21 +565,25 @@ const ShopifyScenariosPage = () => {
                                   {3 + moduleIndex}
                                 </div>
                                 <div className="absolute -top-3 -left-3 flex space-x-2">
-                               <button
-  onClick={() => handleEditModule(branchIndex, module)}
-  className="text-blue-500  p-1 rounded-full hover:text-blue-800"
-  title="Edit"
->
-  <FiEdit className="w-4 h-4" />
-</button>
+                                  <button
+                                    onClick={() =>
+                                      handleEditModule(branchIndex, module)
+                                    }
+                                    className="text-blue-500  p-1 rounded-full hover:text-blue-800"
+                                    title="Edit"
+                                  >
+                                    <FiEdit className="w-4 h-4" />
+                                  </button>
                                 </div>
-                               <button
-  onClick={() => handleRemoveModule(branchIndex, module.id)}
-  className="text-red-500 p-1 rounded-full hover:text-red-600"
-  title="Remove"
->
-  <FiTrash2 className="w-4 h-4" />
-</button>
+                                <button
+                                  onClick={() =>
+                                    handleRemoveModule(branchIndex, module.id)
+                                  }
+                                  className="text-red-500 p-1 rounded-full hover:text-red-600"
+                                  title="Remove"
+                                >
+                                  <FiTrash2 className="w-4 h-4" />
+                                </button>
                               </div>
 
                               <button
@@ -589,7 +594,6 @@ const ShopifyScenariosPage = () => {
                               </button>
                             </div>
 
-                            {/* Connection dots between modules */}
                             {moduleIndex < branch.modules.length - 1 && (
                               <div className="flex items-center ml-4">
                                 <div className="w-2 h-2 rounded-full bg-gray-400"></div>
@@ -600,7 +604,6 @@ const ShopifyScenariosPage = () => {
                           </React.Fragment>
                         ))
                       ) : (
-                        // Default Plus button if no module in branch
                         <button
                           onClick={() => handleBranchPlusClick(branchIndex)}
                           className="w-20 h-20 flex items-center justify-center rounded-full bg-gray-300 text-gray-600 shadow-lg border-2 border-gray-200 hover:bg-gray-400 hover:text-white transition-colors"
@@ -656,296 +659,232 @@ const ShopifyScenariosPage = () => {
                       </li>
                     ))}
                   </ul>
-                  <div className="p-3 border-t">
-                    <div className="flex items-center px-2 py-2 border rounded-md text-gray-500 text-sm">
-                      <Search className="mr-2 w-4 h-4" />
-                      <input
-                        type="text"
-                        placeholder="Search apps or modules"
-                        className="flex-1 outline-none text-gray-600 text-sm"
-                      />
-                    </div>
-                  </div>
                 </>
               ) : (
                 <>
-                  <div
-                    className="flex items-center px-4 py-3 text-sm text-purple-600 cursor-pointer hover:underline"
-                    onClick={() => setSelectedApp(null)}
-                  >
-                    <ArrowLeft className="mr-2 w-4 h-4" /> BACK
+                  <div className="flex justify-between items-center px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-400 text-white rounded-t-lg">
+                    <h3 className="font-semibold">{selectedApp.name}</h3>
+                    <button onClick={handleCancel}>✕</button>
                   </div>
 
-                  <div className="flex flex-col items-center text-center p-6 bg-red-50">
-                    <div
-                      className={`w-12 h-12 flex items-center justify-center rounded-full text-white mb-3 ${selectedApp.color}`}
-                    >
-                      {selectedApp.icon}
-                    </div>
-                    <h2 className="text-lg font-semibold">
-                      {selectedApp.name}
-                    </h2>
+                  <div className="p-4 space-y-4">
+                    {selectedApp.name === "Delay" ? (
+                      <>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Delay <span className="text-red-500">*</span>
+                        </label>
+                        <div className="flex space-x-2">
+                          <input
+                            type="number"
+                            value={delayValue}
+                            onChange={(e) => setDelayValue(e.target.value)}
+                            className="w-20 border rounded px-2 py-1 text-sm"
+                          />
+                          <select
+                            value={delayUnit}
+                            onChange={(e) => setDelayUnit(e.target.value)}
+                            className="border rounded px-2 py-1 text-sm"
+                          >
+                            <option value="seconds">Seconds</option>
+                            <option value="minutes">Minutes</option>
+                            <option value="hours">Hours</option>
+                          </select>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-2">
+                          Suspend the execution of the scenario for the
+                          specified duration.
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <div className="mb-4 w-full">
+                          <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                            <FiMail className="mr-2 text-gray-500" /> Select
+                            Connection
+                          </label>
+                          <div className="flex items-center border rounded-lg px-3 py-2 focus-within:ring-2 focus-within:ring-purple-500 w-full">
+                            {selectedConnection ? (
+                              <span className="flex items-center bg-purple-100 text-purple-700 text-sm px-3 py-2 rounded-full w-full">
+                                <FiMail className="mr-2" />
+                                {connections
+                                  .find((c) => c._id === selectedConnection)
+                                  ?.provider.toUpperCase()}{" "}
+                                -{" "}
+                                {connections.find(
+                                  (c) => c._id === selectedConnection
+                                )?.email ||
+                                  connections.find(
+                                    (c) => c._id === selectedConnection
+                                  )?.name}
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedConnection("")}
+                                  className="ml-auto text-xs text-red-500 hover:text-red-700"
+                                >
+                                  <FiUserX />
+                                </button>
+                              </span>
+                            ) : (
+                              <select
+                                value={selectedConnection}
+                                onChange={(e) =>
+                                  setSelectedConnection(e.target.value)
+                                }
+                                className="w-full border-none outline-none text-sm py-2 px-3 bg-transparent"
+                              >
+                                <option value="">
+                                  -- Select Connection --
+                                </option>
+                                {connections
+                                  .filter((c) => {
+                                    if (selectedApp?.name === "Email") {
+                                      return (
+                                        c.provider === "smtp" ||
+                                        c.provider === "outlook"
+                                      );
+                                    }
+                                    if (selectedApp?.name === "Gmail") {
+                                      return c.provider === "gmail";
+                                    }
+                                    return false;
+                                  })
+                                  .map((c) => (
+                                    <option key={c._id} value={c._id}>
+                                      {c.provider.toUpperCase()} -{" "}
+                                      {c.email || c.name}
+                                    </option>
+                                  ))}
+                              </select>
+                            )}
+                          </div>
+                        </div>
 
-                    <span className="text-xs text-white mt-1 px-2 py-0.5 rounded bg-purple-600">
-                      Customize Template
-                    </span>
+                        <div className="mb-4 w-full">
+                          <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                            <FiFileText className="mr-2 text-gray-500" /> Select
+                            Template
+                          </label>
+                          <div className="flex items-center border rounded-lg px-3 py-2 focus-within:ring-2 focus-within:ring-purple-500 w-full">
+                            {selectedTemplate ? (
+                              <span className="flex items-center bg-blue-100 text-blue-700 text-sm px-3 py-2 rounded-full w-full">
+                                <FiFileText className="mr-2" />
+                                {selectedTemplate === "email"
+                                  ? "Email"
+                                  : "Follow up"}
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedTemplate("")}
+                                  className="ml-auto text-xs text-red-500 hover:text-red-700"
+                                >
+                                  <FiUserX />
+                                </button>
+                              </span>
+                            ) : (
+                              <select
+                                value={selectedTemplate}
+                                onChange={(e) =>
+                                  setSelectedTemplate(e.target.value)
+                                }
+                                className="w-full border-none outline-none text-sm py-2 px-3 bg-transparent"
+                              >
+                                <option value="">-- Select Template --</option>
+                                <option value="email">Email</option>
+                                <option value="followup">Follow up</option>
+                              </select>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* CC */}
+                        <div className="mb-4 w-full">
+                          <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                            <FiUsers className="mr-2 text-gray-500" /> CC
+                          </label>
+                          <div className="flex flex-wrap items-center border rounded-lg px-3 py-2 focus-within:ring-2 focus-within:ring-purple-500 w-full">
+                            {ccList.map((email, index) => (
+                              <span
+                                key={index}
+                                className="flex items-center bg-blue-100 text-blue-700 text-sm px-3 py-1 rounded-full mr-2 mb-1"
+                              >
+                                <FiMail className="mr-2" />
+                                {email}
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveEmail("cc", index)}
+                                  className="ml-2 text-xs text-red-500 hover:text-red-700"
+                                >
+                                  <FiUserX />
+                                </button>
+                              </span>
+                            ))}
+                            <input
+                              type="text"
+                              value={ccInput}
+                              onChange={(e) => setCcInput(e.target.value)}
+                              onKeyDown={(e) => handleAddEmail(e, "cc")}
+                              className="w-full outline-none text-sm py-2 px-3"
+                              placeholder="Type and press Enter"
+                            />
+                          </div>
+                        </div>
+
+                        {/* BCC */}
+                        <div className="w-full">
+                          <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                            <FiUsers className="mr-2 text-gray-500" /> BCC
+                          </label>
+                          <div className="flex flex-wrap items-center border rounded-lg px-3 py-2 focus-within:ring-2 focus-within:ring-purple-500 w-full">
+                            {bccList.map((email, index) => (
+                              <span
+                                key={index}
+                                className="flex items-center bg-green-100 text-green-700 text-sm px-3 py-1 rounded-full mr-2 mb-1"
+                              >
+                                <FiMail className="mr-2" />
+                                {email}
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleRemoveEmail("bcc", index)
+                                  }
+                                  className="ml-2 text-xs text-red-500 hover:text-red-700"
+                                >
+                                  <FiUserX />
+                                </button>
+                              </span>
+                            ))}
+                            <input
+                              type="text"
+                              value={bccInput}
+                              onChange={(e) => setBccInput(e.target.value)}
+                              onKeyDown={(e) => handleAddEmail(e, "bcc")}
+                              className="w-full outline-none text-sm py-2 px-3"
+                              placeholder="Type and press Enter"
+                            />
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
 
-                  {/* Actions */}
-                  <div className="p-4 border-b">
-                    <h3 className="text-xs font-semibold text-gray-500 mb-2">
-                      ACTIONS
-                    </h3>
-
-                    <div
-                      className="flex items-start cursor-pointer hover:bg-gray-50 p-2 rounded"
-                      onClick={() =>
-                        setSelectedModule(
-                          selectedApp.name === "Delay" ? "delay" : "sendEmail"
-                        )
-                      }
+                  <div className="flex justify-end space-x-2 px-4 py-2 border-t bg-gray-50">
+                    <button
+                      className="px-4 py-2 text-sm border rounded hover:bg-gray-100"
+                      onClick={handleCancel}
                     >
-                      <div
-                        className={`w-8 h-8 flex items-center justify-center rounded-full text-white mr-3 ${selectedApp.color}`}
-                      >
-                        {selectedApp.icon}
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-gray-700">
-                          {"Customize template"}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {`Use this template for ${selectedApp.name}.`}
-                        </p>
-                      </div>
-                    </div>
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleSave}
+                      className="px-4 py-2 text-sm bg-purple-600 text-white rounded hover:bg-purple-700"
+                    >
+                      Save
+                    </button>
                   </div>
                 </>
               )}
             </div>
           )}
 
-          {selectedApp && (
-            <div className="absolute top-10 right-10 bg-white rounded-lg shadow-xl w-[600px] border z-20">
-              <div className="flex justify-between items-center px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-400 text-white rounded-t-lg">
-                <h3 className="font-semibold">{selectedApp.name}</h3>
-                <div className="space-x-2 text-sm">
-                  <button>⋮</button>
-                  <button>?</button>
-                  <button onClick={() => setSelectedApp(null)}>✕</button>
-                </div>
-              </div>
-
-              <div className="p-4 space-y-4">
-                {selectedApp.name === "Delay" ? (
-                  <>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Delay <span className="text-red-500">*</span>
-                    </label>
-                    <div className="flex space-x-2">
-                      <input
-                        type="number"
-                        className="w-20 border rounded px-2 py-1 text-sm"
-                        placeholder="5"
-                        defaultValue="5"
-                      />
-                      <select className="border rounded px-2 py-1 text-sm">
-                        <option value="seconds">Seconds</option>
-                        <option value="minutes">Minutes</option>
-                        <option value="hours">Hours</option>
-                      </select>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-2">
-                      Suspend the execution of the scenario for the specified
-                      duration.
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    {/* Select Connection */}
-                    <div className="mb-4">
-                      <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                        <FiMail className="mr-2 text-gray-500" /> Select
-                        Connection
-                      </label>
-                      <div className="flex items-center border rounded-lg px-2 py-1 focus-within:ring-2 focus-within:ring-purple-500">
-                        {selectedConnection ? (
-                          <span className="flex items-center bg-purple-100 text-purple-700 text-sm px-2 py-1 rounded-full mr-2">
-                            <FiMail className="mr-1" />
-                            {connections
-                              .find((c) => c._id === selectedConnection)
-                              ?.provider.toUpperCase()}{" "}
-                            -{" "}
-                            {connections.find(
-                              (c) => c._id === selectedConnection
-                            )?.email ||
-                              connections.find(
-                                (c) => c._id === selectedConnection
-                              )?.name}
-                            <button
-                              type="button"
-                              onClick={() => setSelectedConnection("")}
-                              className="ml-2 text-xs text-red-500 hover:text-red-700"
-                            >
-                              <FiUserX />
-                            </button>
-                          </span>
-                        ) : (
-                          <select
-                            value={selectedConnection}
-                            onChange={(e) =>
-                              setSelectedConnection(e.target.value)
-                            }
-                            className="flex-1 border-none outline-none text-sm py-1 px-2 bg-transparent"
-                          >
-                            <option value="">-- Select Connection --</option>
-
-                            {connections
-                              .filter((c) => {
-                                if (selectedApp?.name === "Email") {
-                                  return (
-                                    c.provider === "smtp" ||
-                                    c.provider === "outlook"
-                                  );
-                                }
-                                if (selectedApp?.name === "Gmail") {
-                                  return c.provider === "gmail";
-                                }
-                                return false;
-                              })
-                              .map((c) => (
-                                <option key={c._id} value={c._id}>
-                                  {c.provider.toUpperCase()} -{" "}
-                                  {c.email || c.name}
-                                </option>
-                              ))}
-                          </select>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Select Template */}
-                    <div className="mb-4">
-                      <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                        <FiFileText className="mr-2 text-gray-500" /> Select
-                        Template
-                      </label>
-                      <div className="flex items-center border rounded-lg px-2 py-1 focus-within:ring-2 focus-within:ring-purple-500">
-                        {selectedTemplate ? (
-                          <span className="flex items-center bg-blue-100 text-blue-700 text-sm px-2 py-1 rounded-full mr-2">
-                            <FiFileText className="mr-1" />
-                            {selectedTemplate === "email"
-                              ? "Email"
-                              : "Follow up"}
-                            <button
-                              type="button"
-                              onClick={() => setSelectedTemplate("")}
-                              className="ml-2 text-xs text-red-500 hover:text-red-700"
-                            >
-                              <FiUserX />
-                            </button>
-                          </span>
-                        ) : (
-                          <select
-                            value={selectedTemplate}
-                            onChange={(e) =>
-                              setSelectedTemplate(e.target.value)
-                            }
-                            className="flex-1 border-none outline-none text-sm py-1 px-2 bg-transparent"
-                          >
-                            <option value="">-- Select Template --</option>
-                            <option value="email">Email</option>
-                            <option value="followup">Follow up</option>
-                          </select>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* CC */}
-                    <div className="mb-4">
-                      <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                        <FiUsers className="mr-2 text-gray-500" /> CC
-                      </label>
-                      <div className="flex flex-wrap items-center border rounded-lg px-2 py-1 focus-within:ring-2 focus-within:ring-purple-500">
-                        {ccList.map((email, index) => (
-                          <span
-                            key={index}
-                            className="flex items-center bg-blue-100 text-blue-700 text-sm px-2 py-1 rounded-full mr-2 mb-1"
-                          >
-                            <FiMail className="mr-1" />
-                            {email}
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveEmail("cc", index)}
-                              className="ml-1 text-xs text-red-500 hover:text-red-700"
-                            >
-                              <FiUserX />
-                            </button>
-                          </span>
-                        ))}
-                        <input
-                          type="text"
-                          value={ccInput}
-                          onChange={(e) => setCcInput(e.target.value)}
-                          onKeyDown={(e) => handleAddEmail(e, "cc")}
-                          className="flex-1 outline-none text-sm py-1 px-2"
-                          placeholder="Type and press Enter"
-                        />
-                      </div>
-                    </div>
-
-                    {/* BCC */}
-                    <div>
-                      <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                        <FiUsers className="mr-2 text-gray-500" /> BCC
-                      </label>
-                      <div className="flex flex-wrap items-center border rounded-lg px-2 py-1 focus-within:ring-2 focus-within:ring-purple-500">
-                        {bccList.map((email, index) => (
-                          <span
-                            key={index}
-                            className="flex items-center bg-green-100 text-green-700 text-sm px-2 py-1 rounded-full mr-2 mb-1"
-                          >
-                            <FiMail className="mr-1" />
-                            {email}
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveEmail("bcc", index)}
-                              className="ml-1 text-xs text-red-500 hover:text-red-700"
-                            >
-                              <FiUserX />
-                            </button>
-                          </span>
-                        ))}
-                        <input
-                          type="text"
-                          value={bccInput}
-                          onChange={(e) => setBccInput(e.target.value)}
-                          onKeyDown={(e) => handleAddEmail(e, "bcc")}
-                          className="flex-1 outline-none text-sm py-1 px-2"
-                          placeholder="Type and press Enter"
-                        />
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-
-              <div className="flex justify-end space-x-2 px-4 py-2 border-t bg-gray-50">
-                <button
-                  className="px-4 py-2 text-sm border rounded hover:bg-gray-100"
-                  onClick={() => setSelectedApp(null)}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSave}
-                  className="px-4 py-2 text-sm bg-purple-600 text-white rounded hover:bg-purple-700"
-                >
-                  Save
-                </button>
-              </div>
-            </div>
-          )}
           {showWebhookInfo && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
               <div className="bg-white rounded-lg shadow-lg w-[500px] p-6 relative transform animate-slideUp">
