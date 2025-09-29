@@ -204,7 +204,7 @@ export default function Template() {
                 <tr>
                   {[
                     "Type",
-                    "Name",
+                    "Sequence",
                     "Service",
                     "Conditions",
                     "Template",

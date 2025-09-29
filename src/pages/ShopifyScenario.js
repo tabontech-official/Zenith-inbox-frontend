@@ -44,9 +44,12 @@ import {
   FiPackage,
   FiUsers,
   FiUserX,
+  FiTrash2,
+  FiEdit,
 } from "react-icons/fi";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
+import axios from "axios";
 
 const ShopifyScenariosPage = () => {
   const [open, setOpen] = useState(false);
@@ -69,6 +72,7 @@ const ShopifyScenariosPage = () => {
   const [selectedConnection, setSelectedConnection] = useState("");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
+
   const [templates, setTemplates] = useState([]);
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [cc, setCc] = useState("");
@@ -78,6 +82,38 @@ const ShopifyScenariosPage = () => {
   const [bccList, setBccList] = useState([]);
   const [ccInput, setCcInput] = useState("");
   const [bccInput, setBccInput] = useState("");
+  const [showWebhookInfo, setShowWebhookInfo] = useState(false);
+
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const userId = localStorage.getItem("userid");
+        const res = await axios.get(
+          `https://email-syncing-backend.vercel.app/auth/getUsers/${userId}`
+        );
+        setUser(res.data.data);
+      } catch (error) {
+        console.error("Error fetching user:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (showWebhookInfo) fetchUser();
+  }, [showWebhookInfo]);
+
+  const webhookUrl = user?.mailhook || "https://yourdomain.com/webhook/12345";
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(webhookUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   const handleAddEmail = (e, type) => {
     if (e.key === "Enter" || e.key === ",") {
       e.preventDefault();
@@ -157,97 +193,9 @@ const ShopifyScenariosPage = () => {
   }, []);
 
   const apps = [
-    {
-      name: "Troubleshooting",
-      color: "bg-purple-500",
-      icon: <FiAlertCircle />,
-    },
     { name: "Delay", color: "bg-blue-500", icon: <Clock /> },
-
-    { name: "Theme customization", color: "bg-indigo-500", icon: <FiCode /> },
-    { name: "Store build or redesign", color: "bg-blue-500", icon: <FiHome /> },
-    { name: "Store migration", color: "bg-teal-500", icon: <FiShuffle /> },
-    {
-      name: "Website and marketing content",
-      color: "bg-pink-500",
-      icon: <FiFileText />,
-    },
-    { name: "SEO", color: "bg-green-500", icon: <FiSearch /> },
-    {
-      name: "Site performance and speed",
-      color: "bg-yellow-500",
-      icon: <FiTrendingUp />,
-    },
-    {
-      name: "Custom apps and integrations",
-      color: "bg-red-500",
-      icon: <FiCpu />,
-    },
-    {
-      name: "Store settings configuration",
-      color: "bg-orange-500",
-      icon: <FiSettings />,
-    },
-    {
-      name: "Product and collection setup",
-      color: "bg-lime-500",
-      icon: <FiBox />,
-    },
-    {
-      name: "Social media marketing",
-      color: "bg-cyan-500",
-      icon: <FiShare2 />,
-    },
-    { name: "Product descriptions", color: "bg-violet-500", icon: <FiType /> },
-    {
-      name: "Search engine advertising",
-      color: "bg-emerald-500",
-      icon: <FiGlobe />,
-    },
-    {
-      name: "POS setup and migration",
-      color: "bg-fuchsia-500",
-      icon: <FiCreditCard />,
-    },
-    { name: "Custom domain setup", color: "bg-rose-500", icon: <FiLink /> },
-    {
-      name: "Conversion rate optimization",
-      color: "bg-sky-500",
-      icon: <FiBarChart2 />,
-    },
-    {
-      name: "Analytics and tracking",
-      color: "bg-slate-500",
-      icon: <FiActivity />,
-    },
-    { name: "Sales channel setup", color: "bg-amber-500", icon: <FiGlobe /> },
-    {
-      name: "Logo and visual branding",
-      color: "bg-purple-400",
-      icon: <FiImage />,
-    },
-    {
-      name: "Business strategy guidance",
-      color: "bg-green-400",
-      icon: <FiBriefcase />,
-    },
-    {
-      name: "Website audit and optimization strategy",
-      color: "bg-indigo-400",
-      icon: <FiClipboard />,
-    },
-    { name: "Sales tax guidance", color: "bg-orange-400", icon: <FiPercent /> },
-    { name: "Product photography", color: "bg-pink-400", icon: <FiCamera /> },
-    { name: "Email marketing", color: "bg-blue-400", icon: <FiMail /> },
-    { name: "3D modelling", color: "bg-teal-400", icon: <FiBox3D /> },
-    { name: "Banner ads", color: "bg-yellow-400", icon: <FiMonitor /> },
-    { name: "Video and illustrations", color: "bg-red-400", icon: <FiVideo /> },
-    { name: "Content marketing", color: "bg-lime-400", icon: <FiBookOpen /> },
-    {
-      name: "Product sourcing guidance",
-      color: "bg-fuchsia-400",
-      icon: <FiPackage />,
-    },
+    { name: "Email", color: "bg-purple-500", icon: <FiMail /> },
+    { name: "Gmail", color: "bg-red-500", icon: <Mail /> },
   ];
 
   const availableData = [
@@ -311,9 +259,6 @@ const ShopifyScenariosPage = () => {
   const handleSave = () => {
     if (editingBranch !== null) {
       const updatedBranches = [...routerBranches];
-      if (!updatedBranches[editingBranch].modules) {
-        updatedBranches[editingBranch].modules = [];
-      }
 
       let type = "";
       let description = "";
@@ -329,20 +274,96 @@ const ShopifyScenariosPage = () => {
         description = "Send an email via Gmail";
       }
 
-      updatedBranches[editingBranch].modules.push({
-        app: selectedApp,
-        type,
-        description,
-        id: Date.now(),
-      });
+      if (editingModuleId) {
+        // 🔄 Update existing
+        const moduleIndex = updatedBranches[editingBranch].modules.findIndex(
+          (m) => m.id === editingModuleId
+        );
+        if (moduleIndex >= 0) {
+          updatedBranches[editingBranch].modules[moduleIndex] = {
+            ...updatedBranches[editingBranch].modules[moduleIndex],
+            app: selectedApp,
+            type,
+            description,
+            connection: selectedConnection,
+            template: selectedTemplate,
+            subject,
+            cc: ccList,
+            bcc: bccList,
+          };
+        }
+      } else {
+        // ➕ Add new
+        updatedBranches[editingBranch].modules.push({
+          app: selectedApp,
+          type,
+          description,
+          id: Date.now(),
+          connection: selectedConnection,
+          template: selectedTemplate,
+          subject,
+          cc: ccList,
+          bcc: bccList,
+        });
+      }
 
       setRouterBranches(updatedBranches);
       setEditingBranch(null);
+      setEditingModuleId(null); // reset
     }
 
     setSelectedModule(null);
     setOpen(false);
     setSelectedApp(null);
+  };
+
+ const handleCancel = () => {
+  setSelectedApp(null);
+  setEditingBranch(null);
+  setEditingModuleId(null);
+
+  setSelectedConnection("");
+  setSelectedTemplate("");
+  setSubject("");
+  setCcList([]);
+  setBccList([]);
+  setCcInput("");
+  setBccInput("");
+};
+
+
+  const handleRemoveModule = (branchIndex, moduleId) => {
+  const updatedBranches = [...routerBranches];
+  updatedBranches[branchIndex].modules = updatedBranches[branchIndex].modules.filter(
+    (m) => m.id !== moduleId
+  );
+  setRouterBranches(updatedBranches);
+
+  // 🔄 Reset form states when module removed
+  setSelectedConnection("");
+  setSelectedTemplate("");
+  setSubject("");
+  setCcList([]);
+  setBccList([]);
+  setCcInput("");
+  setBccInput("");
+};
+
+  const [editingModuleId, setEditingModuleId] = useState(null);
+
+  const handleEditModule = (branchIndex, module) => {
+    setSelectedBranchIndex(branchIndex);
+    setEditingBranch(branchIndex);
+    setEditingModuleId(module.id); // 👈 id store kar li
+    setOpen(true);
+
+    // load saved values
+    setSelectedApp(module.app);
+    setSelectedConnection(module.connection || "");
+    setSelectedTemplate(module.template || "");
+    setSubject(module.subject || "");
+    setCcList(module.cc || []);
+    setBccList(module.bcc || []);
   };
 
   const handleRouterHover = () => {
@@ -415,7 +436,10 @@ const ShopifyScenariosPage = () => {
           <div className="flex items-center justify-center w-full">
             {/* Webhook Module */}
             <div className="relative">
-              <div className="w-48 h-48 hover:border-red-600 cursor-pointer flex flex-col items-center justify-center rounded-full bg-red-500 text-white shadow-lg border-4 border-red-300 relative">
+              <div
+                onClick={() => setShowWebhookInfo(true)}
+                className="w-48 h-48 hover:border-red-600 cursor-pointer flex flex-col items-center justify-center rounded-full bg-red-500 text-white shadow-lg border-4 border-red-300 relative"
+              >
                 <Cloud className="w-16 h-16 mb-1" />
                 <div className="absolute -top-2 -right-2 w-8 h-8 bg-red-600 text-white rounded-full flex items-center justify-center text-sm font-bold border-2 border-white">
                   1
@@ -514,7 +538,24 @@ const ShopifyScenariosPage = () => {
                                 <div className="absolute -top-1 -right-1 w-6 h-6 bg-black bg-opacity-80 text-white rounded-full flex items-center justify-center text-xs font-bold border border-white">
                                   {3 + moduleIndex}
                                 </div>
+                                <div className="mt-2 text-center">
+                                  <p className="text-xs font-medium text-gray-800">
+                                    {module.app.name}
+                                  </p>
+                                  <p className="text-[10px] text-gray-500">
+                                    {module.connection
+                                      ? connections
+                                          .find(
+                                            (c) => c._id === module.connection
+                                          )
+                                          ?.provider.toUpperCase()
+                                      : ""}
+                                  </p>
+                                </div>
+
+                                {/* Edit/Remove Icons */}
                               </div>
+
                               <div className="mt-2 text-center">
                                 <p className="text-xs font-medium text-gray-800">
                                   {module.app.name}
@@ -522,6 +563,22 @@ const ShopifyScenariosPage = () => {
                                 <div className="inline-block px-1 py-0.5 bg-gray-200 text-gray-600 text-xs rounded">
                                   {3 + moduleIndex}
                                 </div>
+                                <div className="absolute -top-3 -left-3 flex space-x-2">
+                               <button
+  onClick={() => handleEditModule(branchIndex, module)}
+  className="text-blue-500  p-1 rounded-full hover:text-blue-800"
+  title="Edit"
+>
+  <FiEdit className="w-4 h-4" />
+</button>
+                                </div>
+                               <button
+  onClick={() => handleRemoveModule(branchIndex, module.id)}
+  className="text-red-500 p-1 rounded-full hover:text-red-600"
+  title="Remove"
+>
+  <FiTrash2 className="w-4 h-4" />
+</button>
                               </div>
 
                               <button
@@ -705,167 +762,171 @@ const ShopifyScenariosPage = () => {
                   </>
                 ) : (
                   <>
-  {/* Select Connection */}
-  <div className="mb-4">
-    <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-      <FiMail className="mr-2 text-gray-500" /> Select Connection
-    </label>
-    <div className="flex items-center border rounded-lg px-2 py-1 focus-within:ring-2 focus-within:ring-purple-500">
-      {selectedConnection ? (
-        <span className="flex items-center bg-purple-100 text-purple-700 text-sm px-2 py-1 rounded-full mr-2">
-          <FiMail className="mr-1" />
-          {connections.find((c) => c._id === selectedConnection)?.provider.toUpperCase()} -{" "}
-          {connections.find((c) => c._id === selectedConnection)?.email ||
-            connections.find((c) => c._id === selectedConnection)?.name}
-          <button
-            type="button"
-            onClick={() => setSelectedConnection("")}
-            className="ml-2 text-xs text-red-500 hover:text-red-700"
-          >
-            <FiUserX />
-          </button>
-        </span>
-      ) : (
-        <select
-          value={selectedConnection}
-          onChange={(e) => setSelectedConnection(e.target.value)}
-          className="flex-1 border-none outline-none text-sm py-1 px-2 bg-transparent"
-        >
-          <option value="">-- Select Connection --</option>
-          {connections
-            .filter(
-              (c) =>
-                c.provider === "gmail" ||
-                c.provider === "outlook" ||
-                c.provider === "smtp"
-            )
-            .map((c) => (
-              <option key={c._id} value={c._id}>
-                {c.provider.toUpperCase()} - {c.email || c.name}
-              </option>
-            ))}
-        </select>
-      )}
-    </div>
-  </div>
+                    {/* Select Connection */}
+                    <div className="mb-4">
+                      <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                        <FiMail className="mr-2 text-gray-500" /> Select
+                        Connection
+                      </label>
+                      <div className="flex items-center border rounded-lg px-2 py-1 focus-within:ring-2 focus-within:ring-purple-500">
+                        {selectedConnection ? (
+                          <span className="flex items-center bg-purple-100 text-purple-700 text-sm px-2 py-1 rounded-full mr-2">
+                            <FiMail className="mr-1" />
+                            {connections
+                              .find((c) => c._id === selectedConnection)
+                              ?.provider.toUpperCase()}{" "}
+                            -{" "}
+                            {connections.find(
+                              (c) => c._id === selectedConnection
+                            )?.email ||
+                              connections.find(
+                                (c) => c._id === selectedConnection
+                              )?.name}
+                            <button
+                              type="button"
+                              onClick={() => setSelectedConnection("")}
+                              className="ml-2 text-xs text-red-500 hover:text-red-700"
+                            >
+                              <FiUserX />
+                            </button>
+                          </span>
+                        ) : (
+                          <select
+                            value={selectedConnection}
+                            onChange={(e) =>
+                              setSelectedConnection(e.target.value)
+                            }
+                            className="flex-1 border-none outline-none text-sm py-1 px-2 bg-transparent"
+                          >
+                            <option value="">-- Select Connection --</option>
 
-  {/* Select Template */}
-  <div className="mb-4">
-    <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-      <FiFileText className="mr-2 text-gray-500" /> Select Template
-    </label>
-    <div className="flex items-center border rounded-lg px-2 py-1 focus-within:ring-2 focus-within:ring-purple-500">
-      {selectedTemplate ? (
-        <span className="flex items-center bg-blue-100 text-blue-700 text-sm px-2 py-1 rounded-full mr-2">
-          <FiFileText className="mr-1" />
-          {templates.find((t) => t._id === selectedTemplate)?.name}
-          <button
-            type="button"
-            onClick={() => setSelectedTemplate("")}
-            className="ml-2 text-xs text-red-500 hover:text-red-700"
-          >
-            <FiUserX />
-          </button>
-        </span>
-      ) : (
-        <select
-          value={selectedTemplate}
-          onChange={(e) => setSelectedTemplate(e.target.value)}
-          className="flex-1 border-none outline-none text-sm py-1 px-2 bg-transparent"
-        >
-          <option value="">-- Select Template --</option>
-          {templates
-            .filter((t) => t.service === selectedApp?.name)
-            .map((t) => (
-              <option key={t._id} value={t._id}>
-                {t.name}
-              </option>
-            ))}
-        </select>
-      )}
-    </div>
-  </div>
+                            {connections
+                              .filter((c) => {
+                                if (selectedApp?.name === "Email") {
+                                  return (
+                                    c.provider === "smtp" ||
+                                    c.provider === "outlook"
+                                  );
+                                }
+                                if (selectedApp?.name === "Gmail") {
+                                  return c.provider === "gmail";
+                                }
+                                return false;
+                              })
+                              .map((c) => (
+                                <option key={c._id} value={c._id}>
+                                  {c.provider.toUpperCase()} -{" "}
+                                  {c.email || c.name}
+                                </option>
+                              ))}
+                          </select>
+                        )}
+                      </div>
+                    </div>
 
-  {/* Subject */}
-  <div className="mb-4">
-    <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-      <FiFileText className="mr-2 text-gray-500" /> Subject
-    </label>
-    <input
-      type="text"
-      value={subject}
-      onChange={(e) => setSubject(e.target.value)}
-      className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-      placeholder="Enter subject"
-    />
-  </div>
+                    {/* Select Template */}
+                    <div className="mb-4">
+                      <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                        <FiFileText className="mr-2 text-gray-500" /> Select
+                        Template
+                      </label>
+                      <div className="flex items-center border rounded-lg px-2 py-1 focus-within:ring-2 focus-within:ring-purple-500">
+                        {selectedTemplate ? (
+                          <span className="flex items-center bg-blue-100 text-blue-700 text-sm px-2 py-1 rounded-full mr-2">
+                            <FiFileText className="mr-1" />
+                            {selectedTemplate === "email"
+                              ? "Email"
+                              : "Follow up"}
+                            <button
+                              type="button"
+                              onClick={() => setSelectedTemplate("")}
+                              className="ml-2 text-xs text-red-500 hover:text-red-700"
+                            >
+                              <FiUserX />
+                            </button>
+                          </span>
+                        ) : (
+                          <select
+                            value={selectedTemplate}
+                            onChange={(e) =>
+                              setSelectedTemplate(e.target.value)
+                            }
+                            className="flex-1 border-none outline-none text-sm py-1 px-2 bg-transparent"
+                          >
+                            <option value="">-- Select Template --</option>
+                            <option value="email">Email</option>
+                            <option value="followup">Follow up</option>
+                          </select>
+                        )}
+                      </div>
+                    </div>
 
-  {/* CC */}
-  <div className="mb-4">
-    <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-      <FiUsers className="mr-2 text-gray-500" /> CC
-    </label>
-    <div className="flex flex-wrap items-center border rounded-lg px-2 py-1 focus-within:ring-2 focus-within:ring-purple-500">
-      {ccList.map((email, index) => (
-        <span
-          key={index}
-          className="flex items-center bg-blue-100 text-blue-700 text-sm px-2 py-1 rounded-full mr-2 mb-1"
-        >
-          <FiMail className="mr-1" />
-          {email}
-          <button
-            type="button"
-            onClick={() => handleRemoveEmail("cc", index)}
-            className="ml-1 text-xs text-red-500 hover:text-red-700"
-          >
-            <FiUserX />
-          </button>
-        </span>
-      ))}
-      <input
-        type="text"
-        value={ccInput}
-        onChange={(e) => setCcInput(e.target.value)}
-        onKeyDown={(e) => handleAddEmail(e, "cc")}
-        className="flex-1 outline-none text-sm py-1 px-2"
-        placeholder="Type and press Enter"
-      />
-    </div>
-  </div>
+                    {/* CC */}
+                    <div className="mb-4">
+                      <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                        <FiUsers className="mr-2 text-gray-500" /> CC
+                      </label>
+                      <div className="flex flex-wrap items-center border rounded-lg px-2 py-1 focus-within:ring-2 focus-within:ring-purple-500">
+                        {ccList.map((email, index) => (
+                          <span
+                            key={index}
+                            className="flex items-center bg-blue-100 text-blue-700 text-sm px-2 py-1 rounded-full mr-2 mb-1"
+                          >
+                            <FiMail className="mr-1" />
+                            {email}
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveEmail("cc", index)}
+                              className="ml-1 text-xs text-red-500 hover:text-red-700"
+                            >
+                              <FiUserX />
+                            </button>
+                          </span>
+                        ))}
+                        <input
+                          type="text"
+                          value={ccInput}
+                          onChange={(e) => setCcInput(e.target.value)}
+                          onKeyDown={(e) => handleAddEmail(e, "cc")}
+                          className="flex-1 outline-none text-sm py-1 px-2"
+                          placeholder="Type and press Enter"
+                        />
+                      </div>
+                    </div>
 
-  {/* BCC */}
-  <div>
-    <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-      <FiUsers className="mr-2 text-gray-500" /> BCC
-    </label>
-    <div className="flex flex-wrap items-center border rounded-lg px-2 py-1 focus-within:ring-2 focus-within:ring-purple-500">
-      {bccList.map((email, index) => (
-        <span
-          key={index}
-          className="flex items-center bg-green-100 text-green-700 text-sm px-2 py-1 rounded-full mr-2 mb-1"
-        >
-          <FiMail className="mr-1" />
-          {email}
-          <button
-            type="button"
-            onClick={() => handleRemoveEmail("bcc", index)}
-            className="ml-1 text-xs text-red-500 hover:text-red-700"
-          >
-            <FiUserX />
-          </button>
-        </span>
-      ))}
-      <input
-        type="text"
-        value={bccInput}
-        onChange={(e) => setBccInput(e.target.value)}
-        onKeyDown={(e) => handleAddEmail(e, "bcc")}
-        className="flex-1 outline-none text-sm py-1 px-2"
-        placeholder="Type and press Enter"
-      />
-    </div>
-  </div>
-</>
+                    {/* BCC */}
+                    <div>
+                      <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                        <FiUsers className="mr-2 text-gray-500" /> BCC
+                      </label>
+                      <div className="flex flex-wrap items-center border rounded-lg px-2 py-1 focus-within:ring-2 focus-within:ring-purple-500">
+                        {bccList.map((email, index) => (
+                          <span
+                            key={index}
+                            className="flex items-center bg-green-100 text-green-700 text-sm px-2 py-1 rounded-full mr-2 mb-1"
+                          >
+                            <FiMail className="mr-1" />
+                            {email}
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveEmail("bcc", index)}
+                              className="ml-1 text-xs text-red-500 hover:text-red-700"
+                            >
+                              <FiUserX />
+                            </button>
+                          </span>
+                        ))}
+                        <input
+                          type="text"
+                          value={bccInput}
+                          onChange={(e) => setBccInput(e.target.value)}
+                          onKeyDown={(e) => handleAddEmail(e, "bcc")}
+                          className="flex-1 outline-none text-sm py-1 px-2"
+                          placeholder="Type and press Enter"
+                        />
+                      </div>
+                    </div>
+                  </>
                 )}
               </div>
 
@@ -881,6 +942,54 @@ const ShopifyScenariosPage = () => {
                   className="px-4 py-2 text-sm bg-purple-600 text-white rounded hover:bg-purple-700"
                 >
                   Save
+                </button>
+              </div>
+            </div>
+          )}
+          {showWebhookInfo && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
+              <div className="bg-white rounded-lg shadow-lg w-[500px] p-6 relative transform animate-slideUp">
+                {/* Close Button */}
+                <button
+                  onClick={() => setShowWebhookInfo(false)}
+                  className="absolute top-3 right-3 text-gray-400 hover:text-gray-700 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+
+                {/* Heading */}
+                <h2 className="text-lg font-semibold text-gray-800 mb-4">
+                  Webhook Mailhook Instructions
+                </h2>
+
+                {/* Instructions */}
+                <p className="text-sm text-gray-600 mb-4 leading-relaxed">
+                  This is your <strong>email forwarding mailhook</strong>.{" "}
+                  <br />
+                  Please copy the URL below and paste it into your{" "}
+                  <strong>mail forwarding settings</strong> in your email
+                  provider. <br />
+                  All forwarded emails will be delivered here.
+                </p>
+
+                {/* Webhook URL */}
+                {loading ? (
+                  <p className="text-gray-500 text-sm">Loading webhook...</p>
+                ) : (
+                  <div className="flex items-center bg-gray-100 border rounded px-3 py-2 mb-4">
+                    <CiLink className="mr-2 text-gray-600" />
+                    <span className="text-sm text-gray-800 font-mono break-all select-all">
+                      {webhookUrl}
+                    </span>
+                  </div>
+                )}
+
+                {/* Copy Button */}
+                <button
+                  onClick={handleCopy}
+                  className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors text-sm"
+                >
+                  {copied ? "Copied!" : "Copy Webhook URL"}
                 </button>
               </div>
             </div>
