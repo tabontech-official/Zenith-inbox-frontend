@@ -25,6 +25,11 @@ function App() {
         <Route path="/scenarios/others/:id" element={<OthersScenariosPage />} />
 
         <Route path="/scenarios/shopify" element={<ShopifyScenariosPage />} />
+        <Route
+          path="/scenarios/shopify/:id"
+          element={<ShopifyScenariosPage />}
+        />
+
         <Route path="/scenarios/add" element={<BuildScenario />} />
         <Route path="/templates" element={<Template />} />
         <Route path="/scenarios/all" element={<AllScenariosPage />} />

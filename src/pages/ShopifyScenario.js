@@ -50,8 +50,12 @@ import {
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import axios from "axios";
+import { useNavigate, useParams } from "react-router-dom";
+import toast from "react-hot-toast";
 
 const ShopifyScenariosPage = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [selectedApp, setSelectedApp] = useState(null);
   const [selectedModule, setSelectedModule] = useState(null);
@@ -68,7 +72,7 @@ const ShopifyScenariosPage = () => {
   const [editingBranch, setEditingBranch] = useState(null);
   const [editorValue, setEditorValue] = useState("");
   const [activeConditionTarget, setActiveConditionTarget] = useState(null);
-  const [connections, setConnections] = useState([]); // fetched connections
+  const [connections, setConnections] = useState([]);
   const [selectedConnection, setSelectedConnection] = useState("");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
@@ -85,7 +89,9 @@ const ShopifyScenariosPage = () => {
   const [ccInput, setCcInput] = useState("");
   const [bccInput, setBccInput] = useState("");
   const [showWebhookInfo, setShowWebhookInfo] = useState(false);
-
+  const [scenarioId, setScenarioId] = useState(null);
+  const [scenarioName, setScenarioName] = useState("");
+  const [scenarioDescription, setScenarioDescription] = useState("");
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -95,7 +101,7 @@ const ShopifyScenariosPage = () => {
       try {
         const userId = localStorage.getItem("userid");
         const res = await axios.get(
-          `https://email-syncing-backend.vercel.app/auth/getUsers/${userId}`
+          `http://localhost:5000/auth/getUsers/${userId}`
         );
         setUser(res.data.data);
       } catch (error) {
@@ -145,7 +151,7 @@ const ShopifyScenariosPage = () => {
     const fetchConnections = async () => {
       try {
         const res = await fetch(
-          `https://email-syncing-backend.vercel.app/auth/getConnection/${localStorage.getItem(
+          `http://localhost:5000/auth/getConnection/${localStorage.getItem(
             "userid"
           )}`
         );
@@ -163,7 +169,7 @@ const ShopifyScenariosPage = () => {
       const fetchTemplates = async () => {
         try {
           const res = await fetch(
-            `https://email-syncing-backend.vercel.app/template/all?userId=${localStorage.getItem(
+            `http://localhost:5000/template/all?userId=${localStorage.getItem(
               "userid"
             )}&platform=shopify&service=${selectedApp.name}`
           );
@@ -195,9 +201,9 @@ const ShopifyScenariosPage = () => {
   }, []);
 
   const apps = [
-    { name: "Delay", color: "bg-blue-500", icon: <Clock /> },
-    { name: "Email", color: "bg-purple-500", icon: <FiMail /> },
-    { name: "Gmail", color: "bg-red-500", icon: <Mail /> },
+    { name: "Delay", color: "bg-blue-500", icon: "Delay" },
+    { name: "Email", color: "bg-purple-500", icon: "Email" },
+    { name: "Gmail", color: "bg-red-500", icon: "Gmail" },
   ];
 
   const availableData = [
@@ -223,41 +229,78 @@ const ShopifyScenariosPage = () => {
     },
   ];
 
-  const handleInsertField = (fieldName) => {
-    if (activeConditionTarget === "input") {
-      const inputEl = document.getElementById("condition-input");
-      if (inputEl) {
-        inputEl.value = inputEl.value + ` {{${fieldName}}} `;
-      }
-    } else if (activeConditionTarget === "quill") {
-      setEditorValue((prev) => prev + ` {{${fieldName}}} `);
-    }
-    setShowDataPanel(false);
+  const handleSaveScenario = async () => {
+    const payload = {
+      userId: localStorage.getItem("userid"),
+      name: scenarioName,
+      description: scenarioDescription,
+      type: "shopify",
+      routerBranches,
+    };
+
+    const url = scenarioId
+      ? `http://localhost:5000/scenario/detail/${scenarioId}`
+      : `http://localhost:5000/scenario`;
+
+    await fetch(url, {
+      method: scenarioId ? "PUT" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    toast.success("Shopify scenario saved successfully!");
+    navigate("/scenarios/all");
+  };
+  const iconMap = {
+    Delay: <Clock />,
+    Email: <FiMail />,
+    Gmail: <Mail />,
+    Webhooks: <Cloud />,
+    Router: <GitBranch />,
   };
 
   useState(() => {
     setSavedModule({
-      app: { name: "Webhooks", color: "bg-red-500", icon: <Cloud /> },
+      app: { name: "Webhooks", color: "bg-red-500", icon: "Webhooks" },
       type: "Custom mailhook",
       description: "Custom mailhook",
     });
     setSavedSecondModule({
-      app: { name: "Router", color: "bg-green-400", icon: <GitBranch /> },
+      app: { name: "Router", color: "bg-green-400", icon: "Router" },
       type: "Router",
       description: "Route to different paths",
     });
     setSavedThirdModule({
-      app: { name: "Gmail", color: "bg-red-500", icon: <Mail /> },
+      app: { name: "Gmail", color: "bg-red-500", icon: "Gmail" },
       type: "Send an Email",
       description: "Send an email",
     });
     setShowRouterBranches(true);
     setRouterBranches([
-      // { id: 1, hasModule: false, condition: null, modules: [] },
       { id: 2, hasModule: false, condition: null, modules: [] },
     ]);
   }, []);
-
+  useEffect(() => {
+    if (id) {
+      const fetchScenario = async () => {
+        try {
+          const res = await fetch(
+            `http://localhost:5000/scenario/detail/${id}`
+          );
+          const data = await res.json();
+          if (data) {
+            setScenarioId(data._id);
+            setScenarioName(data.name || "");
+            setScenarioDescription(data.description || "");
+            setRouterBranches(data.routerBranches || []);
+          }
+        } catch (err) {
+          console.error("Error fetching scenario:", err);
+        }
+      };
+      fetchScenario();
+    }
+  }, [id]);
   const handleSave = () => {
     if (editingBranch !== null) {
       const updatedBranches = [...routerBranches];
@@ -277,17 +320,20 @@ const ShopifyScenariosPage = () => {
       }
 
       if (editingModuleId) {
-        // 🔄 Update existing module
         const moduleIndex = updatedBranches[editingBranch].modules.findIndex(
           (m) => m.id === editingModuleId
         );
         if (moduleIndex >= 0) {
           updatedBranches[editingBranch].modules[moduleIndex] = {
             ...updatedBranches[editingBranch].modules[moduleIndex],
-            app: selectedApp,
+            app: {
+              name: selectedApp.name,
+              color: selectedApp.color,
+              icon: selectedApp.name,
+            },
             type,
             description,
-            connection: selectedConnection,
+            connectionId: selectedConnection,
             template: selectedTemplate,
             subject,
             cc: ccList,
@@ -300,10 +346,14 @@ const ShopifyScenariosPage = () => {
         // ➕ Add new module
         updatedBranches[editingBranch].modules.push({
           id: Date.now(),
-          app: selectedApp,
+          app: {
+            name: selectedApp.name,
+            color: selectedApp.color,
+            icon: selectedApp.name,
+          },
           type,
           description,
-          connection: selectedConnection,
+          connectionId: selectedConnection,
           template: selectedTemplate,
           subject,
           cc: ccList,
@@ -318,7 +368,6 @@ const ShopifyScenariosPage = () => {
       setEditingModuleId(null);
     }
 
-    // Reset UI states
     setSelectedModule(null);
     setOpen(false);
     setSelectedApp(null);
@@ -375,7 +424,7 @@ const ShopifyScenariosPage = () => {
 
     // load saved values
     setSelectedApp(module.app);
-    setSelectedConnection(module.connection || "");
+    setSelectedConnection(module.connectionId || "");
     setSelectedTemplate(module.template || "");
     setSubject(module.subject || "");
     setCcList(module.cc || []);
@@ -442,12 +491,42 @@ const ShopifyScenariosPage = () => {
       </div>
 
       <div className="flex-1 min-h-screen bg-gray-50 font-sans text-gray-800 flex flex-col">
-        <div className="p-6">
-          <button className="flex items-center px-4 py-2 text-sm text-gray-700 bg-white border border-gray-200 rounded-md shadow-sm hover:bg-gray-100">
-            <ArrowLeft className="mr-2 w-4 h-4" />
-            New scenario
-            <Settings className="ml-2 w-4 h-4" />
-          </button>
+        <div className="border-b bg-white shadow-sm">
+          <div className="p-6 flex items-center justify-between">
+            <div className="flex flex-col w-2/3">
+              <h1 className="text-xl font-medium text-gray-800 mb-2">
+                {scenarioId ? "Edit Scenario" : "Create New Scenario"}
+              </h1>
+              <p className="text-sm text-gray-500 mb-4">
+                Give your scenario a clear name so you can identify it later.
+              </p>
+
+              <input
+                type="text"
+                value={scenarioName}
+                onChange={(e) => setScenarioName(e.target.value)}
+                placeholder="Enter scenario name"
+                className="px-4 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 w-full"
+              />
+            </div>
+
+            <div className="flex flex-col space-y-2 items-end">
+              <button
+                className="flex items-center px-4 py-2 text-sm text-gray-700 bg-white border border-gray-200 rounded-md shadow-sm hover:bg-gray-100 w-full"
+                onClick={() => navigate(-1)}
+              >
+                <ArrowLeft className="mr-2 w-4 h-4" />
+                Back
+              </button>
+
+              <button
+                onClick={handleSaveScenario}
+                className="flex items-center justify-center px-4 py-2 text-sm bg-green-600 text-white rounded-md shadow hover:bg-green-700 w-full"
+              >
+                {scenarioId ? "Update Scenario" : "Save Scenario"}
+              </button>
+            </div>
+          </div>
         </div>
 
         <div className="flex-1 flex items-center justify-center relative">
@@ -549,7 +628,7 @@ const ShopifyScenariosPage = () => {
                               <div
                                 className={`w-24 h-24 flex flex-col items-center justify-center rounded-full ${module.app.color} text-white shadow-lg border-2 border-opacity-50`}
                               >
-                                {React.cloneElement(module.app.icon, {
+                                {React.cloneElement(iconMap[module.app.icon], {
                                   className: "w-8 h-8",
                                 })}
                                 <div className="absolute -top-1 -right-1 w-6 h-6 bg-black bg-opacity-80 text-white rounded-full flex items-center justify-center text-xs font-bold border border-white">
@@ -651,7 +730,7 @@ const ShopifyScenariosPage = () => {
                         <div
                           className={`w-8 h-8 flex items-center justify-center rounded-full text-white ${app.color}`}
                         >
-                          {app.icon}
+                          {iconMap[app.icon]}
                         </div>
                         <span className="ml-3 text-sm text-gray-700">
                           {app.name}
@@ -768,9 +847,10 @@ const ShopifyScenariosPage = () => {
                             {selectedTemplate ? (
                               <span className="flex items-center bg-blue-100 text-blue-700 text-sm px-3 py-2 rounded-full w-full">
                                 <FiFileText className="mr-2" />
-                                {selectedTemplate === "email"
-                                  ? "Email"
-                                  : "Follow up"}
+                                {templates.find(
+                                  (tpl) => tpl._id === selectedTemplate
+                                )?.name || "Unknown"}
+
                                 <button
                                   type="button"
                                   onClick={() => setSelectedTemplate("")}
@@ -785,11 +865,13 @@ const ShopifyScenariosPage = () => {
                                 onChange={(e) =>
                                   setSelectedTemplate(e.target.value)
                                 }
-                                className="w-full border-none outline-none text-sm py-2 px-3 bg-transparent"
                               >
                                 <option value="">-- Select Template --</option>
-                                <option value="email">Email</option>
-                                <option value="followup">Follow up</option>
+                                {templates.slice(0, 3).map((tpl) => (
+                                  <option key={tpl._id} value={tpl._id}>
+                                    {tpl.name.split(" - ").pop()}
+                                  </option>
+                                ))}
                               </select>
                             )}
                           </div>

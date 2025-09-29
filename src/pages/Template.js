@@ -5,6 +5,7 @@ import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { ChevronDownIcon, ChevronRightIcon } from "@heroicons/react/24/solid"; // 👈 add this
 
 const SERVICES = [
   "Troubleshooting",
@@ -41,6 +42,7 @@ const SERVICES = [
 export default function Template() {
   const [templates, setTemplates] = useState([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false); // 👈 collapse state
 
   const [editingId, setEditingId] = useState(null);
   const [platform, setPlatform] = useState("");
@@ -49,6 +51,7 @@ export default function Template() {
   const [conditions, setConditions] = useState([
     { field: "subject", operator: "contains", value: "" },
   ]);
+  const [sequenceType, setSequenceType] = useState("");
 
   const [deleteId, setDeleteId] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -56,7 +59,7 @@ export default function Template() {
   const fetchTemplates = async () => {
     try {
       const userId = localStorage.getItem("userid");
-      const res = await axios.get("https://email-syncing-backend.vercel.app/template/all", {
+      const res = await axios.get("http://localhost:5000/template/all", {
         params: { userId },
       });
       setTemplates(res.data);
@@ -88,6 +91,7 @@ export default function Template() {
     setEditingId(template._id);
     setPlatform(template.platform);
     setService(template.service || "");
+    setSequenceType(template.name || "-"); // 👈 here
     setConditions(
       template.conditions?.length > 0
         ? template.conditions
@@ -104,7 +108,7 @@ export default function Template() {
 
   const handleDelete = async () => {
     try {
-      await axios.delete(`https://email-syncing-backend.vercel.app/template/delete/${deleteId}`);
+      await axios.delete(`http://localhost:5000/template/delete/${deleteId}`);
       toast.success(" Template deleted successfully!");
       fetchTemplates();
     } catch (err) {
@@ -122,12 +126,12 @@ export default function Template() {
 
       if (editingId) {
         await axios.put(
-          `https://email-syncing-backend.vercel.app/template/update/${editingId}`,
+          `http://localhost:5000/template/update/${editingId}`,
           payload
         );
         toast.success(" Template updated successfully!");
       } else {
-        await axios.post("https://email-syncing-backend.vercel.app/template/create", payload);
+        await axios.post("http://localhost:5000/template/create", payload);
         toast.success(" Template created successfully!");
       }
 
@@ -146,7 +150,7 @@ export default function Template() {
 
   const handleToggle = async (id, currentStatus) => {
     try {
-      await axios.put(`https://email-syncing-backend.vercel.app/template/update/${id}`, {
+      await axios.put(`http://localhost:5000/template/update/${id}`, {
         active: !currentStatus,
       });
       toast.info(
@@ -196,91 +200,122 @@ export default function Template() {
           </div>
         </header>
 
-        {/* Table */}
-        <main className="container mx-auto p-8">
-          <div className="bg-white shadow rounded-lg overflow-hidden">
-            <table className="w-full border-collapse">
-              <thead className="bg-gray-100 border-b">
-                <tr>
-                  {[
-                    "Type",
-                    "Sequence",
-                    "Service",
-                    "Conditions",
-                    "Template",
-                    "Active",
-                    "Actions",
-                  ].map((h) => (
-                    <th
-                      key={h}
-                      className="p-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wide"
+       <main className="container mx-auto p-8">
+  <div className="bg-white shadow rounded-lg overflow-hidden">
+    <table className="w-full border-collapse">
+      <thead className="bg-gray-100 border-b">
+        <tr>
+          {[
+            "Service request",
+            "Sequence Type",
+            "Template",
+            "Status",
+            "Action",
+          ].map((h) => (
+            <th
+              key={h}
+              className="p-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wide"
+            >
+              {h}
+            </th>
+          ))}
+        </tr>
+      </thead>
+
+      <tbody>
+        {templates.length > 0 ? (
+          <>
+            {/* --- General Templates First --- */}
+            {templates
+              .filter((t) => t.service === "General")
+              .map((t) => (
+                <tr key={t._id} className="border-b hover:bg-gray-50">
+                  <td className="p-3 text-sm">{t.service}</td>
+                  <td className="p-3 text-sm">{t.name}</td>
+                  <td className="p-3 text-sm text-gray-600">
+                    {t.content.replace(/<[^>]+>/g, "").slice(0, 80)}...
+                  </td>
+                  <td className="p-3 text-center">
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={t.active}
+                        onChange={() => handleToggle(t._id, t.active)}
+                        className="sr-only peer"
+                        disabled={t.service === "General"}
+                      />
+                      <div className="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:bg-green-500 transition-colors"></div>
+                      <div className="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full shadow-md transition-transform peer-checked:translate-x-5"></div>
+                    </label>
+                  </td>
+                  <td className="p-3">
+                    <button
+                      onClick={() => handleEdit(t)}
+                      className="text-blue-600 hover:underline text-sm"
                     >
-                      {h}
-                    </th>
-                  ))}
+                      Edit
+                    </button>
+                  </td>
                 </tr>
-              </thead>
+              ))}
 
-              <tbody>
-                {templates.length > 0 ? (
-                  templates.map((t) => (
-                    <tr key={t._id} className="border-b hover:bg-gray-50">
-                      <td className="p-3 text-sm">{t.platform}</td>
-                      <td className="p-3 text-sm">{t.name || "-"}</td>
+            {/* --- Empty Spacer Row --- */}
+            {templates.some((t) => t.service === "General") && (
+              <tr>
+                <td colSpan="5" className="p-4"></td>
+              </tr>
+            )}
 
-                      <td className="p-3 text-sm">{t.service || "-"}</td>
-                      <td className="p-3 text-sm text-gray-600">
-                        {t.conditions
-                          ?.map((c) => `${c.field} ${c.operator} "${c.value}"`)
-                          .join(", ")}
-                      </td>
-                      <td className="p-3 text-sm text-gray-500 truncate max-w-xs">
-                        {t.content.replace(/<[^>]+>/g, "").slice(0, 60)}...
-                      </td>
-                      <td className="p-3 text-center">
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={t.active}
-                            onChange={() => handleToggle(t._id, t.active)}
-                            className="sr-only peer"
-                          />
-                          <div className="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:bg-green-500 transition-colors"></div>
-                          <div className="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full shadow-md transition-transform peer-checked:translate-x-5"></div>
-                        </label>
-                      </td>
-                      <td className="p-3 flex gap-3 justify-center">
-                        <button
-                          onClick={() => handleEdit(t)}
-                          className="text-blue-600 hover:underline text-sm"
-                        >
-                          Edit
-                        </button>
-                        {/* <button
-                          onClick={() => confirmDelete(t._id)}
-                          className="text-red-600 hover:underline text-sm"
-                        >
-                          Delete
-                        </button> */}
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td
-                      colSpan="6"
-                      className="p-6 text-center text-gray-500 text-sm"
+            {/* --- Other Templates --- */}
+            {templates
+              .filter((t) => t.service !== "General")
+              .map((t) => (
+                <tr key={t._id} className="border-b hover:bg-gray-50">
+                  <td className="p-3 text-sm">{t.service || "Any (general)"}</td>
+                  <td className="p-3 text-sm">{t.name}</td>
+                  <td className="p-3 text-sm text-gray-600">
+                    {t.content.replace(/<[^>]+>/g, "").slice(0, 80)}...
+                  </td>
+                  <td className="p-3 text-center">
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={t.active}
+                        onChange={() => handleToggle(t._id, t.active)}
+                        className="sr-only peer"
+                        disabled={t.service === "General"}
+                      />
+                      <div className="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:bg-green-500 transition-colors"></div>
+                      <div className="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full shadow-md transition-transform peer-checked:translate-x-5"></div>
+                    </label>
+                  </td>
+                  <td className="p-3">
+                    <button
+                      onClick={() => handleEdit(t)}
+                      className="text-blue-600 hover:underline text-sm"
                     >
-                      No templates found
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </main>
+                      Edit
+                    </button>
+                  </td>
+                </tr>
+              ))}
+          </>
+        ) : (
+          <tr>
+            <td
+              colSpan="5"
+              className="p-6 text-center text-gray-500 text-sm"
+            >
+              No templates found
+            </td>
+          </tr>
+        )}
+      </tbody>
+    </table>
+  </div>
+</main>
 
-        {/* Delete Modal */}
+
         {isDeleteModalOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn">
             <div className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md transform transition-all duration-300 ease-out animate-scaleIn">
@@ -340,111 +375,27 @@ export default function Template() {
             <div className="flex-1 overflow-y-auto p-6">
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Type
+                  Service Request
                 </label>
-                {/* <select
-                  value={platform}
-                  disabled
-                  onChange={(e) => setPlatform(e.target.value)}
-                  className="w-full p-2 border rounded-lg"
-                >
-                  <option value="">-- Select Type --</option>
-                  <option value="shopify">Shopify</option>
-                  <option value="other">Other</option>
-                </select> */}
                 <input
                   type="text"
-                  value={platform || "-"}
+                  value={service || "Any (general)"}
                   readOnly
-                  className="w-full p-2 border rounded-lg bg-gray-100 text-gray-700 "
+                  className="w-full p-2 border rounded-lg bg-gray-100 text-gray-700"
                 />
               </div>
 
-              {platform === "shopify" && (
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Service
-                  </label>
-                  {/* <select
-                    value={service}
-                    disabled
-                    onChange={(e) => setService(e.target.value)}
-                    className="w-full p-2 border rounded-lg"
-                  >
-                    <option value="">-- Select Service --</option>
-                    {SERVICES.map((srv) => (
-                      <option key={srv} value={srv}>
-                        {srv}
-                      </option>
-                    ))}
-                  </select> */}
-                  <input
-                    type="text"
-                    value={service || "-"}
-                    readOnly
-                    className="w-full p-2 border rounded-lg bg-gray-100 text-gray-700 "
-                  />
-                </div>
-              )}
-
-              {/* Conditions */}
-              {/* <div className="mb-6">
+              <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Conditions
+                  Sequence Type
                 </label>
-                {conditions.map((c, index) => (
-                  <div key={index} className="flex gap-2 mb-2">
-                    <select
-                      value={c.field}
-                      onChange={(e) =>
-                        updateCondition(index, "field", e.target.value)
-                      }
-                      className="p-2 border rounded-lg"
-                    >
-                      <option value="subject">Subject</option>
-                      <option value="body">Body</option>
-                      <option value="sender">Sender</option>
-                      <option value="recipient">Recipient</option>
-                    </select>
-
-                    <select
-                      value={c.operator}
-                      onChange={(e) =>
-                        updateCondition(index, "operator", e.target.value)
-                      }
-                      className="p-2 border rounded-lg"
-                    >
-                      <option value="equals">Equals</option>
-                      <option value="contains">Contains</option>
-                      <option value="not_equals">Not Equals</option>
-                      <option value="starts_with">Starts With</option>
-                    </select>
-
-                    <input
-                      type="text"
-                      value={c.value}
-                      onChange={(e) =>
-                        updateCondition(index, "value", e.target.value)
-                      }
-                      placeholder="Enter value..."
-                      className="flex-1 p-2 border rounded-lg"
-                    />
-
-                    <button
-                      onClick={() => removeCondition(index)}
-                      className="px-3 bg-red-500 text-white rounded-lg"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))}
-                <button
-                  onClick={addCondition}
-                  className="text-blue-600 text-sm font-medium"
-                >
-                  + Add Condition
-                </button>
-              </div> */}
+                <input
+                  type="text"
+                  value={sequenceType || "-"}
+                  readOnly
+                  className="w-full p-2 border rounded-lg bg-gray-100 text-gray-700"
+                />
+              </div>
 
               <div className="mb-8">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -459,7 +410,6 @@ export default function Template() {
               </div>
             </div>
 
-            {/* Actions */}
             <div className="p-4 border-t bg-white flex justify-end gap-3">
               <button
                 onClick={() => setIsDrawerOpen(false)}

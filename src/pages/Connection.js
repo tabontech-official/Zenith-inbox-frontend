@@ -28,7 +28,7 @@ const ConnectionsPage = () => {
           return;
         }
         const res = await axios.get(
-          `https://email-syncing-backend.vercel.app/auth/getConnection/${userId}`
+          `http://localhost:5000/auth/getConnection/${userId}`
         );
         setConnections(res.data);
       } catch (err) {

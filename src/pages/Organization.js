@@ -39,7 +39,7 @@ const Organization = () => {
       try {
         const userId = localStorage.getItem("userid");
         const res = await axios.get(
-          `https://email-syncing-backend.vercel.app/auth/getUsers/${userId}`
+          `http://localhost:5000/auth/getUsers/${userId}`
         );
         setUser(res.data.data);
       } catch (error) {
@@ -57,7 +57,7 @@ const Organization = () => {
       try {
         const userId = localStorage.getItem("userid");
         const res = await axios.get(
-          `https://email-syncing-backend.vercel.app/api/emails?userId=${userId}`
+          `http://localhost:5000/api/emails?userId=${userId}`
         );
         setEmails(res.data);
       } catch (error) {
