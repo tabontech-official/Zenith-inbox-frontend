@@ -70,14 +70,13 @@ export default function Template() {
   };
 
 const insertField = (placeholder) => {
-  const editor = quillRef.current.getEditor(); // Quill instance
-  const range = editor.getSelection(); // Cursor ki jagah
+  const editor = quillRef.current.getEditor(); 
+  const range = editor.getSelection(); 
 
   if (range) {
-    editor.insertText(range.index, placeholder); // cursor ke point pe insert
-    editor.setSelection(range.index + placeholder.length); // cursor aage move
+    editor.insertText(range.index, placeholder); 
+    editor.setSelection(range.index + placeholder.length); 
   } else {
-    // Agar cursor nahi mila toh end me daal do
     editor.insertText(editor.getLength(), placeholder);
   }
 };
