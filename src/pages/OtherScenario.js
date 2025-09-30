@@ -67,10 +67,83 @@ const OthersScenariosPage = () => {
   const [filters, setFilters] = useState({});
   const [filterLabel, setFilterLabel] = useState("");
   const [connectionSubjects, setConnectionSubjects] = useState({});
-
+  const [connectionCCs, setConnectionCCs] = useState({});
+  const [connectionBCCs, setConnectionBCCs] = useState({});
   const [conditions, setConditions] = useState([
     { field: "", operator: "Equal to", value: "", join: null },
   ]);
+
+  const [ccList, setCcList] = useState([]);
+  const [bccList, setBccList] = useState([]);
+  const [ccInput, setCcInput] = useState("");
+  const [bccInput, setBccInput] = useState("");
+
+  const handleAddCC = (e, connId) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      const value = e.target.value.trim();
+      if (value && /\S+@\S+\.\S+/.test(value)) {
+        setConnectionCCs((prev) => ({
+          ...prev,
+          [connId]: [...(prev[connId] || []), value],
+        }));
+        e.target.value = "";
+      }
+    }
+  };
+
+  const handleAddBCC = (e, connId) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      const value = e.target.value.trim();
+      if (value && /\S+@\S+\.\S+/.test(value)) {
+        setConnectionBCCs((prev) => ({
+          ...prev,
+          [connId]: [...(prev[connId] || []), value],
+        }));
+        e.target.value = "";
+      }
+    }
+  };
+
+  const handleRemoveCC = (connId, index) => {
+    setConnectionCCs((prev) => ({
+      ...prev,
+      [connId]: prev[connId].filter((_, i) => i !== index),
+    }));
+  };
+
+  const handleRemoveBCC = (connId, index) => {
+    setConnectionBCCs((prev) => ({
+      ...prev,
+      [connId]: prev[connId].filter((_, i) => i !== index),
+    }));
+  };
+
+  const handleAddEmail = (e, type) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      const value = type === "cc" ? ccInput.trim() : bccInput.trim();
+
+      if (value && /\S+@\S+\.\S+/.test(value)) {
+        if (type === "cc") {
+          setCcList([...ccList, value]);
+          setCcInput("");
+        } else {
+          setBccList([...bccList, value]);
+          setBccInput("");
+        }
+      }
+    }
+  };
+
+  const handleRemoveEmail = (type, index) => {
+    if (type === "cc") {
+      setCcList(ccList.filter((_, i) => i !== index));
+    } else {
+      setBccList(bccList.filter((_, i) => i !== index));
+    }
+  };
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -240,11 +313,12 @@ const OthersScenariosPage = () => {
     };
     fetchConnections();
   }, [userId]);
-  const apps = [
-    { name: "Gmail", color: "bg-red-500", icon: <Mail /> },
-    { name: "Email", color: "bg-red-500", icon: <TfiEmail /> },
-    { name: "Delay", color: "bg-blue-500", icon: <Clock /> },
-  ];
+ const apps = [
+  { name: "Gmail", color: "bg-red-500", icon: "Gmail" },
+  { name: "Email", color: "bg-red-500", icon: "Email" },
+  { name: "Delay", color: "bg-blue-500", icon: "Delay" },
+];
+
 
   const availableData = [
     {
@@ -260,109 +334,145 @@ const OthersScenariosPage = () => {
     },
   ];
 
-  useState(() => {
-    setSavedModule({
-      app: { name: "Webhooks", color: "bg-red-500", icon: <Cloud /> },
-      type: "Custom mailhook",
-      description: "Custom mailhook",
-    });
-    setSavedSecondModule({
-      app: { name: "Router", color: "bg-green-400", icon: <GitBranch /> },
-      type: "Router",
-      description: "Route to different paths",
-    });
-    setSavedThirdModule({
-      app: { name: "Gmail", color: "bg-red-500", icon: <Mail /> },
-      type: "Send an Email",
-      description: "Send an email",
-    });
-    setShowRouterBranches(true);
-    setRouterBranches([
-      { id: 2, hasModule: false, condition: null, modules: [] },
-    ]);
-  }, []);
+ useEffect(() => {
+  setSavedModule({
+    app: { name: "Webhooks", color: "bg-red-500", icon: "Webhooks" }, // ✅ string only
+    type: "Custom mailhook",
+    description: "Custom mailhook",
+  });
+  setSavedSecondModule({
+    app: { name: "Router", color: "bg-green-400", icon: "Router" }, // ✅
+    type: "Router",
+    description: "Route to different paths",
+  });
+  setSavedThirdModule({
+    app: { name: "Gmail", color: "bg-red-500", icon: "Gmail" }, // ✅
+    type: "Send an Email",
+    description: "Send an email",
+  });
+  setShowRouterBranches(true);
+  setRouterBranches([
+    { id: 2, hasModule: false, condition: null, modules: [] },
+  ]);
+}, []);
+
 
   const [delayValue, setDelayValue] = useState(5);
   const [delayUnit, setDelayUnit] = useState("seconds");
 
-  const handleSave = () => {
-    if (editingBranch !== null) {
-      const updated = [...routerBranches];
-      const modules = updated[editingBranch].modules || [];
+const handleSave = () => {
+  if (editingBranch !== null) {
+    const updated = [...routerBranches];
+    const modules = updated[editingBranch].modules || [];
 
-      let type = "";
-      let description = "";
-      let extra = {};
+    let type = "";
+    let description = "";
+    let extra = {};
 
-      if (selectedModule === "delay") {
-        type = "Delay";
-        description = `Delay execution for ${delayValue} ${delayUnit}`;
-        extra = { delayValue, delayUnit };
+    if (selectedModule === "delay") {
+      type = "Delay";
+      description = `Delay execution for ${delayValue} ${delayUnit}`;
+      extra = { delayValue, delayUnit };
 
-        modules.push({
-          id: Date.now(),
+      modules.push({
+        id: Date.now() + Math.random(),
+        app: {
+          name: selectedApp.name,
+          color: selectedApp.color,
+          icon: selectedApp.icon,
+        },
+        type,
+        description,
+        ...extra,
+      });
+    } else {
+      // ✅ Email / Outlook ke liye edit ya push
+      if (selectedModuleIndex !== null && modules[selectedModuleIndex]) {
+        const existing = modules[selectedModuleIndex];
+
+        modules[selectedModuleIndex] = {
+          ...existing,
+          id: existing.id || Date.now(),
           app: {
             name: selectedApp.name,
             color: selectedApp.color,
-            icon: selectedApp.name,
+            icon: selectedApp.icon,
           },
           type,
           description,
-          ...extra,
-        });
-      } else if (selectedModule === "customEmail") {
-        type = "Custom Email";
-        description = "Send an email using custom SMTP";
-
-        // Multiple Outlook connections handle karein
-        selectedConnections.forEach((connId) => {
-          modules.push({
-            id: Date.now() + Math.random(),
-            app: {
-              name: selectedApp.name,
-              color: selectedApp.color,
-              icon: selectedApp.name,
-            },
-            type,
-            description,
-            connectionId: connId,
-            template: connectionTemplates[connId] || "",
-            subject: connectionSubjects[connId] || "",
-          });
-        });
+          connectionId:
+            selectedConnections.length > 1
+              ? selectedConnections
+              : selectedConnections[0],
+          subject:
+            connectionSubjects[selectedConnections[0]] ||
+            existing.subject ||
+            "",
+          template:
+            connectionTemplates[selectedConnections[0]] ||
+            existing.template ||
+            "",
+          cc: connectionCCs[selectedConnections[0]] || [],
+          bcc: connectionBCCs[selectedConnections[0]] || [],
+        };
       } else {
-        type = "Send an Email";
-        description = "Send an email via Gmail";
-
+        // ✅ New email module add
         selectedConnections.forEach((connId) => {
           modules.push({
             id: Date.now() + Math.random(),
             app: {
               name: selectedApp.name,
               color: selectedApp.color,
-              icon: selectedApp.name,
+              icon: selectedApp.icon,
             },
             type,
             description,
             connectionId: connId,
-            template: connectionTemplates[connId] || "",
             subject: connectionSubjects[connId] || "",
+            template: connectionTemplates[connId] || "",
+            cc: connectionCCs[connId] || [],
+            bcc: connectionBCCs[connId] || [],
           });
         });
       }
-
-      updated[editingBranch].modules = modules;
-      setRouterBranches(updated);
-
-      // Reset states
-      setEditingBranch(null);
-      setSelectedModuleIndex(null);
-      setOpen(false);
-      setSelectedModule(null);
-      setSelectedApp(null);
-      setSelectedConnections([]);
     }
-  };
+
+    updated[editingBranch].modules = modules;
+    setRouterBranches(updated);
+
+    // Reset
+    setEditingBranch(null);
+    setSelectedModuleIndex(null);
+    setOpen(false);
+    setSelectedModule(null);
+    setSelectedApp(null);
+    setSelectedConnections([]);
+  }
+};
+
+
+
+const renderIcon = (appName) => {
+  switch (appName) {
+    case "Gmail":
+      return <FaGoogle className="text-white w-5 h-5" />;
+    case "Email":
+      return <TfiEmail className="text-white w-5 h-5" />;
+    case "Outlook":
+      return <FaMicrosoft className="text-white w-5 h-5" />;
+    case "Delay":
+      return <Clock className="text-white w-5 h-5" />;
+    case "Router":
+      return <GitBranch className="text-white w-5 h-5" />;
+    case "Webhooks":
+      return <Cloud className="text-white w-5 h-5" />;
+    default:
+      return <FaEnvelope className="text-white w-5 h-5" />;
+  }
+};
+
+
+
 
   const quillRefs = useRef({});
 
@@ -420,7 +530,6 @@ const OthersScenariosPage = () => {
     saveDraft(draft);
   }, [routerBranches, scenarioName, scenarioDescription]);
 
-  
   useEffect(() => {
     const handleBeforeUnload = (e) => {
       const draft = getDraft();
@@ -444,46 +553,68 @@ const OthersScenariosPage = () => {
       </div>
 
       <div className="flex-1 min-h-screen bg-gray-50 font-sans text-gray-800 flex flex-col">
-        <div className="p-6">
-          <button
-            onClick={async () => {
-              const payload = {
-                userId: localStorage.getItem("userid"),
-                name: scenarioName,
-                description: scenarioDescription,
-                type: "other",
-                routerBranches,
-              };
+        <div className="border-b bg-white shadow-sm">
+          <div className="p-6 flex items-center justify-between">
+            {/* Left Side */}
+            <div className="flex flex-col w-2/3">
+              <h1 className="text-xl font-medium text-gray-800 mb-2">
+                {scenarioId ? "Edit Scenario" : "Create New Scenario"}
+              </h1>
+              <p className="text-sm text-gray-500 mb-4">
+                Give your scenario a clear name so you can identify it later.
+              </p>
 
-              console.log(" Final payload:", JSON.stringify(payload, null, 2));
+              <input
+                type="text"
+                value={scenarioName}
+                onChange={(e) => setScenarioName(e.target.value)}
+                placeholder="Enter scenario name"
+                className="px-4 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 w-full"
+              />
+            </div>
 
-              const url = scenarioId
-                ? `https://email-syncing-backend.vercel.app/scenario/detail/${scenarioId}`
-                : `https://email-syncing-backend.vercel.app/scenario`;
+            {/* Right Side */}
+            <div className="flex flex-col space-y-2 items-end">
+              <button
+                className="flex items-center px-4 py-2 text-sm text-gray-700 bg-white border border-gray-200 rounded-md shadow-sm hover:bg-gray-100 w-full"
+                onClick={() => navigate(-1)}
+              >
+                <ArrowLeft className="mr-2 w-4 h-4" />
+                Back
+              </button>
 
-              await fetch(url, {
-                method: scenarioId ? "PUT" : "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload),
-              });
+              <button
+                onClick={async () => {
+                  const payload = {
+                    userId: localStorage.getItem("userid"),
+                    name: scenarioName,
+                    description: scenarioDescription,
+                    type: "other",
+                    routerBranches,
+                  };
 
-              clearDraft();
-              toast.success("Scenario saved successfully!");
-              localStorage.removeItem("scenario_draft");
-              navigate("/scenarios/all");
-            }}
-            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-          >
-            {scenarioId ? "Update Scenario" : "Save Scenario"}
-          </button>
+                  const url = scenarioId
+                    ? `https://email-syncing-backend.vercel.app/scenario/detail/${scenarioId}`
+                    : `https://email-syncing-backend.vercel.app/scenario`;
+
+                  await fetch(url, {
+                    method: scenarioId ? "PUT" : "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                  });
+
+                  clearDraft();
+                  toast.success("Scenario saved successfully!");
+                  localStorage.removeItem("scenario_draft");
+                  navigate("/scenarios/all");
+                }}
+                className="flex items-center justify-center px-4 py-2 text-sm bg-green-600 text-white rounded-md shadow hover:bg-green-700 w-full"
+              >
+                {scenarioId ? "Update Scenario" : "Save Scenario"}
+              </button>
+            </div>
+          </div>
         </div>
-        {/* <input
-          type="text"
-          value={scenarioName}
-          onChange={(e) => setScenarioName(e.target.value)}
-          placeholder="Enter scenario name"
-          className="border rounded px-3 py-2 text-sm mb-4"
-        /> */}
 
         <div className="flex-1 flex items-center justify-center relative">
           <div className="flex items-center justify-center w-full">
@@ -600,7 +731,7 @@ const OthersScenariosPage = () => {
                               <div
                                 className={`w-20 h-20 flex flex-col items-center justify-center rounded-full ${module.app.color} text-white shadow-lg border-2 border-opacity-50`}
                               >
-                                {module.app.icon}
+                                {renderIcon(module.app.icon)}
                                 <div className="absolute -top-1 -right-1 w-6 h-6 bg-black bg-opacity-80 text-white rounded-full flex items-center justify-center text-xs font-bold border border-white">
                                   {3 + moduleIndex}
                                 </div>
@@ -760,7 +891,7 @@ const OthersScenariosPage = () => {
                         <div
                           className={`w-8 h-8 flex items-center justify-center rounded-full text-white ${app.color}`}
                         >
-                          {app.icon}
+  {renderIcon(app.icon)}
                         </div>
                         <span className="ml-3 text-sm text-gray-700">
                           {app.name}
@@ -792,7 +923,7 @@ const OthersScenariosPage = () => {
                     <div
                       className={`w-12 h-12 flex items-center justify-center rounded-full text-white mb-3 ${selectedApp.color}`}
                     >
-                      {selectedApp.icon}
+                     {renderIcon(selectedApp.icon)} 
                     </div>
                     <h2 className="text-lg font-semibold">
                       {selectedApp.name}
@@ -822,7 +953,7 @@ const OthersScenariosPage = () => {
                       <div
                         className={`w-8 h-8 flex items-center justify-center rounded-full text-white mr-3 ${selectedApp.color}`}
                       >
-                        {selectedApp.icon}
+                        {renderIcon(selectedApp.icon)}
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-gray-700">
@@ -848,7 +979,6 @@ const OthersScenariosPage = () => {
               ref={modalRef}
               className="absolute top-10 right-10 bg-white rounded-lg shadow-xl w-[700px] border z-20"
             >
-              {/* Header */}
               <div className="flex justify-between items-center px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-400 text-white rounded-t-lg">
                 <h3 className="font-semibold">Set up a filter</h3>
                 <div className="flex items-center space-x-2 text-sm">
@@ -860,7 +990,6 @@ const OthersScenariosPage = () => {
               </div>
 
               <div className="p-4 space-y-4">
-                {/* Label Input */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Label
@@ -874,7 +1003,6 @@ const OthersScenariosPage = () => {
                   />
                 </div>
 
-                {/* Conditions */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Conditions
@@ -885,7 +1013,6 @@ const OthersScenariosPage = () => {
                       key={index}
                       className="border rounded p-3 bg-blue-50 border-l-4 border-l-blue-500 mb-3"
                     >
-                      {/* Join (AND/OR) */}
                       {cond.join && (
                         <div className="text-xs font-bold text-gray-600 mb-2">
                           {cond.join}
@@ -907,7 +1034,6 @@ const OthersScenariosPage = () => {
                         <option value="Body">Body</option>
                       </select>
 
-                      {/* Operator */}
                       <select
                         value={cond.operator}
                         onChange={(e) =>
@@ -935,7 +1061,6 @@ const OthersScenariosPage = () => {
                         placeholder="Enter value"
                       />
 
-                      {/* Remove Button */}
                       <button
                         onClick={() =>
                           setConditions((prev) =>
@@ -949,7 +1074,6 @@ const OthersScenariosPage = () => {
                     </div>
                   ))}
 
-                  {/* Add Condition Buttons */}
                   <div className="flex space-x-2 mt-4">
                     <button
                       onClick={() => handleAddCondition("AND")}
@@ -1097,7 +1221,6 @@ const OthersScenariosPage = () => {
                       Outlook Connection <span className="text-red-500">*</span>
                     </label>
 
-                    {/* Multi-select dropdown with Outlook icons */}
                     <div className="relative w-full mb-4">
                       <button
                         type="button"
@@ -1131,7 +1254,7 @@ const OthersScenariosPage = () => {
                       {showDropdown && (
                         <ul className="absolute z-10 mt-1 w-full border rounded bg-white shadow-lg max-h-60 overflow-y-auto">
                           {connections
-                            .filter((conn) => conn.provider === "outlook") // ✅ sirf Outlook connections dikhayega
+                            .filter((conn) => conn.provider === "outlook")
                             .map((conn) => {
                               const isSelected = selectedConnections.includes(
                                 conn._id
@@ -1140,11 +1263,8 @@ const OthersScenariosPage = () => {
                                 <li
                                   key={conn._id}
                                   onClick={() => {
-                                    setSelectedConnections((prev) =>
-                                      isSelected
-                                        ? prev.filter((id) => id !== conn._id)
-                                        : [...prev, conn._id]
-                                    );
+                                    setSelectedConnections([conn._id]);
+                                    setShowDropdown(false);
                                   }}
                                   className={`flex items-center px-3 py-2 cursor-pointer hover:bg-gray-100 text-sm ${
                                     isSelected ? "bg-purple-100" : ""
@@ -1175,8 +1295,96 @@ const OthersScenariosPage = () => {
                             <FaMicrosoft className="text-blue-600 mr-2" />
                             Outlook: {conn.email}
                           </h4>
+  <div className="mt-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              To <span className="text-red-500">*</span>
+                            </label>
+                            <div className="flex items-center flex-wrap gap-2 border rounded px-2 py-2 bg-gray-50 cursor-not-allowed">
+                              <span className="flex items-center bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-medium">
+                                Sender Email Address
+                              </span>
+                              <input
+                                type="text"
+                                disabled
+                                className="flex-1 bg-transparent outline-none text-sm text-gray-400"
+                                placeholder=""
+                              />
+                            </div>
+                          </div>
 
-                          {/* Subject field */}
+                          {/* CC */}
+                          <div className="mt-4">
+                            <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                              CC{" "}
+                              <span className="ml-1 text-xs text-gray-500">
+                                (Optional)
+                              </span>
+                            </label>
+                            <div className="flex flex-wrap items-center border rounded-lg px-3 py-2">
+                              {(connectionCCs[connId] || []).map(
+                                (email, index) => (
+                                  <span
+                                    key={index}
+                                    className="flex items-center bg-blue-100 text-blue-700 text-sm px-3 py-1 rounded-full mr-2 mb-1"
+                                  >
+                                    {email}
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        handleRemoveCC(connId, index)
+                                      }
+                                      className="ml-2 text-xs text-red-500 hover:text-red-700"
+                                    >
+                                      ✕
+                                    </button>
+                                  </span>
+                                )
+                              )}
+                              <input
+                                type="text"
+                                onKeyDown={(e) => handleAddCC(e, connId)}
+                                className="flex-1 outline-none text-sm py-2 px-3"
+                                placeholder="Type and press Enter"
+                              />
+                            </div>
+                          </div>
+
+                          {/* BCC */}
+                          <div className="mt-4">
+                            <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                              BCC{" "}
+                              <span className="ml-1 text-xs text-gray-500">
+                                (Optional)
+                              </span>
+                            </label>
+                            <div className="flex flex-wrap items-center border rounded-lg px-3 py-2">
+                              {(connectionBCCs[connId] || []).map(
+                                (email, index) => (
+                                  <span
+                                    key={index}
+                                    className="flex items-center bg-green-100 text-green-700 text-sm px-3 py-1 rounded-full mr-2 mb-1"
+                                  >
+                                    {email}
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        handleRemoveBCC(connId, index)
+                                      }
+                                      className="ml-2 text-xs text-red-500 hover:text-red-700"
+                                    >
+                                      ✕
+                                    </button>
+                                  </span>
+                                )
+                              )}
+                              <input
+                                type="text"
+                                onKeyDown={(e) => handleAddBCC(e, connId)}
+                                className="flex-1 outline-none text-sm py-2 px-3"
+                                placeholder="Type and press Enter"
+                              />
+                            </div>
+                          </div>
                           <input
                             type="text"
                             value={connectionSubjects[connId] || ""}
@@ -1186,11 +1394,10 @@ const OthersScenariosPage = () => {
                                 [connId]: e.target.value,
                               }))
                             }
-                            className="w-full border rounded px-2 py-1 text-sm mb-3"
+                            className="w-full border rounded px-6 py-3 text-sm mb-3 mt-3"
                             placeholder="Email subject"
                           />
 
-                          {/* Rich Text Template editor */}
                           <ReactQuill
                             theme="snow"
                             value={connectionTemplates[connId] || ""}
@@ -1210,21 +1417,12 @@ const OthersScenariosPage = () => {
                             <code>{"{order.id}"}</code> or{" "}
                             <code>{"{email}"}</code>.
                           </p>
+
+                          {/* To */}
+                        
                         </div>
                       );
                     })}
-
-                    {/* Recipient field (shared) */}
-                    <div className="mt-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        To <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="email"
-                        className="w-full border rounded px-2 py-1 text-sm"
-                        placeholder="recipient@example.com"
-                      />
-                    </div>
                   </>
                 )}
 
@@ -1234,7 +1432,6 @@ const OthersScenariosPage = () => {
                       Connection <span className="text-red-500">*</span>
                     </label>
 
-                    {/* Multi-select dropdown with icons */}
                     <div className="relative w-full mb-4">
                       <button
                         type="button"
@@ -1274,41 +1471,29 @@ const OthersScenariosPage = () => {
                       {showDropdown && (
                         <ul className="absolute z-10 mt-1 w-full border rounded bg-white shadow-lg max-h-60 overflow-y-auto">
                           {connections
-                            .filter((conn) => conn.provider === "gmail") // ✅ sirf Gmail dikhayega
-                            .map((conn) => {
-                              const isSelected = selectedConnections.includes(
-                                conn._id
-                              );
-                              return (
-                                <li
-                                  key={conn._id}
-                                  // onClick={() => {
-                                  //   setSelectedConnections((prev) =>
-                                  //     isSelected
-                                  //       ? prev.filter((id) => id !== conn._id)
-                                  //       : [...prev, conn._id]
-                                  //   );
-                                  // }}
-                                  onClick={() => {
-                                    setSelectedConnections([conn._id]); // ✅ ek hi connection allow
-                                    setShowDropdown(false); // ✅ select karte hi dropdown band
-                                  }}
-                                  className={`flex items-center px-3 py-2 cursor-pointer hover:bg-gray-100 text-sm ${
-                                    selectedConnections.includes(conn._id)
-                                      ? "bg-purple-100"
-                                      : ""
-                                  }`}
-                                >
-                                  <FaGoogle className="text-red-500 mr-2" />
-                                  Gmail: {conn.email}
-                                </li>
-                              );
-                            })}
+                            .filter((conn) => conn.provider === "gmail")
+                            .map((conn) => (
+                              <li
+                                key={conn._id}
+                                onClick={() => {
+                                  setSelectedConnections([conn._id]); // ✅ ek hi connection allow
+                                  setShowDropdown(false);
+                                }}
+                                className={`flex items-center px-3 py-2 cursor-pointer hover:bg-gray-100 text-sm ${
+                                  selectedConnections.includes(conn._id)
+                                    ? "bg-purple-100"
+                                    : ""
+                                }`}
+                              >
+                                <FaGoogle className="text-red-500 mr-2" />
+                                Gmail: {conn.email}
+                              </li>
+                            ))}
                         </ul>
                       )}
                     </div>
 
-                    {/* Multiple editors - one for each selected connection */}
+                    {/* Multiple editors - one per selected connection */}
                     {selectedConnections.map((connId) => {
                       const conn = connections.find((c) => c._id === connId);
                       if (!conn) return null;
@@ -1328,8 +1513,95 @@ const OthersScenariosPage = () => {
                               ? `Gmail: ${conn.email}`
                               : `SMTP: ${conn.name || conn.email}`}
                           </h4>
+                          <div className="mt-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              To <span className="text-red-500">*</span>
+                            </label>
+                            <div className="flex items-center flex-wrap gap-2 border rounded px-2 py-2 bg-gray-50 cursor-not-allowed">
+                              <span className="flex items-center bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-medium">
+                                Sender Email Address
+                              </span>
+                              <input
+                                type="text"
+                                disabled
+                                className="flex-1 bg-transparent outline-none text-sm text-gray-400"
+                                placeholder=""
+                              />
+                            </div>
+                          </div>
 
-                          {/* Subject field */}
+                          <div className="mt-4">
+                            <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                              CC{" "}
+                              <span className="ml-1 text-xs text-gray-500">
+                                (Optional)
+                              </span>
+                            </label>
+                            <div className="flex flex-wrap items-center border rounded-lg px-3 py-2">
+                              {(connectionCCs[connId] || []).map(
+                                (email, index) => (
+                                  <span
+                                    key={index}
+                                    className="flex items-center bg-blue-100 text-blue-700 text-sm px-3 py-1 rounded-full mr-2 mb-1"
+                                  >
+                                    {email}
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        handleRemoveCC(connId, index)
+                                      }
+                                      className="ml-2 text-xs text-red-500 hover:text-red-700"
+                                    >
+                                      ✕
+                                    </button>
+                                  </span>
+                                )
+                              )}
+                              <input
+                                type="text"
+                                onKeyDown={(e) => handleAddCC(e, connId)}
+                                className="flex-1 outline-none text-sm py-2 px-3"
+                                placeholder="Type and press Enter"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="mt-4">
+                            <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                              BCC{" "}
+                              <span className="ml-1 text-xs text-gray-500">
+                                (Optional)
+                              </span>
+                            </label>
+                            <div className="flex flex-wrap items-center border rounded-lg px-3 py-2">
+                              {(connectionBCCs[connId] || []).map(
+                                (email, index) => (
+                                  <span
+                                    key={index}
+                                    className="flex items-center bg-green-100 text-green-700 text-sm px-3 py-1 rounded-full mr-2 mb-1"
+                                  >
+                                    {email}
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        handleRemoveBCC(connId, index)
+                                      }
+                                      className="ml-2 text-xs text-red-500 hover:text-red-700"
+                                    >
+                                      ✕
+                                    </button>
+                                  </span>
+                                )
+                              )}
+                              <input
+                                type="text"
+                                onKeyDown={(e) => handleAddBCC(e, connId)}
+                                className="flex-1 outline-none text-sm py-2 px-3"
+                                placeholder="Type and press Enter"
+                              />
+                            </div>
+                          </div>
+
                           <input
                             type="text"
                             value={connectionSubjects[connId] || ""}
@@ -1339,11 +1611,10 @@ const OthersScenariosPage = () => {
                                 [connId]: e.target.value,
                               }))
                             }
-                            className="w-full border rounded px-2 py-1 text-sm mb-3"
+                            className="w-full border rounded px-6 py-3 text-sm mb-3 mt-3"
                             placeholder="Email subject"
                           />
 
-                          {/* Template editor */}
                           <ReactQuill
                             theme="snow"
                             value={connectionTemplates[connId] || ""}
@@ -1366,33 +1637,8 @@ const OthersScenariosPage = () => {
                         </div>
                       );
                     })}
-
-                    <div className="mt-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        To <span className="text-red-500">*</span>
-                      </label>
-
-                      <div className="flex items-center flex-wrap gap-2 border rounded px-2 py-2 bg-gray-50 cursor-not-allowed">
-                        <span className="flex items-center bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-medium">
-                          Sender Email Address
-                        </span>
-
-                        <input
-                          type="text"
-                          disabled
-                          className="flex-1 bg-transparent outline-none text-sm text-gray-400 "
-                          placeholder=""
-                        />
-                      </div>
-                    </div>
                   </>
                 )}
-
-                <div className="mt-4">
-                  <label className="flex items-center text-sm text-gray-600">
-                    <input type="checkbox" className="mr-2" /> Advanced settings
-                  </label>
-                </div>
               </div>
 
               <div className="flex justify-end space-x-2 px-4 py-2 border-t">
