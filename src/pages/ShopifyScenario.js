@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import {
   Plus,
   Search,
@@ -52,6 +52,8 @@ import "react-quill/dist/quill.snow.css";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
+import { UserContext } from "../component/UserContext";
+import WebhookModal from "../component/WebhookModal";
 
 const ShopifyScenariosPage = () => {
   const { id } = useParams();
@@ -92,30 +94,17 @@ const ShopifyScenariosPage = () => {
   const [scenarioId, setScenarioId] = useState(null);
   const [scenarioName, setScenarioName] = useState("");
   const [scenarioDescription, setScenarioDescription] = useState("");
-  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const { user } = useContext(UserContext);
 
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const userId = localStorage.getItem("userid");
-        const res = await axios.get(
-          `https://email-syncing-backend.vercel.app/auth/getUsers/${userId}`
-        );
-        setUser(res.data.data);
-      } catch (error) {
-        console.error("Error fetching user:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+    if (user) {
+      setLoading(false);
+    }
+  }, [user]);
 
-    if (showWebhookInfo) fetchUser();
-  }, [showWebhookInfo]);
-
-  const webhookUrl = user?.mailhook || "https://yourdomain.com/webhook/12345";
-
+  const webhookUrl = user?.mailhook || "";
   const handleCopy = () => {
     navigator.clipboard.writeText(webhookUrl);
     setCopied(true);
@@ -151,7 +140,7 @@ const ShopifyScenariosPage = () => {
     const fetchConnections = async () => {
       try {
         const res = await fetch(
-          `https://email-syncing-backend.vercel.app/auth/getConnection/${localStorage.getItem(
+          `http://localhost:5000/auth/getConnection/${localStorage.getItem(
             "userid"
           )}`
         );
@@ -169,7 +158,7 @@ const ShopifyScenariosPage = () => {
       const fetchTemplates = async () => {
         try {
           const res = await fetch(
-            `https://email-syncing-backend.vercel.app/template/all?userId=${localStorage.getItem(
+            `http://localhost:5000/template/all?userId=${localStorage.getItem(
               "userid"
             )}&platform=shopify&service=${selectedApp.name}`
           );
@@ -238,8 +227,8 @@ const ShopifyScenariosPage = () => {
     };
 
     const url = scenarioId
-      ? `https://email-syncing-backend.vercel.app/scenario/detail/${scenarioId}`
-      : `https://email-syncing-backend.vercel.app/scenario`;
+      ? `http://localhost:5000/scenario/detail/${scenarioId}`
+      : `http://localhost:5000/scenario`;
 
     await fetch(url, {
       method: scenarioId ? "PUT" : "POST",
@@ -284,7 +273,7 @@ const ShopifyScenariosPage = () => {
       const fetchScenario = async () => {
         try {
           const res = await fetch(
-            `https://email-syncing-backend.vercel.app/scenario/detail/${id}`
+            `http://localhost:5000/scenario/detail/${id}`
           );
           const data = await res.json();
           if (data) {
@@ -314,7 +303,6 @@ const ShopifyScenariosPage = () => {
         type = "Custom Email";
         description = "Send an email using custom SMTP/Outlook";
 
-        // ✅ Mandatory validation
         if (!selectedConnection) {
           toast.error("Please select a connection before saving.");
           return;
@@ -988,55 +976,12 @@ const ShopifyScenariosPage = () => {
             </div>
           )}
 
-          {showWebhookInfo && (
-            <div
-              className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fadeIn"
-              onClick={() => setShowWebhookInfo(false)}
-            >
-              <div
-                className="bg-white rounded-lg shadow-lg w-[500px] p-6 relative transform animate-slideUp"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <button
-                  onClick={() => setShowWebhookInfo(false)}
-                  className="absolute top-3 right-3 text-gray-400 hover:text-gray-700 transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-
-                <h2 className="text-lg font-semibold text-gray-800 mb-4">
-                  Webhook Mailhook Instructions
-                </h2>
-
-                <p className="text-sm text-gray-600 mb-4 leading-relaxed">
-                  This is your <strong>email forwarding mailhook</strong>.{" "}
-                  <br />
-                  Please copy the URL below and paste it into your{" "}
-                  <strong>mail forwarding settings</strong> in your email
-                  provider. <br />
-                  All forwarded emails will be delivered here.
-                </p>
-
-                {loading ? (
-                  <p className="text-gray-500 text-sm">Loading webhook...</p>
-                ) : (
-                  <div className="flex items-center bg-gray-100 border rounded px-3 py-2 mb-4">
-                    <CiLink className="mr-2 text-gray-600" />
-                    <span className="text-sm text-gray-800 font-mono break-all select-all">
-                      {webhookUrl}
-                    </span>
-                  </div>
-                )}
-
-                <button
-                  onClick={handleCopy}
-                  className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors text-sm"
-                >
-                  {copied ? "Copied!" : "Copy Webhook URL"}
-                </button>
-              </div>
-            </div>
-          )}
+          <WebhookModal
+            showWebhookInfo={showWebhookInfo}
+            setShowWebhookInfo={setShowWebhookInfo}
+            webhookUrl={webhookUrl}
+            loading={loading}
+          />
         </div>
       </div>
     </div>

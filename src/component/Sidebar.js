@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   FiGrid,
@@ -12,12 +12,14 @@ import {
   FiLogOut,
 } from "react-icons/fi";
 import { UserContext } from "./UserContext";
+
 const Sidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useContext(UserContext);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isScenariosOpen, setIsScenariosOpen] = useState(false);
+  const scenariosRef = useRef(null);
 
   const isActive = (path) => location.pathname === path;
 
@@ -45,10 +47,9 @@ const Sidebar = () => {
   const handleLogout = async () => {
     const userId = localStorage.getItem("userid");
     try {
-      await fetch(`https://email-syncing-backend.vercel.app/auth/logout/${userId}`, {
+      await fetch(`http://localhost:5000/auth/logout/${userId}`, {
         method: "POST",
       });
-
       localStorage.clear();
       navigate("/login", { replace: true });
     } catch (error) {
@@ -57,12 +58,11 @@ const Sidebar = () => {
   };
 
   return (
-  <aside
-  className={`fixed z-40 top-0 left-0 h-full w-64 bg-gradient-to-b from-purple-700 via-purple-600 to-purple-800 text-white flex flex-col p-6 
-    transform transition-transform duration-300 
-    ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"} 
-    md:translate-x-0 md:static md:shadow-none`}
->
+    <aside
+      className={`fixed z-40 top-0 left-0 h-full w-64 bg-gradient-to-b from-purple-700 via-purple-600 to-purple-800 text-white flex flex-col p-6 transition-transform duration-300 md:translate-x-0 ${
+        isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+      }`}
+    >
       <div className="flex items-center space-x-3 pb-5 mb-6 border-b border-purple-400/40">
         <img
           src="https://placehold.co/48x48/5B21B6/white?text=U"
@@ -111,17 +111,19 @@ const Sidebar = () => {
               )}
             </button>
 
-            {isScenariosOpen && (
-              <div className="ml-8 mt-2 space-y-1">
-                {renderNavLink("All Scenarios", FiZap, "/scenarios/all")}
-                {renderNavLink(
-                  "Shopify Scenario",
-                  FiGitBranch,
-                  "/scenarios/shopify"
-                )}
-                {renderNavLink("Custom", FiSettings, "/scenarios/others")}
-              </div>
-            )}
+            <div
+              ref={scenariosRef}
+              style={{
+                maxHeight: isScenariosOpen
+                  ? scenariosRef.current?.scrollHeight + "px"
+                  : "0px",
+              }}
+              className="ml-8 mt-2 space-y-1 overflow-hidden transition-all duration-300"
+            >
+              {renderNavLink("All Scenarios", FiZap, "/scenarios/all")}
+              {renderNavLink("Shopify Scenario", FiGitBranch, "/scenarios/shopify")}
+              {renderNavLink("Custom", FiSettings, "/scenarios/others")}
+            </div>
           </div>
         </div>
 

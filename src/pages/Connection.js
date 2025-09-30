@@ -5,6 +5,7 @@ import ConnectionModal from "../component/ConnectionModal";
 import OutlookConnectionModal from "../component/OutlookConnectionModal"; 
 import { FaGoogle, FaMicrosoft, FaEnvelope } from "react-icons/fa";
 import axios from "axios";
+import toast from "react-hot-toast";
 
 const ConnectionsPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -15,42 +16,59 @@ const ConnectionsPage = () => {
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
 
+
+const handleConnectionAdded = (newConn) => {
+  const savedConn = newConn.connection || newConn; 
+
+  setConnections((prev) => [...prev, savedConn]);
+
+  toast.success(`${savedConn.provider} connected successfully! `);
+};
+
+
   const openOutlookModal = () => setIsOutlookModalOpen(true); 
   const closeOutlookModal = () => setIsOutlookModalOpen(false);
 
-  useEffect(() => {
-    const fetchConnections = async () => {
-      try {
-        const userId = localStorage.getItem("userid");
-        if (!userId) {
-          console.warn("⚠️ No userId in localStorage");
-          setLoading(false);
-          return;
-        }
-        const res = await axios.get(
-          `https://email-syncing-backend.vercel.app/auth/getConnection/${userId}`
-        );
-        setConnections(res.data);
-      } catch (err) {
-        console.error("❌ Failed to fetch connections:", err);
-      } finally {
+ useEffect(() => {
+  const fetchConnections = async () => {
+    try {
+      const userId = localStorage.getItem("userid");
+      if (!userId) {
+        console.warn(" No userId in localStorage");
         setLoading(false);
+        return;
       }
-    };
-
-    fetchConnections();
-  }, []);
-
-  const providerIcon = (provider) => {
-    switch (provider.toLowerCase()) {
-      case "gmail":
-        return <FaGoogle className="text-red-500 h-6 w-6" />;
-      case "outlook":
-        return <FaMicrosoft className="text-blue-600 h-6 w-6" />;
-      default:
-        return <FaEnvelope className="text-gray-500 h-6 w-6" />;
+      const res = await axios.get(
+        `http://localhost:5000/auth/getConnection/${userId}`
+      );
+      
+      
+      setConnections(res.data);
+    } catch (err) {
+      console.error(" Failed to fetch connections:", err);
+    } finally {
+      setLoading(false);
     }
   };
+
+  fetchConnections();
+}, []);
+
+const providerIcon = (provider) => {
+  if (!provider) {
+    return <FaEnvelope className="text-gray-500 h-6 w-6" />; 
+  }
+
+  switch (provider.toLowerCase()) {
+    case "gmail":
+      return <FaGoogle className="text-red-500 h-6 w-6" />;
+    case "outlook":
+      return <FaMicrosoft className="text-blue-600 h-6 w-6" />;
+    default:
+      return <FaEnvelope className="text-gray-500 h-6 w-6" />;
+  }
+};
+
 
   return (
     <div className="flex">
@@ -133,9 +151,17 @@ const ConnectionsPage = () => {
         </main>
       </div>
 
-      <ConnectionModal isOpen={isModalOpen} onClose={closeModal} />
-      <OutlookConnectionModal isOpen={isOutlookModalOpen} onClose={closeOutlookModal} />
-    </div>
+<ConnectionModal
+      isOpen={isModalOpen}
+      onClose={closeModal}
+      onSuccess={handleConnectionAdded}
+    />  
+    
+<OutlookConnectionModal
+      isOpen={isOutlookModalOpen}
+      onClose={closeOutlookModal}
+      onSuccess={handleConnectionAdded} 
+    />    </div>
   );
 };
 

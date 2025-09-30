@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { FaMicrosoft } from "react-icons/fa";
 import { FiEye, FiEyeOff, FiX } from "react-icons/fi";
 
-const OutlookConnectionModal = ({ isOpen, onClose }) => {
+const OutlookConnectionModal = ({ isOpen, onClose,onSuccess  }) => {
   const [form, setForm] = useState({
     name: "My Outlook Connection",
     provider: "outlook",
@@ -23,17 +23,29 @@ const OutlookConnectionModal = ({ isOpen, onClose }) => {
   };
 
   const handleSubmit = async () => {
-    const userId = localStorage.getItem("userid");
-    const payload = { ...form, userId };
+    try {
+      const userId = localStorage.getItem("userid");
+      const payload = { ...form, userId };
 
-    await fetch("https://email-syncing-backend.vercel.app/auth/saveSmtpConnection", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+      const res = await fetch("http://localhost:5000/auth/saveSmtpConnection", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-    alert(" Outlook connection saved!");
-    onClose();
+      if (!res.ok) {
+        throw new Error("Failed to save connection");
+      }
+
+      const data = await res.json();
+
+      if (onSuccess) {
+        onSuccess(data);
+      }
+
+      onClose();
+    } catch (err) {
+    }
   };
 
   return (
