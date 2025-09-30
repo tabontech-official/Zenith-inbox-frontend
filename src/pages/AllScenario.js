@@ -58,7 +58,7 @@ const AllScenariosPage = () => {
         `https://email-syncing-backend.vercel.app/scenario/user/${userId}`
       );
       const data = await res.json();
-      setScenarios(data); // Shopify + Custom dono ek sath
+      setScenarios(data); 
     } catch (err) {
       console.error(" Error fetching scenarios:", err);
     }
@@ -94,7 +94,6 @@ const AllScenariosPage = () => {
       </div>
 
       <div className="flex-1 flex flex-col bg-gray-50">
-        {/* Header */}
         <div className="flex justify-between items-center p-6 border-b bg-white shadow-sm">
           <div>
             <h1 className="text-2xl font-semibold text-gray-800">
@@ -107,7 +106,6 @@ const AllScenariosPage = () => {
           </div>
         </div>
 
-        {/* Single Table for All */}
         <div className="flex-1 p-6">
           {scenarios.length === 0 ? (
             <div className="text-center py-10 text-gray-400 text-lg">
@@ -131,7 +129,6 @@ const AllScenariosPage = () => {
                       key={scenario._id}
                       className="border-b hover:bg-gray-50 cursor-pointer"
                     >
-                      {/* Name + Icon */}
                       <td
                         onClick={() => handleRowClick(scenario)}
                         className="px-6 py-4 flex items-center gap-2 font-medium text-gray-800"
@@ -140,7 +137,6 @@ const AllScenariosPage = () => {
                         {getScenarioName(scenario)}
                       </td>
 
-                      {/* Description */}
                       <td
                         onClick={() => handleRowClick(scenario)}
                         className="px-6 py-4 text-gray-600 max-w-xs truncate"
@@ -148,7 +144,6 @@ const AllScenariosPage = () => {
                         {getScenarioDescription(scenario)}
                       </td>
 
-                      {/* Type */}
                       <td
                         onClick={() => handleRowClick(scenario)}
                         className="px-6 py-4 capitalize"
@@ -156,7 +151,6 @@ const AllScenariosPage = () => {
                         {scenario.type}
                       </td>
 
-                      {/* Date */}
                       <td
                         onClick={() => handleRowClick(scenario)}
                         className="px-6 py-4"
@@ -193,7 +187,6 @@ const AllScenariosPage = () => {
         </div>
       </div>
 
-      {/* Delete Modal */}
       {deleteModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-lg p-6 w-96">

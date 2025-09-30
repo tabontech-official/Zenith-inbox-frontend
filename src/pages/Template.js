@@ -5,7 +5,7 @@ import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { ChevronDownIcon, ChevronRightIcon } from "@heroicons/react/24/solid"; // 👈 add this
+import { ChevronDownIcon, ChevronRightIcon } from "@heroicons/react/24/solid"; 
 
 const SERVICES = [
   "Troubleshooting",
@@ -42,7 +42,7 @@ const SERVICES = [
 export default function Template() {
   const [templates, setTemplates] = useState([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false); // 👈 collapse state
+  const [isCollapsed, setIsCollapsed] = useState(false); 
   const quillRef = useRef(null);
 
   const [editingId, setEditingId] = useState(null);
@@ -239,7 +239,6 @@ const insertField = (placeholder) => {
               <tbody>
                 {templates.length > 0 ? (
                   <>
-                    {/* --- General Templates First --- */}
                     {templates
                       .filter((t) => t.service === "General")
                       .map((t) => (
@@ -359,7 +358,6 @@ const insertField = (placeholder) => {
           </div>
         )}
 
-        {/* Drawer */}
         <div className="fixed inset-0 z-50 flex pointer-events-none">
           <div
             className={`flex-1 bg-black transition-opacity duration-300 ${

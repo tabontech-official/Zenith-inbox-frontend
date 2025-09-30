@@ -17,7 +17,6 @@ const Organization = () => {
   const [loading, setLoading] = useState(true);
   const [emails, setEmails] = useState([]);
 
-  // ✅ Static Automations
   const recentAutomation = [
     {
       id: 1,
@@ -33,7 +32,6 @@ const Organization = () => {
     },
   ];
 
-  // Fetch user
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -51,7 +49,6 @@ const Organization = () => {
     fetchUser();
   }, []);
 
-  // Fetch recent emails
   useEffect(() => {
     const fetchEmails = async () => {
       try {
@@ -87,8 +84,6 @@ const Organization = () => {
     <div className="flex bg-gray-100 min-h-screen font-inter antialiased">
       <Sidebar />
       <main className="flex-1 md:ml-64 p-6 overflow-auto">
-        {/* Mailhook */}
-        {/* Mailhook */}
         <div className="mb-6 bg-white p-4 rounded-lg shadow">
           {loading ? (
             <p className="text-gray-500">Loading user data...</p>
@@ -101,7 +96,6 @@ const Organization = () => {
                 </p>
               </div>
 
-              {/* Verify Button / Status */}
               {user.isVerified ? (
                 <span className="flex items-center gap-1 text-green-600 font-medium">
                   <FiCheckCircle /> Verified
@@ -126,7 +120,6 @@ const Organization = () => {
           )}
         </div>
 
-        {/* Header */}
         <header className="flex flex-col md:flex-row md:items-center md:justify-between pb-6 border-b border-gray-200">
           <h1 className="text-2xl font-bold text-gray-800">
             Automation Dashboard
@@ -137,7 +130,6 @@ const Organization = () => {
                 Manage Templates
               </button>
             </Link>
-            {/* Toggle */}
             <label className="relative inline-flex items-center cursor-pointer">
               <input
                 type="checkbox"
@@ -154,7 +146,6 @@ const Organization = () => {
           </div>
         </header>
 
-        {/* Stats */}
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
           {renderStatCard(
             <MdOutlineEmail />,
@@ -231,7 +222,6 @@ const Organization = () => {
           </div>
         </section>
 
-        {/* Recent Automations (Static) */}
         <section className="mt-10">
           <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
             <FiZap className="text-yellow-500" /> Recent Automations

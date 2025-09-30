@@ -56,13 +56,10 @@ const ConnectionsPage = () => {
     <div className="flex">
       <Sidebar />
 
-      {/* Main Content */}
       <div className="ml-64 flex-1 min-h-screen bg-gray-50 font-sans text-gray-800">
-        {/* Header */}
         <header className="flex items-center justify-between p-6 bg-white border-b border-gray-200">
           <h1 className="text-2xl font-bold text-gray-800">Connections</h1>
           <div className="flex space-x-3">
-            {/* Gmail button */}
             <button
               onClick={openModal}
               className="flex items-center px-5 py-2 text-sm font-semibold text-white bg-gradient-to-r from-red-500 to-pink-600 rounded-lg shadow hover:from-red-600 hover:to-pink-700 focus:outline-none transition"
@@ -71,7 +68,6 @@ const ConnectionsPage = () => {
               Connect Gmail
             </button>
 
-            {/* Outlook button */}
             <button
               onClick={openOutlookModal}
               className="flex items-center px-5 py-2 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg shadow hover:from-blue-700 hover:to-indigo-700 focus:outline-none transition"
@@ -89,7 +85,6 @@ const ConnectionsPage = () => {
             </span>
           </nav>
 
-          {/* Connections */}
           {loading ? (
             <div className="flex justify-center py-16 text-gray-500">
               Loading connections...

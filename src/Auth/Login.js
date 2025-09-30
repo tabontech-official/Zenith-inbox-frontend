@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { FaEye, FaEyeSlash, FaFacebookF, FaGithub, FaKey, FaGoogle } from "react-icons/fa";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";  // Import Axios for API requests
+import axios from "axios";
 
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -14,63 +14,54 @@ const LoginPage = () => {
     navigate("/register");
   };
 
-  // const handleSubmit = async (e) => {
-  //   e.preventDefault();
-  //   try {
-  //     const response = await axios.post("https://email-syncing-backend.vercel.app/auth/signIn", {
-  //       email,
-  //       password,
-  //     });
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await axios.post(
+        "https://email-syncing-backend.vercel.app/auth/signIn",
+        { email, password }
+      );
 
-  //     if (response.status === 200) {
-  //       navigate("/organization");
-  //     }
-  //   } catch (error) {
-  //     // Handle any errors during login
-  //     setError(error.response?.data?.error || "Login failed. Please try again.");
-  //   }
-  // };
+      if (response.status === 200) {
+        const { token, data } = response.data;
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  try {
-    const response = await axios.post(
-      "https://email-syncing-backend.vercel.app/auth/signIn",
-      { email, password }
-    );
+        localStorage.setItem("usertoken", token);
+        localStorage.setItem("userid", data._id);
 
-    if (response.status === 200) {
-      const { token, data } = response.data;
-
-      localStorage.setItem("usertoken", token);
-      localStorage.setItem("userid", data._id);
-
-      navigate("/organization");
+        navigate("/organization");
+      }
+    } catch (error) {
+      setError(
+        error.response?.data?.error || "Login failed. Please try again."
+      );
     }
-  } catch (error) {
-    setError(
-      error.response?.data?.error || "Login failed. Please try again."
-    );
-  }
-};
+  };
 
   return (
     <div className="min-h-screen flex">
+      {/* Left Section */}
       <div className="w-full lg:w-1/2 bg-white p-10 flex flex-col justify-center">
         <div className="max-w-md w-full mx-auto">
-          <h2 className="text-3xl font-semibold mb-6 text-gray-800">Sign in</h2>
+          <h2 className="text-3xl font-bold mb-6 text-gray-800 text-center">
+            Welcome Back
+          </h2>
+          <p className="text-gray-500 text-center mb-8">
+            Please sign in to continue
+          </p>
 
-          {/* Error Message */}
-          {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+          {error && (
+            <p className="text-red-500 text-sm mb-4 text-center">{error}</p>
+          )}
 
-          <form onSubmit={handleSubmit}>
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-1">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Email */}
+            <div>
+              <label className="block text-sm font-medium mb-1 text-gray-700">
                 Email <span className="text-red-500">*</span>
               </label>
               <input
                 type="email"
-                className="w-full border rounded px-3 py-2"
+                className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
                 placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -78,14 +69,15 @@ const handleSubmit = async (e) => {
               />
             </div>
 
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-1">
+            {/* Password */}
+            <div>
+              <label className="block text-sm font-medium mb-1 text-gray-700">
                 Password <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
-                  className="w-full border rounded px-3 py-2"
+                  className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -100,49 +92,29 @@ const handleSubmit = async (e) => {
               </div>
             </div>
 
+            {/* Submit */}
             <button
               type="submit"
-              className="w-full bg-gradient-to-r from-pink-500 to-purple-600 text-white py-3 rounded-lg font-semibold mt-4"
+              className="w-full bg-gradient-to-r from-pink-500 to-purple-600 text-white py-3 rounded-lg font-semibold hover:opacity-90 transition"
             >
               Sign in
             </button>
           </form>
 
-          <p 
-            className="text-center text-sm text-pink-500 mt-3 cursor-pointer hover:underline"
+          {/* Create account */}
+          <p
+            className="text-center text-sm text-purple-600 mt-5 cursor-pointer hover:underline"
             onClick={handleClick}
           >
-            CREATE AN ACCOUNT
+            Create an account
           </p>
 
-          <div className="my-6 border-t" />
-
-          {/* Social Media Login Buttons */}
-          <div className="space-y-3">
-            <button className="w-full flex items-center justify-center border px-4 py-3 rounded-lg bg-white hover:bg-gray-100 transition">
-              <FaGoogle className="text-red-500 w-5 h-5 mr-2" />
-              Sign in with Google
-            </button>
-
-            <button className="w-full flex items-center justify-center bg-[#3b5998] text-white px-4 py-3 rounded-lg hover:bg-[#2d4373] transition">
-              <FaFacebookF className="w-5 h-5 mr-2" />
-              Sign in with Facebook
-            </button>
-
-            <button className="w-full flex items-center justify-center bg-gray-800 text-white px-4 py-3 rounded-lg hover:bg-gray-700 transition">
-              <FaGithub className="w-5 h-5 mr-2" />
-              Sign in with GitHub
-            </button>
-
-            <button className="w-full flex items-center justify-center bg-black text-white px-4 py-3 rounded-lg hover:bg-gray-900 transition">
-              <FaKey className="w-5 h-5 mr-2" />
-              Sign in with SSO
-            </button>
-          </div>
-
-          <div className="mt-6 text-sm text-gray-500 space-y-1">
-            <p>Lost password</p>
-            <p>Resend verification email</p>
+          {/* Extra Links */}
+          <div className="mt-6 text-sm text-gray-500 text-center space-y-1">
+            <p className="hover:underline cursor-pointer">Forgot password?</p>
+            <p className="hover:underline cursor-pointer">
+              Resend verification email
+            </p>
             <p>
               Can’t log in?{" "}
               <span className="text-blue-500 underline cursor-pointer">
@@ -154,12 +126,12 @@ const handleSubmit = async (e) => {
         </div>
       </div>
 
-      {/* Image Section */}
+      {/* Right Section (Image) */}
       <div className="hidden lg:flex w-2/3 bg-gradient-to-br from-purple-600 to-fuchsia-600 text-white items-center justify-center relative p-0">
         <div className="w-full text-center">
           <img
             src="https://images.ctfassets.net/un655fb9wln6/5yk7rxBv0Nw98EVV0tI0pi/cf7cc21501065fe11153936be521831a/Waves_25_Hero_transparent.png?w=1920&q=75"
-            alt="Speaker 3"
+            alt="Hero Graphic"
             className="w-full max-w-5xl mx-auto"
           />
         </div>

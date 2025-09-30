@@ -77,46 +77,47 @@ const OthersScenariosPage = () => {
   const [bccList, setBccList] = useState([]);
   const [ccInput, setCcInput] = useState("");
   const [bccInput, setBccInput] = useState("");
-
-  const handleAddCC = (e, connId) => {
+  const makeKey = (branchIndex, moduleIndex, connId) =>
+    `${branchIndex}-${moduleIndex}-${connId}`;
+  const handleAddCC = (e, key) => {
     if (e.key === "Enter" || e.key === ",") {
       e.preventDefault();
       const value = e.target.value.trim();
       if (value && /\S+@\S+\.\S+/.test(value)) {
         setConnectionCCs((prev) => ({
           ...prev,
-          [connId]: [...(prev[connId] || []), value],
+          [key]: [...(prev[key] || []), value],
         }));
         e.target.value = "";
       }
     }
   };
 
-  const handleAddBCC = (e, connId) => {
+  const handleAddBCC = (e, key) => {
     if (e.key === "Enter" || e.key === ",") {
       e.preventDefault();
       const value = e.target.value.trim();
       if (value && /\S+@\S+\.\S+/.test(value)) {
         setConnectionBCCs((prev) => ({
           ...prev,
-          [connId]: [...(prev[connId] || []), value],
+          [key]: [...(prev[key] || []), value],
         }));
         e.target.value = "";
       }
     }
   };
 
-  const handleRemoveCC = (connId, index) => {
+  const handleRemoveCC = (key, index) => {
     setConnectionCCs((prev) => ({
       ...prev,
-      [connId]: prev[connId].filter((_, i) => i !== index),
+      [key]: prev[key].filter((_, i) => i !== index),
     }));
   };
 
-  const handleRemoveBCC = (connId, index) => {
+  const handleRemoveBCC = (key, index) => {
     setConnectionBCCs((prev) => ({
       ...prev,
-      [connId]: prev[connId].filter((_, i) => i !== index),
+      [key]: prev[key].filter((_, i) => i !== index),
     }));
   };
 
@@ -153,10 +154,8 @@ const OthersScenariosPage = () => {
     if (status === "success" && connectionId) {
       console.log("🔗 Gmail connection created:", connectionId);
 
-      // store in localStorage so modules can use it
       localStorage.setItem("gmailConnectionId", connectionId);
 
-      // clear query params from URL
       window.history.replaceState({}, document.title, "/scenarios/others");
     }
   }, []);
@@ -193,25 +192,23 @@ const OthersScenariosPage = () => {
   const handleSaveFilter = () => {
     const key = `${selectedBranchIndex}-${selectedModuleIndex ?? "branch"}`;
 
-    // Save filter in local filters state
     setFilters((prev) => ({
       ...prev,
       [key]: { label: filterLabel, conditions, template: editorContent },
     }));
 
-    // Save filter in routerBranches
     const updatedBranches = [...routerBranches];
     if (selectedModuleIndex === null) {
       updatedBranches[selectedBranchIndex].filter = {
         label: filterLabel,
-        conditions, // ✅ structured objects
+        conditions,
         template: editorContent,
       };
     } else {
       updatedBranches[selectedBranchIndex].modules[selectedModuleIndex].filter =
         {
           label: filterLabel,
-          conditions, // ✅ structured objects
+          conditions,
           template: editorContent,
         };
     }
@@ -227,31 +224,6 @@ const OthersScenariosPage = () => {
       return updated;
     });
   };
-
-  // const openFilterModal = (branchIndex, moduleIndex = null) => {
-  //   setSelectedBranchIndex(branchIndex);
-  //   setSelectedModuleIndex(moduleIndex);
-
-  //   const key = `${branchIndex}-${moduleIndex ?? "branch"}-${
-  //     selectedConnection || "none"
-  //   }`;
-
-  //   const existing = filters[key] || {
-  //     label: "",
-  //     conditions: [],
-  //     template: "",
-  //   };
-
-  //   setFilterLabel(existing.label || "");
-  //   setConditions(
-  //     existing.conditions && existing.conditions.length > 0
-  //       ? existing.conditions
-  //       : [{ field: "", operator: "Equal to", value: "", join: null }]
-  //   );
-  //   setEditorContent(existing.template || "");
-
-  //   setShowFilterDialog(true);
-  // };
 
   const openFilterModal = (branchIndex, moduleIndex = null) => {
     setSelectedBranchIndex(branchIndex);
@@ -313,12 +285,11 @@ const OthersScenariosPage = () => {
     };
     fetchConnections();
   }, [userId]);
- const apps = [
-  { name: "Gmail", color: "bg-red-500", icon: "Gmail" },
-  { name: "Email", color: "bg-red-500", icon: "Email" },
-  { name: "Delay", color: "bg-blue-500", icon: "Delay" },
-];
-
+  const apps = [
+    { name: "Gmail", color: "bg-red-500", icon: "Gmail" },
+    { name: "Email", color: "bg-red-500", icon: "Email" },
+    { name: "Delay", color: "bg-blue-500", icon: "Delay" },
+  ];
 
   const availableData = [
     {
@@ -334,145 +305,124 @@ const OthersScenariosPage = () => {
     },
   ];
 
- useEffect(() => {
-  setSavedModule({
-    app: { name: "Webhooks", color: "bg-red-500", icon: "Webhooks" }, // ✅ string only
-    type: "Custom mailhook",
-    description: "Custom mailhook",
-  });
-  setSavedSecondModule({
-    app: { name: "Router", color: "bg-green-400", icon: "Router" }, // ✅
-    type: "Router",
-    description: "Route to different paths",
-  });
-  setSavedThirdModule({
-    app: { name: "Gmail", color: "bg-red-500", icon: "Gmail" }, // ✅
-    type: "Send an Email",
-    description: "Send an email",
-  });
-  setShowRouterBranches(true);
-  setRouterBranches([
-    { id: 2, hasModule: false, condition: null, modules: [] },
-  ]);
-}, []);
-
+  useEffect(() => {
+    setSavedModule({
+      app: { name: "Webhooks", color: "bg-red-500", icon: "Webhooks" },
+      type: "Custom mailhook",
+      description: "Custom mailhook",
+    });
+    setSavedSecondModule({
+      app: { name: "Router", color: "bg-green-400", icon: "Router" },
+      type: "Router",
+      description: "Route to different paths",
+    });
+    setSavedThirdModule({
+      app: { name: "Gmail", color: "bg-red-500", icon: "Gmail" },
+      type: "Send an Email",
+      description: "Send an email",
+    });
+    setShowRouterBranches(true);
+    setRouterBranches([
+      { id: 2, hasModule: false, condition: null, modules: [] },
+    ]);
+  }, []);
 
   const [delayValue, setDelayValue] = useState(5);
   const [delayUnit, setDelayUnit] = useState("seconds");
 
-const handleSave = () => {
-  if (editingBranch !== null) {
-    const updated = [...routerBranches];
-    const modules = updated[editingBranch].modules || [];
+  const handleSave = () => {
+    if (editingBranch !== null) {
+      const updated = [...routerBranches];
+      const modules = updated[editingBranch].modules || [];
 
-    let type = "";
-    let description = "";
-    let extra = {};
+      let type = "";
+      let description = "";
+      let extra = {};
 
-    if (selectedModule === "delay") {
-      type = "Delay";
-      description = `Delay execution for ${delayValue} ${delayUnit}`;
-      extra = { delayValue, delayUnit };
+      if (selectedModule === "delay") {
+        type = "Delay";
+        description = `Delay execution for ${delayValue} ${delayUnit}`;
+        extra = { delayValue, delayUnit };
 
-      modules.push({
-        id: Date.now() + Math.random(),
-        app: {
-          name: selectedApp.name,
-          color: selectedApp.color,
-          icon: selectedApp.icon,
-        },
-        type,
-        description,
-        ...extra,
-      });
-    } else {
-      // ✅ Email / Outlook ke liye edit ya push
-      if (selectedModuleIndex !== null && modules[selectedModuleIndex]) {
-        const existing = modules[selectedModuleIndex];
-
-        modules[selectedModuleIndex] = {
-          ...existing,
-          id: existing.id || Date.now(),
-          app: {
-            name: selectedApp.name,
-            color: selectedApp.color,
-            icon: selectedApp.icon,
-          },
+        modules.push({
+          id: Date.now() + Math.random(),
+          app: { ...selectedApp },
           type,
           description,
-          connectionId:
-            selectedConnections.length > 1
-              ? selectedConnections
-              : selectedConnections[0],
-          subject:
-            connectionSubjects[selectedConnections[0]] ||
-            existing.subject ||
-            "",
-          template:
-            connectionTemplates[selectedConnections[0]] ||
-            existing.template ||
-            "",
-          cc: connectionCCs[selectedConnections[0]] || [],
-          bcc: connectionBCCs[selectedConnections[0]] || [],
-        };
+          ...extra,
+        });
       } else {
-        // ✅ New email module add
-        selectedConnections.forEach((connId) => {
-          modules.push({
-            id: Date.now() + Math.random(),
-            app: {
-              name: selectedApp.name,
-              color: selectedApp.color,
-              icon: selectedApp.icon,
-            },
+        if (selectedModuleIndex !== null && modules[selectedModuleIndex]) {
+          const existing = modules[selectedModuleIndex];
+          const connId = Array.isArray(existing.connectionId)
+            ? existing.connectionId[0]
+            : existing.connectionId;
+          const key = makeKey(editingBranch, selectedModuleIndex, connId);
+
+          modules[selectedModuleIndex] = {
+            ...existing,
+            id: existing.id || Date.now(),
+            app: { ...selectedApp },
             type,
             description,
-            connectionId: connId,
+            connectionId: selectedConnections,
             subject: connectionSubjects[connId] || "",
             template: connectionTemplates[connId] || "",
-            cc: connectionCCs[connId] || [],
-            bcc: connectionBCCs[connId] || [],
+            cc: connectionCCs[key] || [],
+            bcc: connectionBCCs[key] || [],
+          };
+        } else {
+          selectedConnections.forEach((connId) => {
+            const key = makeKey(editingBranch, modules.length, connId);
+            modules.push({
+              id: Date.now() + Math.random(),
+              app: { ...selectedApp },
+              type,
+              description,
+              connectionId: connId,
+              subject: connectionSubjects[connId] || "",
+              template: connectionTemplates[connId] || "",
+              cc: connectionCCs[key] || [],
+              bcc: connectionBCCs[key] || [],
+            });
           });
-        });
+        }
       }
+
+      updated[editingBranch].modules = modules;
+      setRouterBranches(updated);
+
+      setEditingBranch(null);
+      setSelectedModuleIndex(null);
+      setOpen(false);
+      setSelectedModule(null);
+      setSelectedApp(null);
+      setSelectedConnections([]);
+      setConnectionSubjects({});
+      setConnectionTemplates({});
+      setConnectionCCs({});
+      setConnectionBCCs({});
     }
+  };
 
-    updated[editingBranch].modules = modules;
-    setRouterBranches(updated);
-
-    // Reset
-    setEditingBranch(null);
-    setSelectedModuleIndex(null);
-    setOpen(false);
-    setSelectedModule(null);
-    setSelectedApp(null);
-    setSelectedConnections([]);
-  }
-};
-
-
-
-const renderIcon = (appName) => {
-  switch (appName) {
-    case "Gmail":
-      return <FaGoogle className="text-white w-5 h-5" />;
-    case "Email":
-      return <TfiEmail className="text-white w-5 h-5" />;
-    case "Outlook":
-      return <FaMicrosoft className="text-white w-5 h-5" />;
-    case "Delay":
-      return <Clock className="text-white w-5 h-5" />;
-    case "Router":
-      return <GitBranch className="text-white w-5 h-5" />;
-    case "Webhooks":
-      return <Cloud className="text-white w-5 h-5" />;
-    default:
-      return <FaEnvelope className="text-white w-5 h-5" />;
-  }
-};
-
-
-
+  const renderIcon = (appName) => {
+    switch (appName) {
+      case "Gmail":
+        return <FaGoogle className="text-white w-5 h-5" />;
+      case "Email":
+        return <TfiEmail className="text-white w-5 h-5" />;
+      case "Outlook":
+        return <FaMicrosoft className="text-white w-5 h-5" />;
+      case "Delay":
+        return <Clock className="text-white w-5 h-5" />;
+      case "Router":
+        return <GitBranch className="text-white w-5 h-5" />;
+      case "Webhooks":
+        return <Cloud className="text-white w-5 h-5" />;
+      default:
+        return <FaEnvelope className="text-white w-5 h-5" />;
+    }
+  };
 
   const quillRefs = useRef({});
 
@@ -490,7 +440,7 @@ const renderIcon = (appName) => {
       hasModule: false,
       condition: null,
       modules: [],
-      filter: { label: "", conditions: [], template: "" }, // ✅ fix
+      filter: { label: "", conditions: [], template: "" },
     };
 
     setRouterBranches([...routerBranches, newBranch]);
@@ -555,7 +505,6 @@ const renderIcon = (appName) => {
       <div className="flex-1 min-h-screen bg-gray-50 font-sans text-gray-800 flex flex-col">
         <div className="border-b bg-white shadow-sm">
           <div className="p-6 flex items-center justify-between">
-            {/* Left Side */}
             <div className="flex flex-col w-2/3">
               <h1 className="text-xl font-medium text-gray-800 mb-2">
                 {scenarioId ? "Edit Scenario" : "Create New Scenario"}
@@ -573,7 +522,6 @@ const renderIcon = (appName) => {
               />
             </div>
 
-            {/* Right Side */}
             <div className="flex flex-col space-y-2 items-end">
               <button
                 className="flex items-center px-4 py-2 text-sm text-gray-700 bg-white border border-gray-200 rounded-md shadow-sm hover:bg-gray-100 w-full"
@@ -755,7 +703,6 @@ const renderIcon = (appName) => {
 
                                     setSelectedApp(module.app);
 
-                                    // ✅ Restore multiple connections
                                     const connectionsToRestore = Array.isArray(
                                       module.connectionId
                                     )
@@ -767,13 +714,30 @@ const renderIcon = (appName) => {
                                     );
 
                                     connectionsToRestore.forEach((connId) => {
+                                      const key = makeKey(
+                                        branchIndex,
+                                        moduleIndex,
+                                        connId
+                                      );
+
                                       setConnectionSubjects((prev) => ({
                                         ...prev,
                                         [connId]: module.subject || "",
                                       }));
+
                                       setConnectionTemplates((prev) => ({
                                         ...prev,
                                         [connId]: module.template || "",
+                                      }));
+
+                                      setConnectionCCs((prev) => ({
+                                        ...prev,
+                                        [key]: module.cc || [],
+                                      }));
+
+                                      setConnectionBCCs((prev) => ({
+                                        ...prev,
+                                        [key]: module.bcc || [],
                                       }));
                                     });
                                   }}
@@ -814,8 +778,6 @@ const renderIcon = (appName) => {
                                 <Plus className="w-3 h-3 text-gray-600" />
                               </button>
                             </div>
-
-                            {/* Connection dots between modules */}
 
                             {moduleIndex < branch.modules.length - 1 && (
                               <div className="flex items-center ml-4 space-x-2">
@@ -891,7 +853,7 @@ const renderIcon = (appName) => {
                         <div
                           className={`w-8 h-8 flex items-center justify-center rounded-full text-white ${app.color}`}
                         >
-  {renderIcon(app.icon)}
+                          {renderIcon(app.icon)}
                         </div>
                         <span className="ml-3 text-sm text-gray-700">
                           {app.name}
@@ -923,7 +885,7 @@ const renderIcon = (appName) => {
                     <div
                       className={`w-12 h-12 flex items-center justify-center rounded-full text-white mb-3 ${selectedApp.color}`}
                     >
-                     {renderIcon(selectedApp.icon)} 
+                      {renderIcon(selectedApp.icon)}
                     </div>
                     <h2 className="text-lg font-semibold">
                       {selectedApp.name}
@@ -1019,7 +981,6 @@ const renderIcon = (appName) => {
                         </div>
                       )}
 
-                      {/* Field */}
                       <select
                         value={cond.field}
                         onChange={(e) =>
@@ -1050,7 +1011,6 @@ const renderIcon = (appName) => {
                         <option>Does not contain</option>
                       </select>
 
-                      {/* Value */}
                       <input
                         type="text"
                         value={cond.value}
@@ -1091,10 +1051,9 @@ const renderIcon = (appName) => {
                 </div>
               </div>
 
-              {/* Footer */}
               <div className="flex justify-end space-x-2 px-4 py-3 border-t bg-gray-50">
                 <button
-                  onClick={handleSaveFilter} // ✅ just call the function
+                  onClick={handleSaveFilter}
                   className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
                 >
                   Save
@@ -1279,12 +1238,18 @@ const renderIcon = (appName) => {
                       )}
                     </div>
 
-                    {/* Multiple editors - one per selected Outlook connection */}
                     {selectedConnections.map((connId) => {
                       const conn = connections.find(
                         (c) => c._id === connId && c.provider === "outlook"
                       );
                       if (!conn) return null;
+
+                      const key = makeKey(
+                        selectedBranchIndex,
+                        selectedModuleIndex ??
+                          routerBranches[editingBranch]?.modules.length,
+                        connId
+                      );
 
                       return (
                         <div
@@ -1295,7 +1260,8 @@ const renderIcon = (appName) => {
                             <FaMicrosoft className="text-blue-600 mr-2" />
                             Outlook: {conn.email}
                           </h4>
-  <div className="mt-4">
+
+                          <div className="mt-4">
                             <label className="block text-sm font-medium text-gray-700 mb-2">
                               To <span className="text-red-500">*</span>
                             </label>
@@ -1312,7 +1278,6 @@ const renderIcon = (appName) => {
                             </div>
                           </div>
 
-                          {/* CC */}
                           <div className="mt-4">
                             <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
                               CC{" "}
@@ -1321,7 +1286,7 @@ const renderIcon = (appName) => {
                               </span>
                             </label>
                             <div className="flex flex-wrap items-center border rounded-lg px-3 py-2">
-                              {(connectionCCs[connId] || []).map(
+                              {(connectionCCs[key] || []).map(
                                 (email, index) => (
                                   <span
                                     key={index}
@@ -1330,9 +1295,7 @@ const renderIcon = (appName) => {
                                     {email}
                                     <button
                                       type="button"
-                                      onClick={() =>
-                                        handleRemoveCC(connId, index)
-                                      }
+                                      onClick={() => handleRemoveCC(key, index)}
                                       className="ml-2 text-xs text-red-500 hover:text-red-700"
                                     >
                                       ✕
@@ -1342,14 +1305,13 @@ const renderIcon = (appName) => {
                               )}
                               <input
                                 type="text"
-                                onKeyDown={(e) => handleAddCC(e, connId)}
+                                onKeyDown={(e) => handleAddCC(e, key)}
                                 className="flex-1 outline-none text-sm py-2 px-3"
                                 placeholder="Type and press Enter"
                               />
                             </div>
                           </div>
 
-                          {/* BCC */}
                           <div className="mt-4">
                             <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
                               BCC{" "}
@@ -1358,7 +1320,7 @@ const renderIcon = (appName) => {
                               </span>
                             </label>
                             <div className="flex flex-wrap items-center border rounded-lg px-3 py-2">
-                              {(connectionBCCs[connId] || []).map(
+                              {(connectionBCCs[key] || []).map(
                                 (email, index) => (
                                   <span
                                     key={index}
@@ -1368,7 +1330,7 @@ const renderIcon = (appName) => {
                                     <button
                                       type="button"
                                       onClick={() =>
-                                        handleRemoveBCC(connId, index)
+                                        handleRemoveBCC(key, index)
                                       }
                                       className="ml-2 text-xs text-red-500 hover:text-red-700"
                                     >
@@ -1379,12 +1341,13 @@ const renderIcon = (appName) => {
                               )}
                               <input
                                 type="text"
-                                onKeyDown={(e) => handleAddBCC(e, connId)}
+                                onKeyDown={(e) => handleAddBCC(e, key)}
                                 className="flex-1 outline-none text-sm py-2 px-3"
                                 placeholder="Type and press Enter"
                               />
                             </div>
                           </div>
+
                           <input
                             type="text"
                             value={connectionSubjects[connId] || ""}
@@ -1417,9 +1380,6 @@ const renderIcon = (appName) => {
                             <code>{"{order.id}"}</code> or{" "}
                             <code>{"{email}"}</code>.
                           </p>
-
-                          {/* To */}
-                        
                         </div>
                       );
                     })}
@@ -1476,7 +1436,7 @@ const renderIcon = (appName) => {
                               <li
                                 key={conn._id}
                                 onClick={() => {
-                                  setSelectedConnections([conn._id]); // ✅ ek hi connection allow
+                                  setSelectedConnections([conn._id]);
                                   setShowDropdown(false);
                                 }}
                                 className={`flex items-center px-3 py-2 cursor-pointer hover:bg-gray-100 text-sm ${
@@ -1493,10 +1453,16 @@ const renderIcon = (appName) => {
                       )}
                     </div>
 
-                    {/* Multiple editors - one per selected connection */}
                     {selectedConnections.map((connId) => {
                       const conn = connections.find((c) => c._id === connId);
                       if (!conn) return null;
+
+                      const key = makeKey(
+                        selectedBranchIndex,
+                        selectedModuleIndex ??
+                          routerBranches[editingBranch]?.modules.length,
+                        connId
+                      );
 
                       return (
                         <div
@@ -1513,6 +1479,7 @@ const renderIcon = (appName) => {
                               ? `Gmail: ${conn.email}`
                               : `SMTP: ${conn.name || conn.email}`}
                           </h4>
+
                           <div className="mt-4">
                             <label className="block text-sm font-medium text-gray-700 mb-2">
                               To <span className="text-red-500">*</span>
@@ -1538,7 +1505,7 @@ const renderIcon = (appName) => {
                               </span>
                             </label>
                             <div className="flex flex-wrap items-center border rounded-lg px-3 py-2">
-                              {(connectionCCs[connId] || []).map(
+                              {(connectionCCs[key] || []).map(
                                 (email, index) => (
                                   <span
                                     key={index}
@@ -1547,9 +1514,7 @@ const renderIcon = (appName) => {
                                     {email}
                                     <button
                                       type="button"
-                                      onClick={() =>
-                                        handleRemoveCC(connId, index)
-                                      }
+                                      onClick={() => handleRemoveCC(key, index)}
                                       className="ml-2 text-xs text-red-500 hover:text-red-700"
                                     >
                                       ✕
@@ -1559,7 +1524,7 @@ const renderIcon = (appName) => {
                               )}
                               <input
                                 type="text"
-                                onKeyDown={(e) => handleAddCC(e, connId)}
+                                onKeyDown={(e) => handleAddCC(e, key)}
                                 className="flex-1 outline-none text-sm py-2 px-3"
                                 placeholder="Type and press Enter"
                               />
@@ -1574,7 +1539,7 @@ const renderIcon = (appName) => {
                               </span>
                             </label>
                             <div className="flex flex-wrap items-center border rounded-lg px-3 py-2">
-                              {(connectionBCCs[connId] || []).map(
+                              {(connectionBCCs[key] || []).map(
                                 (email, index) => (
                                   <span
                                     key={index}
@@ -1584,7 +1549,7 @@ const renderIcon = (appName) => {
                                     <button
                                       type="button"
                                       onClick={() =>
-                                        handleRemoveBCC(connId, index)
+                                        handleRemoveBCC(key, index)
                                       }
                                       className="ml-2 text-xs text-red-500 hover:text-red-700"
                                     >
@@ -1595,7 +1560,7 @@ const renderIcon = (appName) => {
                               )}
                               <input
                                 type="text"
-                                onKeyDown={(e) => handleAddBCC(e, connId)}
+                                onKeyDown={(e) => handleAddBCC(e, key)}
                                 className="flex-1 outline-none text-sm py-2 px-3"
                                 placeholder="Type and press Enter"
                               />

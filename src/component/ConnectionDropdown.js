@@ -1,4 +1,3 @@
-// src/component/ConnectionDropdown.jsx
 import React, { useState } from "react";
 import { FaGoogle, FaMicrosoft, FaEnvelope } from "react-icons/fa";
 

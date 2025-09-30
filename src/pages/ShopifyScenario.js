@@ -186,7 +186,6 @@ const ShopifyScenariosPage = () => {
   useEffect(() => {
     function handleClickOutside(event) {
       if (modalRef.current && !modalRef.current.contains(event.target)) {
-        // Close all open boxes if clicked outside
         setOpen(false);
         setShowFilterDialog(false);
         setShowDataPanel(false);
@@ -424,7 +423,6 @@ const ShopifyScenariosPage = () => {
     ].modules.filter((m) => m.id !== moduleId);
     setRouterBranches(updatedBranches);
 
-    // 🔄 Reset form states when module removed
     setSelectedConnection("");
     setSelectedTemplate("");
     setSubject("");
@@ -442,7 +440,6 @@ const ShopifyScenariosPage = () => {
     setEditingModuleId(module.id);
     setOpen(true);
 
-    // load saved values
     setSelectedApp(module.app);
     setSelectedConnection(module.connectionId || "");
     setSelectedTemplate(module.template || "");
@@ -710,17 +707,6 @@ const ShopifyScenariosPage = () => {
                           <Plus className="w-6 h-6" />
                         </button>
                       )}
-
-                      {/* Filter Button */}
-                      {/* <button
-                        onClick={() => {
-                          setSelectedBranchIndex(branchIndex);
-                          setShowFilterDialog(true);
-                        }}
-                        className="ml-2 px-3 py-1 bg-blue-100 text-blue-700 text-xs rounded hover:bg-blue-200 transition-colors border border-blue-300"
-                      >
-                        + Filter
-                      </button> */}
                     </div>
                   </div>
                 ))}
@@ -943,7 +929,6 @@ const ShopifyScenariosPage = () => {
                           </div>
                         </div>
 
-                        {/* BCC */}
                         <div className="w-full">
                           <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
                             <FiUsers className="mr-2 text-gray-500" /> BCC
