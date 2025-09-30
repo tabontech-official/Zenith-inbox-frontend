@@ -405,97 +405,91 @@ const OthersScenariosPage = () => {
   //   }
   // };
 
-
   const handleSave = () => {
-  if (editingBranch !== null) {
-    const updated = [...routerBranches];
-    const modules = updated[editingBranch].modules || [];
+    if (editingBranch !== null) {
+      const updated = [...routerBranches];
+      const modules = updated[editingBranch].modules || [];
 
-    let type = "";
-    let description = "";
-    let extra = {};
+      let type = "";
+      let description = "";
+      let extra = {};
 
-    // 🕒 Delay module
-    if (selectedModule === "delay") {
-      type = "Delay";
-      description = `Delay execution for ${delayValue} ${delayUnit}`;
-      extra = { delayValue, delayUnit };
+      if (selectedModule === "delay") {
+        type = "Delay";
+        description = `Delay execution for ${delayValue} ${delayUnit}`;
+        extra = { delayValue, delayUnit };
 
-      modules.push({
-        id: Date.now() + Math.random(),
-        app: { ...selectedApp },
-        type,
-        description,
-        ...extra,
-      });
-    } else {
-      // ✉️ Gmail / Email / Other modules
-      if (selectedApp?.name === "Gmail") {
-        type = "Send an Email";
-        description = "Send email using Gmail";
-      } else if (selectedApp?.name === "Email") {
-        type = "Custom Email";
-        description = "Send custom email";
-      } else {
-        type = "Other";
-        description = "Custom module";
-      }
-
-      // 🔄 Update existing module
-      if (selectedModuleIndex !== null && modules[selectedModuleIndex]) {
-        const existing = modules[selectedModuleIndex];
-        const connId = Array.isArray(existing.connectionId)
-          ? existing.connectionId[0]
-          : existing.connectionId;
-        const key = makeKey(editingBranch, selectedModuleIndex, connId);
-
-        modules[selectedModuleIndex] = {
-          ...existing,
-          id: existing.id || Date.now(),
+        modules.push({
+          id: Date.now() + Math.random(),
           app: { ...selectedApp },
           type,
           description,
-          connectionId: selectedConnections,
-          subject: connectionSubjects[connId] || "",
-          template: connectionTemplates[connId] || "",
-          cc: connectionCCs[key] || [],
-          bcc: connectionBCCs[key] || [],
-        };
+          ...extra,
+        });
       } else {
-        // ➕ Add new modules for each selected connection
-        selectedConnections.forEach((connId, idx) => {
-          const key = makeKey(editingBranch, modules.length + idx, connId);
-          modules.push({
-            id: Date.now() + Math.random(),
+        if (selectedApp?.name === "Gmail") {
+          type = "Send an Email";
+          description = "Send email using Gmail";
+        } else if (selectedApp?.name === "Email") {
+          type = "Custom Email";
+          description = "Send custom email";
+        } else {
+          type = "Other";
+          description = "Custom module";
+        }
+
+        if (selectedModuleIndex !== null && modules[selectedModuleIndex]) {
+          const existing = modules[selectedModuleIndex];
+          const connId = Array.isArray(existing.connectionId)
+            ? existing.connectionId[0]
+            : existing.connectionId;
+          const key = makeKey(editingBranch, selectedModuleIndex, connId);
+
+          modules[selectedModuleIndex] = {
+            ...existing,
+            id: existing.id || Date.now(),
             app: { ...selectedApp },
             type,
             description,
-            connectionId: connId,
+            connectionId: selectedConnections,
             subject: connectionSubjects[connId] || "",
             template: connectionTemplates[connId] || "",
             cc: connectionCCs[key] || [],
             bcc: connectionBCCs[key] || [],
+          };
+        } else {
+          selectedConnections.forEach((connId, idx) => {
+            const key = makeKey(editingBranch, modules.length + idx, connId);
+            modules.push({
+              id: Date.now() + Math.random(),
+              app: { ...selectedApp },
+              type,
+              description,
+              connectionId: connId,
+              subject: connectionSubjects[connId] || "",
+              template: connectionTemplates[connId] || "",
+              cc: connectionCCs[key] || [],
+              bcc: connectionBCCs[key] || [],
+            });
           });
-        });
+        }
       }
+
+      updated[editingBranch].modules = modules;
+      setRouterBranches(updated);
+
+      setEditingBranch(null);
+      setSelectedModuleIndex(null);
+      setOpen(false);
+      setSelectedModule(null);
+      setSelectedApp(null);
+      setSelectedConnections([]);
+      setConnectionSubjects({});
+      setConnectionTemplates({});
+      setConnectionCCs({});
+      setConnectionBCCs({});
     }
-
-    updated[editingBranch].modules = modules;
-    setRouterBranches(updated);
-
-    // reset states
-    setEditingBranch(null);
-    setSelectedModuleIndex(null);
-    setOpen(false);
-    setSelectedModule(null);
-    setSelectedApp(null);
-    setSelectedConnections([]);
-    setConnectionSubjects({});
-    setConnectionTemplates({});
-    setConnectionCCs({});
-    setConnectionBCCs({});
-  }
-};
+  };
 
   const renderIcon = (appName) => {
     switch (appName) {

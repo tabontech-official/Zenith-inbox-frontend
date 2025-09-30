@@ -1,79 +1,73 @@
-
 import React, { useState, useEffect } from "react";
 import Sidebar from "../component/Sidebar";
 import ConnectionModal from "../component/ConnectionModal";
-import OutlookConnectionModal from "../component/OutlookConnectionModal"; 
+import OutlookConnectionModal from "../component/OutlookConnectionModal";
 import { FaGoogle, FaMicrosoft, FaEnvelope } from "react-icons/fa";
 import axios from "axios";
 import toast from "react-hot-toast";
 
 const ConnectionsPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isOutlookModalOpen, setIsOutlookModalOpen] = useState(false); 
+  const [isOutlookModalOpen, setIsOutlookModalOpen] = useState(false);
   const [connections, setConnections] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
 
+  const handleConnectionAdded = (newConn) => {
+    const savedConn = newConn.connection || newConn;
 
-const handleConnectionAdded = (newConn) => {
-  const savedConn = newConn.connection || newConn; 
+    setConnections((prev) => [...prev, savedConn]);
 
-  setConnections((prev) => [...prev, savedConn]);
-
-  toast.success(`${savedConn.provider} connected successfully! `);
-};
-
-
-  const openOutlookModal = () => setIsOutlookModalOpen(true); 
-  const closeOutlookModal = () => setIsOutlookModalOpen(false);
-
- useEffect(() => {
-  const fetchConnections = async () => {
-    try {
-      const userId = localStorage.getItem("userid");
-      if (!userId) {
-        console.warn(" No userId in localStorage");
-        setLoading(false);
-        return;
-      }
-      const res = await axios.get(
-        `https://email-syncing-backend.vercel.app/auth/getConnection/${userId}`
-      );
-      
-      
-      setConnections(res.data);
-    } catch (err) {
-      console.error(" Failed to fetch connections:", err);
-    } finally {
-      setLoading(false);
-    }
+    toast.success(`${savedConn.provider} connected successfully! `);
   };
 
-  fetchConnections();
-}, []);
+  const openOutlookModal = () => setIsOutlookModalOpen(true);
+  const closeOutlookModal = () => setIsOutlookModalOpen(false);
 
-const providerIcon = (provider) => {
-  if (!provider) {
-    return <FaEnvelope className="text-gray-500 h-6 w-6" />; 
-  }
+  useEffect(() => {
+    const fetchConnections = async () => {
+      try {
+        const userId = localStorage.getItem("userid");
+        if (!userId) {
+          console.warn(" No userId in localStorage");
+          setLoading(false);
+          return;
+        }
+        const res = await axios.get(
+          `https://email-syncing-backend.vercel.app/auth/getConnection/${userId}`
+        );
 
-  switch (provider.toLowerCase()) {
-    case "gmail":
-      return <FaGoogle className="text-red-500 h-6 w-6" />;
-    case "outlook":
-      return <FaMicrosoft className="text-blue-600 h-6 w-6" />;
-    default:
+        setConnections(res.data);
+      } catch (err) {
+        console.error(" Failed to fetch connections:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchConnections();
+  }, []);
+
+  const providerIcon = (provider) => {
+    if (!provider) {
       return <FaEnvelope className="text-gray-500 h-6 w-6" />;
-  }
-};
+    }
 
+    switch (provider.toLowerCase()) {
+      case "gmail":
+        return <FaGoogle className="text-red-500 h-6 w-6" />;
+      case "outlook":
+        return <FaMicrosoft className="text-blue-600 h-6 w-6" />;
+      default:
+        return <FaEnvelope className="text-gray-500 h-6 w-6" />;
+    }
+  };
 
   return (
     <div className="flex">
       <Sidebar />
-
       <div className="ml-64 flex-1 min-h-screen bg-gray-50 font-sans text-gray-800">
         <header className="flex items-center justify-between p-6 bg-white border-b border-gray-200">
           <h1 className="text-2xl font-bold text-gray-800">Connections</h1>
@@ -110,7 +104,9 @@ const providerIcon = (provider) => {
           ) : connections.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-gray-500">
               <FaEnvelope className="h-12 w-12 text-gray-400 mb-3" />
-              <p className="text-lg">You haven’t created any connections yet.</p>
+              <p className="text-lg">
+                You haven’t created any connections yet.
+              </p>
               <div className="flex space-x-3 mt-4">
                 <button
                   onClick={openModal}
@@ -150,18 +146,17 @@ const providerIcon = (provider) => {
           )}
         </main>
       </div>
-
-<ConnectionModal
-      isOpen={isModalOpen}
-      onClose={closeModal}
-      onSuccess={handleConnectionAdded}
-    />  
-    
-<OutlookConnectionModal
-      isOpen={isOutlookModalOpen}
-      onClose={closeOutlookModal}
-      onSuccess={handleConnectionAdded} 
-    />    </div>
+      <ConnectionModal
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        onSuccess={handleConnectionAdded}
+      />
+      <OutlookConnectionModal
+        isOpen={isOutlookModalOpen}
+        onClose={closeOutlookModal}
+        onSuccess={handleConnectionAdded}
+      />{" "}
+    </div>
   );
 };
 
