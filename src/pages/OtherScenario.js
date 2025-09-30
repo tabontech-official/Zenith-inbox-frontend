@@ -165,7 +165,7 @@ const OthersScenariosPage = () => {
       const fetchScenario = async () => {
         try {
           const res = await fetch(
-            `http://localhost:5000/scenario/detail/${id}`
+            `https://email-syncing-backend.vercel.app/scenario/detail/${id}`
           );
           const data = await res.json();
 
@@ -275,7 +275,7 @@ const OthersScenariosPage = () => {
     const fetchConnections = async () => {
       try {
         const res = await fetch(
-          `http://localhost:5000/auth/getConnection/${userId}`
+          `https://email-syncing-backend.vercel.app/auth/getConnection/${userId}`
         );
         const data = await res.json();
         setConnections(data);
@@ -330,80 +330,172 @@ const OthersScenariosPage = () => {
   const [delayValue, setDelayValue] = useState(5);
   const [delayUnit, setDelayUnit] = useState("seconds");
 
+  // const handleSave = () => {
+  //   if (editingBranch !== null) {
+  //     const updated = [...routerBranches];
+  //     const modules = updated[editingBranch].modules || [];
+
+  //     let type = "";
+  //     let description = "";
+  //     let extra = {};
+
+  //     if (selectedModule === "delay") {
+  //       type = "Delay";
+  //       description = `Delay execution for ${delayValue} ${delayUnit}`;
+  //       extra = { delayValue, delayUnit };
+
+  //       modules.push({
+  //         id: Date.now() + Math.random(),
+  //         app: { ...selectedApp },
+  //         type,
+  //         description,
+  //         ...extra,
+  //       });
+  //     } else {
+  //       if (selectedModuleIndex !== null && modules[selectedModuleIndex]) {
+  //         const existing = modules[selectedModuleIndex];
+  //         const connId = Array.isArray(existing.connectionId)
+  //           ? existing.connectionId[0]
+  //           : existing.connectionId;
+  //         const key = makeKey(editingBranch, selectedModuleIndex, connId);
+
+  //         modules[selectedModuleIndex] = {
+  //           ...existing,
+  //           id: existing.id || Date.now(),
+  //           app: { ...selectedApp },
+  //           type,
+  //           description,
+  //           connectionId: selectedConnections,
+  //           subject: connectionSubjects[connId] || "",
+  //           template: connectionTemplates[connId] || "",
+  //           cc: connectionCCs[key] || [],
+  //           bcc: connectionBCCs[key] || [],
+  //         };
+  //       } else {
+  //         selectedConnections.forEach((connId) => {
+  //           const key = makeKey(editingBranch, modules.length, connId);
+  //           modules.push({
+  //             id: Date.now() + Math.random(),
+  //             app: { ...selectedApp },
+  //             type,
+  //             description,
+  //             connectionId: connId,
+  //             subject: connectionSubjects[connId] || "",
+  //             template: connectionTemplates[connId] || "",
+  //             cc: connectionCCs[key] || [],
+  //             bcc: connectionBCCs[key] || [],
+  //           });
+  //         });
+  //       }
+  //     }
+
+  //     updated[editingBranch].modules = modules;
+  //     setRouterBranches(updated);
+
+  //     setEditingBranch(null);
+  //     setSelectedModuleIndex(null);
+  //     setOpen(false);
+  //     setSelectedModule(null);
+  //     setSelectedApp(null);
+  //     setSelectedConnections([]);
+  //     setConnectionSubjects({});
+  //     setConnectionTemplates({});
+  //     setConnectionCCs({});
+  //     setConnectionBCCs({});
+  //   }
+  // };
+
+
   const handleSave = () => {
-    if (editingBranch !== null) {
-      const updated = [...routerBranches];
-      const modules = updated[editingBranch].modules || [];
+  if (editingBranch !== null) {
+    const updated = [...routerBranches];
+    const modules = updated[editingBranch].modules || [];
 
-      let type = "";
-      let description = "";
-      let extra = {};
+    let type = "";
+    let description = "";
+    let extra = {};
 
-      if (selectedModule === "delay") {
-        type = "Delay";
-        description = `Delay execution for ${delayValue} ${delayUnit}`;
-        extra = { delayValue, delayUnit };
+    // 🕒 Delay module
+    if (selectedModule === "delay") {
+      type = "Delay";
+      description = `Delay execution for ${delayValue} ${delayUnit}`;
+      extra = { delayValue, delayUnit };
 
-        modules.push({
-          id: Date.now() + Math.random(),
+      modules.push({
+        id: Date.now() + Math.random(),
+        app: { ...selectedApp },
+        type,
+        description,
+        ...extra,
+      });
+    } else {
+      // ✉️ Gmail / Email / Other modules
+      if (selectedApp?.name === "Gmail") {
+        type = "Send an Email";
+        description = "Send email using Gmail";
+      } else if (selectedApp?.name === "Email") {
+        type = "Custom Email";
+        description = "Send custom email";
+      } else {
+        type = "Other";
+        description = "Custom module";
+      }
+
+      // 🔄 Update existing module
+      if (selectedModuleIndex !== null && modules[selectedModuleIndex]) {
+        const existing = modules[selectedModuleIndex];
+        const connId = Array.isArray(existing.connectionId)
+          ? existing.connectionId[0]
+          : existing.connectionId;
+        const key = makeKey(editingBranch, selectedModuleIndex, connId);
+
+        modules[selectedModuleIndex] = {
+          ...existing,
+          id: existing.id || Date.now(),
           app: { ...selectedApp },
           type,
           description,
-          ...extra,
-        });
+          connectionId: selectedConnections,
+          subject: connectionSubjects[connId] || "",
+          template: connectionTemplates[connId] || "",
+          cc: connectionCCs[key] || [],
+          bcc: connectionBCCs[key] || [],
+        };
       } else {
-        if (selectedModuleIndex !== null && modules[selectedModuleIndex]) {
-          const existing = modules[selectedModuleIndex];
-          const connId = Array.isArray(existing.connectionId)
-            ? existing.connectionId[0]
-            : existing.connectionId;
-          const key = makeKey(editingBranch, selectedModuleIndex, connId);
-
-          modules[selectedModuleIndex] = {
-            ...existing,
-            id: existing.id || Date.now(),
+        // ➕ Add new modules for each selected connection
+        selectedConnections.forEach((connId, idx) => {
+          const key = makeKey(editingBranch, modules.length + idx, connId);
+          modules.push({
+            id: Date.now() + Math.random(),
             app: { ...selectedApp },
             type,
             description,
-            connectionId: selectedConnections,
+            connectionId: connId,
             subject: connectionSubjects[connId] || "",
             template: connectionTemplates[connId] || "",
             cc: connectionCCs[key] || [],
             bcc: connectionBCCs[key] || [],
-          };
-        } else {
-          selectedConnections.forEach((connId) => {
-            const key = makeKey(editingBranch, modules.length, connId);
-            modules.push({
-              id: Date.now() + Math.random(),
-              app: { ...selectedApp },
-              type,
-              description,
-              connectionId: connId,
-              subject: connectionSubjects[connId] || "",
-              template: connectionTemplates[connId] || "",
-              cc: connectionCCs[key] || [],
-              bcc: connectionBCCs[key] || [],
-            });
           });
-        }
+        });
       }
-
-      updated[editingBranch].modules = modules;
-      setRouterBranches(updated);
-
-      setEditingBranch(null);
-      setSelectedModuleIndex(null);
-      setOpen(false);
-      setSelectedModule(null);
-      setSelectedApp(null);
-      setSelectedConnections([]);
-      setConnectionSubjects({});
-      setConnectionTemplates({});
-      setConnectionCCs({});
-      setConnectionBCCs({});
     }
-  };
+
+    updated[editingBranch].modules = modules;
+    setRouterBranches(updated);
+
+    // reset states
+    setEditingBranch(null);
+    setSelectedModuleIndex(null);
+    setOpen(false);
+    setSelectedModule(null);
+    setSelectedApp(null);
+    setSelectedConnections([]);
+    setConnectionSubjects({});
+    setConnectionTemplates({});
+    setConnectionCCs({});
+    setConnectionBCCs({});
+  }
+};
 
   const renderIcon = (appName) => {
     switch (appName) {
@@ -542,8 +634,8 @@ const OthersScenariosPage = () => {
                   };
 
                   const url = scenarioId
-                    ? `http://localhost:5000/scenario/detail/${scenarioId}`
-                    : `http://localhost:5000/scenario`;
+                    ? `https://email-syncing-backend.vercel.app/scenario/detail/${scenarioId}`
+                    : `https://email-syncing-backend.vercel.app/scenario`;
 
                   await fetch(url, {
                     method: scenarioId ? "PUT" : "POST",

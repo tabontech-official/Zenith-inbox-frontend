@@ -47,7 +47,7 @@ const Sidebar = () => {
   const handleLogout = async () => {
     const userId = localStorage.getItem("userid");
     try {
-      await fetch(`http://localhost:5000/auth/logout/${userId}`, {
+      await fetch(`https://email-syncing-backend.vercel.app/auth/logout/${userId}`, {
         method: "POST",
       });
       localStorage.clear();

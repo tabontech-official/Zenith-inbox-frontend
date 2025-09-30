@@ -16,28 +16,14 @@ const Organization = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [emails, setEmails] = useState([]);
-
-  const recentAutomation = [
-    {
-      id: 1,
-      template: "Custom Domain Setup",
-      customer: "Malik Rehan",
-      sentAt: "Sep 20, 2025, 10:35 AM",
-    },
-    {
-      id: 2,
-      template: "SEO Optimization",
-      customer: "John Doe",
-      sentAt: "Sep 19, 2025, 02:20 PM",
-    },
-  ];
+  const [activeTab, setActiveTab] = useState("emails");
 
   useEffect(() => {
     const fetchUser = async () => {
       try {
         const userId = localStorage.getItem("userid");
         const res = await axios.get(
-          `http://localhost:5000/auth/getUsers/${userId}`
+          `https://email-syncing-backend.vercel.app/auth/getUsers/${userId}`
         );
         setUser(res.data.data);
       } catch (error) {
@@ -54,9 +40,11 @@ const Organization = () => {
       try {
         const userId = localStorage.getItem("userid");
         const res = await axios.get(
-          `http://localhost:5000/api/emails?userId=${userId}`
+          `https://email-syncing-backend.vercel.app/mailhook/getAllEmails/${userId}`
         );
-        setEmails(res.data);
+        if (res.data.success) {
+          setEmails(res.data.data);
+        }
       } catch (error) {
         console.error("Error fetching emails:", error);
       }
@@ -79,6 +67,28 @@ const Organization = () => {
       </div>
     </div>
   );
+
+  const getEmailStatus = (email) => {
+    if (!email.statuses || email.statuses.length === 0) return "Pending";
+
+    if (email.statuses.every((s) => s.status === "failed")) return "Failed";
+
+    if (email.statuses.every((s) => s.status === "completed"))
+      return "Processed";
+
+    if (email.statuses.some((s) => s.status === "partial")) return "Partial";
+
+    if (
+      email.statuses.some((s) => s.status === "completed") &&
+      email.statuses.some((s) => s.status === "pending")
+    ) {
+      return "Partial";
+    }
+
+    if (email.statuses.every((s) => s.status === "pending")) return "Pending";
+
+    return "Pending";
+  };
 
   return (
     <div className="flex bg-gray-100 min-h-screen font-inter antialiased">
@@ -156,25 +166,31 @@ const Organization = () => {
           {renderStatCard(
             <FiCheckCircle />,
             "Processed",
-            emails.filter((e) => e.status === "Processed").length,
+            emails.filter((e) => getEmailStatus(e) === "Processed").length,
             "bg-green-500"
           )}
-          {renderStatCard(
+          {/* {renderStatCard(
             <FiClock />,
             "Pending",
-            emails.filter((e) => e.status === "Pending").length,
+            emails.filter((e) => getEmailStatus(e) === "Pending").length,
             "bg-yellow-500"
+          )} */}
+          {renderStatCard(
+            <FiZap />,
+            "Partial",
+            emails.filter((e) => getEmailStatus(e) === "Partial").length,
+            "bg-blue-500"
           )}
+
           {renderStatCard(
             <FiAlertCircle />,
             "Failed",
-            emails.filter((e) => e.status === "Failed").length,
+            emails.filter((e) => getEmailStatus(e) === "Failed").length,
             "bg-red-500"
           )}
         </section>
 
-        {/* Recent Emails */}
-        <section className="mt-10">
+        {/* <section className="mt-10">
           <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
             <FiMail className="text-purple-600" /> Recent Emails
           </h2>
@@ -190,26 +206,33 @@ const Organization = () => {
               </thead>
               <tbody>
                 {emails.length > 0 ? (
-                  emails.map((email, idx) => (
-                    <tr key={idx} className="border-b hover:bg-gray-50">
-                      <td className="p-3">{email.from}</td>
-                      <td className="p-3">{email.subject}</td>
-                      <td className="p-3">{email.date}</td>
-                      <td className="p-3">
-                        <span
-                          className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            email.status === "Processed"
-                              ? "bg-green-100 text-green-700"
-                              : email.status === "Pending"
-                              ? "bg-yellow-100 text-yellow-700"
-                              : "bg-red-100 text-red-700"
-                          }`}
-                        >
-                          {email.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))
+                  emails.map((email, idx) => {
+                    const status = getEmailStatus(email);
+                    return (
+                      <tr key={idx} className="border-b hover:bg-gray-50">
+                        <td className="p-3">{email.senderAddress}</td>
+                        <td className="p-3">{email.subject}</td>
+                        <td className="p-3">
+                          {new Date(email.date).toLocaleString()}
+                        </td>
+                        <td className="p-3">
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              status === "Processed"
+                                ? "bg-green-100 text-green-700"
+                                : status === "Pending"
+                                ? "bg-yellow-100 text-yellow-700"
+                                : status === "Partial"
+                                ? "bg-blue-100 text-blue-700"
+                                : "bg-red-100 text-red-700"
+                            }`}
+                          >
+                            {status}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })
                 ) : (
                   <tr>
                     <td colSpan="4" className="p-3 text-center text-gray-500">
@@ -230,21 +253,141 @@ const Organization = () => {
             <table className="w-full text-left text-sm">
               <thead className="bg-gray-50 border-b text-gray-600">
                 <tr>
-                  <th className="p-3">Template Used</th>
-                  <th className="p-3">Customer</th>
-                  <th className="p-3">Sent At</th>
+                  <th className="p-3">Scenario</th>
+                  <th className="p-3">Status</th>
+                  <th className="p-3">Completed</th>
+                  <th className="p-3">Pending</th>
                 </tr>
               </thead>
               <tbody>
-                {recentAutomation.map((auto) => (
-                  <tr key={auto.id} className="border-b hover:bg-gray-50">
-                    <td className="p-3">{auto.template}</td>
-                    <td className="p-3">{auto.customer}</td>
-                    <td className="p-3">{auto.sentAt}</td>
-                  </tr>
-                ))}
+                {emails.flatMap((email) =>
+                  email.statuses.map((s, i) => (
+                    <tr
+                      key={`${email._id}-${i}`}
+                      className="border-b hover:bg-gray-50"
+                    >
+                      <td className="p-3">{s.scenarioId?.name || "N/A"}</td>
+                      <td className="p-3">{s.status}</td>
+                      <td className="p-3">{s.completedModules?.length || 0}</td>
+                      <td className="p-3">{s.pendingModules?.length || 0}</td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
+          </div>
+        </section> */}
+        <section className="mt-10">
+          <div className="bg-white rounded-lg shadow overflow-hidden">
+            {/* Tabs Header */}
+            <div className="flex border-b">
+              <button
+                onClick={() => setActiveTab("emails")}
+                className={`flex items-center gap-2 px-6 py-3 text-sm font-medium transition ${
+                  activeTab === "emails"
+                    ? "border-b-2 border-purple-600 text-purple-600"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                <FiMail /> Recent Emails
+              </button>
+              <button
+                onClick={() => setActiveTab("automations")}
+                className={`flex items-center gap-2 px-6 py-3 text-sm font-medium transition ${
+                  activeTab === "automations"
+                    ? "border-b-2 border-purple-600 text-purple-600"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                <FiZap /> Recent Automations
+              </button>
+            </div>
+
+            {/* Tab Content */}
+            <div className="p-4">
+              {activeTab === "emails" ? (
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-gray-50 border-b text-gray-600">
+                    <tr>
+                      <th className="p-3">From</th>
+                      <th className="p-3">Subject</th>
+                      <th className="p-3">Date</th>
+                      <th className="p-3">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {emails.length > 0 ? (
+                      emails.map((email, idx) => {
+                        const status = getEmailStatus(email);
+                        return (
+                          <tr key={idx} className="border-b hover:bg-gray-50">
+                            <td className="p-3">{email.senderAddress}</td>
+                            <td className="p-3">{email.subject}</td>
+                            <td className="p-3">
+                              {new Date(email.date).toLocaleString()}
+                            </td>
+                            <td className="p-3">
+                              <span
+                                className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                  status === "Processed"
+                                    ? "bg-green-100 text-green-700"
+                                    : status === "Pending"
+                                    ? "bg-yellow-100 text-yellow-700"
+                                    : status === "Partial"
+                                    ? "bg-blue-100 text-blue-700"
+                                    : "bg-red-100 text-red-700"
+                                }`}
+                              >
+                                {status}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    ) : (
+                      <tr>
+                        <td
+                          colSpan="4"
+                          className="p-3 text-center text-gray-500"
+                        >
+                          No recent emails found
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              ) : (
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-gray-50 border-b text-gray-600">
+                    <tr>
+                      <th className="p-3">Scenario</th>
+                      <th className="p-3">Status</th>
+                      <th className="p-3">Completed</th>
+                      <th className="p-3">Pending</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {emails.flatMap((email) =>
+                      email.statuses.map((s, i) => (
+                        <tr
+                          key={`${email._id}-${i}`}
+                          className="border-b hover:bg-gray-50"
+                        >
+                          <td className="p-3">{s.scenarioId?.name || "N/A"}</td>
+                          <td className="p-3">{s.status}</td>
+                          <td className="p-3">
+                            {s.completedModules?.length || 0}
+                          </td>
+                          <td className="p-3">
+                            {s.pendingModules?.length || 0}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              )}
+            </div>
           </div>
         </section>
       </main>

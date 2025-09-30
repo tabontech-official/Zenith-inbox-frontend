@@ -12,7 +12,7 @@ export const UserProvider = ({ children }) => {
 
       try {
         const response = await fetch(
-          `http://localhost:5000/auth/getUsers/${userId}`
+          `https://email-syncing-backend.vercel.app/auth/getUsers/${userId}`
         );
         const data = await response.json();
         if (response.ok) {
