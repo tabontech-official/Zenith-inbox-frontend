@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   FiGrid,
@@ -6,9 +6,9 @@ import {
   FiFileText,
   FiChevronDown,
   FiChevronRight,
-  FiZap,       // ⚡
-  FiSettings,  // ⚙
-  FiGitBranch, // 🌿
+  FiZap,      
+  FiSettings,  
+  FiGitBranch, 
 } from "react-icons/fi";
 
 const Sidebar = () => {
@@ -32,13 +32,19 @@ const Sidebar = () => {
     </Link>
   );
 
+ 
+  useEffect(() => {
+    if (location.pathname.startsWith("/scenarios")) {
+      setIsScenariosOpen(true);
+    }
+  }, [location.pathname]);
+
   return (
     <aside
       className={`fixed z-40 top-0 left-0 h-full w-64 bg-gradient-to-b from-purple-600 via-purple-500 to-purple-800 text-white flex flex-col p-6 transition-transform duration-300 md:translate-x-0 ${
         isSidebarOpen ? "translate-x-0" : "-translate-x-full"
       }`}
     >
-      {/* Logo */}
       <div className="flex items-center space-x-2 mb-10">
         <img
           src="https://placehold.co/40x40/5B21B6/white?text=A"
@@ -48,7 +54,6 @@ const Sidebar = () => {
         <h1 className="text-lg font-bold">My Organization</h1>
       </div>
 
-      {/* Navigation */}
       <div className="flex-1 space-y-2 text-sm">
         <div className="text-xs text-gray-200 uppercase font-medium mb-2">
           Main
@@ -59,7 +64,6 @@ const Sidebar = () => {
           Automations
         </div>
 
-        {/* Scenarios with Dropdown */}
         <div>
           <button
             onClick={() => setIsScenariosOpen(!isScenariosOpen)}
@@ -84,12 +88,12 @@ const Sidebar = () => {
             <div className="ml-8 mt-1 space-y-1">
               {renderNavLink("All Scenarios", FiZap, "/scenarios/all")}
               {renderNavLink("Shopify Scenario", FiGitBranch, "/scenarios/shopify")}
-              {renderNavLink("Others", FiSettings, "/scenarios/others")}
+              {renderNavLink("Custom", FiSettings, "/scenarios/others")}
             </div>
           )}
         </div>
 
-        {renderNavLink("Templates", FiFileText, "/templates")}
+        {renderNavLink("Shopify-Templates", FiFileText, "/templates")}
         {renderNavLink("Connection", FiZap, "/connection")}
       </div>
 

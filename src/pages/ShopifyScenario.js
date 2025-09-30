@@ -859,49 +859,52 @@ const ShopifyScenariosPage = () => {
                         </div>
 
                         <div className="mb-4 w-full">
-  <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-    <FiFileText className="mr-2 text-gray-500" /> Select Template
-  </label>
-  <div className="flex items-center border rounded-lg px-3 py-2 focus-within:ring-2 focus-within:ring-purple-500 w-full">
-    {selectedTemplate ? (
-      <span className="flex items-center bg-blue-100 text-blue-700 text-sm px-3 py-2 rounded-full w-full">
-        <FiFileText className="mr-2" />
-        {selectedTemplate}
+                          <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                            <FiFileText className="mr-2 text-gray-500" /> Select
+                            Template
+                          </label>
+                          <div className="flex items-center border rounded-lg px-3 py-2 focus-within:ring-2 focus-within:ring-purple-500 w-full">
+                            {selectedTemplate ? (
+                              <span className="flex items-center bg-blue-100 text-blue-700 text-sm px-3 py-2 rounded-full w-full">
+                                <FiFileText className="mr-2" />
+                                {selectedTemplate}
 
-        <button
-          type="button"
-          onClick={() => {
-            console.log("Clearing selected template");
-            setSelectedTemplate("");
-          }}
-          className="ml-auto text-xs text-red-500 hover:text-red-700"
-        >
-          <FiUserX />
-        </button>
-      </span>
-    ) : (
-      <select
-        value={selectedTemplate}
-        onChange={(e) => {
-          console.log("Selected value:", e.target.value);
-          setSelectedTemplate(e.target.value);
-        }}
-        className="w-full border-none outline-none text-sm py-2 px-3 bg-transparent"
-      >
-        <option value="">-- Select Template --</option>
-        {templates.slice(0, 3).map((tpl) => {
-          const shortName = tpl.name.split(" - ").pop();
-          return (
-            <option key={tpl._id} value={shortName}>
-              {shortName}
-            </option>
-          );
-        })}
-      </select>
-    )}
-  </div>
-</div>
-
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    console.log("Clearing selected template");
+                                    setSelectedTemplate("");
+                                  }}
+                                  className="ml-auto text-xs text-red-500 hover:text-red-700"
+                                >
+                                  <FiUserX />
+                                </button>
+                              </span>
+                            ) : (
+                              <select
+                                value={selectedTemplate}
+                                onChange={(e) => {
+                                  console.log(
+                                    "Selected value:",
+                                    e.target.value
+                                  );
+                                  setSelectedTemplate(e.target.value);
+                                }}
+                                className="w-full border-none outline-none text-sm py-2 px-3 bg-transparent"
+                              >
+                                <option value="">-- Select Template --</option>
+                                {templates.slice(0, 3).map((tpl) => {
+                                  const shortName = tpl.name.split(" - ").pop();
+                                  return (
+                                    <option key={tpl._id} value={shortName}>
+                                      {shortName}
+                                    </option>
+                                  );
+                                })}
+                              </select>
+                            )}
+                          </div>
+                        </div>
 
                         <div className="mb-4 w-full">
                           <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
