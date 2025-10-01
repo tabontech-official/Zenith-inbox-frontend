@@ -17,7 +17,7 @@
 
 //       try {
 //         const userRes = await fetch(
-//           `https://email-syncing-backend.vercel.app/auth/getUsers/${userId}`
+//           `http://localhost:5000/auth/getUsers/${userId}`
 //         );
 //         const userData = await userRes.json();
 
@@ -30,7 +30,7 @@
 //         setUser(userData.data);
 
 //         const emailRes = await fetch(
-//           `https://email-syncing-backend.vercel.app/mailhook/getAllEmails/${userId}`
+//           `http://localhost:5000/mailhook/getAllEmails/${userId}`
 //         );
 //         const emailData = await emailRes.json();
 
@@ -46,7 +46,7 @@
 //         for (const mail of rawEmails) {
 //           try {
 //             const threadRes = await fetch(
-//               `https://email-syncing-backend.vercel.app/mailhook/getAllEmailsData/${mail._id}`
+//               `http://localhost:5000/mailhook/getAllEmailsData/${mail._id}`
 //             );
 //             const threadData = await threadRes.json();
 //             if (threadRes.ok) {
@@ -94,7 +94,7 @@ export const UserProvider = ({ children }) => {
       try {
         // 🟪 1. Fetch user
         const userRes = await fetch(
-          `https://email-syncing-backend.vercel.app/auth/getUsers/${userId}`
+          `http://localhost:5000/auth/getUsers/${userId}`
         );
         const userData = await userRes.json();
 
@@ -108,7 +108,7 @@ export const UserProvider = ({ children }) => {
 
         // 🟪 2. Fetch root emails list
         const emailRes = await fetch(
-          `https://email-syncing-backend.vercel.app/mailhook/getAllEmails/${userId}`
+          `http://localhost:5000/mailhook/getAllEmails/${userId}`
         );
         const emailData = await emailRes.json();
 
@@ -124,7 +124,7 @@ export const UserProvider = ({ children }) => {
         const threadPromises = rawEmails.map(async (mail) => {
           try {
             const threadRes = await fetch(
-              `https://email-syncing-backend.vercel.app/mailhook/getAllEmailsData/${mail._id}`
+              `http://localhost:5000/mailhook/getAllEmailsData/${mail._id}`
             );
             const threadData = await threadRes.json();
             if (threadRes.ok) {

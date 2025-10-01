@@ -80,7 +80,8 @@ const ShopifyScenariosPage = () => {
   const [body, setBody] = useState("");
   const [delayValue, setDelayValue] = useState("5");
   const [delayUnit, setDelayUnit] = useState("seconds");
-
+  const [showGmailModal, setShowGmailModal] = useState(false);
+  const [showOutlookModal, setShowOutlookModal] = useState(false);
   const [templates, setTemplates] = useState([]);
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [cc, setCc] = useState("");
@@ -140,7 +141,7 @@ const ShopifyScenariosPage = () => {
     const fetchConnections = async () => {
       try {
         const res = await fetch(
-          `https://email-syncing-backend.vercel.app/auth/getConnection/${localStorage.getItem(
+          `http://localhost:5000/auth/getConnection/${localStorage.getItem(
             "userid"
           )}`
         );
@@ -158,7 +159,7 @@ const ShopifyScenariosPage = () => {
       const fetchTemplates = async () => {
         try {
           const res = await fetch(
-            `https://email-syncing-backend.vercel.app/template/all?userId=${localStorage.getItem(
+            `http://localhost:5000/template/all?userId=${localStorage.getItem(
               "userid"
             )}&platform=shopify&service=${selectedApp.name}`
           );
@@ -227,8 +228,8 @@ const ShopifyScenariosPage = () => {
     };
 
     const url = scenarioId
-      ? `https://email-syncing-backend.vercel.app/scenario/detail/${scenarioId}`
-      : `https://email-syncing-backend.vercel.app/scenario`;
+      ? `http://localhost:5000/scenario/detail/${scenarioId}`
+      : `http://localhost:5000/scenario`;
 
     await fetch(url, {
       method: scenarioId ? "PUT" : "POST",
@@ -239,12 +240,14 @@ const ShopifyScenariosPage = () => {
     toast.success("Shopify scenario saved successfully!");
     navigate("/scenarios/all");
   };
+
   const iconMap = {
     Delay: <Clock />,
     Email: <FiMail />,
     Gmail: <Mail />,
     Webhooks: <Cloud />,
     Router: <GitBranch />,
+    handleSaveScenario,
   };
 
   useState(() => {
@@ -273,7 +276,7 @@ const ShopifyScenariosPage = () => {
       const fetchScenario = async () => {
         try {
           const res = await fetch(
-            `https://email-syncing-backend.vercel.app/scenario/detail/${id}`
+            `http://localhost:5000/scenario/detail/${id}`
           );
           const data = await res.json();
           if (data) {
