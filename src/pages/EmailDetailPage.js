@@ -161,14 +161,6 @@ const renderEmailChain = (email, title = "Email", level = 0) => {
           </div>
         </div>
 
-        {/* <div className="mt-6">
-          <label className="block text-xs font-bold uppercase text-purple-600 mb-3 tracking-wider">
-            Message Body
-          </label>
-          <div className="max-h-72 overflow-y-auto p-6 rounded-xl bg-gray-50 border border-gray-200 text-gray-700 text-base whitespace-pre-wrap leading-relaxed shadow-inner font-light">
-            {bodyText}
-          </div>
-        </div> */}
         <div className="mt-6">
           <label className="block text-xs font-bold uppercase text-purple-600 mb-3 tracking-wider">
             Message Body
