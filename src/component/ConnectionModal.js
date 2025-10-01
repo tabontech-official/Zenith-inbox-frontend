@@ -18,7 +18,6 @@ const ConnectionModal = ({ isOpen, onClose }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-50 font-sans">
       <div className="bg-white rounded-lg shadow-2xl w-full max-w-lg overflow-hidden animate-fadeIn">
-        {/* Header */}
         <div className="bg-gradient-to-r from-[#e45341] to-[#f46654] text-white flex justify-between items-center px-5 py-3">
           <h2 className="text-sm font-semibold tracking-wide flex items-center gap-2">
             <span>Create a Connection</span>

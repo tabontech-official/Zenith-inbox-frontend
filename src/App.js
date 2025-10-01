@@ -12,6 +12,7 @@ import ShopifyScenariosPage from "./pages/ShopifyScenario";
 import OthersScenariosPage from "./pages/OtherScenario";
 import AllScenariosPage from "./pages/AllScenario";
 import { UserProvider } from "./component/UserContext";
+import EmailDetailPage from "./pages/EmailDetailPage";
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
           <Route path="/scenarios/shopify/:id" element={<ShopifyScenariosPage />} />
           <Route path="/scenarios/add" element={<BuildScenario />} />
           <Route path="/scenarios/all" element={<AllScenariosPage />} />
+          <Route path="/organization/email/:id" element={<EmailDetailPage />} />
 
           {/* Templates */}
           <Route path="/templates" element={<Template />} />

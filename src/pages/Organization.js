@@ -1,56 +1,37 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useContext } from "react";
 import Sidebar from "../component/Sidebar";
-import { Link } from "react-router-dom";
-import {
-  FiMail,
-  FiCheckCircle,
-  FiClock,
-  FiAlertCircle,
-  FiZap,
-} from "react-icons/fi";
+import { Link, useNavigate } from "react-router-dom";
+import { FiMail, FiCheckCircle, FiAlertCircle, FiZap } from "react-icons/fi";
 import { MdOutlineEmail } from "react-icons/md";
-import axios from "axios";
+import { UserContext } from "../component/UserContext";
 
 const Organization = () => {
   const [automationOn, setAutomationOn] = useState(true);
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [emails, setEmails] = useState([]);
   const [activeTab, setActiveTab] = useState("emails");
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const userId = localStorage.getItem("userid");
-        const res = await axios.get(
-          `https://email-syncing-backend.vercel.app/auth/getUsers/${userId}`
-        );
-        setUser(res.data.data);
-      } catch (error) {
-        console.error("Error fetching user:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchUser();
-  }, []);
+  const { user, emails, loading } = useContext(UserContext);
 
-  useEffect(() => {
-    const fetchEmails = async () => {
-      try {
-        const userId = localStorage.getItem("userid");
-        const res = await axios.get(
-          `https://email-syncing-backend.vercel.app/mailhook/getAllEmails/${userId}`
-        );
-        if (res.data.success) {
-          setEmails(res.data.data);
-        }
-      } catch (error) {
-        console.error("Error fetching emails:", error);
-      }
-    };
-    fetchEmails();
-  }, []);
+  const fetchEmailById = async (id) => {
+    navigate(`/organization/email/${id}`);
+  };
+
+  const getEmailStatus = (statuses) => {
+    if (!statuses || statuses.length === 0) return "Pending";
+    if (statuses.every((s) => s.status === "failed")) return "Failed";
+    if (statuses.every((s) => s.status === "completed")) return "Processed";
+    if (statuses.some((s) => s.status === "partial")) return "Partial";
+    if (
+      statuses.some((s) => s.status === "completed") &&
+      statuses.some((s) => s.status === "pending")
+    ) {
+      return "Partial";
+    }
+    if (statuses.every((s) => s.status === "pending")) return "Pending";
+    return "Pending";
+  };
+
+  const rootEmails = emails.filter((e) => !e.isForwarded && !e.parentEmailId);
 
   const renderStatCard = (icon, label, value, color) => (
     <div className="bg-white p-6 rounded-lg shadow hover:shadow-md transition">
@@ -67,28 +48,6 @@ const Organization = () => {
       </div>
     </div>
   );
-
-  const getEmailStatus = (email) => {
-    if (!email.statuses || email.statuses.length === 0) return "Pending";
-
-    if (email.statuses.every((s) => s.status === "failed")) return "Failed";
-
-    if (email.statuses.every((s) => s.status === "completed"))
-      return "Processed";
-
-    if (email.statuses.some((s) => s.status === "partial")) return "Partial";
-
-    if (
-      email.statuses.some((s) => s.status === "completed") &&
-      email.statuses.some((s) => s.status === "pending")
-    ) {
-      return "Partial";
-    }
-
-    if (email.statuses.every((s) => s.status === "pending")) return "Pending";
-
-    return "Pending";
-  };
 
   return (
     <div className="flex bg-gray-100 min-h-screen font-inter antialiased">
@@ -112,13 +71,11 @@ const Organization = () => {
                 </span>
               ) : (
                 <button
-                  onClick={() => {
-                    if (user.verificationUrl) {
-                      window.open(user.verificationUrl, "_blank");
-                    } else {
-                      alert("No verification link found.");
-                    }
-                  }}
+                  onClick={() =>
+                    user.verificationUrl
+                      ? window.open(user.verificationUrl, "_blank")
+                      : alert("No verification link found.")
+                  }
                   className="bg-green-500 text-white px-3 py-1 rounded-lg hover:bg-green-600 transition"
                 >
                   Verify
@@ -160,132 +117,40 @@ const Organization = () => {
           {renderStatCard(
             <MdOutlineEmail />,
             "Total Emails",
-            emails.length,
+            rootEmails.length,
             "bg-indigo-500"
           )}
           {renderStatCard(
             <FiCheckCircle />,
             "Processed",
-            emails.filter((e) => getEmailStatus(e) === "Processed").length,
+            rootEmails.filter((e) => getEmailStatus(e.statuses) === "Processed")
+              .length,
             "bg-green-500"
           )}
-          {/* {renderStatCard(
-            <FiClock />,
-            "Pending",
-            emails.filter((e) => getEmailStatus(e) === "Pending").length,
-            "bg-yellow-500"
-          )} */}
           {renderStatCard(
             <FiZap />,
             "Partial",
-            emails.filter((e) => getEmailStatus(e) === "Partial").length,
+            rootEmails.filter((e) => getEmailStatus(e.statuses) === "Partial")
+              .length,
             "bg-blue-500"
           )}
-
           {renderStatCard(
             <FiAlertCircle />,
             "Failed",
-            emails.filter((e) => getEmailStatus(e) === "Failed").length,
+            rootEmails.filter((e) => getEmailStatus(e.statuses) === "Failed")
+              .length,
             "bg-red-500"
           )}
         </section>
 
-        {/* <section className="mt-10">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-            <FiMail className="text-purple-600" /> Recent Emails
-          </h2>
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-gray-50 border-b text-gray-600">
-                <tr>
-                  <th className="p-3">From</th>
-                  <th className="p-3">Subject</th>
-                  <th className="p-3">Date</th>
-                  <th className="p-3">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {emails.length > 0 ? (
-                  emails.map((email, idx) => {
-                    const status = getEmailStatus(email);
-                    return (
-                      <tr key={idx} className="border-b hover:bg-gray-50">
-                        <td className="p-3">{email.senderAddress}</td>
-                        <td className="p-3">{email.subject}</td>
-                        <td className="p-3">
-                          {new Date(email.date).toLocaleString()}
-                        </td>
-                        <td className="p-3">
-                          <span
-                            className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              status === "Processed"
-                                ? "bg-green-100 text-green-700"
-                                : status === "Pending"
-                                ? "bg-yellow-100 text-yellow-700"
-                                : status === "Partial"
-                                ? "bg-blue-100 text-blue-700"
-                                : "bg-red-100 text-red-700"
-                            }`}
-                          >
-                            {status}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })
-                ) : (
-                  <tr>
-                    <td colSpan="4" className="p-3 text-center text-gray-500">
-                      No recent emails found
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        <section className="mt-10">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-            <FiZap className="text-yellow-500" /> Recent Automations
-          </h2>
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-gray-50 border-b text-gray-600">
-                <tr>
-                  <th className="p-3">Scenario</th>
-                  <th className="p-3">Status</th>
-                  <th className="p-3">Completed</th>
-                  <th className="p-3">Pending</th>
-                </tr>
-              </thead>
-              <tbody>
-                {emails.flatMap((email) =>
-                  email.statuses.map((s, i) => (
-                    <tr
-                      key={`${email._id}-${i}`}
-                      className="border-b hover:bg-gray-50"
-                    >
-                      <td className="p-3">{s.scenarioId?.name || "N/A"}</td>
-                      <td className="p-3">{s.status}</td>
-                      <td className="p-3">{s.completedModules?.length || 0}</td>
-                      <td className="p-3">{s.pendingModules?.length || 0}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </section> */}
         <section className="mt-10">
           <div className="bg-white rounded-lg shadow overflow-hidden">
-            {/* Tabs Header */}
-            <div className="flex border-b">
+            <div className="flex border-b bg-gray-50">
               <button
                 onClick={() => setActiveTab("emails")}
-                className={`flex items-center gap-2 px-6 py-3 text-sm font-medium transition ${
+                className={`flex items-center gap-2 px-6 py-3 text-sm font-medium transition-all ${
                   activeTab === "emails"
-                    ? "border-b-2 border-purple-600 text-purple-600"
+                    ? "border-b-2 border-purple-600 text-purple-600 bg-white"
                     : "text-gray-500 hover:text-gray-700"
                 }`}
               >
@@ -293,9 +158,9 @@ const Organization = () => {
               </button>
               <button
                 onClick={() => setActiveTab("automations")}
-                className={`flex items-center gap-2 px-6 py-3 text-sm font-medium transition ${
+                className={`flex items-center gap-2 px-6 py-3 text-sm font-medium transition-all ${
                   activeTab === "automations"
-                    ? "border-b-2 border-purple-600 text-purple-600"
+                    ? "border-b-2 border-purple-600 text-purple-600 bg-white"
                     : "text-gray-500 hover:text-gray-700"
                 }`}
               >
@@ -303,32 +168,45 @@ const Organization = () => {
               </button>
             </div>
 
-            {/* Tab Content */}
-            <div className="p-4">
+            <div className="p-4 overflow-x-auto">
               {activeTab === "emails" ? (
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-gray-50 border-b text-gray-600">
+                <table className="w-full border-collapse text-sm">
+                  <thead className="bg-gray-100 text-gray-700 text-xs uppercase tracking-wide">
                     <tr>
-                      <th className="p-3">From</th>
-                      <th className="p-3">Subject</th>
-                      <th className="p-3">Date</th>
-                      <th className="p-3">Status</th>
+                      <th className="px-4 py-3 text-left">From</th>
+                      <th className="px-4 py-3 text-left">Subject</th>
+                      <th className="px-4 py-3 text-left">Date</th>
+                      <th className="px-4 py-3 text-center">Status</th>
                     </tr>
                   </thead>
-                  <tbody>
-                    {emails.length > 0 ? (
-                      emails.map((email, idx) => {
-                        const status = getEmailStatus(email);
+                  <tbody className="divide-y divide-gray-200">
+                    {rootEmails.length > 0 ? (
+                      rootEmails.map((email) => {
+                        const root = email.rootEmail || email;
+                        const status = getEmailStatus(
+                          email.statuses || root.statuses
+                        );
+
                         return (
-                          <tr key={idx} className="border-b hover:bg-gray-50">
-                            <td className="p-3">{email.senderAddress}</td>
-                            <td className="p-3">{email.subject}</td>
-                            <td className="p-3">
-                              {new Date(email.date).toLocaleString()}
+                          <tr
+                            key={root._id}
+                            className="hover:bg-gray-50 transition duration-150 cursor-pointer"
+                            onClick={() => fetchEmailById(root._id)}
+                          >
+                            <td className="px-4 py-3 font-medium text-gray-800">
+                              {root.senderAddress || "N/A"}
                             </td>
-                            <td className="p-3">
+                            <td className="px-4 py-3 text-gray-600">
+                              {root.subject || "No Subject"}
+                            </td>
+                            <td className="px-4 py-3 text-gray-500">
+                              {root.date
+                                ? new Date(root.date).toLocaleString()
+                                : "N/A"}
+                            </td>
+                            <td className="px-4 py-3 text-center">
                               <span
-                                className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
                                   status === "Processed"
                                     ? "bg-green-100 text-green-700"
                                     : status === "Pending"
@@ -348,7 +226,7 @@ const Organization = () => {
                       <tr>
                         <td
                           colSpan="4"
-                          className="p-3 text-center text-gray-500"
+                          className="px-4 py-6 text-center text-gray-500 italic"
                         >
                           No recent emails found
                         </td>
@@ -357,28 +235,44 @@ const Organization = () => {
                   </tbody>
                 </table>
               ) : (
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-gray-50 border-b text-gray-600">
+                <table className="w-full border-collapse text-sm">
+                  <thead className="bg-gray-100 text-gray-700 text-xs uppercase tracking-wide">
                     <tr>
-                      <th className="p-3">Scenario</th>
-                      <th className="p-3">Status</th>
-                      <th className="p-3">Completed</th>
-                      <th className="p-3">Pending</th>
+                      <th className="px-4 py-3 text-left">Scenario</th>
+                      <th className="px-4 py-3 text-center">Status</th>
+                      <th className="px-4 py-3 text-center">Completed</th>
+                      <th className="px-4 py-3 text-center">Pending</th>
                     </tr>
                   </thead>
-                  <tbody>
-                    {emails.flatMap((email) =>
+                  <tbody className="divide-y divide-gray-200">
+                    {rootEmails.flatMap((email) =>
                       email.statuses.map((s, i) => (
                         <tr
                           key={`${email._id}-${i}`}
-                          className="border-b hover:bg-gray-50"
+                          className="hover:bg-gray-50 transition duration-150"
                         >
-                          <td className="p-3">{s.scenarioId?.name || "N/A"}</td>
-                          <td className="p-3">{s.status}</td>
-                          <td className="p-3">
+                          <td className="px-4 py-3 font-medium text-gray-800">
+                            {s.scenarioId?.name || "N/A"}
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <span
+                              className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
+                                s.status === "completed"
+                                  ? "bg-green-100 text-green-700"
+                                  : s.status === "pending"
+                                  ? "bg-yellow-100 text-yellow-700"
+                                  : s.status === "partial"
+                                  ? "bg-blue-100 text-blue-700"
+                                  : "bg-red-100 text-red-700"
+                              }`}
+                            >
+                              {s.status}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-center text-gray-600">
                             {s.completedModules?.length || 0}
                           </td>
-                          <td className="p-3">
+                          <td className="px-4 py-3 text-center text-gray-600">
                             {s.pendingModules?.length || 0}
                           </td>
                         </tr>
