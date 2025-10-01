@@ -10,7 +10,7 @@ const ConnectionModal = ({ isOpen, onClose }) => {
 
 const handleGoogleSignIn = () => {
   const userId = localStorage.getItem("userid");
-  const url = `http://localhost:5000/auth/google?userId=${userId}`;
+  const url = `https://email-syncing-backend.vercel.app/auth/google?userId=${userId}`;
 
   const popup = window.open(
     url,

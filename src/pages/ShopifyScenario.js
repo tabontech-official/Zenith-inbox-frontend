@@ -149,7 +149,7 @@ const ShopifyScenariosPage = () => {
   const fetchConnections = async () => {
     try {
       const res = await fetch(
-        `http://localhost:5000/auth/getConnection/${localStorage.getItem(
+        `https://email-syncing-backend.vercel.app/auth/getConnection/${localStorage.getItem(
           "userid"
         )}`
       );
@@ -169,7 +169,7 @@ const ShopifyScenariosPage = () => {
       const fetchTemplates = async () => {
         try {
           const res = await fetch(
-            `http://localhost:5000/template/all?userId=${localStorage.getItem(
+            `https://email-syncing-backend.vercel.app/template/all?userId=${localStorage.getItem(
               "userid"
             )}&platform=shopify&service=${selectedApp.name}`
           );
@@ -238,8 +238,8 @@ const ShopifyScenariosPage = () => {
     };
 
     const url = scenarioId
-      ? `http://localhost:5000/scenario/detail/${scenarioId}`
-      : `http://localhost:5000/scenario`;
+      ? `https://email-syncing-backend.vercel.app/scenario/detail/${scenarioId}`
+      : `https://email-syncing-backend.vercel.app/scenario`;
 
     await fetch(url, {
       method: scenarioId ? "PUT" : "POST",
@@ -286,7 +286,7 @@ const ShopifyScenariosPage = () => {
       const fetchScenario = async () => {
         try {
           const res = await fetch(
-            `http://localhost:5000/scenario/detail/${id}`
+            `https://email-syncing-backend.vercel.app/scenario/detail/${id}`
           );
           const data = await res.json();
           if (data) {
