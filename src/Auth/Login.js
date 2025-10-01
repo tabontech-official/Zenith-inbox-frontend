@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { UserContext } from "../component/UserContext";
 
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -9,12 +10,13 @@ const LoginPage = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const { setUser } = useContext(UserContext); 
 
   const handleClick = () => {
     navigate("/register");
   };
 
-  const handleSubmit = async (e) => {
+ const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const response = await axios.post(
@@ -28,7 +30,9 @@ const LoginPage = () => {
         localStorage.setItem("usertoken", token);
         localStorage.setItem("userid", data._id);
 
-        navigate("/organization");
+        setUser(data); 
+
+        navigate("/organization", { replace: true });
       }
     } catch (error) {
       setError(

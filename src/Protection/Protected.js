@@ -3,15 +3,7 @@ import { Navigate } from "react-router-dom";
 import { UserContext } from "../component/UserContext";
 
 const ProtectedRoute = ({ children }) => {
-  const { user, loading } = useContext(UserContext);
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <p className="text-lg font-semibold text-purple-600">Loading...</p>
-      </div>
-    );
-  }
+  const { user } = useContext(UserContext);
 
   if (!user) {
     return <Navigate to="/login" replace />;
