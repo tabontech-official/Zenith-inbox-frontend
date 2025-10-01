@@ -26,8 +26,12 @@ const renderEmailChain = (email, title = "Email", level = 0) => {
     ? "bg-white border border-gray-200"
     : "bg-purple-50 hover:bg-purple-100 transition duration-200 ease-in-out";
 
-  const sender = email.senderAddress || email.forwardedMeta?.from || "Unknown Sender";
-  const recipient = email.recipientAddress || email.forwardedMeta?.to || "Unknown Recipient";
+  const sender =
+    email.senderAddress || email.forwardedMeta?.from || "Unknown Sender";
+  const recipient =
+    email.recipientAddress || email.forwardedMeta?.to || "Unknown Recipient";
+  const cc = email.cc || email.forwardedMeta?.cc || null;
+  const bcc = email.bcc || email.forwardedMeta?.bcc || null;
   const subject = email.subject || email.forwardedMeta?.subject || "No Subject";
   const dateValue = email.date || email.forwardedMeta?.date;
   const bodyText =
@@ -38,7 +42,11 @@ const renderEmailChain = (email, title = "Email", level = 0) => {
   const hasAttachments = email.attachments && email.attachments.length > 0;
 
   return (
-    <div key={email._id || Math.random()} style={indentationStyle} className="w-full">
+    <div
+      key={email._id || Math.random()}
+      style={indentationStyle}
+      className="w-full"
+    >
       <div
         className={`${bgColor} mb-8 p-8 rounded-2xl shadow-lg hover:shadow-2xl transition duration-300 ease-in-out`}
       >
@@ -52,7 +60,9 @@ const renderEmailChain = (email, title = "Email", level = 0) => {
           </h3>
           <span
             className={`text-sm font-semibold px-3 py-1 rounded-full ${
-              isRoot ? "bg-purple-100 text-purple-700" : "bg-gray-200 text-gray-600"
+              isRoot
+                ? "bg-purple-100 text-purple-700"
+                : "bg-gray-200 text-gray-600"
             }`}
           >
             {isRoot ? "Original Message" : `Level ${level}`}
@@ -76,6 +86,55 @@ const renderEmailChain = (email, title = "Email", level = 0) => {
               {recipient}
             </p>
           </div>
+
+          {cc && (
+            <div className="lg:col-span-2">
+              <label className="block text-xs font-bold uppercase text-purple-600 mb-1 tracking-wider">
+                Cc
+              </label>
+              {cc && cc.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {(Array.isArray(cc) ? cc : [cc]).map((c, idx) => (
+                    <span
+                      key={idx}
+                      className="px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700 shadow-sm"
+                    >
+                      {c}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-400 shadow-sm">
+                  N/A
+                </span>
+              )}
+            </div>
+          )}
+
+          {bcc && (
+            <div className="lg:col-span-2">
+              <label className="block text-xs font-bold uppercase text-purple-600 mb-1 tracking-wider">
+                Bcc
+              </label>
+              {bcc && bcc.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {(Array.isArray(bcc) ? bcc : [bcc]).map((b, idx) => (
+                    <span
+                      key={idx}
+                      className="px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700 shadow-sm"
+                    >
+                      {b}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-400 shadow-sm">
+                  N/A
+                </span>
+              )}
+            </div>
+          )}
+
           <div className="lg:col-span-4 mt-2">
             <label className="block text-xs font-bold uppercase text-purple-600 mb-1 tracking-wider">
               Subject
@@ -127,9 +186,23 @@ const EmailDetailPage = ({ emailId: propEmailId }) => {
   if (loading)
     return (
       <div className="flex flex-col justify-center items-center min-h-screen bg-gray-50">
-        <svg className="animate-spin h-10 w-10 text-purple-600 mb-4" viewBox="0 0 24 24">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        <svg
+          className="animate-spin h-10 w-10 text-purple-600 mb-4"
+          viewBox="0 0 24 24"
+        >
+          <circle
+            className="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            strokeWidth="4"
+          ></circle>
+          <path
+            className="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+          ></path>
         </svg>
         <p className="text-2xl text-purple-600 font-semibold">
           Loading conversation thread...
