@@ -214,11 +214,9 @@ const Sidebar = () => {
       }`}
     >
       <div className="flex items-center justify-center py-6 border-b border-purple-400/40">
-        <img
-          src="https://cdn.shopify.com/s/files/1/0555/4726/5114/files/ChatGPT_Image_Oct_1_2025_12_53_34_AM.png?v=1759305250"
-          alt="MailMatrix Logo"
-          className="w-12 h-12 object-contain"
-        />
+        <h1 className="text-3xl font-extrabold tracking-wide bg-gradient-to-r from-purple-200 via-white to-purple-300 bg-clip-text text-transparent">
+          MailMatrix
+        </h1>
       </div>
 
       <div className="flex items-center space-x-3 py-5 px-6 border-b border-purple-400/40">
@@ -280,7 +278,11 @@ const Sidebar = () => {
               className="ml-8 mt-2 space-y-1 overflow-hidden transition-all duration-300"
             >
               {renderNavLink("All Scenarios", FiZap, "/scenarios/all")}
-              {renderNavLink("Shopify Scenario", FiGitBranch, "/scenarios/shopify")}
+              {renderNavLink(
+                "Shopify Scenario",
+                FiGitBranch,
+                "/scenarios/shopify"
+              )}
               {renderNavLink("Custom", FiSettings, "/scenarios/others")}
             </div>
           </div>
@@ -315,4 +317,3 @@ const Sidebar = () => {
 };
 
 export default Sidebar;
-
