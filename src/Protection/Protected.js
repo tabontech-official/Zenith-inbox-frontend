@@ -1,11 +1,10 @@
-import React, { useContext } from "react";
+import React from "react";
 import { Navigate } from "react-router-dom";
-import { UserContext } from "../component/UserContext";
 
 const ProtectedRoute = ({ children }) => {
-  const { user } = useContext(UserContext);
+  const userId = localStorage.getItem("userid");
 
-  if (!user) {
+  if (!userId) {
     return <Navigate to="/login" replace />;
   }
 
