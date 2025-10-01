@@ -80,8 +80,7 @@ const ShopifyScenariosPage = () => {
   const [body, setBody] = useState("");
   const [delayValue, setDelayValue] = useState("5");
   const [delayUnit, setDelayUnit] = useState("seconds");
-  const [showGmailModal, setShowGmailModal] = useState(false);
-  const [showOutlookModal, setShowOutlookModal] = useState(false);
+
   const [templates, setTemplates] = useState([]);
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [cc, setCc] = useState("");
@@ -240,14 +239,17 @@ const ShopifyScenariosPage = () => {
     toast.success("Shopify scenario saved successfully!");
     navigate("/scenarios/all");
   };
+ 
 
+
+
+ 
   const iconMap = {
     Delay: <Clock />,
     Email: <FiMail />,
     Gmail: <Mail />,
     Webhooks: <Cloud />,
-    Router: <GitBranch />,
-    handleSaveScenario,
+    Router: <GitBranch />,handleSaveScenario 
   };
 
   useState(() => {
