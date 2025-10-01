@@ -54,6 +54,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { UserContext } from "../component/UserContext";
 import WebhookModal from "../component/WebhookModal";
+import ConnectionModal from "../component/ConnectionModal";
+import OutlookConnectionModal from "../component/OutlookConnectionModal";
 
 const ShopifyScenariosPage = () => {
   const { id } = useParams();
@@ -97,7 +99,16 @@ const ShopifyScenariosPage = () => {
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const { user } = useContext(UserContext);
+  const [showOutlookModal, setShowOutlookModal] = useState(false);
+  const [showGmailModal, setShowGmailModal] = useState(false);
 
+  const handleAddClick = () => {
+    if (selectedApp?.name === "Email") {
+      setShowOutlookModal(true);
+    } else if (selectedApp?.name === "Gmail") {
+      setShowGmailModal(true);
+    }
+  };
   useEffect(() => {
     if (user) {
       setLoading(false);
@@ -135,21 +146,21 @@ const ShopifyScenariosPage = () => {
       setBccList(bccList.filter((_, i) => i !== index));
     }
   };
+  const fetchConnections = async () => {
+    try {
+      const res = await fetch(
+        `http://localhost:5000/auth/getConnection/${localStorage.getItem(
+          "userid"
+        )}`
+      );
+      const data = await res.json();
+      setConnections(data);
+    } catch (err) {
+      console.error("Error fetching connections:", err);
+    }
+  };
 
   useEffect(() => {
-    const fetchConnections = async () => {
-      try {
-        const res = await fetch(
-          `http://localhost:5000/auth/getConnection/${localStorage.getItem(
-            "userid"
-          )}`
-        );
-        const data = await res.json();
-        setConnections(data);
-      } catch (err) {
-        console.error("Error fetching connections:", err);
-      }
-    };
     fetchConnections();
   }, []);
 
@@ -239,17 +250,14 @@ const ShopifyScenariosPage = () => {
     toast.success("Shopify scenario saved successfully!");
     navigate("/scenarios/all");
   };
- 
 
-
-
- 
   const iconMap = {
     Delay: <Clock />,
     Email: <FiMail />,
     Gmail: <Mail />,
     Webhooks: <Cloud />,
-    Router: <GitBranch />,handleSaveScenario 
+    Router: <GitBranch />,
+    handleSaveScenario,
   };
 
   useState(() => {
@@ -780,60 +788,47 @@ const ShopifyScenariosPage = () => {
                             <FiMail className="mr-2 text-gray-500" /> Select
                             Connection
                           </label>
-                          <div className="flex items-center border rounded-lg px-3 py-2 focus-within:ring-2 focus-within:ring-purple-500 w-full">
-                            {selectedConnection ? (
-                              <span className="flex items-center bg-purple-100 text-purple-700 text-sm px-3 py-2 rounded-full w-full">
-                                <FiMail className="mr-2" />
-                                {connections
-                                  .find((c) => c._id === selectedConnection)
-                                  ?.provider.toUpperCase()}{" "}
-                                -{" "}
-                                {connections.find(
-                                  (c) => c._id === selectedConnection
-                                )?.email ||
-                                  connections.find(
-                                    (c) => c._id === selectedConnection
-                                  )?.name}
-                                <button
-                                  type="button"
-                                  onClick={() => setSelectedConnection("")}
-                                  className="ml-auto text-xs text-red-500 hover:text-red-700"
-                                >
-                                  <FiUserX />
-                                </button>
-                              </span>
-                            ) : (
-                              <select
-                                value={selectedConnection}
-                                onChange={(e) =>
-                                  setSelectedConnection(e.target.value)
-                                }
-                                className="w-full border-none outline-none text-sm py-2 px-3 bg-transparent"
-                              >
-                                <option value="">
-                                  -- Select Connection --
-                                </option>
-                                {connections
-                                  .filter((c) => {
-                                    if (selectedApp?.name === "Email") {
-                                      return (
-                                        c.provider === "smtp" ||
-                                        c.provider === "outlook"
-                                      );
-                                    }
-                                    if (selectedApp?.name === "Gmail") {
-                                      return c.provider === "gmail";
-                                    }
-                                    return false;
-                                  })
-                                  .map((c) => (
-                                    <option key={c._id} value={c._id}>
-                                      {c.provider.toUpperCase()} -{" "}
-                                      {c.email || c.name}
-                                    </option>
-                                  ))}
-                              </select>
-                            )}
+                          <div className="relative w-full border rounded-lg px-3 py-2">
+                            <select
+                              value={selectedConnection}
+                              onChange={(e) =>
+                                setSelectedConnection(e.target.value)
+                              }
+                              className="w-full border-none outline-none text-sm py-2 px-3 bg-transparent appearance-none"
+                            >
+                              <option onClick={fetchConnections()} value="">
+                                -- Select Connection --
+                              </option>
+                              {connections
+                                .filter((c) => {
+                                  if (selectedApp?.name === "Email") {
+                                    return (
+                                      c.provider === "smtp" ||
+                                      c.provider === "outlook"
+                                    );
+                                  }
+                                  if (selectedApp?.name === "Gmail") {
+                                    return c.provider === "gmail";
+                                  }
+                                  return false;
+                                })
+                                .map((c) => (
+                                  <option key={c._id} value={c._id}>
+                                    {c.provider.toUpperCase()} -{" "}
+                                    {c.email || c.name}
+                                  </option>
+                                ))}
+                            </select>
+
+                            {/* Yeh "Add" button arrow ki jagah */}
+                            <span
+                              onClick={handleAddClick}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 pl-2 border-l-2 border-gray-300 text-purple-600 text-sm font-medium cursor-pointer hover:text-purple-800"
+                            >
+                              Add
+                            </span>
+
+                            {/* Outlook Modal */}
                           </div>
                         </div>
 
@@ -980,7 +975,20 @@ const ShopifyScenariosPage = () => {
               )}
             </div>
           )}
+          <OutlookConnectionModal
+            isOpen={showOutlookModal}
+            onClose={() => setShowOutlookModal(false)}
+            onSuccess={(data) => {
+              console.log("Outlook connection saved", data);
+              setShowOutlookModal(false);
+            }}
+          />
 
+          {/* Gmail Modal */}
+          <ConnectionModal
+            isOpen={showGmailModal}
+            onClose={() => setShowGmailModal(false)}
+          />
           <WebhookModal
             showWebhookInfo={showWebhookInfo}
             setShowWebhookInfo={setShowWebhookInfo}

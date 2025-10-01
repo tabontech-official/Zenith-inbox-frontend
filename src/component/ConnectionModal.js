@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { FaGoogle, FaTimes } from "react-icons/fa";
 import { MdInfo } from "react-icons/md";
 
@@ -8,15 +8,43 @@ const ConnectionModal = ({ isOpen, onClose }) => {
   );
   const [advancedSettings, setAdvancedSettings] = useState(false);
 
-  const handleGoogleSignIn = () => {
-    const userId = localStorage.getItem("userid"); 
-    window.location.href = `http://localhost:5000/auth/google?userId=${userId}`;
+const handleGoogleSignIn = () => {
+  const userId = localStorage.getItem("userid");
+  const url = `http://localhost:5000/auth/google?userId=${userId}`;
+
+  const popup = window.open(
+    url,
+    "googleAuth",
+    "width=500,height=600,left=200,top=200"
+  );
+
+  window.googlePopup = popup;
+};
+
+useEffect(() => {
+  const listener = (event) => {
+    if (event.data?.type === "google-auth-success") {
+
+      // show toast or banner
+      alert("Successfully connected to Gmail!");
+
+      if (window.googlePopup && !window.googlePopup.closed) {
+        window.googlePopup.close();
+      }
+
+      onClose(); // close modal
+      // fetchConnections(); // refresh list
+    }
   };
+
+  window.addEventListener("message", listener);
+  return () => window.removeEventListener("message", listener);
+}, [onClose]);
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-50 font-sans">
+    <div className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 z-50">
       <div className="bg-white rounded-lg shadow-2xl w-full max-w-lg overflow-hidden animate-fadeIn">
         <div className="bg-gradient-to-r from-[#e45341] to-[#f46654] text-white flex justify-between items-center px-5 py-3">
           <h2 className="text-sm font-semibold tracking-wide flex items-center gap-2">

@@ -92,7 +92,6 @@ export const UserProvider = ({ children }) => {
       }
 
       try {
-        // 🟪 1. Fetch user
         const userRes = await fetch(
           `http://localhost:5000/auth/getUsers/${userId}`
         );
@@ -106,7 +105,6 @@ export const UserProvider = ({ children }) => {
 
         setUser(userData.data);
 
-        // 🟪 2. Fetch root emails list
         const emailRes = await fetch(
           `http://localhost:5000/mailhook/getAllEmails/${userId}`
         );
@@ -120,7 +118,6 @@ export const UserProvider = ({ children }) => {
 
         const rawEmails = emailData.data || [];
 
-        // 🟪 3. Parallel fetch all threads instead of sequential
         const threadPromises = rawEmails.map(async (mail) => {
           try {
             const threadRes = await fetch(
