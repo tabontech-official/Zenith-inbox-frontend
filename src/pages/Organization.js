@@ -13,7 +13,7 @@ const Organization = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
-  const [limit] = useState(10); 
+  const [limit] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
 
   const [stats, setStats] = useState({
@@ -38,7 +38,7 @@ const Organization = () => {
 
       setEmails(res.data?.data || []);
       setTotalPages(res.data?.totalPages || 1);
-      setStats(res.data?.stats || {}); 
+      setStats(res.data?.stats || {});
     } catch (err) {
       console.error("Error fetching emails:", err);
     } finally {
@@ -69,7 +69,7 @@ const Organization = () => {
 
   useEffect(() => {
     fetchEmails();
-  }, [page]); 
+  }, [page]);
 
   const fetchEmailById = async (id) => {
     navigate(`/organization/email/${id}`);
