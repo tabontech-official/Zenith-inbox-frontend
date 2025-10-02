@@ -17,7 +17,7 @@
 
 // //       try {
 // //         const userRes = await fetch(
-// //           `http://localhost:5000/auth/getUsers/${userId}`
+// //           `https://email-syncing-backend.vercel.app/auth/getUsers/${userId}`
 // //         );
 // //         const userData = await userRes.json();
 
@@ -30,7 +30,7 @@
 // //         setUser(userData.data);
 
 // //         const emailRes = await fetch(
-// //           `http://localhost:5000/mailhook/getAllEmails/${userId}`
+// //           `https://email-syncing-backend.vercel.app/mailhook/getAllEmails/${userId}`
 // //         );
 // //         const emailData = await emailRes.json();
 
@@ -46,7 +46,7 @@
 // //         for (const mail of rawEmails) {
 // //           try {
 // //             const threadRes = await fetch(
-// //               `http://localhost:5000/mailhook/getAllEmailsData/${mail._id}`
+// //               `https://email-syncing-backend.vercel.app/mailhook/getAllEmailsData/${mail._id}`
 // //             );
 // //             const threadData = await threadRes.json();
 // //             if (threadRes.ok) {
@@ -93,7 +93,7 @@
 
 //       try {
 //         const userRes = await fetch(
-//           `http://localhost:5000/auth/getUsers/${userId}`
+//           `https://email-syncing-backend.vercel.app/auth/getUsers/${userId}`
 //         );
 //         const userData = await userRes.json();
 
@@ -106,7 +106,7 @@
 //         setUser(userData.data);
 
 //         const emailRes = await fetch(
-//           `http://localhost:5000/mailhook/getAllEmails/${userId}`
+//           `https://email-syncing-backend.vercel.app/mailhook/getAllEmails/${userId}`
 //         );
 //         const emailData = await emailRes.json();
 
@@ -121,7 +121,7 @@
 //         const threadPromises = rawEmails.map(async (mail) => {
 //           try {
 //             const threadRes = await fetch(
-//               `http://localhost:5000/mailhook/getAllEmailsData/${mail._id}`
+//               `https://email-syncing-backend.vercel.app/mailhook/getAllEmailsData/${mail._id}`
 //             );
 //             const threadData = await threadRes.json();
 //             if (threadRes.ok) {
@@ -171,7 +171,7 @@ export const UserProvider = ({ children }) => {
 
       try {
         const userRes = await fetch(
-          `http://localhost:5000/auth/getUsers/${userId}`
+          `https://email-syncing-backend.vercel.app/auth/getUsers/${userId}`
         );
         const userData = await userRes.json();
 

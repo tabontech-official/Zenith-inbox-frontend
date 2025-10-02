@@ -28,7 +28,7 @@ const OutlookConnectionModal = ({ isOpen, onClose, onSuccess }) => {
       const payload = { ...form, userId };
 
       const res = await fetch(
-        "http://localhost:5000/auth/saveSmtpConnection",
+        "https://email-syncing-backend.vercel.app/auth/saveSmtpConnection",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
