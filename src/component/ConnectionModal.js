@@ -91,7 +91,7 @@ const ConnectionModal = ({ isOpen, onClose }) => {
             for additional required steps.
           </p>
 
-          <div className="flex items-center">
+          {/* <div className="flex items-center">
             <label className="relative inline-flex items-center cursor-pointer">
               <input
                 type="checkbox"
@@ -105,7 +105,7 @@ const ConnectionModal = ({ isOpen, onClose }) => {
                 Advanced settings
               </span>
             </label>
-          </div>
+          </div> */}
         </div>
 
         <div className="flex justify-end gap-3 px-6 py-4 bg-gray-50 border-t">
