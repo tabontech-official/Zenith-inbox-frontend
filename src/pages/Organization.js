@@ -1,20 +1,73 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import Sidebar from "../component/Sidebar";
 import { Link, useNavigate } from "react-router-dom";
 import { FiMail, FiCheckCircle, FiAlertCircle, FiZap } from "react-icons/fi";
 import { MdOutlineEmail } from "react-icons/md";
-import { UserContext } from "../component/UserContext";
+import axios from "axios";
 
 const Organization = () => {
   const [automationOn, setAutomationOn] = useState(true);
   const [activeTab, setActiveTab] = useState("emails");
   const navigate = useNavigate();
+  const [emails, setEmails] = useState([]);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  const { user, emails, loading } = useContext(UserContext);
+  const fetchEmails = async () => {
+    try {
+      setLoading(true);
+      const userId = localStorage.getItem("userid");
+      if (!userId) {
+        console.error("No userId in localStorage");
+        return;
+      }
 
+      const res = await axios.get(
+        `https://email-syncing-backend.vercel.app/mailhook/getAllEmails/${userId}`
+      );
+      setEmails(res.data?.data || []);
+      setUser(res.data?.user || null);
+    } catch (err) {
+      console.error("Error fetching emails:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchEmails();
+  }, []);
   const fetchEmailById = async (id) => {
     navigate(`/organization/email/${id}`);
   };
+
+  const Loader = () => (
+    <tr>
+      <td colSpan="5">
+        <div className="flex flex-col justify-center items-center py-10">
+          <svg
+            className="animate-spin h-8 w-8 text-purple-600 mb-2"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            ></circle>
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            ></path>
+          </svg>
+          <p className="text-sm text-purple-600 font-medium">Loading data...</p>
+        </div>
+      </td>
+    </tr>
+  );
 
   const getEmailStatus = (statuses) => {
     if (!statuses || statuses.length === 0) return "Pending";
@@ -180,7 +233,9 @@ const Organization = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {rootEmails.length > 0 ? (
+                    {loading ? (
+                      <Loader />
+                    ) : rootEmails.length > 0 ? (
                       rootEmails.map((email) => {
                         const root = email.rootEmail || email;
                         const status = getEmailStatus(
@@ -245,38 +300,51 @@ const Organization = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {rootEmails.flatMap((email) =>
-                      email.statuses.map((s, i) => (
-                        <tr
-                          key={`${email._id}-${i}`}
-                          className="hover:bg-gray-50 transition duration-150"
+                    {loading ? (
+                      <Loader />
+                    ) : rootEmails.length > 0 ? (
+                      rootEmails.flatMap((email) =>
+                        email.statuses.map((s, i) => (
+                          <tr
+                            key={`${email._id}-${i}`}
+                            className="hover:bg-gray-50 transition duration-150"
+                          >
+                            <td className="px-4 py-3 font-medium text-gray-800">
+                              {s.scenarioId?.name || "N/A"}
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <span
+                                className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
+                                  s.status === "completed"
+                                    ? "bg-green-100 text-green-700"
+                                    : s.status === "pending"
+                                    ? "bg-yellow-100 text-yellow-700"
+                                    : s.status === "partial"
+                                    ? "bg-blue-100 text-blue-700"
+                                    : "bg-red-100 text-red-700"
+                                }`}
+                              >
+                                {s.status}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-center text-gray-600">
+                              {s.completedModules?.length || 0}
+                            </td>
+                            <td className="px-4 py-3 text-center text-gray-600">
+                              {s.pendingModules?.length || 0}
+                            </td>
+                          </tr>
+                        ))
+                      )
+                    ) : (
+                      <tr>
+                        <td
+                          colSpan="4"
+                          className="px-4 py-6 text-center text-gray-500 italic"
                         >
-                          <td className="px-4 py-3 font-medium text-gray-800">
-                            {s.scenarioId?.name || "N/A"}
-                          </td>
-                          <td className="px-4 py-3 text-center">
-                            <span
-                              className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
-                                s.status === "completed"
-                                  ? "bg-green-100 text-green-700"
-                                  : s.status === "pending"
-                                  ? "bg-yellow-100 text-yellow-700"
-                                  : s.status === "partial"
-                                  ? "bg-blue-100 text-blue-700"
-                                  : "bg-red-100 text-red-700"
-                              }`}
-                            >
-                              {s.status}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-center text-gray-600">
-                            {s.completedModules?.length || 0}
-                          </td>
-                          <td className="px-4 py-3 text-center text-gray-600">
-                            {s.pendingModules?.length || 0}
-                          </td>
-                        </tr>
-                      ))
+                          No recent automations found
+                        </td>
+                      </tr>
                     )}
                   </tbody>
                 </table>

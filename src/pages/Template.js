@@ -5,7 +5,7 @@ import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { ChevronDownIcon, ChevronRightIcon } from "@heroicons/react/24/solid"; 
+import { ChevronDownIcon, ChevronRightIcon } from "@heroicons/react/24/solid";
 
 const SERVICES = [
   "Troubleshooting",
@@ -42,8 +42,9 @@ const SERVICES = [
 export default function Template() {
   const [templates, setTemplates] = useState([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false); 
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const quillRef = useRef(null);
+  const [loading, setLoading] = useState(false);
 
   const [editingId, setEditingId] = useState(null);
   const [platform, setPlatform] = useState("");
@@ -59,6 +60,7 @@ export default function Template() {
 
   const fetchTemplates = async () => {
     try {
+      setLoading(true);
       const userId = localStorage.getItem("userid");
       const res = await axios.get("https://email-syncing-backend.vercel.app/template/all", {
         params: { userId },
@@ -66,21 +68,47 @@ export default function Template() {
       setTemplates(res.data);
     } catch (err) {
       toast.error(" Failed to fetch templates");
+    } finally {
+      setLoading(false);
     }
   };
 
-const insertField = (placeholder) => {
-  const editor = quillRef.current.getEditor(); 
-  const range = editor.getSelection(); 
+  const insertField = (placeholder) => {
+    const editor = quillRef.current.getEditor();
+    const range = editor.getSelection();
 
-  if (range) {
-    editor.insertText(range.index, placeholder); 
-    editor.setSelection(range.index + placeholder.length); 
-  } else {
-    editor.insertText(editor.getLength(), placeholder);
-  }
-};
-
+    if (range) {
+      editor.insertText(range.index, placeholder);
+      editor.setSelection(range.index + placeholder.length);
+    } else {
+      editor.insertText(editor.getLength(), placeholder);
+    }
+  };
+  const Loader = () => (
+    <div className="flex flex-col justify-center items-center py-10">
+      <svg
+        className="animate-spin h-8 w-8 text-purple-600 mb-2"
+        viewBox="0 0 24 24"
+      >
+        <circle
+          className="opacity-25"
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="currentColor"
+          strokeWidth="4"
+        ></circle>
+        <path
+          className="opacity-75"
+          fill="currentColor"
+          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+        ></path>
+      </svg>
+      <p className="text-sm text-purple-600 font-medium">
+        Loading templates...
+      </p>
+    </div>
+  );
 
   useEffect(() => {
     fetchTemplates();
@@ -237,7 +265,13 @@ const insertField = (placeholder) => {
               </thead>
 
               <tbody>
-                {templates.length > 0 ? (
+                {loading ? (
+                  <tr>
+                    <td colSpan="5" className="text-center">
+                      <Loader />
+                    </td>
+                  </tr>
+                ) : templates.length > 0 ? (
                   <>
                     {templates
                       .filter((t) => t.service === "General")

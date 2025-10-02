@@ -8,38 +8,37 @@ const ConnectionModal = ({ isOpen, onClose }) => {
   );
   const [advancedSettings, setAdvancedSettings] = useState(false);
 
-const handleGoogleSignIn = () => {
-  const userId = localStorage.getItem("userid");
-  const url = `https://email-syncing-backend.vercel.app/auth/google?userId=${userId}`;
+  const handleGoogleSignIn = () => {
+    const userId = localStorage.getItem("userid");
+    const url = `https://email-syncing-backend.vercel.app/auth/google?userId=${userId}`;
 
-  const popup = window.open(
-    url,
-    "googleAuth",
-    "width=500,height=600,left=200,top=200"
-  );
+    const popup = window.open(
+      url,
+      "googleAuth",
+      "width=500,height=600,left=200,top=200"
+    );
 
-  window.googlePopup = popup;
-};
-
-useEffect(() => {
-  const listener = (event) => {
-    if (event.data?.type === "google-auth-success") {
-
-      // show toast or banner
-      alert("Successfully connected to Gmail!");
-
-      if (window.googlePopup && !window.googlePopup.closed) {
-        window.googlePopup.close();
-      }
-
-      onClose(); // close modal
-      // fetchConnections(); // refresh list
-    }
+    window.googlePopup = popup;
   };
 
-  window.addEventListener("message", listener);
-  return () => window.removeEventListener("message", listener);
-}, [onClose]);
+  useEffect(() => {
+    const listener = (event) => {
+      if (event.data?.type === "google-auth-success") {
+        // show toast or banner
+        alert("Successfully connected to Gmail!");
+
+        if (window.googlePopup && !window.googlePopup.closed) {
+          window.googlePopup.close();
+        }
+
+        onClose(); // close modal
+        // fetchConnections(); // refresh list
+      }
+    };
+
+    window.addEventListener("message", listener);
+    return () => window.removeEventListener("message", listener);
+  }, [onClose]);
 
   if (!isOpen) return null;
 

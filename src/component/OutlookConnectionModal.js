@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { FaMicrosoft } from "react-icons/fa";
 import { FiEye, FiEyeOff, FiX } from "react-icons/fi";
 
-const OutlookConnectionModal = ({ isOpen, onClose,onSuccess  }) => {
+const OutlookConnectionModal = ({ isOpen, onClose, onSuccess }) => {
   const [form, setForm] = useState({
     name: "My Outlook Connection",
     provider: "outlook",
@@ -27,11 +27,14 @@ const OutlookConnectionModal = ({ isOpen, onClose,onSuccess  }) => {
       const userId = localStorage.getItem("userid");
       const payload = { ...form, userId };
 
-      const res = await fetch("https://email-syncing-backend.vercel.app/auth/saveSmtpConnection", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const res = await fetch(
+        "https://email-syncing-backend.vercel.app/auth/saveSmtpConnection",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
 
       if (!res.ok) {
         throw new Error("Failed to save connection");
@@ -44,13 +47,12 @@ const OutlookConnectionModal = ({ isOpen, onClose,onSuccess  }) => {
       }
 
       onClose();
-    } catch (err) {
-    }
+    } catch (err) {}
   };
 
   return (
-<div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-  <div className="bg-white rounded-lg shadow-xl w-[420px] overflow-hidden">
+    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg shadow-xl w-[420px] overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
           <div className="flex items-center space-x-2">

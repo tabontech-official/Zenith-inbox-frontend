@@ -281,27 +281,59 @@ const ShopifyScenariosPage = () => {
       { id: 2, hasModule: false, condition: null, modules: [] },
     ]);
   }, []);
+  // useEffect(() => {
+  //   if (id) {
+  //     const fetchScenario = async () => {
+  //       try {
+  //         const res = await fetch(
+  //           `https://email-syncing-backend.vercel.app/scenario/detail/${id}`
+  //         );
+  //         const data = await res.json();
+  //         if (data) {
+  //           setScenarioId(data._id);
+  //           setScenarioName(data.name || "");
+  //           setScenarioDescription(data.description || "");
+  //           setRouterBranches(data.routerBranches || []);
+  //         }
+  //       } catch (err) {
+  //         console.error("Error fetching scenario:", err);
+  //       }
+  //     };
+  //     fetchScenario();
+  //   }
+  // }, [id]);
   useEffect(() => {
-    if (id) {
-      const fetchScenario = async () => {
-        try {
-          const res = await fetch(
-            `https://email-syncing-backend.vercel.app/scenario/detail/${id}`
-          );
-          const data = await res.json();
-          if (data) {
-            setScenarioId(data._id);
-            setScenarioName(data.name || "");
-            setScenarioDescription(data.description || "");
-            setRouterBranches(data.routerBranches || []);
-          }
-        } catch (err) {
-          console.error("Error fetching scenario:", err);
+    const fetchScenario = async () => {
+      try {
+        const userId = localStorage.getItem("userid"); // localStorage se lo
+        if (!userId) {
+          console.error("No userId found in localStorage");
+          return;
         }
-      };
-      fetchScenario();
-    }
-  }, [id]);
+
+        const res = await fetch("https://email-syncing-backend.vercel.app/scenario/details", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ userId }), // ✅ body me userId send
+        });
+
+        const data = await res.json();
+        if (data) {
+          setScenarioId(data._id);
+          setScenarioName(data.name || "");
+          setScenarioDescription(data.description || "");
+          setRouterBranches(data.routerBranches || []);
+        }
+      } catch (err) {
+        console.error("Error fetching scenario:", err);
+      }
+    };
+
+    fetchScenario();
+  }, []);
+
   const handleSave = () => {
     if (editingBranch !== null) {
       const updatedBranches = [...routerBranches];
