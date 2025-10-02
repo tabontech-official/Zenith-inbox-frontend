@@ -12,26 +12,39 @@ const Organization = () => {
   const [emails, setEmails] = useState([]);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10); // per page limit
+  const [totalPages, setTotalPages] = useState(1);
 
-  const fetchEmails = async () => {
-    try {
-      setLoading(true);
-      const userId = localStorage.getItem("userid");
-      if (!userId) {
-        console.error("No userId in localStorage");
-        return;
-      }
-
-      const res = await axios.get(
-        `https://email-syncing-backend.vercel.app/mailhook/getAllEmails/${userId}`
-      );
-      setEmails(res.data?.data || []);
-    } catch (err) {
-      console.error("Error fetching emails:", err);
-    } finally {
-      setLoading(false);
+  const [stats, setStats] = useState({
+  total: 0,
+  processed: 0,
+  partial: 0,
+  failed: 0,
+  pending: 0,
+});
+const fetchEmails = async () => {
+  try {
+    setLoading(true);
+    const userId = localStorage.getItem("userid");
+    if (!userId) {
+      console.error("No userId in localStorage");
+      return;
     }
-  };
+
+    const res = await axios.get(
+      `http://localhost:5000/mailhook/getAllEmails/${userId}?page=${page}&limit=${limit}`
+    );
+
+    setEmails(res.data?.data || []);
+    setTotalPages(res.data?.totalPages || 1);
+    setStats(res.data?.stats || {}); // 👈 global stats bhi store kar lo
+  } catch (err) {
+    console.error("Error fetching emails:", err);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const fetchUser = async () => {
     try {
@@ -42,7 +55,7 @@ const Organization = () => {
       }
 
       const res = await axios.get(
-        `https://email-syncing-backend.vercel.app/auth/getUsers/${userId}`
+        `http://localhost:5000/auth/getUsers/${userId}`
       );
 
       setUser(res.data?.data || null);
@@ -51,9 +64,12 @@ const Organization = () => {
     }
   };
   useEffect(() => {
-    fetchUser(); 
-    fetchEmails();
+    fetchUser();
   }, []);
+
+  useEffect(() => {
+    fetchEmails();
+  }, [page]); //
 
   const fetchEmailById = async (id) => {
     navigate(`/organization/email/${id}`);
@@ -185,37 +201,15 @@ const Organization = () => {
         </header>
 
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
-          {renderStatCard(
-            <MdOutlineEmail />,
-            "Total Emails",
-            rootEmails.length,
-            "bg-indigo-500"
-          )}
-          {renderStatCard(
-            <FiCheckCircle />,
-            "Processed",
-            rootEmails.filter((e) => getEmailStatus(e.statuses) === "Processed")
-              .length,
-            "bg-green-500"
-          )}
-          {renderStatCard(
-            <FiZap />,
-            "Partial",
-            rootEmails.filter((e) => getEmailStatus(e.statuses) === "Partial")
-              .length,
-            "bg-blue-500"
-          )}
-          {renderStatCard(
-            <FiAlertCircle />,
-            "Failed",
-            rootEmails.filter((e) => getEmailStatus(e.statuses) === "Failed")
-              .length,
-            "bg-red-500"
-          )}
-        </section>
+  {renderStatCard(<MdOutlineEmail />, "Total Emails", stats.total, "bg-indigo-500")}
+  {renderStatCard(<FiCheckCircle />, "Processed", stats.processed, "bg-green-500")}
+  {renderStatCard(<FiZap />, "Partial", stats.partial, "bg-blue-500")}
+  {renderStatCard(<FiAlertCircle />, "Failed", stats.failed, "bg-red-500")}
+</section>
 
         <section className="mt-10">
-          <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200">
+            {/* Tabs */}
             <div className="flex border-b bg-gray-50">
               <button
                 onClick={() => setActiveTab("emails")}
@@ -239,10 +233,11 @@ const Organization = () => {
               </button>
             </div>
 
+            {/* Table */}
             <div className="p-4 overflow-x-auto">
               {activeTab === "emails" ? (
                 <table className="w-full border-collapse text-sm">
-                  <thead className="bg-gray-100 text-gray-700 text-xs uppercase tracking-wide">
+                  <thead className="bg-gray-100 text-gray-700 text-xs uppercase tracking-wide sticky top-0 z-10">
                     <tr>
                       <th className="px-4 py-3 text-left">From</th>
                       <th className="px-4 py-3 text-left">Subject</th>
@@ -263,7 +258,7 @@ const Organization = () => {
                         return (
                           <tr
                             key={root._id}
-                            className="hover:bg-gray-50 transition duration-150 cursor-pointer"
+                            className="hover:bg-purple-50 transition duration-150 cursor-pointer transform hover:scale-[1.01]"
                             onClick={() => fetchEmailById(root._id)}
                           >
                             <td className="px-4 py-3 font-medium text-gray-800">
@@ -299,9 +294,12 @@ const Organization = () => {
                       <tr>
                         <td
                           colSpan="4"
-                          className="px-4 py-6 text-center text-gray-500 italic"
+                          className="px-4 py-10 text-center text-gray-500"
                         >
-                          No recent emails found
+                          <div className="flex flex-col items-center">
+                            <FiMail className="h-8 w-8 text-gray-400 mb-2" />
+                            <p className="italic">No recent emails found</p>
+                          </div>
                         </td>
                       </tr>
                     )}
@@ -309,7 +307,7 @@ const Organization = () => {
                 </table>
               ) : (
                 <table className="w-full border-collapse text-sm">
-                  <thead className="bg-gray-100 text-gray-700 text-xs uppercase tracking-wide">
+                  <thead className="bg-gray-100 text-gray-700 text-xs uppercase tracking-wide sticky top-0 z-10">
                     <tr>
                       <th className="px-4 py-3 text-left">Scenario</th>
                       <th className="px-4 py-3 text-center">Status</th>
@@ -325,7 +323,7 @@ const Organization = () => {
                         email.statuses.map((s, i) => (
                           <tr
                             key={`${email._id}-${i}`}
-                            className="hover:bg-gray-50 transition duration-150"
+                            className="hover:bg-purple-50 transition duration-150"
                           >
                             <td className="px-4 py-3 font-medium text-gray-800">
                               {s.scenarioId?.name || "N/A"}
@@ -358,15 +356,53 @@ const Organization = () => {
                       <tr>
                         <td
                           colSpan="4"
-                          className="px-4 py-6 text-center text-gray-500 italic"
+                          className="px-4 py-10 text-center text-gray-500"
                         >
-                          No recent automations found
+                          <div className="flex flex-col items-center">
+                            <FiZap className="h-8 w-8 text-gray-400 mb-2" />
+                            <p className="italic">
+                              No recent automations found
+                            </p>
+                          </div>
                         </td>
                       </tr>
                     )}
                   </tbody>
                 </table>
               )}
+            </div>
+
+            {/* Pagination */}
+            <div className="flex justify-between items-center px-4 py-3 bg-gray-50 border-t">
+              <button
+                disabled={page === 1}
+                onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                className={`px-3 py-1 rounded-md ${
+                  page === 1
+                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    : "bg-purple-600 text-white hover:bg-purple-700"
+                }`}
+              >
+                Previous
+              </button>
+
+              <span className="text-gray-600">
+                Page {page} of {totalPages}
+              </span>
+
+              <button
+                disabled={page === totalPages}
+                onClick={() =>
+                  setPage((prev) => Math.min(prev + 1, totalPages))
+                }
+                className={`px-3 py-1 rounded-md ${
+                  page === totalPages
+                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    : "bg-purple-600 text-white hover:bg-purple-700"
+                }`}
+              >
+                Next
+              </button>
             </div>
           </div>
         </section>
