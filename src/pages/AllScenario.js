@@ -40,10 +40,40 @@ const getScenarioIcon = (scenario) => {
   return <Layers className="w-5 h-5 text-purple-500" />;
 };
 
+const Loader = () => (
+  <tr>
+    <td colSpan="5">
+      <div className="flex flex-col justify-center items-center py-10">
+        <svg
+          className="animate-spin h-8 w-8 text-purple-600 mb-2"
+          viewBox="0 0 24 24"
+        >
+          <circle
+            className="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            strokeWidth="4"
+          ></circle>
+          <path
+            className="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+          ></path>
+        </svg>
+        <p className="text-sm text-purple-600 font-medium">Loading data...</p>
+      </div>
+    </td>
+  </tr>
+);
+
 const AllScenariosPage = () => {
   const [scenarios, setScenarios] = useState([]);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedScenario, setSelectedScenario] = useState(null);
+  const [loading, setLoading] = useState(false);
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -52,15 +82,17 @@ const AllScenariosPage = () => {
 
   const fetchScenarios = async () => {
     const userId = localStorage.getItem("userid");
-
     try {
+      setLoading(true);
       const res = await fetch(
         `https://email-syncing-backend.vercel.app/scenario/user/${userId}`
       );
       const data = await res.json();
-      setScenarios(data); 
+      setScenarios(data);
     } catch (err) {
-      console.error(" Error fetching scenarios:", err);
+      console.error("Error fetching scenarios:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -124,62 +156,74 @@ const AllScenariosPage = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {scenarios.map((scenario) => (
-                    <tr
-                      key={scenario._id}
-                      className="border-b hover:bg-gray-50 cursor-pointer"
-                    >
-                      <td
-                        onClick={() => handleRowClick(scenario)}
-                        className="px-6 py-4 flex items-center gap-2 font-medium text-gray-800"
+                  {loading ? (
+                    <Loader />
+                  ) : scenarios.length > 0 ? (
+                    scenarios.map((scenario) => (
+                      <tr
+                        key={scenario._id}
+                        className="border-b hover:bg-gray-50 cursor-pointer"
                       >
-                        {getScenarioIcon(scenario)}
-                        {getScenarioName(scenario)}
-                      </td>
-
-                      <td
-                        onClick={() => handleRowClick(scenario)}
-                        className="px-6 py-4 text-gray-600 max-w-xs truncate"
-                      >
-                        {getScenarioDescription(scenario)}
-                      </td>
-
-                      <td
-                        onClick={() => handleRowClick(scenario)}
-                        className="px-6 py-4 capitalize"
-                      >
-                        {scenario.type}
-                      </td>
-
-                      <td
-                        onClick={() => handleRowClick(scenario)}
-                        className="px-6 py-4"
-                      >
-                        {new Date(scenario.createdAt).toLocaleDateString(
-                          "en-US",
-                          {
-                            year: "numeric",
-                            month: "short",
-                            day: "numeric",
-                          }
-                        )}
-                      </td>
-
-                      {/* Actions */}
-                      <td className="px-6 py-4 text-right">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedScenario(scenario);
-                            setDeleteModalOpen(true);
-                          }}
-                          className="text-gray-400 hover:text-red-500"
+                        <td
+                          onClick={() => handleRowClick(scenario)}
+                          className="px-6 py-4 flex items-center gap-2 font-medium text-gray-800"
                         >
-                          <Trash2 className="w-5 h-5" />
-                        </button>
+                          {getScenarioIcon(scenario)}
+                          {getScenarioName(scenario)}
+                        </td>
+
+                        <td
+                          onClick={() => handleRowClick(scenario)}
+                          className="px-6 py-4 text-gray-600 max-w-xs truncate"
+                        >
+                          {getScenarioDescription(scenario)}
+                        </td>
+
+                        <td
+                          onClick={() => handleRowClick(scenario)}
+                          className="px-6 py-4 capitalize"
+                        >
+                          {scenario.type}
+                        </td>
+
+                        <td
+                          onClick={() => handleRowClick(scenario)}
+                          className="px-6 py-4"
+                        >
+                          {new Date(scenario.createdAt).toLocaleDateString(
+                            "en-US",
+                            {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                            }
+                          )}
+                        </td>
+
+                        <td className="px-6 py-4 text-right">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedScenario(scenario);
+                              setDeleteModalOpen(true);
+                            }}
+                            className="text-gray-400 hover:text-red-500"
+                          >
+                            <Trash2 className="w-5 h-5" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td
+                        colSpan="5"
+                        className="text-center py-10 text-gray-400 text-lg"
+                      >
+                        No scenarios found.
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>

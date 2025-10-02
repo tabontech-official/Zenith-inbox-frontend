@@ -26,7 +26,6 @@ const Organization = () => {
         `https://email-syncing-backend.vercel.app/mailhook/getAllEmails/${userId}`
       );
       setEmails(res.data?.data || []);
-      setUser(res.data?.user || null);
     } catch (err) {
       console.error("Error fetching emails:", err);
     } finally {
@@ -34,9 +33,28 @@ const Organization = () => {
     }
   };
 
+  const fetchUser = async () => {
+    try {
+      const userId = localStorage.getItem("userid");
+      if (!userId) {
+        console.error("No userId in localStorage");
+        return;
+      }
+
+      const res = await axios.get(
+        `https://email-syncing-backend.vercel.app/auth/getUsers/${userId}`
+      );
+
+      setUser(res.data?.data || null);
+    } catch (err) {
+      console.error("Error fetching user:", err);
+    }
+  };
   useEffect(() => {
+    fetchUser(); 
     fetchEmails();
   }, []);
+
   const fetchEmailById = async (id) => {
     navigate(`/organization/email/${id}`);
   };
