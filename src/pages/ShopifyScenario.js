@@ -311,13 +311,16 @@ const ShopifyScenariosPage = () => {
           return;
         }
 
-        const res = await fetch("https://email-syncing-backend.vercel.app/scenario/details", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ userId }), // ✅ body me userId send
-        });
+        const res = await fetch(
+          "https://email-syncing-backend.vercel.app/scenario/details",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ userId }), // ✅ body me userId send
+          }
+        );
 
         const data = await res.json();
         if (data) {
