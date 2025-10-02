@@ -13,38 +13,38 @@ const Organization = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
-  const [limit] = useState(10); // per page limit
+  const [limit] = useState(10); 
   const [totalPages, setTotalPages] = useState(1);
 
   const [stats, setStats] = useState({
-  total: 0,
-  processed: 0,
-  partial: 0,
-  failed: 0,
-  pending: 0,
-});
-const fetchEmails = async () => {
-  try {
-    setLoading(true);
-    const userId = localStorage.getItem("userid");
-    if (!userId) {
-      console.error("No userId in localStorage");
-      return;
+    total: 0,
+    processed: 0,
+    partial: 0,
+    failed: 0,
+    pending: 0,
+  });
+  const fetchEmails = async () => {
+    try {
+      setLoading(true);
+      const userId = localStorage.getItem("userid");
+      if (!userId) {
+        console.error("No userId in localStorage");
+        return;
+      }
+
+      const res = await axios.get(
+        `https://email-syncing-backend.vercel.app/mailhook/getAllEmails/${userId}?page=${page}&limit=${limit}`
+      );
+
+      setEmails(res.data?.data || []);
+      setTotalPages(res.data?.totalPages || 1);
+      setStats(res.data?.stats || {}); 
+    } catch (err) {
+      console.error("Error fetching emails:", err);
+    } finally {
+      setLoading(false);
     }
-
-    const res = await axios.get(
-      `https://email-syncing-backend.vercel.app/mailhook/getAllEmails/${userId}?page=${page}&limit=${limit}`
-    );
-
-    setEmails(res.data?.data || []);
-    setTotalPages(res.data?.totalPages || 1);
-    setStats(res.data?.stats || {}); // 👈 global stats bhi store kar lo
-  } catch (err) {
-    console.error("Error fetching emails:", err);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const fetchUser = async () => {
     try {
@@ -69,7 +69,7 @@ const fetchEmails = async () => {
 
   useEffect(() => {
     fetchEmails();
-  }, [page]); //
+  }, [page]); 
 
   const fetchEmailById = async (id) => {
     navigate(`/organization/email/${id}`);
@@ -201,11 +201,26 @@ const fetchEmails = async () => {
         </header>
 
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
-  {renderStatCard(<MdOutlineEmail />, "Total Emails", stats.total, "bg-indigo-500")}
-  {renderStatCard(<FiCheckCircle />, "Processed", stats.processed, "bg-green-500")}
-  {renderStatCard(<FiZap />, "Partial", stats.partial, "bg-blue-500")}
-  {renderStatCard(<FiAlertCircle />, "Failed", stats.failed, "bg-red-500")}
-</section>
+          {renderStatCard(
+            <MdOutlineEmail />,
+            "Total Emails",
+            stats.total,
+            "bg-indigo-500"
+          )}
+          {renderStatCard(
+            <FiCheckCircle />,
+            "Processed",
+            stats.processed,
+            "bg-green-500"
+          )}
+          {renderStatCard(<FiZap />, "Partial", stats.partial, "bg-blue-500")}
+          {renderStatCard(
+            <FiAlertCircle />,
+            "Failed",
+            stats.failed,
+            "bg-red-500"
+          )}
+        </section>
 
         <section className="mt-10">
           <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200">
