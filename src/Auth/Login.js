@@ -30,7 +30,7 @@ const LoginPage = () => {
         localStorage.setItem("usertoken", token);
         localStorage.setItem("userid", data._id);
         setUser(data);
-        navigate("/organization", { replace: true });
+        navigate("/setup", { replace: true });
       }
     } catch (error) {
       setError(
