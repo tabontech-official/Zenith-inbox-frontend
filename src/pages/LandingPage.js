@@ -2,8 +2,10 @@ import React from "react";
 import { motion } from "framer-motion";
 import { FiMail, FiZap, FiSend, FiRepeat, FiBarChart2 } from "react-icons/fi";
 import { PiRobotLight } from "react-icons/pi";
+import { useNavigate } from "react-router-dom";
 
 const LandingPage = () => {
+  const navigate=useNavigate()
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -60,6 +62,7 @@ const LandingPage = () => {
           variants={fadeUp}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.97 }}
+          onClick={()=>navigate("/login")}
         >
           Start 60-sec Setup →
         </motion.button>
