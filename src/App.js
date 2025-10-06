@@ -1,6 +1,6 @@
 // import React from "react";
 // import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-// import { Toaster } from "react-hot-toast"; 
+// import { Toaster } from "react-hot-toast";
 // import LandingPage from "./pages/LandingPage";
 // import LoginPage from "./Auth/Login";
 // import RegisterPage from "./Auth/Register";
@@ -107,7 +107,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-            <Route
+          <Route
             path="/setup"
             element={
               <ProtectedRoute>

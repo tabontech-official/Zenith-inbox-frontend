@@ -141,7 +141,6 @@ const LoginPage = () => {
             </motion.button>
           </form>
 
-          {/* Create account */}
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

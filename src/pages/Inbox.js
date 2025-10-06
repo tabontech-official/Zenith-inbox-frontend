@@ -56,7 +56,6 @@ const Inbox = () => {
           </div>
         </div>
 
-        {/* Recursive rendering for children */}
         {email.children && email.children.length > 0 && (
           <div className="ml-10 mt-4 border-l-2 border-gray-200 pl-4">
             {email.children.map((child) => renderEmailContent(child))}
@@ -71,7 +70,6 @@ const Inbox = () => {
       <Sidebar />
       <main className="flex-1 md:ml-64 flex h-screen overflow-hidden">
         <div className="flex w-full border-t border-gray-200 bg-white rounded-lg shadow-sm m-4 overflow-hidden">
-          {/* Left Sidebar (Email List) */}
           <div className="w-1/3 border-r border-gray-200 overflow-y-auto">
             <div className="p-4 border-b border-gray-200">
               <h2 className="text-lg font-semibold text-gray-800">Inbox</h2>
@@ -118,7 +116,6 @@ const Inbox = () => {
             )}
           </div>
 
-          {/* Right Side (Email Thread View) */}
           <div className="flex-1 overflow-y-auto p-6">
             {selectedEmail ? (
               <>
@@ -131,7 +128,6 @@ const Inbox = () => {
                   </p>
                 </div>
 
-                {/* Main Email + Replies */}
                 {renderEmailContent(selectedEmail)}
               </>
             ) : (

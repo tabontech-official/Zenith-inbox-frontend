@@ -91,11 +91,9 @@ const Organization = () => {
       <Sidebar />
 
       <main className="flex-1 md:ml-64 p-8 overflow-auto">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex justify-between items-center mb-8 ">
           <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
 
-          {/* Automation Toggle */}
           <div className="flex items-center gap-3">
             <span className="text-sm font-medium text-gray-700">
               Automation
@@ -120,7 +118,6 @@ const Organization = () => {
           </div>
         </div>
 
-        {/* Stats Section */}
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-10">
           {[
             { label: "New", value: stats.pending || 12 },
@@ -139,9 +136,7 @@ const Organization = () => {
           ))}
         </section>
 
-        {/* Main Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Recent Emails Table */}
           <div className="lg:col-span-2 bg-white rounded-lg shadow p-6">
             <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
               <FiInbox className="text-[#4F46E5]" /> Recent Emails
@@ -165,7 +160,9 @@ const Organization = () => {
                 ) : rootEmails.length > 0 ? (
                   rootEmails.map((email, i) => {
                     const root = email.rootEmail || email;
-                    const status = getEmailStatus(email.statuses || root.statuses);
+                    const status = getEmailStatus(
+                      email.statuses || root.statuses
+                    );
                     const color =
                       status === "Processed"
                         ? "bg-indigo-100 text-indigo-700"
@@ -212,7 +209,6 @@ const Organization = () => {
               </tbody>
             </table>
 
-            {/* Pagination */}
             <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-200">
               <button
                 disabled={page === 1}
@@ -246,17 +242,22 @@ const Organization = () => {
             </div>
           </div>
 
-          {/* Quick Actions */}
           <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
             <div className="flex flex-col space-y-3">
-              <button className="flex items-center justify-center gap-2 bg-[#4F46E5] text-white py-2 rounded-lg font-medium hover:bg-[#4338CA] transition">
+              <button onClick={()=>navigate("/connection")} className="flex items-center justify-center gap-2 bg-[#4F46E5] text-white py-2 rounded-lg font-medium hover:bg-[#4338CA] transition">
                 <FiMail /> Connect another inbox
               </button>
-              <button className="flex items-center justify-center gap-2 bg-gray-100 text-gray-700 py-2 rounded-lg font-medium hover:bg-gray-200 transition">
+              <button
+                onClick={() => navigate("/templates")}
+                className="flex items-center justify-center gap-2 bg-gray-100 text-gray-700 py-2 rounded-lg font-medium hover:bg-gray-200 transition"
+              >
                 <FiEdit /> Edit templates
               </button>
-              <button className="flex items-center justify-center gap-2 bg-gray-100 text-gray-700 py-2 rounded-lg font-medium hover:bg-gray-200 transition">
+              <button
+                onClick={() => navigate("/scenarios/others")}
+                className="flex items-center justify-center gap-2 bg-gray-100 text-gray-700 py-2 rounded-lg font-medium hover:bg-gray-200 transition"
+              >
                 <FiPlusCircle /> Create scenario
               </button>
             </div>

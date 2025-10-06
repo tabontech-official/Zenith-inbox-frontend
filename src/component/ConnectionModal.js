@@ -24,14 +24,13 @@ const ConnectionModal = ({ isOpen, onClose }) => {
   useEffect(() => {
     const listener = (event) => {
       if (event.data?.type === "google-auth-success") {
-        // show toast or banner
         alert("Successfully connected to Gmail!");
 
         if (window.googlePopup && !window.googlePopup.closed) {
           window.googlePopup.close();
         }
 
-        onClose(); // close modal
+        onClose(); 
         // fetchConnections(); // refresh list
       }
     };

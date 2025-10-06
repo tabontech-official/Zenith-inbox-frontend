@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import {
   FiMail,
   FiArrowRight,
@@ -7,9 +7,11 @@ import {
   FiCheck,
 } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
+import { UserContext } from "../component/UserContext";
 
 const SetupFlow = () => {
   const navigate = useNavigate();
+  const { user, loading } = useContext(UserContext);
   const [step, setStep] = useState(1);
   const [testSent, setTestSent] = useState(false);
   const [selectedTab, setSelectedTab] = useState("Gmail");
@@ -106,8 +108,15 @@ const SetupFlow = () => {
                 Forward your Shopify leads to this address.
               </p>
               <div className="bg-[#F3F4F6] text-[#4F46E5] px-4 py-3 rounded-lg flex justify-between items-center font-mono text-sm">
-                acme-m14272@zenith-inbox.com
-                <FiCopy className="text-gray-500 cursor-pointer" />
+                {user?.mailhook || "loading-mailhook@zenith-inbox.com"}
+                <FiCopy
+                  className="text-gray-500 cursor-pointer"
+                  onClick={() => {
+                    if (user?.mailhook) {
+                      navigator.clipboard.writeText(user.mailhook);
+                    }
+                  }}
+                />{" "}
               </div>
             </div>
 
@@ -186,8 +195,15 @@ const SetupFlow = () => {
           </p>
 
           <div className="bg-[#F3F4F6] text-[#4F46E5] px-4 py-3 rounded-lg flex justify-between items-center font-mono text-sm mb-6">
-            Forward emails to: <span>acme-m14272@zenith-inbox.com</span>
-            <FiCopy className="text-gray-500 cursor-pointer" />
+            Forward emails to: <span>{user?.mailhook || "loading..."}</span>
+            <FiCopy
+              className="text-gray-500 cursor-pointer"
+              onClick={() => {
+                if (user?.mailhook) {
+                  navigator.clipboard.writeText(user.mailhook);
+                }
+              }}
+            />{" "}
           </div>
 
           <div className="flex border border-gray-300 rounded-lg overflow-hidden mb-4 w-full sm:w-[24rem] mx-auto">
@@ -205,13 +221,17 @@ const SetupFlow = () => {
               </button>
             ))}
           </div>
-
           {selectedTab === "Gmail" && (
             <div className="border border-gray-200 rounded-lg p-5 text-sm text-[#111827] leading-7 bg-white">
               <ol className="list-decimal list-inside space-y-2">
                 <li>
                   In Gmail, go to{" "}
-                  <a href="#" className="text-[#4F46E5] underline">
+                  <a
+                    href="https://mail.google.com/mail/u/0/#settings/filters"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[#4F46E5] underline"
+                  >
                     Settings → Filters and Blocked Addresses
                   </a>
                   .
@@ -235,23 +255,33 @@ const SetupFlow = () => {
             <div className="border border-gray-200 rounded-lg p-5 text-sm text-[#111827] leading-7 bg-white">
               <ol className="list-decimal list-inside space-y-2">
                 <li>
-                  In Gmail, go to{" "}
-                  <a href="#" className="text-[#4F46E5] underline">
-                    Settings → Filters and Blocked Addresses
-                  </a>
+                  In Outlook Web, click{" "}
+                  <span className="font-medium">
+                    Settings → View all Outlook settings
+                  </span>
                   .
                 </li>
-                <li>Click "Create a new filter".</li>
                 <li>
-                  In the "From" field, enter{" "}
+                  Select Mail → Rules.
+                </li>
+                <li>
+                  Click Add new rule.
+                </li>
+                <li>
+                  Under Condition, choose From{" "}
+                  and enter{" "}
                   <code className="bg-gray-100 px-1 py-0.5 rounded">
                     @shopify.com
                   </code>
                   .
                 </li>
-                <li>Click "Create filter".</li>
-                <li>Check "Forward it to:" and add your mailhook address.</li>
-                <li>Click "Create filter" to finish.</li>
+                <li>
+                  Under Action, choose{" "}
+                  Forward to and paste your mailhook address.
+                </li>
+                <li>
+                  Click Save.
+                </li>
               </ol>
             </div>
           )}
@@ -684,14 +714,13 @@ const SetupFlow = () => {
 
             <div className="bg-[#F3F4F6] p-4 rounded-lg mt-4 text-sm text-[#4B5563]">
               <p>
-                <strong>Your Mailhook:</strong>{" "}
+                Your Mailhook:{" "}
                 <span className="text-[#4F46E5] font-mono">
-                  acme-m14272@zenith-inbox.com
+                  {user?.mailhook}
                 </span>
               </p>
               <p>
-                <strong>Automation Mode:</strong> Auto-Send (during business
-                hours)
+                Automation Mode: Auto-Send 
               </p>
             </div>
           </div>
