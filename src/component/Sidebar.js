@@ -10,6 +10,7 @@ import {
   FiSettings,
   FiGitBranch,
   FiLogOut,
+  FiMail,
 } from "react-icons/fi";
 import { UserContext } from "./UserContext";
 
@@ -86,13 +87,13 @@ const Sidebar = () => {
         </div>
       </div>
 
-      {/* Navigation */}
       <nav className="flex-1 px-4 py-6 space-y-6 overflow-y-auto">
         <div>
           <p className="text-xs text-gray-300 uppercase font-semibold mb-2 tracking-wide">
             Main
           </p>
           {renderNavLink("Organization", FiGrid, "/organization")}
+          {renderNavLink("Inbox", FiMail, "/inbox")}
         </div>
 
         <div>
@@ -129,11 +130,7 @@ const Sidebar = () => {
               className="ml-8 mt-2 space-y-1 overflow-hidden transition-all duration-300"
             >
               {renderNavLink("All Scenarios", FiZap, "/scenarios/all")}
-              {renderNavLink(
-                "Shopify Scenario",
-                FiGitBranch,
-                "/scenarios/shopify"
-              )}
+              {renderNavLink("Shopify Scenario", FiGitBranch, "/scenarios/shopify")}
               {renderNavLink("Custom", FiSettings, "/scenarios/others")}
             </div>
           </div>
@@ -148,7 +145,6 @@ const Sidebar = () => {
         </div>
       </nav>
 
-      {/* Logout */}
       <div className="px-4 pb-4">
         <button
           onClick={handleLogout}
@@ -159,7 +155,6 @@ const Sidebar = () => {
         </button>
       </div>
 
-      {/* Footer */}
       <div className="text-xs text-gray-400 border-t border-purple-500/40 py-3 text-center">
         © 2025 MailMatrix
       </div>

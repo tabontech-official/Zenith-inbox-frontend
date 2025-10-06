@@ -56,7 +56,6 @@ const SetupFlow = () => {
           </span>
         </div>
 
-        {/* Progress Bar */}
         <div className="w-72 sm:w-[28rem] h-[6px] bg-[#E0E7FF] rounded-full overflow-hidden">
           <div
             className="h-full bg-[#4F46E5] rounded-full transition-all duration-500"
@@ -257,7 +256,6 @@ const SetupFlow = () => {
             </div>
           )}
 
-          {/* Footer Buttons */}
           <div className="flex justify-between mt-8">
             <button
               onClick={() => setStep(2)}
@@ -401,7 +399,6 @@ const SetupFlow = () => {
             Customize the AI's personality and services.
           </p>
 
-          {/* Tone of Voice */}
           <div className="border border-[#E5E7EB] rounded-lg p-6 mb-6">
             <h3 className="font-semibold text-[#111827] mb-2">Tone of Voice</h3>
             <p className="text-sm text-[#6B7280] mb-4">
@@ -472,7 +469,6 @@ const SetupFlow = () => {
                     key={service}
                     className="flex items-center space-x-2 cursor-pointer"
                   >
-                    {/* Toggle */}
                     <div className="relative">
                       <input
                         type="checkbox"
@@ -480,13 +476,10 @@ const SetupFlow = () => {
                         onChange={() => toggleService(service)}
                         className="sr-only peer"
                       />
-                      {/* Toggle track */}
                       <div className="w-10 h-5 bg-gray-300 peer-checked:bg-[#4F46E5] rounded-full transition-colors duration-300"></div>
-                      {/* Toggle circle */}
                       <div className="absolute top-[2px] left-[2px] w-4 h-4 bg-white rounded-full shadow-sm transition-transform duration-300 peer-checked:translate-x-5"></div>
                     </div>
 
-                    {/* Label */}
                     <span className="text-sm font-medium text-[#111827]">
                       {service}
                     </span>
@@ -556,7 +549,6 @@ const SetupFlow = () => {
             </div>
           </div>
 
-          {/* Follow-ups */}
           <div className="border border-[#E5E7EB] rounded-lg p-6 mb-6">
             <h3 className="font-semibold text-[#111827] mb-2">Follow-ups</h3>
             <p className="text-sm text-[#6B7280] mb-4">
@@ -566,7 +558,6 @@ const SetupFlow = () => {
             <div className="flex flex-wrap items-center gap-2 text-sm text-[#111827]">
               <span>Send follow-up after</span>
 
-              {/* First delay input */}
               <input
                 type="number"
                 min="1"
@@ -575,7 +566,6 @@ const SetupFlow = () => {
                 className="w-16 border border-gray-300 rounded-md px-2 py-1 text-center focus:outline-none focus:ring-2 focus:ring-[#4F46E5]"
               />
 
-              {/* First time unit selector */}
               <select
                 value={followUp1Unit}
                 onChange={(e) => setFollowUp1Unit(e.target.value)}
@@ -592,7 +582,6 @@ const SetupFlow = () => {
 
               <span>, then another after</span>
 
-              {/* Second delay input */}
               <input
                 type="number"
                 min="1"
@@ -601,7 +590,6 @@ const SetupFlow = () => {
                 className="w-16 border border-gray-300 rounded-md px-2 py-1 text-center focus:outline-none focus:ring-2 focus:ring-[#4F46E5]"
               />
 
-              {/* Second time unit selector */}
               <select
                 value={followUp2Unit}
                 onChange={(e) => setFollowUp2Unit(e.target.value)}
@@ -620,7 +608,6 @@ const SetupFlow = () => {
             </div>
           </div>
 
-          {/* Safety Net */}
           <div className="border border-[#E5E7EB] rounded-lg p-6">
             <h3 className="font-semibold text-[#111827] mb-2">Safety Net</h3>
             <p className="text-sm text-[#6B7280] mb-4">
@@ -643,7 +630,6 @@ const SetupFlow = () => {
             </label>
           </div>
 
-          {/* Footer Buttons */}
           <div className="flex justify-between mt-8">
             <button
               onClick={() => setStep(5)}
@@ -652,7 +638,10 @@ const SetupFlow = () => {
               <FiArrowLeft /> <span>Back</span>
             </button>
 
-            <button onClick={()=>setStep(7)} className="flex items-center space-x-2 px-6 py-2 rounded-lg text-sm font-semibold bg-[#4F46E5] text-white hover:bg-[#4338CA]">
+            <button
+              onClick={() => setStep(7)}
+              className="flex items-center space-x-2 px-6 py-2 rounded-lg text-sm font-semibold bg-[#4F46E5] text-white hover:bg-[#4338CA]"
+            >
               <span>Next</span> <FiArrowRight />
             </button>
           </div>
@@ -668,7 +657,6 @@ const SetupFlow = () => {
             Confirm your setup and enable automation.
           </p>
 
-          {/* Checklist */}
           <div className="border border-[#E5E7EB] rounded-lg p-6 space-y-4 mb-8">
             <div>
               <h3 className="font-semibold text-[#111827] mb-1">
@@ -694,7 +682,6 @@ const SetupFlow = () => {
               ))}
             </ul>
 
-            {/* Mailhook + Mode */}
             <div className="bg-[#F3F4F6] p-4 rounded-lg mt-4 text-sm text-[#4B5563]">
               <p>
                 <strong>Your Mailhook:</strong>{" "}
@@ -709,7 +696,6 @@ const SetupFlow = () => {
             </div>
           </div>
 
-          {/* Footer buttons */}
           <div className="flex justify-between mt-8">
             <button
               onClick={() => setStep(6)}

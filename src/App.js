@@ -62,6 +62,7 @@ import EmailDetailPage from "./pages/EmailDetailPage";
 import ProtectedRoute from "./Protection/Protected";
 import SetupPage from "./pages/SetupPage";
 import SetupFlow from "./pages/SetupPage";
+import Inbox from "./pages/Inbox";
 
 function App() {
   return (
@@ -95,6 +96,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <OthersScenariosPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/inbox"
+            element={
+              <ProtectedRoute>
+                <Inbox />
               </ProtectedRoute>
             }
           />
