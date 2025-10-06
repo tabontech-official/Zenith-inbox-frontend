@@ -60,6 +60,8 @@ import AllScenariosPage from "./pages/AllScenario";
 import { UserProvider } from "./component/UserContext";
 import EmailDetailPage from "./pages/EmailDetailPage";
 import ProtectedRoute from "./Protection/Protected";
+import SetupPage from "./pages/SetupPage";
+import SetupFlow from "./pages/SetupPage";
 
 function App() {
   return (
@@ -93,6 +95,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <OthersScenariosPage />
+              </ProtectedRoute>
+            }
+          />
+            <Route
+            path="/setup"
+            element={
+              <ProtectedRoute>
+                <SetupFlow />
               </ProtectedRoute>
             }
           />
