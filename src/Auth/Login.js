@@ -17,27 +17,35 @@ const LoginPage = () => {
     navigate("/register");
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const response = await axios.post(
-        "https://email-syncing-backend.vercel.app/auth/signIn",
-        { email, password }
-      );
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  try {
+    const response = await axios.post(
+      "https://email-syncing-backend.vercel.app/auth/signIn",
+      { email, password }
+    );
 
-      if (response.status === 200) {
-        const { token, data } = response.data;
-        localStorage.setItem("usertoken", token);
-        localStorage.setItem("userid", data._id);
-        setUser(data);
+    if (response.status === 200) {
+      const { token, data } = response.data;
+      localStorage.setItem("usertoken", token);
+      localStorage.setItem("userid", data._id);
+      setUser(data);
+
+      const completed = data?.setup?.stepCompleted || 0;
+
+      if (completed >= 7) {
+        navigate("/organization", { replace: true });
+      } else if (completed > 0) {
+        navigate(`/setup?step=${completed + 1}`, { replace: true });
+      } else {
         navigate("/setup", { replace: true });
       }
-    } catch (error) {
-      setError(
-        error.response?.data?.error || "Login failed. Please try again."
-      );
     }
-  };
+  } catch (error) {
+    setError(error.response?.data?.error || "Login failed. Please try again.");
+  }
+};
+
 
   return (
     <div className="min-h-screen flex bg-gradient-to-br from-purple-600 to-fuchsia-600 relative overflow-hidden">

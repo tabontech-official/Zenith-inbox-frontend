@@ -6,13 +6,16 @@ import {
   FiCopy,
   FiCheck,
 } from "react-icons/fi";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { UserContext } from "../component/UserContext";
 
 const SetupFlow = () => {
   const navigate = useNavigate();
   const { user, loading } = useContext(UserContext);
-  const [step, setStep] = useState(1);
+  const location = useLocation();
+  const query = new URLSearchParams(location.search);
+  const stepFromURL = parseInt(query.get("step"), 10);
+  const [step, setStep] = useState(stepFromURL || 1);
   const [testSent, setTestSent] = useState(false);
   const [selectedTab, setSelectedTab] = useState("Gmail");
   const [sendingMode, setSendingMode] = useState("Auto-Send");
@@ -46,6 +49,59 @@ const SetupFlow = () => {
         ? prev.filter((s) => s !== service)
         : [...prev, service]
     );
+  };
+
+  const handleGmailConnect = () => {
+    const userId = user?._id;
+    const popup = window.open(
+      `https://email-syncing-backend.vercel.app/auth/google?userId=${userId}`,
+      "gmailConnect",
+      "width=600,height=600"
+    );
+
+    window.addEventListener("message", (event) => {
+      if (event.data?.type === "google-auth-success") {
+      }
+    });
+  };
+  const handleSmtpSave = async () => {
+    const payload = {
+      userId: user._id,
+      email: "your.email@example.com",
+      username: "your.email@example.com",
+      password: "userpassword",
+      host: "smtp.gmail.com",
+      port: 587,
+      name: user.name || "",
+    };
+
+    const res = await fetch("https://email-syncing-backend.vercel.app/auth/saveSmtpConnection", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await res.json();
+    if (data.success) {
+    } else {
+      alert("Failed to save SMTP connection");
+    }
+  };
+  const [signature, setSignature] = useState("Best,\nThe Zenith Team");
+  const [calendarLink, setCalendarLink] = useState("");
+  const updateStep = async (nextStep, extra = {}) => {
+    const payload = {
+      "setup.stepCompleted": nextStep,
+      ...extra,
+    };
+
+    await fetch(`https://email-syncing-backend.vercel.app/auth/setup/${user._id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    setStep(nextStep);
   };
 
   return (
@@ -131,7 +187,9 @@ const SetupFlow = () => {
                   </p>
                 </div>
                 <button
-                  onClick={() => setTestSent(true)}
+                  onClick={() => {
+                    setTestSent(true);
+                  }}
                   disabled={testSent}
                   className={`text-sm font-semibold px-4 py-2 rounded-md ${
                     testSent
@@ -172,7 +230,7 @@ const SetupFlow = () => {
 
             <button
               disabled={!testSent}
-              onClick={() => setStep(3)}
+              onClick={() => updateStep(3)}
               className={`flex items-center space-x-2 px-6 py-2 rounded-lg text-sm font-semibold ${
                 testSent
                   ? "bg-[#4F46E5] text-white hover:bg-[#4338CA]"
@@ -261,27 +319,20 @@ const SetupFlow = () => {
                   </span>
                   .
                 </li>
+                <li>Select Mail → Rules.</li>
+                <li>Click Add new rule.</li>
                 <li>
-                  Select Mail → Rules.
-                </li>
-                <li>
-                  Click Add new rule.
-                </li>
-                <li>
-                  Under Condition, choose From{" "}
-                  and enter{" "}
+                  Under Condition, choose From and enter{" "}
                   <code className="bg-gray-100 px-1 py-0.5 rounded">
                     @shopify.com
                   </code>
                   .
                 </li>
                 <li>
-                  Under Action, choose{" "}
-                  Forward to and paste your mailhook address.
+                  Under Action, choose Forward to and paste your mailhook
+                  address.
                 </li>
-                <li>
-                  Click Save.
-                </li>
+                <li>Click Save.</li>
               </ol>
             </div>
           )}
@@ -295,7 +346,7 @@ const SetupFlow = () => {
             </button>
 
             <button
-              onClick={() => setStep(4)}
+              onClick={() => updateStep(4)}
               className="flex items-center space-x-2 px-6 py-2 rounded-lg text-sm font-semibold bg-[#4F46E5] text-white hover:bg-[#4338CA]"
             >
               <span>Next</span> <FiArrowRight />
@@ -334,7 +385,10 @@ const SetupFlow = () => {
               <p className="text-[#4B5563]">
                 Connect your Gmail account securely using OAuth 2.0.
               </p>
-              <button className="bg-[#EA4335] hover:bg-[#C33D2D] text-white px-6 py-3 rounded-lg text-sm font-semibold shadow-md">
+              <button
+                onClick={handleGmailConnect}
+                className="bg-[#EA4335] hover:bg-[#C33D2D] text-white px-6 py-3 rounded-lg text-sm font-semibold shadow-md"
+              >
                 Connect with Gmail
               </button>
             </div>
@@ -396,7 +450,10 @@ const SetupFlow = () => {
                 />
               </div>
 
-              <button className="w-full bg-gray-100 text-[#111827] font-medium py-2 rounded-md hover:bg-gray-200">
+              <button
+                onClick={() => handleSmtpSave()}
+                className="w-full bg-gray-100 text-[#111827] font-medium py-2 rounded-md hover:bg-gray-200"
+              >
                 Test Connection
               </button>
             </div>
@@ -411,7 +468,7 @@ const SetupFlow = () => {
             </button>
 
             <button
-              onClick={() => setStep(5)}
+              onClick={() => updateStep(5)}
               className="flex items-center space-x-2 px-6 py-2 rounded-lg text-sm font-semibold bg-[#4F46E5] text-white hover:bg-[#4338CA]"
             >
               <span>Next</span> <FiArrowRight />
@@ -469,7 +526,8 @@ const SetupFlow = () => {
               </label>
               <textarea
                 rows="2"
-                placeholder="Best,\nThe Zenith Team"
+                value={signature}
+                onChange={(e) => setSignature(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#4F46E5]"
               ></textarea>
             </div>
@@ -480,6 +538,8 @@ const SetupFlow = () => {
               </label>
               <input
                 type="text"
+                value={calendarLink}
+                onChange={(e) => setCalendarLink(e.target.value)}
                 placeholder="https://cal.com/your-name"
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#4F46E5]"
               />
@@ -528,7 +588,14 @@ const SetupFlow = () => {
             </button>
 
             <button
-              onClick={() => setStep(6)}
+              onClick={() =>
+                updateStep(6, {
+                  "setup.tone": selectedTone,
+                  "setup.services": selectedServices,
+                  "setup.signature": signature,
+                  "setup.calendarLink": calendarLink,
+                })
+              }
               className="flex items-center space-x-2 px-6 py-2 rounded-lg text-sm font-semibold bg-[#4F46E5] text-white hover:bg-[#4338CA]"
             >
               <span>Next</span> <FiArrowRight />
@@ -669,7 +736,16 @@ const SetupFlow = () => {
             </button>
 
             <button
-              onClick={() => setStep(7)}
+              onClick={() =>
+                updateStep(7, {
+                  "setup.sendingMode": sendingMode,
+                  "setup.followUps": {
+                    first: { delay: followUp1, unit: followUp1Unit },
+                    second: { delay: followUp2, unit: followUp2Unit },
+                  },
+                  "setup.safetyNet": safetyNet,
+                })
+              }
               className="flex items-center space-x-2 px-6 py-2 rounded-lg text-sm font-semibold bg-[#4F46E5] text-white hover:bg-[#4338CA]"
             >
               <span>Next</span> <FiArrowRight />
@@ -719,9 +795,7 @@ const SetupFlow = () => {
                   {user?.mailhook}
                 </span>
               </p>
-              <p>
-                Automation Mode: Auto-Send 
-              </p>
+              <p>Automation Mode: Auto-Send</p>
             </div>
           </div>
 
@@ -734,7 +808,11 @@ const SetupFlow = () => {
             </button>
 
             <button
-              onClick={() => navigate("/organization")}
+              onClick={() =>
+                updateStep(7, { "setup.completed": true }).then(() =>
+                  navigate("/organization")
+                )
+              }
               className="flex items-center space-x-2 px-6 py-3 rounded-lg text-sm font-semibold bg-[#4F46E5] text-white hover:bg-[#4338CA] shadow-md"
             >
               <span>Enable Automation &amp; Go to Dashboard</span> 🚀
