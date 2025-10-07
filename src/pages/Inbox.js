@@ -1,6 +1,152 @@
+// import React, { useState, useEffect } from "react";
+// import Sidebar from "../component/Sidebar";
+// import axios from "axios";
+
+// const Inbox = () => {
+//   const [emails, setEmails] = useState([]);
+//   const [selectedEmail, setSelectedEmail] = useState(null);
+//   const [loading, setLoading] = useState(false);
+
+//   const fetchEmails = async () => {
+//     try {
+//       setLoading(true);
+//       const userId = localStorage.getItem("userid");
+//       const res = await axios.get(
+//         `https://email-syncing-backend.vercel.app/mailhook/getAllEmailsData/${userId}`
+//       );
+//       setEmails(res.data?.data?.rootEmails || []);
+//     } catch (error) {
+//       console.error("Error fetching inbox emails:", error);
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   useEffect(() => {
+//     fetchEmails();
+//   }, []);
+
+//   const renderEmailContent = (email) => {
+//     return (
+//       <div key={email._id} className="mb-6 border-b pb-4 last:border-none">
+//         <div className="flex items-start gap-3">
+//           <div className="flex-shrink-0">
+//             <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-700 font-semibold">
+//               {email.senderAddress?.charAt(0).toUpperCase() || "?"}
+//             </div>
+//           </div>
+//           <div>
+//             <p className="text-sm text-gray-700">
+//               <strong>{email.senderAddress}</strong> to{" "}
+//               {email.recipientAddress || "me"}
+//             </p>
+//             <p className="text-xs text-gray-400 mb-2">
+//               {new Date(email.date).toLocaleString()}
+//             </p>
+//             {email.htmlBody ? (
+//               <div
+//                 className="prose prose-sm text-gray-800 leading-relaxed"
+//                 dangerouslySetInnerHTML={{ __html: email.htmlBody }}
+//               />
+//             ) : (
+//               <p className="text-gray-700 whitespace-pre-line">
+//                 {email.textBody || "No message content"}
+//               </p>
+//             )}
+//           </div>
+//         </div>
+
+//         {email.children && email.children.length > 0 && (
+//           <div className="ml-10 mt-4 border-l-2 border-gray-200 pl-4">
+//             {email.children.map((child) => renderEmailContent(child))}
+//           </div>
+//         )}
+//       </div>
+//     );
+//   };
+
+//   return (
+//     <div className="flex bg-gray-50 min-h-screen font-inter">
+//       <Sidebar />
+//       <main className="flex-1 md:ml-64 flex h-screen overflow-hidden">
+//         <div className="flex w-full border-t border-gray-200 bg-white rounded-lg shadow-sm m-4 overflow-hidden">
+//           <div className="w-1/3 border-r border-gray-200 overflow-y-auto">
+//             <div className="p-4 border-b border-gray-200">
+//               <h2 className="text-lg font-semibold text-gray-800">Inbox</h2>
+//             </div>
+//             {loading ? (
+//               <div className="flex justify-center items-center py-10 text-gray-500">
+//                 Loading emails...
+//               </div>
+//             ) : (
+//               <ul>
+//                 {emails.map((email) => (
+//                   <li
+//                     key={email._id}
+//                     onClick={() => setSelectedEmail(email)}
+//                     className={`px-4 py-3 border-b cursor-pointer transition ${
+//                       selectedEmail?._id === email._id
+//                         ? "bg-indigo-50 border-l-4 border-indigo-600"
+//                         : "hover:bg-gray-50"
+//                     }`}
+//                   >
+//                     <div className="flex justify-between items-center">
+//                       <p className="text-sm font-semibold text-gray-800 truncate">
+//                         {email.senderAddress}
+//                       </p>
+//                       <span className="text-xs text-gray-400">
+//                         {new Date(email.date).toLocaleTimeString([], {
+//                           hour: "2-digit",
+//                           minute: "2-digit",
+//                         })}
+//                       </span>
+//                     </div>
+//                     <p className="text-sm font-medium text-gray-900 truncate">
+//                       {email.subject || "No Subject"}
+//                     </p>
+//                     <p className="text-xs text-gray-500 truncate">
+//                       {email.textBody?.slice(0, 60) || "No preview available"}
+//                     </p>
+//                     <span className="inline-block text-[11px] mt-1 px-2 py-[1px] rounded-full bg-indigo-100 text-indigo-700">
+//                       New
+//                     </span>
+//                   </li>
+//                 ))}
+//               </ul>
+//             )}
+//           </div>
+
+//           <div className="flex-1 overflow-y-auto p-6">
+//             {selectedEmail ? (
+//               <>
+//                 <div className="border-b pb-3 mb-6">
+//                   <h3 className="text-xl font-semibold text-gray-900 mb-1">
+//                     {selectedEmail.subject}
+//                   </h3>
+//                   <p className="text-sm text-gray-500">
+//                     From: {selectedEmail.senderAddress}
+//                   </p>
+//                 </div>
+
+//                 {renderEmailContent(selectedEmail)}
+//               </>
+//             ) : (
+//               <div className="h-full flex items-center justify-center text-gray-400 text-sm">
+//                 Select an email to view conversation
+//               </div>
+//             )}
+//           </div>
+//         </div>
+//       </main>
+//     </div>
+//   );
+// };
+
+// export default Inbox;
 import React, { useState, useEffect } from "react";
 import Sidebar from "../component/Sidebar";
 import axios from "axios";
+import { motion, AnimatePresence } from "framer-motion";
 
 const Inbox = () => {
   const [emails, setEmails] = useState([]);
@@ -14,7 +160,9 @@ const Inbox = () => {
       const res = await axios.get(
         `https://email-syncing-backend.vercel.app/mailhook/getAllEmailsData/${userId}`
       );
-      setEmails(res.data?.data?.rootEmails || []);
+      const data = res.data?.data?.rootEmails || [];
+      setEmails(data);
+      if (data.length > 0) setSelectedEmail(data[0]);
     } catch (error) {
       console.error("Error fetching inbox emails:", error);
     } finally {
@@ -26,71 +174,142 @@ const Inbox = () => {
     fetchEmails();
   }, []);
 
-  const renderEmailContent = (email) => {
-    return (
-      <div key={email._id} className="mb-6 border-b pb-4 last:border-none">
-        <div className="flex items-start gap-3">
-          <div className="flex-shrink-0">
-            <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-700 font-semibold">
-              {email.senderAddress?.charAt(0).toUpperCase() || "?"}
-            </div>
-          </div>
-          <div>
-            <p className="text-sm text-gray-700">
-              <strong>{email.senderAddress}</strong> to{" "}
-              {email.recipientAddress || "me"}
-            </p>
-            <p className="text-xs text-gray-400 mb-2">
-              {new Date(email.date).toLocaleString()}
-            </p>
-            {email.htmlBody ? (
-              <div
-                className="prose prose-sm text-gray-800 leading-relaxed"
-                dangerouslySetInnerHTML={{ __html: email.htmlBody }}
-              />
-            ) : (
-              <p className="text-gray-700 whitespace-pre-line">
-                {email.textBody || "No message content"}
-              </p>
-            )}
-          </div>
-        </div>
-
-        {email.children && email.children.length > 0 && (
-          <div className="ml-10 mt-4 border-l-2 border-gray-200 pl-4">
-            {email.children.map((child) => renderEmailContent(child))}
-          </div>
-        )}
-      </div>
-    );
+  const listContainer = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.08,
+      },
+    },
   };
 
+  const listItem = {
+    hidden: { opacity: 0, y: 10 },
+    show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 60 } },
+  };
+
+  const emailView = {
+    hidden: { opacity: 0, x: 40 },
+    show: {
+      opacity: 1,
+      x: 0,
+      transition: { type: "spring", damping: 18, stiffness: 100 },
+    },
+    exit: { opacity: 0, x: -40 },
+  };
+
+  const renderEmailContent = (email) => (
+    <motion.div
+      key={email._id}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="mb-6 border-b pb-4 last:border-none"
+    >
+      <div className="flex items-start gap-3">
+        <motion.div
+          whileHover={{ rotate: -5, scale: 1.05 }}
+          transition={{ type: "spring", stiffness: 200 }}
+          className="flex-shrink-0"
+        >
+          <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-semibold shadow-sm">
+            {email.senderAddress?.charAt(0).toUpperCase() || "?"}
+          </div>
+        </motion.div>
+        <div>
+          <p className="text-sm text-gray-700">
+            <strong>{email.senderAddress}</strong> →{" "}
+            {email.recipientAddress || "me"}
+          </p>
+          <p className="text-xs text-gray-400 mb-2">
+            {new Date(email.date).toLocaleString()}
+          </p>
+
+          {email.htmlBody ? (
+            <div
+              className="prose prose-sm text-gray-800 leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: email.htmlBody }}
+            />
+          ) : (
+            <p className="text-gray-700 whitespace-pre-line">
+              {email.textBody || "No message content"}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {email.children && email.children.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, x: 10 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.1 }}
+          className="ml-10 mt-4 border-l-2 border-gray-200 pl-4"
+        >
+          {email.children.map((child) => renderEmailContent(child))}
+        </motion.div>
+      )}
+    </motion.div>
+  );
+
   return (
-    <div className="flex bg-gray-50 min-h-screen font-inter">
+    <div className="flex bg-gray-100 min-h-screen font-inter">
       <Sidebar />
       <main className="flex-1 md:ml-64 flex h-screen overflow-hidden">
-        <div className="flex w-full border-t border-gray-200 bg-white rounded-lg shadow-sm m-4 overflow-hidden">
-          <div className="w-1/3 border-r border-gray-200 overflow-y-auto">
-            <div className="p-4 border-b border-gray-200">
+        <motion.div
+          layout
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.4 }}
+          className="flex w-full bg-white border border-gray-200 rounded-xl shadow-md m-4 overflow-hidden"
+        >
+          {/* 📩 Email List */}
+          <motion.div
+            className="w-1/3 border-r border-gray-200 bg-gray-50 
+overflow-y-auto scrollbar-thin scrollbar-thumb-indigo-300 
+scrollbar-track-transparent hover:scrollbar-thumb-indigo-400 
+transition-all duration-300 ease-in-out p-2 shadow-inner"
+          >
+            <div className="p-4 border-b border-gray-200 bg-gray-100">
               <h2 className="text-lg font-semibold text-gray-800">Inbox</h2>
             </div>
+
             {loading ? (
-              <div className="flex justify-center items-center py-10 text-gray-500">
+              <motion.div
+                className="flex justify-center items-center py-10 text-gray-500"
+                animate={{ opacity: [0.4, 1, 0.4] }}
+                transition={{
+                  repeat: Infinity,
+                  duration: 1.5,
+                  ease: "easeInOut",
+                }}
+              >
                 Loading emails...
+              </motion.div>
+            ) : emails.length === 0 ? (
+              <div className="flex justify-center items-center py-10 text-gray-400 text-sm">
+                No emails found.
               </div>
             ) : (
-              <ul>
+              <motion.ul
+                variants={listContainer}
+                initial="hidden"
+                animate="show"
+              >
                 {emails.map((email) => (
-                  <li
+                  <motion.li
                     key={email._id}
+                    variants={listItem}
+                    whileHover={{ scale: 1.02, backgroundColor: "#EEF2FF" }}
+                    whileTap={{ scale: 0.97 }}
                     onClick={() => setSelectedEmail(email)}
-                    className={`px-4 py-3 border-b cursor-pointer transition ${
+                    className={`px-4 py-3 border-b cursor-pointer rounded-lg mb-1 transition-all duration-300 ${
                       selectedEmail?._id === email._id
-                        ? "bg-indigo-50 border-l-4 border-indigo-600"
-                        : "hover:bg-gray-50"
+                        ? "bg-indigo-50 border-l-4 border-indigo-600 shadow-sm"
+                        : "hover:bg-gray-100"
                     }`}
                   >
-                    <div className="flex justify-between items-center">
+                    <div className="flex justify-between items-center mb-1">
                       <p className="text-sm font-semibold text-gray-800 truncate">
                         {email.senderAddress}
                       </p>
@@ -107,36 +326,55 @@ const Inbox = () => {
                     <p className="text-xs text-gray-500 truncate">
                       {email.textBody?.slice(0, 60) || "No preview available"}
                     </p>
-                    <span className="inline-block text-[11px] mt-1 px-2 py-[1px] rounded-full bg-indigo-100 text-indigo-700">
-                      New
-                    </span>
-                  </li>
+                  </motion.li>
                 ))}
-              </ul>
+              </motion.ul>
             )}
-          </div>
+          </motion.div>
 
-          <div className="flex-1 overflow-y-auto p-6">
-            {selectedEmail ? (
-              <>
-                <div className="border-b pb-3 mb-6">
-                  <h3 className="text-xl font-semibold text-gray-900 mb-1">
-                    {selectedEmail.subject}
-                  </h3>
-                  <p className="text-sm text-gray-500">
-                    From: {selectedEmail.senderAddress}
-                  </p>
-                </div>
-
-                {renderEmailContent(selectedEmail)}
-              </>
-            ) : (
-              <div className="h-full flex items-center justify-center text-gray-400 text-sm">
-                Select an email to view conversation
-              </div>
-            )}
-          </div>
-        </div>
+          <motion.div
+            layout
+            className="flex-1 overflow-y-auto p-6 bg-white"
+          >
+            <AnimatePresence mode="wait">
+              {selectedEmail ? (
+                <motion.div
+                  key={selectedEmail._id}
+                  variants={emailView}
+                  initial="hidden"
+                  animate="show"
+                  exit="exit"
+                >
+                  <motion.div
+                    layout
+                    className="border-b pb-3 mb-6"
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 }}
+                  >
+                    <h3 className="text-xl font-semibold text-gray-900 mb-1">
+                      {selectedEmail.subject || "No Subject"}
+                    </h3>
+                    <p className="text-sm text-gray-500">
+                      From: {selectedEmail.senderAddress}
+                    </p>
+                  </motion.div>
+                  {renderEmailContent(selectedEmail)}
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="placeholder"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="h-full flex items-center justify-center text-gray-400 text-sm"
+                >
+                  Select an email to view conversation
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        </motion.div>
       </main>
     </div>
   );
