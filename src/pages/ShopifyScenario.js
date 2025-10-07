@@ -1141,26 +1141,29 @@ const ShopifyScenariosPage = () => {
   const { user } = useContext(UserContext);
   const [showOutlookModal, setShowOutlookModal] = useState(false);
   const [showGmailModal, setShowGmailModal] = useState(false);
-const [positions, setPositions] = useState({
-  webhook: { x: 0, y: 0 },
-  router: { x: 300, y: 0 },
-  branches: {}, // optional per-branch
-});
+  const [positions, setPositions] = useState({
+    webhook: { x: 0, y: 0 },
+    router: { x: 300, y: 0 },
+    branches: {}, // optional per-branch
+  });
 
-const handleNodeDragEnd = (nodeKey, info) => {
-  setPositions(prev => ({
-    ...prev,
-    [nodeKey]: { x: info.point.x, y: info.point.y },
-  }));
-  localStorage.setItem("nodePositions", JSON.stringify({
-    ...positions,
-    [nodeKey]: { x: info.point.x, y: info.point.y },
-  }));
-};
-useEffect(() => {
-  const saved = localStorage.getItem("nodePositions");
-  if (saved) setPositions(JSON.parse(saved));
-}, []);
+  const handleNodeDragEnd = (nodeKey, info) => {
+    setPositions((prev) => ({
+      ...prev,
+      [nodeKey]: { x: info.point.x, y: info.point.y },
+    }));
+    localStorage.setItem(
+      "nodePositions",
+      JSON.stringify({
+        ...positions,
+        [nodeKey]: { x: info.point.x, y: info.point.y },
+      })
+    );
+  };
+  useEffect(() => {
+    const saved = localStorage.getItem("nodePositions");
+    if (saved) setPositions(JSON.parse(saved));
+  }, []);
   const handleAddClick = () => {
     if (selectedApp?.name === "Email") {
       setShowOutlookModal(true);
@@ -1643,19 +1646,23 @@ useEffect(() => {
 
         <div className="flex-1 flex items-center justify-center relative">
           <div className="flex items-center justify-center w-full">
-           <motion.div
-  className="relative cursor-grab active:cursor-grabbing"
-  drag
-  dragConstraints={{ left: -300, right: 300, top: -200, bottom: 200 }}
-  dragElastic={0.15}
-  whileHover={{ scale: 1.08 }}
-  whileTap={{ scale: 0.98 }}
-  transition={{ type: "spring", stiffness: 300, damping: 25 }}
-  onDragEnd={(e, info) => handleNodeDragEnd('webhook', info)}
->
-
+            <motion.div
+              className="relative cursor-grab active:cursor-grabbing"
+              drag
+              dragConstraints={{
+                left: -300,
+                right: 300,
+                top: -200,
+                bottom: 200,
+              }}
+              dragElastic={0.15}
+              whileHover={{ scale: 1.08 }}
+              whileTap={{ scale: 0.98 }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              onDragEnd={(e, info) => handleNodeDragEnd("webhook", info)}
+            >
               <motion.div
-                onClick={() => setShowWebhookInfo(true)}
+                // onClick={() => setShowWebhookInfo(true)}
                 className="w-48 h-48 hover:border-red-600 cursor-pointer flex flex-col items-center justify-center rounded-full bg-red-500 text-white shadow-lg border-4 border-red-300 relative"
                 animate={{
                   boxShadow: [
@@ -1717,17 +1724,21 @@ useEffect(() => {
               ))}
             </motion.div>
 
-           <motion.div
-  className="relative cursor-grab active:cursor-grabbing"
-  drag
-  dragConstraints={{ left: -300, right: 300, top: -200, bottom: 200 }}
-  dragElastic={0.15}
-  whileHover={{ scale: 1.08 }}
-  whileTap={{ scale: 0.98 }}
-  transition={{ type: "spring", stiffness: 300, damping: 25 }}
-  onDragEnd={(e, info) => handleNodeDragEnd('webhook', info)}
->
-
+            <motion.div
+              className="relative cursor-grab active:cursor-grabbing"
+              drag
+              dragConstraints={{
+                left: -300,
+                right: 300,
+                top: -200,
+                bottom: 200,
+              }}
+              dragElastic={0.15}
+              whileHover={{ scale: 1.08 }}
+              whileTap={{ scale: 0.98 }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              onDragEnd={(e, info) => handleNodeDragEnd("webhook", info)}
+            >
               <motion.div
                 className="w-44 h-44 flex flex-col items-center justify-center rounded-full bg-green-400 text-white shadow-lg border-4 border-green-200 relative cursor-pointer hover:bg-green-500 transition-colors"
                 animate={{ rotate: [0, 3, -3, 0] }}
