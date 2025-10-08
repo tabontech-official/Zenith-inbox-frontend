@@ -252,132 +252,163 @@ const Inbox = () => {
     </motion.div>
   );
 
-  return (
-    <div className="flex bg-gray-100 min-h-screen font-inter">
-      <Sidebar />
-      <main className="flex-1 md:ml-64 flex h-screen overflow-hidden">
+ return (
+  <div className="flex bg-gradient-to-br from-gray-50 to-indigo-50 min-h-screen font-inter">
+    <Sidebar />
+
+    <main className="flex-1 md:ml-64 flex h-screen overflow-hidden">
+      <motion.div
+        layout
+        initial={{ opacity: 0, scale: 0.98 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.4 }}
+        className="flex w-full bg-white rounded-2xl shadow-lg m-6 border border-gray-200 overflow-hidden"
+      >
+        {/* 📩 Email List */}
+        <motion.div
+          className="w-1/3 border-r border-gray-200 bg-gray-50 
+          overflow-y-auto scrollbar-thin scrollbar-thumb-indigo-300 
+          scrollbar-track-transparent hover:scrollbar-thumb-indigo-400 
+          transition-all duration-300 ease-in-out"
+        >
+          {/* Header */}
+          <div className="p-5 border-b border-gray-200 bg-white sticky top-0 z-10">
+            <h2 className="text-lg font-semibold text-gray-800">Inbox</h2>
+            <p className="text-xs text-gray-500 mt-1">Recent conversations</p>
+          </div>
+
+          {/* Loading / Empty / List */}
+          {loading ? (
+            <motion.div
+              className="flex justify-center items-center py-10 text-gray-500 text-sm"
+              animate={{ opacity: [0.4, 1, 0.4] }}
+              transition={{ repeat: Infinity, duration: 1.5 }}
+            >
+              Loading emails...
+            </motion.div>
+          ) : emails.length === 0 ? (
+            <div className="flex justify-center items-center py-10 text-gray-400 text-sm italic">
+              No emails found
+            </div>
+          ) : (
+            <motion.ul
+              variants={listContainer}
+              initial="hidden"
+              animate="show"
+              className="p-2"
+            >
+              {emails.map((email) => (
+                <motion.li
+                  key={email._id}
+                  variants={listItem}
+                  whileHover={{
+                    scale: 1.02,
+                    backgroundColor: "#EEF2FF",
+                  }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setSelectedEmail(email)}
+                  className={`px-4 py-3 border-b rounded-lg cursor-pointer transition-all duration-300 ${
+                    selectedEmail?._id === email._id
+                      ? "bg-indigo-50 border-l-4 border-indigo-600 shadow-sm"
+                      : "hover:bg-gray-100"
+                  }`}
+                >
+                  <div className="flex justify-between items-center mb-1">
+                    <p className="text-sm font-semibold text-gray-800 truncate">
+                      {email.senderAddress}
+                    </p>
+                    <span className="text-xs text-gray-400">
+                      {new Date(email.date).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-900 font-medium truncate">
+                    {email.subject || "No Subject"}
+                  </p>
+                  <p className="text-xs text-gray-500 truncate">
+                    {email.textBody?.slice(0, 70) || "No preview available"}
+                  </p>
+                </motion.li>
+              ))}
+            </motion.ul>
+          )}
+        </motion.div>
+
+        {/* 📬 Email View */}
         <motion.div
           layout
-          initial={{ opacity: 0, scale: 0.98 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.4 }}
-          className="flex w-full bg-white border border-gray-200 rounded-xl shadow-md m-4 overflow-hidden"
+          className="flex-1 overflow-y-auto bg-white p-8 scrollbar-thin scrollbar-thumb-indigo-300"
         >
-          {/* 📩 Email List */}
-          <motion.div
-            className="w-1/3 border-r border-gray-200 bg-gray-50 
-overflow-y-auto scrollbar-thin scrollbar-thumb-indigo-300 
-scrollbar-track-transparent hover:scrollbar-thumb-indigo-400 
-transition-all duration-300 ease-in-out p-2 shadow-inner"
-          >
-            <div className="p-4 border-b border-gray-200 bg-gray-100">
-              <h2 className="text-lg font-semibold text-gray-800">Inbox</h2>
-            </div>
-
-            {loading ? (
+          <AnimatePresence mode="wait">
+            {selectedEmail ? (
               <motion.div
-                className="flex justify-center items-center py-10 text-gray-500"
-                animate={{ opacity: [0.4, 1, 0.4] }}
-                transition={{
-                  repeat: Infinity,
-                  duration: 1.5,
-                  ease: "easeInOut",
-                }}
-              >
-                Loading emails...
-              </motion.div>
-            ) : emails.length === 0 ? (
-              <div className="flex justify-center items-center py-10 text-gray-400 text-sm">
-                No emails found.
-              </div>
-            ) : (
-              <motion.ul
-                variants={listContainer}
+                key={selectedEmail._id}
+                variants={emailView}
                 initial="hidden"
                 animate="show"
+                exit="exit"
               >
-                {emails.map((email) => (
-                  <motion.li
-                    key={email._id}
-                    variants={listItem}
-                    whileHover={{ scale: 1.02, backgroundColor: "#EEF2FF" }}
-                    whileTap={{ scale: 0.97 }}
-                    onClick={() => setSelectedEmail(email)}
-                    className={`px-4 py-3 border-b cursor-pointer rounded-lg mb-1 transition-all duration-300 ${
-                      selectedEmail?._id === email._id
-                        ? "bg-indigo-50 border-l-4 border-indigo-600 shadow-sm"
-                        : "hover:bg-gray-100"
-                    }`}
-                  >
-                    <div className="flex justify-between items-center mb-1">
-                      <p className="text-sm font-semibold text-gray-800 truncate">
-                        {email.senderAddress}
-                      </p>
-                      <span className="text-xs text-gray-400">
-                        {new Date(email.date).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </span>
-                    </div>
-                    <p className="text-sm font-medium text-gray-900 truncate">
-                      {email.subject || "No Subject"}
-                    </p>
-                    <p className="text-xs text-gray-500 truncate">
-                      {email.textBody?.slice(0, 60) || "No preview available"}
-                    </p>
-                  </motion.li>
-                ))}
-              </motion.ul>
-            )}
-          </motion.div>
+                {/* Email Header */}
+                <motion.div
+                  layout
+                  className="border-b pb-4 mb-6"
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                >
+                  <h3 className="text-2xl font-semibold text-gray-900 mb-1">
+                    {selectedEmail.subject || "No Subject"}
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    From:{" "}
+                    <span className="font-medium text-gray-800">
+                      {selectedEmail.senderAddress}
+                    </span>
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    {new Date(selectedEmail.date).toLocaleString()}
+                  </p>
+                </motion.div>
 
-          <motion.div
-            layout
-            className="flex-1 overflow-y-auto p-6 bg-white"
-          >
-            <AnimatePresence mode="wait">
-              {selectedEmail ? (
-                <motion.div
-                  key={selectedEmail._id}
-                  variants={emailView}
-                  initial="hidden"
-                  animate="show"
-                  exit="exit"
-                >
-                  <motion.div
-                    layout
-                    className="border-b pb-3 mb-6"
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
+                {/* Email Thread */}
+                {renderEmailContent(selectedEmail)}
+              </motion.div>
+            ) : (
+              <motion.div
+                key="placeholder"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="h-full flex flex-col items-center justify-center text-gray-400 text-sm"
+              >
+                <div className="w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center mb-3">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="w-8 h-8 text-indigo-500"
                   >
-                    <h3 className="text-xl font-semibold text-gray-900 mb-1">
-                      {selectedEmail.subject || "No Subject"}
-                    </h3>
-                    <p className="text-sm text-gray-500">
-                      From: {selectedEmail.senderAddress}
-                    </p>
-                  </motion.div>
-                  {renderEmailContent(selectedEmail)}
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="placeholder"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="h-full flex items-center justify-center text-gray-400 text-sm"
-                >
-                  Select an email to view conversation
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.005 1.875l-7.5 5.25a2.25 2.25 0 01-2.49 0l-7.5-5.25A2.25 2.25 0 013 6.993V6.75"
+                    />
+                  </svg>
+                </div>
+                <p>Select an email to view the conversation</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
-      </main>
-    </div>
-  );
+      </motion.div>
+    </main>
+  </div>
+);
+
 };
 
 export default Inbox;

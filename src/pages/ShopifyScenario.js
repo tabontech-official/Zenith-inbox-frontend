@@ -1644,8 +1644,8 @@ const ShopifyScenariosPage = () => {
           </div>
         </div>
 
-        <div className="flex-1 flex items-center justify-center relative">
-          <div className="flex items-center justify-center w-full">
+<div className="flex-1 flex items-center justify-center relative bg-gradient-to-br from-gray-50 to-indigo-100 overflow-hidden">
+  <div className="flex items-center justify-center w-full relative py-16">
             <motion.div
               className="relative cursor-grab active:cursor-grabbing"
               drag

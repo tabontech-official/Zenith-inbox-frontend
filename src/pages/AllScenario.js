@@ -120,157 +120,151 @@ const AllScenariosPage = () => {
   };
 
   return (
-    <div className="flex min-h-screen">
-      <div className="w-64 border-r bg-gradient-to-b from-purple-600 to-purple-800">
-        <Sidebar />
-      </div>
+  <div className="flex bg-gradient-to-br from-gray-50 to-indigo-50 min-h-screen font-inter">
+    <Sidebar />
 
-      <div className="flex-1 flex flex-col bg-gray-50">
-        <div className="flex justify-between items-center p-6 border-b bg-white shadow-sm">
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-800">
-              All Scenarios
-            </h1>
-            <p className="text-sm text-gray-500 mt-1">
-              Manage, edit, and organize all your automation workflows in one
-              place.
-            </p>
-          </div>
+    <main className="flex-1 md:ml-64 flex flex-col">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b px-8 py-6 flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
+            All Scenarios
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Manage, edit, and organize all your automation workflows.
+          </p>
         </div>
+        <button
+          onClick={() => navigate("/scenarios/others")}
+          className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm transition"
+        >
+          + New Scenario
+        </button>
+      </header>
 
-        <div className="flex-1 p-6">
-          {scenarios.length === 0 ? (
-            <div className="text-center py-10 text-gray-400 text-lg">
-              No scenarios found.
-            </div>
-          ) : (
-            <div className="overflow-x-auto border rounded-lg bg-white shadow">
-              <table className="w-full text-sm text-left text-gray-600">
-                <thead className="bg-gray-100 text-gray-700 text-sm uppercase">
-                  <tr>
-                    <th className="px-6 py-3">Scenario</th>
-                    <th className="px-6 py-3">Description</th>
-                    <th className="px-6 py-3">Type</th>
-                    <th className="px-6 py-3">Created At</th>
-                    <th className="px-6 py-3 text-right">Actions</th>
+      {/* Table Section */}
+      <section className="flex-1 p-8 overflow-x-auto">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+          <table className="w-full text-sm text-left text-gray-600">
+            <thead className="bg-gray-100 text-gray-700 uppercase tracking-wide text-xs">
+              <tr>
+                <th className="px-6 py-3">Scenario</th>
+                <th className="px-6 py-3">Description</th>
+                <th className="px-6 py-3">Type</th>
+                <th className="px-6 py-3">Created At</th>
+                <th className="px-6 py-3 text-right">Actions</th>
+              </tr>
+            </thead>
+
+            <tbody className="divide-y divide-gray-100">
+              {loading ? (
+                <Loader />
+              ) : scenarios.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan="5"
+                    className="text-center py-10 text-gray-400 text-base"
+                  >
+                    No scenarios found.
+                  </td>
+                </tr>
+              ) : (
+                scenarios.map((scenario, idx) => (
+                  <tr
+                    key={scenario._id}
+                    className={`transition-all duration-200 ${
+                      idx % 2 === 0 ? "bg-white" : "bg-gray-50"
+                    } hover:bg-indigo-50 cursor-pointer`}
+                    onClick={() => handleRowClick(scenario)}
+                  >
+                    <td className="px-6 py-4 flex items-center gap-3 font-semibold text-gray-800">
+                      <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-indigo-100 text-indigo-600">
+                        {getScenarioIcon(scenario)}
+                      </div>
+                      {getScenarioName(scenario)}
+                    </td>
+
+                    <td className="px-6 py-4 text-gray-600 max-w-sm truncate">
+                      {getScenarioDescription(scenario)}
+                    </td>
+
+                    <td className="px-6 py-4 capitalize text-gray-700">
+                      {scenario.type}
+                    </td>
+
+                    <td className="px-6 py-4 text-gray-500">
+                      {new Date(scenario.createdAt).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </td>
+
+                    <td className="px-6 py-4 text-right">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedScenario(scenario);
+                          setDeleteModalOpen(true);
+                        }}
+                        className="text-gray-400 hover:text-red-500 transition"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {loading ? (
-                    <Loader />
-                  ) : scenarios.length > 0 ? (
-                    scenarios.map((scenario) => (
-                      <tr
-                        key={scenario._id}
-                        className="border-b hover:bg-gray-50 cursor-pointer"
-                      >
-                        <td
-                          onClick={() => handleRowClick(scenario)}
-                          className="px-6 py-4 flex items-center gap-2 font-medium text-gray-800"
-                        >
-                          {getScenarioIcon(scenario)}
-                          {getScenarioName(scenario)}
-                        </td>
-
-                        <td
-                          onClick={() => handleRowClick(scenario)}
-                          className="px-6 py-4 text-gray-600 max-w-xs truncate"
-                        >
-                          {getScenarioDescription(scenario)}
-                        </td>
-
-                        <td
-                          onClick={() => handleRowClick(scenario)}
-                          className="px-6 py-4 capitalize"
-                        >
-                          {scenario.type}
-                        </td>
-
-                        <td
-                          onClick={() => handleRowClick(scenario)}
-                          className="px-6 py-4"
-                        >
-                          {new Date(scenario.createdAt).toLocaleDateString(
-                            "en-US",
-                            {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                            }
-                          )}
-                        </td>
-
-                        <td className="px-6 py-4 text-right">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedScenario(scenario);
-                              setDeleteModalOpen(true);
-                            }}
-                            className="text-gray-400 hover:text-red-500"
-                          >
-                            <Trash2 className="w-5 h-5" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td
-                        colSpan="5"
-                        className="text-center py-10 text-gray-400 text-lg"
-                      >
-                        No scenarios found.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
-      </div>
+      </section>
+    </main>
 
-      {deleteModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-lg p-6 w-96">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold text-gray-800">
-                Confirm Delete
-              </h2>
-              <button
-                onClick={() => setDeleteModalOpen(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <p className="text-gray-600 mb-6">
-              Are you sure you want to delete{" "}
-              <span className="font-semibold">
-                {selectedScenario?.name || "this scenario"}
-              </span>
-              ?
-            </p>
-            <div className="flex justify-end space-x-3">
-              <button
-                onClick={() => setDeleteModalOpen(false)}
-                className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDelete}
-                className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white shadow"
-              >
-                Delete
-              </button>
-            </div>
+    {/* 🗑️ Delete Modal */}
+    {deleteModalOpen && (
+      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+        <div className="bg-white rounded-2xl shadow-xl w-96 p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">
+              Confirm Delete
+            </h2>
+            <button
+              onClick={() => setDeleteModalOpen(false)}
+              className="text-gray-400 hover:text-gray-600 transition"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <p className="text-gray-600 mb-6 leading-relaxed">
+            Are you sure you want to delete{" "}
+            <span className="font-semibold text-gray-800">
+              {selectedScenario?.name || "this scenario"}
+            </span>
+            ?
+          </p>
+
+          <div className="flex justify-end space-x-3">
+            <button
+              onClick={() => setDeleteModalOpen(false)}
+              className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleDelete}
+              className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white shadow transition"
+            >
+              Delete
+            </button>
           </div>
         </div>
-      )}
-    </div>
-  );
+      </div>
+    )}
+  </div>
+);
+
 };
 
 export default AllScenariosPage;
