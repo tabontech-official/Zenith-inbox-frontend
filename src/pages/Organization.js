@@ -497,7 +497,7 @@ const Organization = () => {
                       return (
                         <motion.tr
                           key={i}
-                          onClick={() => fetchEmailById(root._id)}
+                          // onClick={() => fetchEmailById(root._id)}
                           className="border-b last:border-none hover:bg-gray-50 transition cursor-pointer"
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}

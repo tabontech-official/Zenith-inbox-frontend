@@ -1,3 +1,1042 @@
+// // import React, { useContext, useEffect, useRef, useState } from "react";
+// // import {
+// //   Plus,
+// //   Search,
+// //   ArrowLeft,
+// //   Settings,
+// //   Mail,
+// //   Cloud,
+// //   GitBranch,
+// //   X,
+// //   Clock,
+// // } from "lucide-react";
+// // import { CiLink } from "react-icons/ci";
+
+// // import Sidebar from "../component/Sidebar";
+// // import {
+// //   FiAlertCircle,
+// //   FiCode,
+// //   FiHome,
+// //   FiShuffle,
+// //   FiFileText,
+// //   FiSearch,
+// //   FiTrendingUp,
+// //   FiCpu,
+// //   FiSettings,
+// //   FiBox,
+// //   FiShare2,
+// //   FiType,
+// //   FiGlobe,
+// //   FiCreditCard,
+// //   FiLink,
+// //   FiBarChart2,
+// //   FiActivity,
+// //   FiImage,
+// //   FiBriefcase,
+// //   FiClipboard,
+// //   FiPercent,
+// //   FiCamera,
+// //   FiMail,
+// //   FiBox as FiBox3D,
+// //   FiMonitor,
+// //   FiVideo,
+// //   FiBookOpen,
+// //   FiPackage,
+// //   FiUsers,
+// //   FiUserX,
+// //   FiTrash2,
+// //   FiEdit,
+// // } from "react-icons/fi";
+// // import ReactQuill from "react-quill";
+// // import "react-quill/dist/quill.snow.css";
+// // import axios from "axios";
+// // import { useNavigate, useParams } from "react-router-dom";
+// // import toast from "react-hot-toast";
+// // import { UserContext } from "../component/UserContext";
+// // import WebhookModal from "../component/WebhookModal";
+// // import ConnectionModal from "../component/ConnectionModal";
+// // import OutlookConnectionModal from "../component/OutlookConnectionModal";
+
+// // const ShopifyScenariosPage = () => {
+// //   const { id } = useParams();
+// //   const navigate = useNavigate();
+// //   const [open, setOpen] = useState(false);
+// //   const [selectedApp, setSelectedApp] = useState(null);
+// //   const [selectedModule, setSelectedModule] = useState(null);
+// //   const [savedModule, setSavedModule] = useState(null);
+// //   const [savedSecondModule, setSavedSecondModule] = useState(null);
+// //   const [savedThirdModule, setSavedThirdModule] = useState(null);
+// //   const [showRouterBranches, setShowRouterBranches] = useState(false);
+// //   const [showFilterDialog, setShowFilterDialog] = useState(false);
+// //   const [showDataPanel, setShowDataPanel] = useState(false);
+// //   const [routerBranches, setRouterBranches] = useState([]);
+// //   const [selectedBranchIndex, setSelectedBranchIndex] = useState(null);
+// //   const [routerHovered, setRouterHovered] = useState(false);
+// //   const [branchModules, setBranchModules] = useState({});
+// //   const [editingBranch, setEditingBranch] = useState(null);
+// //   const [editorValue, setEditorValue] = useState("");
+// //   const [activeConditionTarget, setActiveConditionTarget] = useState(null);
+// //   const [connections, setConnections] = useState([]);
+// //   const [selectedConnection, setSelectedConnection] = useState("");
+// //   const [subject, setSubject] = useState("");
+// //   const [body, setBody] = useState("");
+// //   const [delayValue, setDelayValue] = useState("5");
+// //   const [delayUnit, setDelayUnit] = useState("seconds");
+
+// //   const [templates, setTemplates] = useState([]);
+// //   const [selectedTemplate, setSelectedTemplate] = useState("");
+// //   const [cc, setCc] = useState("");
+// //   const [bcc, setBcc] = useState("");
+// //   const modalRef = useRef(null);
+// //   const [ccList, setCcList] = useState([]);
+// //   const [bccList, setBccList] = useState([]);
+// //   const [ccInput, setCcInput] = useState("");
+// //   const [bccInput, setBccInput] = useState("");
+// //   const [showWebhookInfo, setShowWebhookInfo] = useState(false);
+// //   const [scenarioId, setScenarioId] = useState(null);
+// //   const [scenarioName, setScenarioName] = useState("");
+// //   const [scenarioDescription, setScenarioDescription] = useState("");
+// //   const [loading, setLoading] = useState(true);
+// //   const [copied, setCopied] = useState(false);
+// //   const { user } = useContext(UserContext);
+// //   const [showOutlookModal, setShowOutlookModal] = useState(false);
+// //   const [showGmailModal, setShowGmailModal] = useState(false);
+
+// //   const handleAddClick = () => {
+// //     if (selectedApp?.name === "Email") {
+// //       setShowOutlookModal(true);
+// //     } else if (selectedApp?.name === "Gmail") {
+// //       setShowGmailModal(true);
+// //     }
+// //   };
+// //   useEffect(() => {
+// //     if (user) {
+// //       setLoading(false);
+// //     }
+// //   }, [user]);
+
+// //   const webhookUrl = user?.mailhook || "";
+// //   const handleCopy = () => {
+// //     navigator.clipboard.writeText(webhookUrl);
+// //     setCopied(true);
+// //     setTimeout(() => setCopied(false), 2000);
+// //   };
+
+// //   const handleAddEmail = (e, type) => {
+// //     if (e.key === "Enter" || e.key === ",") {
+// //       e.preventDefault();
+// //       const value = type === "cc" ? ccInput.trim() : bccInput.trim();
+
+// //       if (value && /\S+@\S+\.\S+/.test(value)) {
+// //         if (type === "cc") {
+// //           setCcList([...ccList, value]);
+// //           setCcInput("");
+// //         } else {
+// //           setBccList([...bccList, value]);
+// //           setBccInput("");
+// //         }
+// //       }
+// //     }
+// //   };
+
+// //   const handleRemoveEmail = (type, index) => {
+// //     if (type === "cc") {
+// //       setCcList(ccList.filter((_, i) => i !== index));
+// //     } else {
+// //       setBccList(bccList.filter((_, i) => i !== index));
+// //     }
+// //   };
+// //   const fetchConnections = async () => {
+// //     try {
+// //       const res = await fetch(
+// //         `https://email-syncing-backend.vercel.app/auth/getConnection/${localStorage.getItem(
+// //           "userid"
+// //         )}`
+// //       );
+// //       const data = await res.json();
+// //       setConnections(data);
+// //     } catch (err) {
+// //       console.error("Error fetching connections:", err);
+// //     }
+// //   };
+
+// //   useEffect(() => {
+// //     fetchConnections();
+// //   }, []);
+
+// //   useEffect(() => {
+// //     if (selectedApp?.name) {
+// //       const fetchTemplates = async () => {
+// //         try {
+// //           const res = await fetch(
+// //             `https://email-syncing-backend.vercel.app/template/all?userId=${localStorage.getItem(
+// //               "userid"
+// //             )}&platform=shopify&service=${selectedApp.name}`
+// //           );
+// //           const data = await res.json();
+// //           setTemplates(data);
+// //         } catch (err) {
+// //           console.error("Error fetching templates:", err);
+// //         }
+// //       };
+// //       fetchTemplates();
+// //     }
+// //   }, [selectedApp]);
+
+// //   useEffect(() => {
+// //     function handleClickOutside(event) {
+// //       if (modalRef.current && !modalRef.current.contains(event.target)) {
+// //         setOpen(false);
+// //         setShowFilterDialog(false);
+// //         setShowDataPanel(false);
+// //         setSelectedModule(null);
+// //       }
+// //     }
+
+// //     document.addEventListener("mousedown", handleClickOutside);
+// //     return () => {
+// //       document.removeEventListener("mousedown", handleClickOutside);
+// //     };
+// //   }, []);
+
+// //   const apps = [
+// //     { name: "Delay", color: "bg-blue-500", icon: "Delay" },
+// //     { name: "Email", color: "bg-purple-500", icon: "Email" },
+// //     { name: "Gmail", color: "bg-red-500", icon: "Gmail" },
+// //   ];
+
+// //   const availableData = [
+// //     {
+// //       module: "Gmail",
+// //       type: "Send an Email",
+// //       fields: [
+// //         { name: "Message ID", type: "text" },
+// //         { name: "Subject", type: "text" },
+// //         { name: "Date", type: "date" },
+// //         { name: "HTML content", type: "html" },
+// //         {
+// //           name: "Sender",
+// //           type: "object",
+// //           subFields: ["Name", "Email address"],
+// //         },
+// //         { name: "Recipients[]", type: "array" },
+// //         { name: "Copy Recipients[]", type: "array" },
+// //         { name: "Blind copy recipients[]", type: "array" },
+// //         { name: "Attachments[]", type: "array" },
+// //         { name: "Headers", type: "object" },
+// //       ],
+// //     },
+// //   ];
+
+// //   const handleSaveScenario = async () => {
+// //     const payload = {
+// //       userId: localStorage.getItem("userid"),
+// //       name: scenarioName,
+// //       description: scenarioDescription,
+// //       type: "shopify",
+// //       routerBranches,
+// //     };
+
+// //     const url = scenarioId
+// //       ? `https://email-syncing-backend.vercel.app/scenario/detail/${scenarioId}`
+// //       : `https://email-syncing-backend.vercel.app/scenario`;
+
+// //     await fetch(url, {
+// //       method: scenarioId ? "PUT" : "POST",
+// //       headers: { "Content-Type": "application/json" },
+// //       body: JSON.stringify(payload),
+// //     });
+
+// //     toast.success("Shopify scenario saved successfully!");
+// //     navigate("/scenarios/all");
+// //   };
+
+// //   const iconMap = {
+// //     Delay: <Clock />,
+// //     Email: <FiMail />,
+// //     Gmail: <Mail />,
+// //     Webhooks: <Cloud />,
+// //     Router: <GitBranch />,
+// //     handleSaveScenario,
+// //   };
+
+// //   useState(() => {
+// //     setSavedModule({
+// //       app: { name: "Webhooks", color: "bg-red-500", icon: "Webhooks" },
+// //       type: "Custom mailhook",
+// //       description: "Custom mailhook",
+// //     });
+// //     setSavedSecondModule({
+// //       app: { name: "Router", color: "bg-green-400", icon: "Router" },
+// //       type: "Router",
+// //       description: "Route to different paths",
+// //     });
+// //     setSavedThirdModule({
+// //       app: { name: "Gmail", color: "bg-red-500", icon: "Gmail" },
+// //       type: "Send an Email",
+// //       description: "Send an email",
+// //     });
+// //     setShowRouterBranches(true);
+// //     setRouterBranches([
+// //       { id: 2, hasModule: false, condition: null, modules: [] },
+// //     ]);
+// //   }, []);
+// //   // useEffect(() => {
+// //   //   if (id) {
+// //   //     const fetchScenario = async () => {
+// //   //       try {
+// //   //         const res = await fetch(
+// //   //           `https://email-syncing-backend.vercel.app/scenario/detail/${id}`
+// //   //         );
+// //   //         const data = await res.json();
+// //   //         if (data) {
+// //   //           setScenarioId(data._id);
+// //   //           setScenarioName(data.name || "");
+// //   //           setScenarioDescription(data.description || "");
+// //   //           setRouterBranches(data.routerBranches || []);
+// //   //         }
+// //   //       } catch (err) {
+// //   //         console.error("Error fetching scenario:", err);
+// //   //       }
+// //   //     };
+// //   //     fetchScenario();
+// //   //   }
+// //   // }, [id]);
+// //   useEffect(() => {
+// //     const fetchScenario = async () => {
+// //       try {
+// //         const userId = localStorage.getItem("userid"); // localStorage se lo
+// //         if (!userId) {
+// //           console.error("No userId found in localStorage");
+// //           return;
+// //         }
+
+// //         const res = await fetch(
+// //           "https://email-syncing-backend.vercel.app/scenario/details",
+// //           {
+// //             method: "POST",
+// //             headers: {
+// //               "Content-Type": "application/json",
+// //             },
+// //             body: JSON.stringify({ userId }), // ✅ body me userId send
+// //           }
+// //         );
+
+// //         const data = await res.json();
+// //         if (data) {
+// //           setScenarioId(data._id);
+// //           setScenarioName(data.name || "");
+// //           setScenarioDescription(data.description || "");
+// //           setRouterBranches(data.routerBranches || []);
+// //         }
+// //       } catch (err) {
+// //         console.error("Error fetching scenario:", err);
+// //       }
+// //     };
+
+// //     fetchScenario();
+// //   }, []);
+
+// //   const handleSave = () => {
+// //     if (editingBranch !== null) {
+// //       const updatedBranches = [...routerBranches];
+
+// //       let type = "";
+// //       let description = "";
+
+// //       if (selectedModule === "delay") {
+// //         type = "Delay";
+// //         description = `Wait ${delayValue} ${delayUnit}`;
+// //       } else if (selectedApp?.name === "Email") {
+// //         type = "Custom Email";
+// //         description = "Send an email using custom SMTP/Outlook";
+
+// //         if (!selectedConnection) {
+// //           toast.error("Please select a connection before saving.");
+// //           return;
+// //         }
+// //         if (!selectedTemplate) {
+// //           toast.error("Please select a template before saving.");
+// //           return;
+// //         }
+// //       } else if (selectedApp?.name === "Gmail") {
+// //         type = "Send an Email";
+// //         description = "Send an email via Gmail";
+
+// //         // ✅ Mandatory validation
+// //         if (!selectedConnection) {
+// //           toast.error("Please select a connection before saving.");
+// //           return;
+// //         }
+// //         if (!selectedTemplate) {
+// //           toast.error("Please select a template before saving.");
+// //           return;
+// //         }
+// //       }
+
+// //       if (editingModuleId) {
+// //         const moduleIndex = updatedBranches[editingBranch].modules.findIndex(
+// //           (m) => m.id === editingModuleId
+// //         );
+// //         if (moduleIndex >= 0) {
+// //           updatedBranches[editingBranch].modules[moduleIndex] = {
+// //             ...updatedBranches[editingBranch].modules[moduleIndex],
+// //             app: {
+// //               name: selectedApp.name,
+// //               color: selectedApp.color,
+// //               icon: selectedApp.name,
+// //             },
+// //             type,
+// //             description,
+// //             connectionId: selectedConnection,
+// //             template: selectedTemplate,
+// //             subject,
+// //             cc: ccList,
+// //             bcc: bccList,
+// //             delayValue,
+// //             delayUnit,
+// //           };
+// //         }
+// //       } else {
+// //         // ➕ Add new module
+// //         updatedBranches[editingBranch].modules.push({
+// //           id: Date.now(),
+// //           app: {
+// //             name: selectedApp.name,
+// //             color: selectedApp.color,
+// //             icon: selectedApp.name,
+// //           },
+// //           type,
+// //           description,
+// //           connectionId: selectedConnection,
+// //           template: selectedTemplate,
+// //           subject,
+// //           cc: ccList,
+// //           bcc: bccList,
+// //           delayValue,
+// //           delayUnit,
+// //         });
+// //       }
+
+// //       setRouterBranches(updatedBranches);
+// //       setEditingBranch(null);
+// //       setEditingModuleId(null);
+// //     }
+
+// //     setSelectedModule(null);
+// //     setOpen(false);
+// //     setSelectedApp(null);
+// //     setSelectedConnection("");
+// //     setSelectedTemplate("");
+// //     setSubject("");
+// //     setCcList([]);
+// //     setBccList([]);
+// //     setDelayValue("5");
+// //     setDelayUnit("seconds");
+// //   };
+
+// //   const handleCancel = () => {
+// //     setSelectedApp(null);
+// //     setEditingBranch(null);
+// //     setEditingModuleId(null);
+
+// //     setSelectedConnection("");
+// //     setSelectedTemplate("");
+// //     setSubject("");
+// //     setCcList([]);
+// //     setBccList([]);
+// //     setCcInput("");
+// //     setBccInput("");
+// //     setDelayValue("5");
+// //     setDelayUnit("seconds");
+// //     setOpen(false);
+// //   };
+
+// //   const handleRemoveModule = (branchIndex, moduleId) => {
+// //     const updatedBranches = [...routerBranches];
+// //     updatedBranches[branchIndex].modules = updatedBranches[
+// //       branchIndex
+// //     ].modules.filter((m) => m.id !== moduleId);
+// //     setRouterBranches(updatedBranches);
+
+// //     setSelectedConnection("");
+// //     setSelectedTemplate("");
+// //     setSubject("");
+// //     setCcList([]);
+// //     setBccList([]);
+// //     setCcInput("");
+// //     setBccInput("");
+// //   };
+
+// //   const [editingModuleId, setEditingModuleId] = useState(null);
+
+// //   const handleEditModule = (branchIndex, module) => {
+// //     setSelectedBranchIndex(branchIndex);
+// //     setEditingBranch(branchIndex);
+// //     setEditingModuleId(module.id);
+// //     setOpen(true);
+
+// //     setSelectedApp(module.app);
+// //     setSelectedConnection(module.connectionId || "");
+// //     setSelectedTemplate(module.template || "");
+// //     setSubject(module.subject || "");
+// //     setCcList(module.cc || []);
+// //     setBccList(module.bcc || []);
+// //     setDelayValue(module.delayValue || "5");
+// //     setDelayUnit(module.delayUnit || "seconds");
+// //   };
+
+// //   const handleRouterHover = () => {
+// //     setRouterHovered(true);
+// //   };
+
+// //   const handleRouterLeave = () => {
+// //     setRouterHovered(false);
+// //   };
+
+// //   const addRouterBranch = () => {
+// //     const newBranch = {
+// //       id: routerBranches.length + 1,
+// //       hasModule: false,
+// //       condition: null,
+// //       modules: [],
+// //     };
+// //     setRouterBranches([...routerBranches, newBranch]);
+// //   };
+
+// //   const handleBranchPlusClick = (branchIndex) => {
+// //     setSelectedBranchIndex(branchIndex);
+// //     setEditingBranch(branchIndex);
+// //     setOpen(true);
+// //   };
+
+// //   const handleConditionClick = () => {
+// //     setShowDataPanel(true);
+// //   };
+
+// //   const addModuleToBranch = (branchIndex) => {
+// //     setEditingBranch(branchIndex);
+// //     setOpen(true);
+// //   };
+// //   const renderConnectionLine = (startX, startY, endX, endY) => {
+// //     return (
+// //       <svg
+// //         className="absolute top-0 left-0 w-full h-full pointer-events-none"
+// //         xmlns="http://www.w3.org/2000/svg"
+// //       >
+// //         <line
+// //           x1={startX}
+// //           y1={startY}
+// //           x2={endX}
+// //           y2={endY}
+// //           stroke="gray"
+// //           strokeWidth="2"
+// //           strokeDasharray="5,5"
+// //         />
+// //       </svg>
+// //     );
+// //   };
+
+// //   return (
+// //     <div className="flex">
+// //       <div className="w-64 min-h-screen bg-gray-100">
+// //         <Sidebar />
+// //       </div>
+
+// //       <div className="flex-1 min-h-screen bg-gray-50 font-sans text-gray-800 flex flex-col">
+// //         <div className="border-b bg-white shadow-sm">
+// //           <div className="p-6 flex items-center justify-between">
+// //             <div className="flex flex-col w-2/3">
+// //               <h1 className="text-xl font-medium text-gray-800 mb-2">
+// //                 {scenarioId ? "Edit Scenario" : "Create New Scenario"}
+// //               </h1>
+// //               <p className="text-sm text-gray-500 mb-4">
+// //                 Give your scenario a clear name so you can identify it later.
+// //               </p>
+
+// //               <input
+// //                 type="text"
+// //                 value={scenarioName}
+// //                 onChange={(e) => setScenarioName(e.target.value)}
+// //                 placeholder="Enter scenario name"
+// //                 className="px-4 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 w-full"
+// //               />
+// //             </div>
+
+// //             <div className="flex flex-col space-y-2 items-end">
+// //               <button
+// //                 className="flex items-center px-4 py-2 text-sm text-gray-700 bg-white border border-gray-200 rounded-md shadow-sm hover:bg-gray-100 w-full"
+// //                 onClick={() => navigate(-1)}
+// //               >
+// //                 <ArrowLeft className="mr-2 w-4 h-4" />
+// //                 Back
+// //               </button>
+
+// //               <button
+// //                 onClick={handleSaveScenario}
+// //                 className="flex items-center justify-center px-4 py-2 text-sm bg-green-600 text-white rounded-md shadow hover:bg-green-700 w-full"
+// //               >
+// //                 {scenarioId ? "Update Scenario" : "Save Scenario"}
+// //               </button>
+// //             </div>
+// //           </div>
+// //         </div>
+
+// //         <div className="flex-1 flex items-center justify-center relative">
+// //           <div className="flex items-center justify-center w-full">
+// //             <div className="relative">
+// //               <div
+// //                 onClick={() => setShowWebhookInfo(true)}
+// //                 className="w-48 h-48 hover:border-red-600 cursor-pointer flex flex-col items-center justify-center rounded-full bg-red-500 text-white shadow-lg border-4 border-red-300 relative"
+// //               >
+// //                 <Cloud className="w-16 h-16 mb-1" />
+// //                 <div className="absolute -top-2 -right-2 w-8 h-8 bg-red-600 text-white rounded-full flex items-center justify-center text-sm font-bold border-2 border-white">
+// //                   1
+// //                 </div>
+// //               </div>
+
+// //               <div className="absolute -bottom-3 -left-3 w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg border-2 border-red-200">
+// //                 <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
+// //                   <span className="text-white font-bold">⚡</span>
+// //                 </div>
+// //               </div>
+
+// //               <div className="mt-4 text-center">
+// //                 <h3 className="font-semibold text-gray-800">Webhooks</h3>
+// //                 <p className="text-sm text-gray-600">Custom mailhook</p>
+// //                 <div className="inline-block mt-1 px-2 py-1 bg-gray-200 text-gray-600 text-xs rounded">
+// //                   1
+// //                 </div>
+// //               </div>
+// //             </div>
+
+// //             <div className="flex items-center mx-8">
+// //               <div className="w-4 h-4 rounded-full bg-pink-400"></div>
+// //               <div className="w-4 h-4 rounded-full bg-pink-300 ml-2"></div>
+// //               <div className="w-4 h-4 rounded-full bg-pink-200 ml-2"></div>
+// //               <div className="w-4 h-4 rounded-full bg-pink-100 ml-2"></div>
+// //               <div className="ml-4"></div>
+// //             </div>
+
+// //             <div className="relative">
+// //               <div
+// //                 className="w-44 h-44 flex flex-col items-center justify-center rounded-full bg-green-400 text-white shadow-lg border-4 border-green-200 relative cursor-pointer hover:bg-green-500 transition-colors"
+// //                 onMouseEnter={handleRouterHover}
+// //                 onMouseLeave={handleRouterLeave}
+// //               >
+// //                 <GitBranch className="w-12 h-12" />
+// //                 <div className="absolute -top-2 -right-2 w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-bold border-2 border-white">
+// //                   2
+// //                 </div>
+
+// //                 {/* {routerHovered && (
+// //                   <button
+// //                     onClick={addRouterBranch}
+// //                     className="absolute -right-6 top-1/2 transform -translate-y-1/2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg border-2 border-green-300 hover:bg-gray-100 transition-all"
+// //                   >
+// //                     <Plus className="w-4 h-4 text-green-600" />
+// //                   </button>
+// //                 )} */}
+// //               </div>
+
+// //               <div className="mt-4 text-center">
+// //                 <h3 className="font-semibold text-gray-800">Router</h3>
+// //                 <p className="text-sm text-gray-600">
+// //                   Route to different paths
+// //                 </p>
+// //                 <div className="inline-block mt-1 px-2 py-1 bg-gray-200 text-gray-600 text-xs rounded">
+// //                   2
+// //                 </div>
+// //               </div>
+// //             </div>
+
+// //             {showRouterBranches && (
+// //               <div className="relative ml-12 flex flex-col space-y-12">
+// //                 {routerBranches.map((branch, branchIndex) => (
+// //                   <div key={branch.id} className="flex items-center relative">
+// //                     <div className="absolute -left-16 top-1/2 transform -translate-y-1/2 flex items-center">
+// //                       {Array.from({ length: 6 }).map((_, i) => (
+// //                         <div
+// //                           key={i}
+// //                           className={`w-3 h-3 rounded-full ml-2 ${
+// //                             i === 0
+// //                               ? "bg-green-500"
+// //                               : i === 1
+// //                               ? "bg-green-400"
+// //                               : i === 2
+// //                               ? "bg-green-300"
+// //                               : i === 3
+// //                               ? "bg-green-200"
+// //                               : "bg-green-100"
+// //                           }`}
+// //                         ></div>
+// //                       ))}
+// //                     </div>
+
+// //                     <div className="flex items-center space-x-6 ml-12">
+// //                       {branch.modules && branch.modules.length > 0 ? (
+// //                         branch.modules.map((module, moduleIndex) => (
+// //                           <React.Fragment key={module.id}>
+// //                             <div className="relative">
+// //                               <div
+// //                                 className={`w-24 h-24 flex flex-col items-center justify-center rounded-full ${module.app.color} text-white shadow-lg border-2 border-opacity-50`}
+// //                               >
+// //                                 {React.cloneElement(iconMap[module.app.icon], {
+// //                                   className: "w-8 h-8",
+// //                                 })}
+// //                                 <div className="absolute -top-1 -right-1 w-6 h-6 bg-black bg-opacity-80 text-white rounded-full flex items-center justify-center text-xs font-bold border border-white">
+// //                                   {3 + moduleIndex}
+// //                                 </div>
+// //                               </div>
+
+// //                               <div className="mt-2 text-center">
+// //                                 <p className="text-xs font-medium text-gray-800">
+// //                                   {module.app.name}
+// //                                 </p>
+// //                                 <div className="inline-block px-1 py-0.5 bg-gray-200 text-gray-600 text-xs rounded">
+// //                                   {3 + moduleIndex}
+// //                                 </div>
+// //                                 <div className="absolute -top-3 -left-3 flex space-x-2">
+// //                                   <button
+// //                                     onClick={() =>
+// //                                       handleEditModule(branchIndex, module)
+// //                                     }
+// //                                     className="text-blue-500  p-1 rounded-full hover:text-blue-800"
+// //                                     title="Edit"
+// //                                   >
+// //                                     <FiEdit className="w-4 h-4" />
+// //                                   </button>
+// //                                 </div>
+// //                                 <button
+// //                                   onClick={() =>
+// //                                     handleRemoveModule(branchIndex, module.id)
+// //                                   }
+// //                                   className="text-red-500 p-1 rounded-full hover:text-red-600"
+// //                                   title="Remove"
+// //                                 >
+// //                                   <FiTrash2 className="w-4 h-4" />
+// //                                 </button>
+// //                               </div>
+
+// //                               <button
+// //                                 onClick={() => addModuleToBranch(branchIndex)}
+// //                                 className="absolute -right-3 top-6 w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center hover:bg-gray-400 transition-colors"
+// //                               >
+// //                                 <Plus className="w-3 h-3 text-gray-600" />
+// //                               </button>
+// //                             </div>
+
+// //                             {moduleIndex < branch.modules.length - 1 && (
+// //                               <div className="flex items-center ml-4">
+// //                                 <div className="w-2 h-2 rounded-full bg-gray-400"></div>
+// //                                 <div className="w-2 h-2 rounded-full bg-gray-300 ml-2"></div>
+// //                                 <div className="w-2 h-2 rounded-full bg-gray-200 ml-2"></div>
+// //                               </div>
+// //                             )}
+// //                           </React.Fragment>
+// //                         ))
+// //                       ) : (
+// //                         <button
+// //                           onClick={() => handleBranchPlusClick(branchIndex)}
+// //                           className="w-20 h-20 flex items-center justify-center rounded-full bg-gray-300 text-gray-600 shadow-lg border-2 border-gray-200 hover:bg-gray-400 hover:text-white transition-colors"
+// //                         >
+// //                           <Plus className="w-6 h-6" />
+// //                         </button>
+// //                       )}
+// //                     </div>
+// //                   </div>
+// //                 ))}
+// //               </div>
+// //             )}
+// //           </div>
+
+// //           {open && (
+// //             <div
+// //               ref={modalRef}
+// //               className="absolute left-1/2 translate-x-36 bg-white rounded-lg shadow-lg w-96 z-10"
+// //             >
+// //               {!selectedApp ? (
+// //                 <>
+// //                   <div className="p-4 border-b">
+// //                     <h2 className="text-xs font-semibold text-gray-500">
+// //                       ALL APPS
+// //                     </h2>
+// //                   </div>
+// //                   <ul className="max-h-80 overflow-y-auto">
+// //                     {apps.map((app, idx) => (
+// //                       <li
+// //                         key={idx}
+// //                         onClick={() => setSelectedApp(app)}
+// //                         className="flex items-center px-4 py-3 hover:bg-gray-50 cursor-pointer"
+// //                       >
+// //                         <div
+// //                           className={`w-8 h-8 flex items-center justify-center rounded-full text-white ${app.color}`}
+// //                         >
+// //                           {iconMap[app.icon]}
+// //                         </div>
+// //                         <span className="ml-3 text-sm text-gray-700">
+// //                           {app.name}
+// //                         </span>
+// //                       </li>
+// //                     ))}
+// //                   </ul>
+// //                 </>
+// //               ) : (
+// //                 <>
+// //                   <div className="flex justify-between items-center px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-400 text-white rounded-t-lg">
+// //                     <h3 className="font-semibold">{selectedApp.name}</h3>
+// //                     <button onClick={handleCancel}>✕</button>
+// //                   </div>
+
+// //                   <div className="p-4 space-y-4">
+// //                     {selectedApp.name === "Delay" ? (
+// //                       <>
+// //                         <label className="block text-sm font-medium text-gray-700 mb-2">
+// //                           Delay <span className="text-red-500">*</span>
+// //                         </label>
+// //                         <div className="flex space-x-2">
+// //                           <input
+// //                             type="number"
+// //                             value={delayValue}
+// //                             onChange={(e) => setDelayValue(e.target.value)}
+// //                             className="w-20 border rounded px-2 py-1 text-sm"
+// //                           />
+// //                           <select
+// //                             value={delayUnit}
+// //                             onChange={(e) => setDelayUnit(e.target.value)}
+// //                             className="border rounded px-2 py-1 text-sm"
+// //                           >
+// //                             <option value="seconds">Seconds</option>
+// //                             <option value="minutes">Minutes</option>
+// //                             <option value="hours">Hours</option>
+// //                           </select>
+// //                         </div>
+// //                         <p className="text-xs text-gray-500 mt-2">
+// //                           Suspend the execution of the scenario for the
+// //                           specified duration.
+// //                         </p>
+// //                       </>
+// //                     ) : (
+// //                       <>
+// //                         <div className="mb-4 w-full">
+// //                           <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+// //                             <FiMail className="mr-2 text-gray-500" /> Select
+// //                             Connection
+// //                           </label>
+// //                           <div className="relative w-full border rounded-lg px-3 py-2">
+// //                             <select
+// //                               value={selectedConnection}
+// //                               onChange={(e) =>
+// //                                 setSelectedConnection(e.target.value)
+// //                               }
+// //                               className="w-full border-none outline-none text-sm py-2 px-3 bg-transparent appearance-none"
+// //                             >
+// //                               <option onClick={fetchConnections()} value="">
+// //                                 -- Select Connection --
+// //                               </option>
+// //                               {connections
+// //                                 .filter((c) => {
+// //                                   if (selectedApp?.name === "Email") {
+// //                                     return (
+// //                                       c.provider === "smtp" ||
+// //                                       c.provider === "outlook"
+// //                                     );
+// //                                   }
+// //                                   if (selectedApp?.name === "Gmail") {
+// //                                     return c.provider === "gmail";
+// //                                   }
+// //                                   return false;
+// //                                 })
+// //                                 .map((c) => (
+// //                                   <option key={c._id} value={c._id}>
+// //                                     {c.provider.toUpperCase()} -{" "}
+// //                                     {c.email || c.name}
+// //                                   </option>
+// //                                 ))}
+// //                             </select>
+
+// //                             {/* Yeh "Add" button arrow ki jagah */}
+// //                             <span
+// //                               onClick={handleAddClick}
+// //                               className="absolute right-3 top-1/2 -translate-y-1/2 pl-2 border-l-2 border-gray-300 text-purple-600 text-sm font-medium cursor-pointer hover:text-purple-800"
+// //                             >
+// //                               Add
+// //                             </span>
+
+// //                             {/* Outlook Modal */}
+// //                           </div>
+// //                         </div>
+
+// //                         <div className="mb-4 w-full">
+// //                           <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+// //                             <FiFileText className="mr-2 text-gray-500" /> Select
+// //                             Template
+// //                           </label>
+// //                           <div className="flex items-center border rounded-lg px-3 py-2 focus-within:ring-2 focus-within:ring-purple-500 w-full">
+// //                             {selectedTemplate ? (
+// //                               <span className="flex items-center bg-blue-100 text-blue-700 text-sm px-3 py-2 rounded-full w-full">
+// //                                 <FiFileText className="mr-2" />
+// //                                 {selectedTemplate}
+
+// //                                 <button
+// //                                   type="button"
+// //                                   onClick={() => {
+// //                                     console.log("Clearing selected template");
+// //                                     setSelectedTemplate("");
+// //                                   }}
+// //                                   className="ml-auto text-xs text-red-500 hover:text-red-700"
+// //                                 >
+// //                                   <FiUserX />
+// //                                 </button>
+// //                               </span>
+// //                             ) : (
+// //                               <select
+// //                                 value={selectedTemplate}
+// //                                 onChange={(e) => {
+// //                                   console.log(
+// //                                     "Selected value:",
+// //                                     e.target.value
+// //                                   );
+// //                                   setSelectedTemplate(e.target.value);
+// //                                 }}
+// //                                 className="w-full border-none outline-none text-sm py-2 px-3 bg-transparent"
+// //                               >
+// //                                 <option value="">-- Select Template --</option>
+// //                                 {templates.slice(0, 3).map((tpl) => {
+// //                                   const shortName = tpl.name.split(" - ").pop();
+// //                                   return (
+// //                                     <option key={tpl._id} value={shortName}>
+// //                                       {shortName}
+// //                                     </option>
+// //                                   );
+// //                                 })}
+// //                               </select>
+// //                             )}
+// //                           </div>
+// //                         </div>
+
+// //                         <div className="mb-4 w-full">
+// //                           <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+// //                             <FiUsers className="mr-2 text-gray-500" />
+// //                             CC
+// //                             <span className="ml-1 text-xs text-gray-500 font-normal">
+// //                               (Optional)
+// //                             </span>
+// //                           </label>
+
+// //                           <div className="flex flex-wrap items-center border rounded-lg px-3 py-2 focus-within:ring-2 focus-within:ring-purple-500 w-full">
+// //                             {ccList.map((email, index) => (
+// //                               <span
+// //                                 key={index}
+// //                                 className="flex items-center bg-blue-100 text-blue-700 text-sm px-3 py-1 rounded-full mr-2 mb-1"
+// //                               >
+// //                                 <FiMail className="mr-2" />
+// //                                 {email}
+// //                                 <button
+// //                                   type="button"
+// //                                   onClick={() => handleRemoveEmail("cc", index)}
+// //                                   className="ml-2 text-xs text-red-500 hover:text-red-700"
+// //                                 >
+// //                                   <FiUserX />
+// //                                 </button>
+// //                               </span>
+// //                             ))}
+// //                             <input
+// //                               type="text"
+// //                               value={ccInput}
+// //                               onChange={(e) => setCcInput(e.target.value)}
+// //                               onKeyDown={(e) => handleAddEmail(e, "cc")}
+// //                               className="w-full outline-none text-sm py-2 px-3"
+// //                               placeholder="Type and press Enter"
+// //                             />
+// //                           </div>
+// //                         </div>
+
+// //                         <div className="w-full">
+// //                           <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+// //                             <FiUsers className="mr-2 text-gray-500" /> BCC
+// //                             <span className="ml-1 text-xs text-gray-500 font-normal">
+// //                               (Optional)
+// //                             </span>
+// //                           </label>
+// //                           <div className="flex flex-wrap items-center border rounded-lg px-3 py-2 focus-within:ring-2 focus-within:ring-purple-500 w-full">
+// //                             {bccList.map((email, index) => (
+// //                               <span
+// //                                 key={index}
+// //                                 className="flex items-center bg-green-100 text-green-700 text-sm px-3 py-1 rounded-full mr-2 mb-1"
+// //                               >
+// //                                 <FiMail className="mr-2" />
+// //                                 {email}
+// //                                 <button
+// //                                   type="button"
+// //                                   onClick={() =>
+// //                                     handleRemoveEmail("bcc", index)
+// //                                   }
+// //                                   className="ml-2 text-xs text-red-500 hover:text-red-700"
+// //                                 >
+// //                                   <FiUserX />
+// //                                 </button>
+// //                               </span>
+// //                             ))}
+// //                             <input
+// //                               type="text"
+// //                               value={bccInput}
+// //                               onChange={(e) => setBccInput(e.target.value)}
+// //                               onKeyDown={(e) => handleAddEmail(e, "bcc")}
+// //                               className="w-full outline-none text-sm py-2 px-3"
+// //                               placeholder="Type and press Enter"
+// //                             />
+// //                           </div>
+// //                         </div>
+// //                       </>
+// //                     )}
+// //                   </div>
+
+// //                   <div className="flex justify-end space-x-2 px-4 py-2 border-t bg-gray-50">
+// //                     <button
+// //                       className="px-4 py-2 text-sm border rounded hover:bg-gray-100"
+// //                       onClick={handleCancel}
+// //                     >
+// //                       Cancel
+// //                     </button>
+// //                     <button
+// //                       onClick={handleSave}
+// //                       className="px-4 py-2 text-sm bg-purple-600 text-white rounded hover:bg-purple-700"
+// //                     >
+// //                       Save
+// //                     </button>
+// //                   </div>
+// //                 </>
+// //               )}
+// //             </div>
+// //           )}
+// //           <OutlookConnectionModal
+// //             isOpen={showOutlookModal}
+// //             onClose={() => setShowOutlookModal(false)}
+// //             onSuccess={(data) => {
+// //               console.log("Outlook connection saved", data);
+// //               setShowOutlookModal(false);
+// //             }}
+// //           />
+
+// //           {/* Gmail Modal */}
+// //           <ConnectionModal
+// //             isOpen={showGmailModal}
+// //             onClose={() => setShowGmailModal(false)}
+// //           />
+// //           <WebhookModal
+// //             showWebhookInfo={showWebhookInfo}
+// //             setShowWebhookInfo={setShowWebhookInfo}
+// //             webhookUrl={webhookUrl}
+// //             loading={loading}
+// //           />
+// //         </div>
+// //       </div>
+// //     </div>
+// //   );
+// // };
+
+// // export default ShopifyScenariosPage;
 // import React, { useContext, useEffect, useRef, useState } from "react";
 // import {
 //   Plus,
@@ -56,6 +1095,7 @@
 // import WebhookModal from "../component/WebhookModal";
 // import ConnectionModal from "../component/ConnectionModal";
 // import OutlookConnectionModal from "../component/OutlookConnectionModal";
+// import { motion } from "framer-motion";
 
 // const ShopifyScenariosPage = () => {
 //   const { id } = useParams();
@@ -101,7 +1141,29 @@
 //   const { user } = useContext(UserContext);
 //   const [showOutlookModal, setShowOutlookModal] = useState(false);
 //   const [showGmailModal, setShowGmailModal] = useState(false);
+//   const [positions, setPositions] = useState({
+//     webhook: { x: 0, y: 0 },
+//     router: { x: 300, y: 0 },
+//     branches: {}, // optional per-branch
+//   });
 
+//   const handleNodeDragEnd = (nodeKey, info) => {
+//     setPositions((prev) => ({
+//       ...prev,
+//       [nodeKey]: { x: info.point.x, y: info.point.y },
+//     }));
+//     localStorage.setItem(
+//       "nodePositions",
+//       JSON.stringify({
+//         ...positions,
+//         [nodeKey]: { x: info.point.x, y: info.point.y },
+//       })
+//     );
+//   };
+//   useEffect(() => {
+//     const saved = localStorage.getItem("nodePositions");
+//     if (saved) setPositions(JSON.parse(saved));
+//   }, []);
 //   const handleAddClick = () => {
 //     if (selectedApp?.name === "Email") {
 //       setShowOutlookModal(true);
@@ -582,24 +1644,53 @@
 //           </div>
 //         </div>
 
-//         <div className="flex-1 flex items-center justify-center relative">
-//           <div className="flex items-center justify-center w-full">
-//             <div className="relative">
-//               <div
-//                 onClick={() => setShowWebhookInfo(true)}
+//         <div className="flex-1 flex items-center justify-center relative bg-gradient-to-br from-gray-50 to-indigo-100 overflow-hidden">
+//           <div className="flex items-center justify-center w-full relative py-16">
+//             <motion.div
+//               className="relative cursor-grab active:cursor-grabbing"
+//               drag
+//               dragConstraints={{
+//                 left: -300,
+//                 right: 300,
+//                 top: -200,
+//                 bottom: 200,
+//               }}
+//               dragElastic={0.15}
+//               whileHover={{ scale: 1.08 }}
+//               whileTap={{ scale: 0.98 }}
+//               transition={{ type: "spring", stiffness: 300, damping: 25 }}
+//               onDragEnd={(e, info) => handleNodeDragEnd("webhook", info)}
+//             >
+//               <motion.div
+//                 // onClick={() => setShowWebhookInfo(true)}
 //                 className="w-48 h-48 hover:border-red-600 cursor-pointer flex flex-col items-center justify-center rounded-full bg-red-500 text-white shadow-lg border-4 border-red-300 relative"
+//                 animate={{
+//                   boxShadow: [
+//                     "0 0 0 0 rgba(239,68,68,0.6)",
+//                     "0 0 0 15px rgba(239,68,68,0)",
+//                   ],
+//                 }}
+//                 transition={{ repeat: Infinity, duration: 2 }}
 //               >
 //                 <Cloud className="w-16 h-16 mb-1" />
 //                 <div className="absolute -top-2 -right-2 w-8 h-8 bg-red-600 text-white rounded-full flex items-center justify-center text-sm font-bold border-2 border-white">
 //                   1
 //                 </div>
-//               </div>
+//               </motion.div>
 
-//               <div className="absolute -bottom-3 -left-3 w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg border-2 border-red-200">
-//                 <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
+//               <motion.div
+//                 className="absolute -bottom-3 -left-3 w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg border-2 border-red-200"
+//                 whileHover={{ rotate: 10 }}
+//                 transition={{ type: "spring", stiffness: 200 }}
+//               >
+//                 <motion.div
+//                   animate={{ rotate: [0, 10, -10, 0] }}
+//                   transition={{ repeat: Infinity, duration: 3 }}
+//                   className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center"
+//                 >
 //                   <span className="text-white font-bold">⚡</span>
-//                 </div>
-//               </div>
+//                 </motion.div>
+//               </motion.div>
 
 //               <div className="mt-4 text-center">
 //                 <h3 className="font-semibold text-gray-800">Webhooks</h3>
@@ -608,19 +1699,50 @@
 //                   1
 //                 </div>
 //               </div>
-//             </div>
+//             </motion.div>
 
-//             <div className="flex items-center mx-8">
-//               <div className="w-4 h-4 rounded-full bg-pink-400"></div>
-//               <div className="w-4 h-4 rounded-full bg-pink-300 ml-2"></div>
-//               <div className="w-4 h-4 rounded-full bg-pink-200 ml-2"></div>
-//               <div className="w-4 h-4 rounded-full bg-pink-100 ml-2"></div>
-//               <div className="ml-4"></div>
-//             </div>
+//             <motion.div
+//               className="flex items-center mx-8"
+//               initial={{ opacity: 0 }}
+//               animate={{ opacity: 1 }}
+//               transition={{ delay: 0.3 }}
+//             >
+//               {Array.from({ length: 4 }).map((_, i) => (
+//                 <motion.div
+//                   key={i}
+//                   animate={{
+//                     backgroundColor: [
+//                       "#f43f5e",
+//                       "#a855f7",
+//                       "#22c55e",
+//                       "#f43f5e",
+//                     ],
+//                   }}
+//                   transition={{ duration: 2, repeat: Infinity, delay: i * 0.2 }}
+//                   className="w-4 h-4 rounded-full ml-2"
+//                 ></motion.div>
+//               ))}
+//             </motion.div>
 
-//             <div className="relative">
-//               <div
+//             <motion.div
+//               className="relative cursor-grab active:cursor-grabbing"
+//               drag
+//               dragConstraints={{
+//                 left: -300,
+//                 right: 300,
+//                 top: -200,
+//                 bottom: 200,
+//               }}
+//               dragElastic={0.15}
+//               whileHover={{ scale: 1.08 }}
+//               whileTap={{ scale: 0.98 }}
+//               transition={{ type: "spring", stiffness: 300, damping: 25 }}
+//               onDragEnd={(e, info) => handleNodeDragEnd("webhook", info)}
+//             >
+//               <motion.div
 //                 className="w-44 h-44 flex flex-col items-center justify-center rounded-full bg-green-400 text-white shadow-lg border-4 border-green-200 relative cursor-pointer hover:bg-green-500 transition-colors"
+//                 animate={{ rotate: [0, 3, -3, 0] }}
+//                 transition={{ duration: 4, repeat: Infinity }}
 //                 onMouseEnter={handleRouterHover}
 //                 onMouseLeave={handleRouterLeave}
 //               >
@@ -628,16 +1750,7 @@
 //                 <div className="absolute -top-2 -right-2 w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-bold border-2 border-white">
 //                   2
 //                 </div>
-
-//                 {/* {routerHovered && (
-//                   <button
-//                     onClick={addRouterBranch}
-//                     className="absolute -right-6 top-1/2 transform -translate-y-1/2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg border-2 border-green-300 hover:bg-gray-100 transition-all"
-//                   >
-//                     <Plus className="w-4 h-4 text-green-600" />
-//                   </button>
-//                 )} */}
-//               </div>
+//               </motion.div>
 
 //               <div className="mt-4 text-center">
 //                 <h3 className="font-semibold text-gray-800">Router</h3>
@@ -648,36 +1761,60 @@
 //                   2
 //                 </div>
 //               </div>
-//             </div>
+//             </motion.div>
 
 //             {showRouterBranches && (
-//               <div className="relative ml-12 flex flex-col space-y-12">
+//               <motion.div
+//                 className="relative ml-12 flex flex-col space-y-12"
+//                 initial={{ opacity: 0, x: 50 }}
+//                 animate={{ opacity: 1, x: 0 }}
+//                 transition={{ duration: 0.6 }}
+//               >
+//                 {" "}
 //                 {routerBranches.map((branch, branchIndex) => (
-//                   <div key={branch.id} className="flex items-center relative">
-//                     <div className="absolute -left-16 top-1/2 transform -translate-y-1/2 flex items-center">
+//                   <motion.div
+//                     key={branch.id}
+//                     className="flex items-center relative"
+//                     whileHover={{ scale: 1.02 }}
+//                   >
+//                     {" "}
+//                     <motion.div
+//                       className="absolute -left-16 top-1/2 transform -translate-y-1/2 flex items-center"
+//                       animate={{ opacity: [0.8, 1, 0.8] }}
+//                       transition={{ duration: 1.5, repeat: Infinity }}
+//                     >
+//                       {" "}
 //                       {Array.from({ length: 6 }).map((_, i) => (
-//                         <div
+//                         <motion.div
 //                           key={i}
-//                           className={`w-3 h-3 rounded-full ml-2 ${
-//                             i === 0
-//                               ? "bg-green-500"
-//                               : i === 1
-//                               ? "bg-green-400"
-//                               : i === 2
-//                               ? "bg-green-300"
-//                               : i === 3
-//                               ? "bg-green-200"
-//                               : "bg-green-100"
-//                           }`}
-//                         ></div>
+//                           animate={{
+//                             backgroundColor: [
+//                               "#22c55e",
+//                               "#4ade80",
+//                               "#86efac",
+//                               "#bbf7d0",
+//                               "#dcfce7",
+//                             ],
+//                           }}
+//                           transition={{
+//                             duration: 3,
+//                             repeat: Infinity,
+//                             delay: i * 0.2,
+//                           }}
+//                           className="w-3 h-3 rounded-full ml-2"
+//                         ></motion.div>
 //                       ))}
-//                     </div>
-
+//                     </motion.div>
 //                     <div className="flex items-center space-x-6 ml-12">
 //                       {branch.modules && branch.modules.length > 0 ? (
 //                         branch.modules.map((module, moduleIndex) => (
 //                           <React.Fragment key={module.id}>
-//                             <div className="relative">
+//                             <motion.div
+//                               className="relative"
+//                               whileHover={{ scale: 1.08 }}
+//                               transition={{ type: "spring", stiffness: 250 }}
+//                             >
+//                               {" "}
 //                               <div
 //                                 className={`w-24 h-24 flex flex-col items-center justify-center rounded-full ${module.app.color} text-white shadow-lg border-2 border-opacity-50`}
 //                               >
@@ -688,7 +1825,6 @@
 //                                   {3 + moduleIndex}
 //                                 </div>
 //                               </div>
-
 //                               <div className="mt-2 text-center">
 //                                 <p className="text-xs font-medium text-gray-800">
 //                                   {module.app.name}
@@ -717,36 +1853,42 @@
 //                                   <FiTrash2 className="w-4 h-4" />
 //                                 </button>
 //                               </div>
-
 //                               <button
 //                                 onClick={() => addModuleToBranch(branchIndex)}
 //                                 className="absolute -right-3 top-6 w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center hover:bg-gray-400 transition-colors"
 //                               >
 //                                 <Plus className="w-3 h-3 text-gray-600" />
 //                               </button>
-//                             </div>
+//                             </motion.div>
 
 //                             {moduleIndex < branch.modules.length - 1 && (
-//                               <div className="flex items-center ml-4">
+//                               <motion.div
+//                                 className="flex items-center ml-4"
+//                                 animate={{
+//                                   opacity: [0.5, 1, 0.5],
+//                                 }}
+//                                 transition={{ duration: 2, repeat: Infinity }}
+//                               >
 //                                 <div className="w-2 h-2 rounded-full bg-gray-400"></div>
 //                                 <div className="w-2 h-2 rounded-full bg-gray-300 ml-2"></div>
 //                                 <div className="w-2 h-2 rounded-full bg-gray-200 ml-2"></div>
-//                               </div>
+//                               </motion.div>
 //                             )}
 //                           </React.Fragment>
 //                         ))
 //                       ) : (
-//                         <button
+//                         <motion.button
+//                           whileHover={{ scale: 1.1 }}
 //                           onClick={() => handleBranchPlusClick(branchIndex)}
 //                           className="w-20 h-20 flex items-center justify-center rounded-full bg-gray-300 text-gray-600 shadow-lg border-2 border-gray-200 hover:bg-gray-400 hover:text-white transition-colors"
 //                         >
 //                           <Plus className="w-6 h-6" />
-//                         </button>
+//                         </motion.button>
 //                       )}
 //                     </div>
-//                   </div>
+//                   </motion.div>
 //                 ))}
-//               </div>
+//               </motion.div>
 //             )}
 //           </div>
 
@@ -1048,6 +2190,7 @@ import {
   GitBranch,
   X,
   Clock,
+  Zap,
 } from "lucide-react";
 import { CiLink } from "react-icons/ci";
 
@@ -1095,7 +2238,6 @@ import { UserContext } from "../component/UserContext";
 import WebhookModal from "../component/WebhookModal";
 import ConnectionModal from "../component/ConnectionModal";
 import OutlookConnectionModal from "../component/OutlookConnectionModal";
-import { motion } from "framer-motion";
 
 const ShopifyScenariosPage = () => {
   const { id } = useParams();
@@ -1141,29 +2283,7 @@ const ShopifyScenariosPage = () => {
   const { user } = useContext(UserContext);
   const [showOutlookModal, setShowOutlookModal] = useState(false);
   const [showGmailModal, setShowGmailModal] = useState(false);
-  const [positions, setPositions] = useState({
-    webhook: { x: 0, y: 0 },
-    router: { x: 300, y: 0 },
-    branches: {}, // optional per-branch
-  });
 
-  const handleNodeDragEnd = (nodeKey, info) => {
-    setPositions((prev) => ({
-      ...prev,
-      [nodeKey]: { x: info.point.x, y: info.point.y },
-    }));
-    localStorage.setItem(
-      "nodePositions",
-      JSON.stringify({
-        ...positions,
-        [nodeKey]: { x: info.point.x, y: info.point.y },
-      })
-    );
-  };
-  useEffect(() => {
-    const saved = localStorage.getItem("nodePositions");
-    if (saved) setPositions(JSON.parse(saved));
-  }, []);
   const handleAddClick = () => {
     if (selectedApp?.name === "Email") {
       setShowOutlookModal(true);
@@ -1313,14 +2433,13 @@ const ShopifyScenariosPage = () => {
     navigate("/scenarios/all");
   };
 
-  const iconMap = {
-    Delay: <Clock />,
-    Email: <FiMail />,
-    Gmail: <Mail />,
-    Webhooks: <Cloud />,
-    Router: <GitBranch />,
-    handleSaveScenario,
-  };
+const iconMap = {
+  Delay: Clock,
+  Email: FiMail,
+  Gmail: Mail,
+  Webhooks: Cloud,
+  Router: GitBranch,
+};
 
   useState(() => {
     setSavedModule({
@@ -1343,27 +2462,7 @@ const ShopifyScenariosPage = () => {
       { id: 2, hasModule: false, condition: null, modules: [] },
     ]);
   }, []);
-  // useEffect(() => {
-  //   if (id) {
-  //     const fetchScenario = async () => {
-  //       try {
-  //         const res = await fetch(
-  //           `https://email-syncing-backend.vercel.app/scenario/detail/${id}`
-  //         );
-  //         const data = await res.json();
-  //         if (data) {
-  //           setScenarioId(data._id);
-  //           setScenarioName(data.name || "");
-  //           setScenarioDescription(data.description || "");
-  //           setRouterBranches(data.routerBranches || []);
-  //         }
-  //       } catch (err) {
-  //         console.error("Error fetching scenario:", err);
-  //       }
-  //     };
-  //     fetchScenario();
-  //   }
-  // }, [id]);
+
   useEffect(() => {
     const fetchScenario = async () => {
       try {
@@ -1399,6 +2498,7 @@ const ShopifyScenariosPage = () => {
     fetchScenario();
   }, []);
 
+  
   const handleSave = () => {
     if (editingBranch !== null) {
       const updatedBranches = [...routerBranches];
@@ -1406,34 +2506,12 @@ const ShopifyScenariosPage = () => {
       let type = "";
       let description = "";
 
-      if (selectedModule === "delay") {
+      if (selectedApp?.name === "Delay") {
         type = "Delay";
         description = `Wait ${delayValue} ${delayUnit}`;
-      } else if (selectedApp?.name === "Email") {
-        type = "Custom Email";
-        description = "Send an email using custom SMTP/Outlook";
-
-        if (!selectedConnection) {
-          toast.error("Please select a connection before saving.");
-          return;
-        }
-        if (!selectedTemplate) {
-          toast.error("Please select a template before saving.");
-          return;
-        }
-      } else if (selectedApp?.name === "Gmail") {
-        type = "Send an Email";
-        description = "Send an email via Gmail";
-
-        // ✅ Mandatory validation
-        if (!selectedConnection) {
-          toast.error("Please select a connection before saving.");
-          return;
-        }
-        if (!selectedTemplate) {
-          toast.error("Please select a template before saving.");
-          return;
-        }
+      } else if (selectedApp?.name === "Email" || selectedApp?.name === "Gmail") {
+        type = selectedApp.name === "Email" ? "Custom Email" : "Send an Email";
+        description = `Send email via ${selectedApp.name}`;
       }
 
       if (editingModuleId) {
@@ -1443,16 +2521,11 @@ const ShopifyScenariosPage = () => {
         if (moduleIndex >= 0) {
           updatedBranches[editingBranch].modules[moduleIndex] = {
             ...updatedBranches[editingBranch].modules[moduleIndex],
-            app: {
-              name: selectedApp.name,
-              color: selectedApp.color,
-              icon: selectedApp.name,
-            },
+            app: selectedApp,
             type,
             description,
             connectionId: selectedConnection,
             template: selectedTemplate,
-            subject,
             cc: ccList,
             bcc: bccList,
             delayValue,
@@ -1460,19 +2533,13 @@ const ShopifyScenariosPage = () => {
           };
         }
       } else {
-        // ➕ Add new module
         updatedBranches[editingBranch].modules.push({
           id: Date.now(),
-          app: {
-            name: selectedApp.name,
-            color: selectedApp.color,
-            icon: selectedApp.name,
-          },
+          app: selectedApp,
           type,
           description,
           connectionId: selectedConnection,
           template: selectedTemplate,
-          subject,
           cc: ccList,
           bcc: bccList,
           delayValue,
@@ -1485,16 +2552,7 @@ const ShopifyScenariosPage = () => {
       setEditingModuleId(null);
     }
 
-    setSelectedModule(null);
-    setOpen(false);
-    setSelectedApp(null);
-    setSelectedConnection("");
-    setSelectedTemplate("");
-    setSubject("");
-    setCcList([]);
-    setBccList([]);
-    setDelayValue("5");
-    setDelayUnit("seconds");
+    resetForm();
   };
 
   const handleCancel = () => {
@@ -1599,534 +2657,352 @@ const ShopifyScenariosPage = () => {
     );
   };
 
+    // Flowwise-style Node Component
+  const FlowNode = ({ icon: Icon, title, subtitle, color, number, onEdit, onDelete, isFirst, isLast }) => (
+    <div className="relative group">
+      <div className={`bg-white rounded-xl shadow-lg border-2 ${color} p-6 w-64 hover:shadow-xl transition-all duration-200`}>
+        {/* Number Badge */}
+        <div className={`absolute -top-3 -left-3 w-8 h-8 ${color.replace('border-', 'bg-')} rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md`}>
+          {number}
+        </div>
+
+        {/* Icon and Title */}
+        <div className="flex items-center space-x-3 mb-3">
+          <div className={`${color.replace('border-', 'bg-').replace('-500', '-100')} p-3 rounded-lg`}>
+            <Icon className={`w-6 h-6 ${color.replace('border-', 'text-')}`} />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-semibold text-gray-800 text-sm">{title}</h3>
+            <p className="text-xs text-gray-500 mt-1">{subtitle}</p>
+          </div>
+        </div>
+
+        {/* Action Buttons (on hover) */}
+        {!isFirst && (
+          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1">
+            {onEdit && (
+              <button
+                onClick={onEdit}
+                className="p-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+              >
+                <Settings className="w-3 h-3" />
+              </button>
+            )}
+            {onDelete && (
+              <button
+                onClick={onDelete}
+                className="p-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Connection Point - Bottom */}
+        {!isLast && (
+          <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-gray-400 rounded-full border-2 border-white"></div>
+        )}
+
+        {/* Connection Point - Top */}
+        {!isFirst && (
+          <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-gray-400 rounded-full border-2 border-white"></div>
+        )}
+      </div>
+    </div>
+  );
+
+  // Add Module Button Component
+  const AddModuleButton = ({ onClick }) => (
+    <button
+      onClick={onClick}
+      className="w-64 h-24 border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center hover:border-purple-500 hover:bg-purple-50 transition-all group"
+    >
+      <Plus className="w-6 h-6 text-gray-400 group-hover:text-purple-500" />
+      <span className="ml-2 text-gray-500 group-hover:text-purple-600 font-medium">Add Module</span>
+    </button>
+  );
+const resetForm = () => {
+    setSelectedApp(null);
+    setSelectedConnection("");
+    setSelectedTemplate("");
+    setCcList([]);
+    setBccList([]);
+    setCcInput("");
+    setBccInput("");
+    setDelayValue("5");
+    setDelayUnit("seconds");
+    setOpen(false);
+  };
   return (
-    <div className="flex">
-      <div className="w-64 min-h-screen bg-gray-100">
+      <div className="flex h-screen bg-gray-50">
+      <div className="w-64">
         <Sidebar />
       </div>
 
-      <div className="flex-1 min-h-screen bg-gray-50 font-sans text-gray-800 flex flex-col">
-        <div className="border-b bg-white shadow-sm">
-          <div className="p-6 flex items-center justify-between">
-            <div className="flex flex-col w-2/3">
-              <h1 className="text-xl font-medium text-gray-800 mb-2">
-                {scenarioId ? "Edit Scenario" : "Create New Scenario"}
-              </h1>
-              <p className="text-sm text-gray-500 mb-4">
-                Give your scenario a clear name so you can identify it later.
-              </p>
-
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Header */}
+        <div className="bg-white border-b px-6 py-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
               <input
                 type="text"
                 value={scenarioName}
                 onChange={(e) => setScenarioName(e.target.value)}
-                placeholder="Enter scenario name"
-                className="px-4 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 w-full"
+                className="text-xl font-semibold text-gray-800 border-none outline-none focus:ring-0 w-full"
+                placeholder="Scenario Name"
               />
+              <p className="text-sm text-gray-500 mt-1">Configure your automation workflow</p>
             </div>
-
-            <div className="flex flex-col space-y-2 items-end">
-              <button
-                className="flex items-center px-4 py-2 text-sm text-gray-700 bg-white border border-gray-200 rounded-md shadow-sm hover:bg-gray-100 w-full"
-                onClick={() => navigate(-1)}
-              >
-                <ArrowLeft className="mr-2 w-4 h-4" />
+            <div className="flex space-x-3">
+              <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center text-sm">
+                <ArrowLeft className="w-4 h-4 mr-2" />
                 Back
               </button>
-
-              <button
-                onClick={handleSaveScenario}
-                className="flex items-center justify-center px-4 py-2 text-sm bg-green-600 text-white rounded-md shadow hover:bg-green-700 w-full"
-              >
-                {scenarioId ? "Update Scenario" : "Save Scenario"}
+              <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center text-sm">
+                Save Scenario
               </button>
             </div>
           </div>
         </div>
 
-<div className="flex-1 flex items-center justify-center relative bg-gradient-to-br from-gray-50 to-indigo-100 overflow-hidden">
-  <div className="flex items-center justify-center w-full relative py-16">
-            <motion.div
-              className="relative cursor-grab active:cursor-grabbing"
-              drag
-              dragConstraints={{
-                left: -300,
-                right: 300,
-                top: -200,
-                bottom: 200,
-              }}
-              dragElastic={0.15}
-              whileHover={{ scale: 1.08 }}
-              whileTap={{ scale: 0.98 }}
-              transition={{ type: "spring", stiffness: 300, damping: 25 }}
-              onDragEnd={(e, info) => handleNodeDragEnd("webhook", info)}
-            >
-              <motion.div
-                // onClick={() => setShowWebhookInfo(true)}
-                className="w-48 h-48 hover:border-red-600 cursor-pointer flex flex-col items-center justify-center rounded-full bg-red-500 text-white shadow-lg border-4 border-red-300 relative"
-                animate={{
-                  boxShadow: [
-                    "0 0 0 0 rgba(239,68,68,0.6)",
-                    "0 0 0 15px rgba(239,68,68,0)",
-                  ],
-                }}
-                transition={{ repeat: Infinity, duration: 2 }}
-              >
-                <Cloud className="w-16 h-16 mb-1" />
-                <div className="absolute -top-2 -right-2 w-8 h-8 bg-red-600 text-white rounded-full flex items-center justify-center text-sm font-bold border-2 border-white">
-                  1
-                </div>
-              </motion.div>
-
-              <motion.div
-                className="absolute -bottom-3 -left-3 w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg border-2 border-red-200"
-                whileHover={{ rotate: 10 }}
-                transition={{ type: "spring", stiffness: 200 }}
-              >
-                <motion.div
-                  animate={{ rotate: [0, 10, -10, 0] }}
-                  transition={{ repeat: Infinity, duration: 3 }}
-                  className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center"
-                >
-                  <span className="text-white font-bold">⚡</span>
-                </motion.div>
-              </motion.div>
-
-              <div className="mt-4 text-center">
-                <h3 className="font-semibold text-gray-800">Webhooks</h3>
-                <p className="text-sm text-gray-600">Custom mailhook</p>
-                <div className="inline-block mt-1 px-2 py-1 bg-gray-200 text-gray-600 text-xs rounded">
-                  1
+        {/* Flow Canvas */}
+        <div className="flex-1 overflow-auto p-8">
+          <div className="max-w-5xl mx-auto">
+            {/* Webhook Start Node */}
+            <div className="flex flex-col items-center mb-8">
+              <FlowNode
+                icon={Cloud}
+                title="Webhooks"
+                subtitle="Custom mailhook"
+                color="border-red-500"
+                number={1}
+                isFirst={true}
+              />
+              
+              {/* Vertical Connection Line */}
+              <div className="w-0.5 h-12 bg-gray-300 relative">
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                  <Zap className="w-4 h-4 text-gray-400" />
                 </div>
               </div>
-            </motion.div>
+            </div>
 
-            <motion.div
-              className="flex items-center mx-8"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.3 }}
-            >
-              {Array.from({ length: 4 }).map((_, i) => (
-                <motion.div
-                  key={i}
-                  animate={{
-                    backgroundColor: [
-                      "#f43f5e",
-                      "#a855f7",
-                      "#22c55e",
-                      "#f43f5e",
-                    ],
-                  }}
-                  transition={{ duration: 2, repeat: Infinity, delay: i * 0.2 }}
-                  className="w-4 h-4 rounded-full ml-2"
-                ></motion.div>
+            {/* Router Node */}
+            <div className="flex flex-col items-center mb-8">
+              <FlowNode
+                icon={GitBranch}
+                title="Router"
+                subtitle="Route to different paths"
+                color="border-green-500"
+                number={2}
+              />
+              
+              {/* Branch Line */}
+              <div className="w-0.5 h-12 bg-gray-300"></div>
+            </div>
+
+            {/* Router Branches */}
+            <div className="space-y-16">
+              {routerBranches.map((branch, branchIndex) => (
+                <div key={branch.id} className="flex flex-col items-center space-y-8">
+                  {/* Branch Modules */}
+                  {branch.modules.length > 0 ? (
+                    branch.modules.map((module, moduleIndex) => {
+                      const Icon = iconMap[module.app.icon];
+                      return (
+                        <React.Fragment key={module.id}>
+                          <FlowNode
+                            icon={Icon}
+                            title={module.app.name}
+                            subtitle={module.description}
+                            color={`border-${module.app.color.replace('bg-', '')}`}
+                            number={3 + moduleIndex}
+                            onEdit={() => handleEditModule(branchIndex, module)}
+                            onDelete={() => handleRemoveModule(branchIndex, module.id)}
+                            isLast={moduleIndex === branch.modules.length - 1}
+                          />
+                          
+                          {/* Connection between modules */}
+                          {moduleIndex < branch.modules.length - 1 && (
+                            <div className="w-0.5 h-12 bg-gray-300"></div>
+                          )}
+                        </React.Fragment>
+                      );
+                    })
+                  ) : null}
+
+                  {/* Add Module Button */}
+                  {branch.modules.length === 0 || branch.modules.length > 0 ? (
+                    <>
+                      {branch.modules.length > 0 && <div className="w-0.5 h-8 bg-gray-300"></div>}
+                      <AddModuleButton
+                        onClick={() => {
+                          setEditingBranch(branchIndex);
+                          setOpen(true);
+                        }}
+                      />
+                    </>
+                  ) : null}
+                </div>
               ))}
-            </motion.div>
-
-            <motion.div
-              className="relative cursor-grab active:cursor-grabbing"
-              drag
-              dragConstraints={{
-                left: -300,
-                right: 300,
-                top: -200,
-                bottom: 200,
-              }}
-              dragElastic={0.15}
-              whileHover={{ scale: 1.08 }}
-              whileTap={{ scale: 0.98 }}
-              transition={{ type: "spring", stiffness: 300, damping: 25 }}
-              onDragEnd={(e, info) => handleNodeDragEnd("webhook", info)}
-            >
-              <motion.div
-                className="w-44 h-44 flex flex-col items-center justify-center rounded-full bg-green-400 text-white shadow-lg border-4 border-green-200 relative cursor-pointer hover:bg-green-500 transition-colors"
-                animate={{ rotate: [0, 3, -3, 0] }}
-                transition={{ duration: 4, repeat: Infinity }}
-                onMouseEnter={handleRouterHover}
-                onMouseLeave={handleRouterLeave}
-              >
-                <GitBranch className="w-12 h-12" />
-                <div className="absolute -top-2 -right-2 w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-bold border-2 border-white">
-                  2
-                </div>
-              </motion.div>
-
-              <div className="mt-4 text-center">
-                <h3 className="font-semibold text-gray-800">Router</h3>
-                <p className="text-sm text-gray-600">
-                  Route to different paths
-                </p>
-                <div className="inline-block mt-1 px-2 py-1 bg-gray-200 text-gray-600 text-xs rounded">
-                  2
-                </div>
-              </div>
-            </motion.div>
-
-            {showRouterBranches && (
-              <motion.div
-                className="relative ml-12 flex flex-col space-y-12"
-                initial={{ opacity: 0, x: 50 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6 }}
-              >
-                {" "}
-                {routerBranches.map((branch, branchIndex) => (
-                  <motion.div
-                    key={branch.id}
-                    className="flex items-center relative"
-                    whileHover={{ scale: 1.02 }}
-                  >
-                    {" "}
-                    <motion.div
-                      className="absolute -left-16 top-1/2 transform -translate-y-1/2 flex items-center"
-                      animate={{ opacity: [0.8, 1, 0.8] }}
-                      transition={{ duration: 1.5, repeat: Infinity }}
-                    >
-                      {" "}
-                      {Array.from({ length: 6 }).map((_, i) => (
-                        <motion.div
-                          key={i}
-                          animate={{
-                            backgroundColor: [
-                              "#22c55e",
-                              "#4ade80",
-                              "#86efac",
-                              "#bbf7d0",
-                              "#dcfce7",
-                            ],
-                          }}
-                          transition={{
-                            duration: 3,
-                            repeat: Infinity,
-                            delay: i * 0.2,
-                          }}
-                          className="w-3 h-3 rounded-full ml-2"
-                        ></motion.div>
-                      ))}
-                    </motion.div>
-                    <div className="flex items-center space-x-6 ml-12">
-                      {branch.modules && branch.modules.length > 0 ? (
-                        branch.modules.map((module, moduleIndex) => (
-                          <React.Fragment key={module.id}>
-                            <motion.div
-                              className="relative"
-                              whileHover={{ scale: 1.08 }}
-                              transition={{ type: "spring", stiffness: 250 }}
-                            >
-                              {" "}
-                              <div
-                                className={`w-24 h-24 flex flex-col items-center justify-center rounded-full ${module.app.color} text-white shadow-lg border-2 border-opacity-50`}
-                              >
-                                {React.cloneElement(iconMap[module.app.icon], {
-                                  className: "w-8 h-8",
-                                })}
-                                <div className="absolute -top-1 -right-1 w-6 h-6 bg-black bg-opacity-80 text-white rounded-full flex items-center justify-center text-xs font-bold border border-white">
-                                  {3 + moduleIndex}
-                                </div>
-                              </div>
-                              <div className="mt-2 text-center">
-                                <p className="text-xs font-medium text-gray-800">
-                                  {module.app.name}
-                                </p>
-                                <div className="inline-block px-1 py-0.5 bg-gray-200 text-gray-600 text-xs rounded">
-                                  {3 + moduleIndex}
-                                </div>
-                                <div className="absolute -top-3 -left-3 flex space-x-2">
-                                  <button
-                                    onClick={() =>
-                                      handleEditModule(branchIndex, module)
-                                    }
-                                    className="text-blue-500  p-1 rounded-full hover:text-blue-800"
-                                    title="Edit"
-                                  >
-                                    <FiEdit className="w-4 h-4" />
-                                  </button>
-                                </div>
-                                <button
-                                  onClick={() =>
-                                    handleRemoveModule(branchIndex, module.id)
-                                  }
-                                  className="text-red-500 p-1 rounded-full hover:text-red-600"
-                                  title="Remove"
-                                >
-                                  <FiTrash2 className="w-4 h-4" />
-                                </button>
-                              </div>
-                              <button
-                                onClick={() => addModuleToBranch(branchIndex)}
-                                className="absolute -right-3 top-6 w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center hover:bg-gray-400 transition-colors"
-                              >
-                                <Plus className="w-3 h-3 text-gray-600" />
-                              </button>
-                            </motion.div>
-
-                            {moduleIndex < branch.modules.length - 1 && (
-                              <motion.div
-                                className="flex items-center ml-4"
-                                animate={{
-                                  opacity: [0.5, 1, 0.5],
-                                }}
-                                transition={{ duration: 2, repeat: Infinity }}
-                              >
-                                <div className="w-2 h-2 rounded-full bg-gray-400"></div>
-                                <div className="w-2 h-2 rounded-full bg-gray-300 ml-2"></div>
-                                <div className="w-2 h-2 rounded-full bg-gray-200 ml-2"></div>
-                              </motion.div>
-                            )}
-                          </React.Fragment>
-                        ))
-                      ) : (
-                        <motion.button
-                          whileHover={{ scale: 1.1 }}
-                          onClick={() => handleBranchPlusClick(branchIndex)}
-                          className="w-20 h-20 flex items-center justify-center rounded-full bg-gray-300 text-gray-600 shadow-lg border-2 border-gray-200 hover:bg-gray-400 hover:text-white transition-colors"
-                        >
-                          <Plus className="w-6 h-6" />
-                        </motion.button>
-                      )}
-                    </div>
-                  </motion.div>
-                ))}
-              </motion.div>
-            )}
+            </div>
           </div>
+        </div>
 
-          {open && (
-            <div
-              ref={modalRef}
-              className="absolute left-1/2 translate-x-36 bg-white rounded-lg shadow-lg w-96 z-10"
-            >
+        {/* Modal */}
+        {open && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div ref={modalRef} className="bg-white rounded-xl shadow-2xl w-[500px] max-h-[80vh] overflow-hidden">
               {!selectedApp ? (
                 <>
-                  <div className="p-4 border-b">
-                    <h2 className="text-xs font-semibold text-gray-500">
-                      ALL APPS
-                    </h2>
+                  <div className="p-6 border-b bg-gradient-to-r from-purple-600 to-purple-500 text-white">
+                    <h2 className="text-lg font-semibold">Select Application</h2>
+                    <p className="text-sm text-purple-100 mt-1">Choose an app to add to your workflow</p>
                   </div>
-                  <ul className="max-h-80 overflow-y-auto">
-                    {apps.map((app, idx) => (
-                      <li
-                        key={idx}
-                        onClick={() => setSelectedApp(app)}
-                        className="flex items-center px-4 py-3 hover:bg-gray-50 cursor-pointer"
-                      >
+                  <div className="p-4 max-h-96 overflow-y-auto">
+                    {apps.map((app, idx) => {
+                      const Icon = iconMap[app.icon];
+                      return (
                         <div
-                          className={`w-8 h-8 flex items-center justify-center rounded-full text-white ${app.color}`}
+                          key={idx}
+                          onClick={() => setSelectedApp(app)}
+                          className="flex items-center p-4 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors border border-transparent hover:border-purple-200"
                         >
-                          {iconMap[app.icon]}
+                          <div className={`w-12 h-12 ${app.color} rounded-lg flex items-center justify-center text-white`}>
+                            <Icon className="w-6 h-6" />
+                          </div>
+                          <span className="ml-4 font-medium text-gray-800">{app.name}</span>
                         </div>
-                        <span className="ml-3 text-sm text-gray-700">
-                          {app.name}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
+                      );
+                    })}
+                  </div>
                 </>
               ) : (
                 <>
-                  <div className="flex justify-between items-center px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-400 text-white rounded-t-lg">
-                    <h3 className="font-semibold">{selectedApp.name}</h3>
-                    <button onClick={handleCancel}>✕</button>
+                  <div className="p-6 border-b bg-gradient-to-r from-purple-600 to-purple-500 text-white flex justify-between items-center">
+                    <h3 className="font-semibold text-lg">{selectedApp.name}</h3>
+                    <button onClick={resetForm} className="hover:bg-white hover:bg-opacity-20 p-1 rounded">
+                      <X className="w-5 h-5" />
+                    </button>
                   </div>
 
-                  <div className="p-4 space-y-4">
+                  <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
                     {selectedApp.name === "Delay" ? (
-                      <>
+                      <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Delay <span className="text-red-500">*</span>
+                          Delay Duration <span className="text-red-500">*</span>
                         </label>
-                        <div className="flex space-x-2">
+                        <div className="flex space-x-3">
                           <input
                             type="number"
                             value={delayValue}
                             onChange={(e) => setDelayValue(e.target.value)}
-                            className="w-20 border rounded px-2 py-1 text-sm"
+                            className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                           />
                           <select
                             value={delayUnit}
                             onChange={(e) => setDelayUnit(e.target.value)}
-                            className="border rounded px-2 py-1 text-sm"
+                            className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                           >
                             <option value="seconds">Seconds</option>
                             <option value="minutes">Minutes</option>
                             <option value="hours">Hours</option>
                           </select>
                         </div>
-                        <p className="text-xs text-gray-500 mt-2">
-                          Suspend the execution of the scenario for the
-                          specified duration.
-                        </p>
-                      </>
+                      </div>
                     ) : (
                       <>
-                        <div className="mb-4 w-full">
-                          <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                            <FiMail className="mr-2 text-gray-500" /> Select
-                            Connection
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Connection <span className="text-red-500">*</span>
                           </label>
-                          <div className="relative w-full border rounded-lg px-3 py-2">
-                            <select
-                              value={selectedConnection}
-                              onChange={(e) =>
-                                setSelectedConnection(e.target.value)
-                              }
-                              className="w-full border-none outline-none text-sm py-2 px-3 bg-transparent appearance-none"
-                            >
-                              <option onClick={fetchConnections()} value="">
-                                -- Select Connection --
+                          <select
+                            value={selectedConnection}
+                            onChange={(e) => setSelectedConnection(e.target.value)}
+                            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                          >
+                            <option value="">-- Select Connection --</option>
+                            {connections
+                              .filter((c) => {
+                                if (selectedApp?.name === "Email") return c.provider === "smtp" || c.provider === "outlook";
+                                if (selectedApp?.name === "Gmail") return c.provider === "gmail";
+                                return false;
+                              })
+                              .map((c) => (
+                                <option key={c._id} value={c._id}>
+                                  {c.provider.toUpperCase()} - {c.email}
+                                </option>
+                              ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Template <span className="text-red-500">*</span>
+                          </label>
+                          <select
+                            value={selectedTemplate}
+                            onChange={(e) => setSelectedTemplate(e.target.value)}
+                            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                          >
+                            <option value="">-- Select Template --</option>
+                            {templates.map((tpl) => (
+                              <option key={tpl._id} value={tpl.name}>
+                                {tpl.name}
                               </option>
-                              {connections
-                                .filter((c) => {
-                                  if (selectedApp?.name === "Email") {
-                                    return (
-                                      c.provider === "smtp" ||
-                                      c.provider === "outlook"
-                                    );
-                                  }
-                                  if (selectedApp?.name === "Gmail") {
-                                    return c.provider === "gmail";
-                                  }
-                                  return false;
-                                })
-                                .map((c) => (
-                                  <option key={c._id} value={c._id}>
-                                    {c.provider.toUpperCase()} -{" "}
-                                    {c.email || c.name}
-                                  </option>
-                                ))}
-                            </select>
-
-                            {/* Yeh "Add" button arrow ki jagah */}
-                            <span
-                              onClick={handleAddClick}
-                              className="absolute right-3 top-1/2 -translate-y-1/2 pl-2 border-l-2 border-gray-300 text-purple-600 text-sm font-medium cursor-pointer hover:text-purple-800"
-                            >
-                              Add
-                            </span>
-
-                            {/* Outlook Modal */}
-                          </div>
-                        </div>
-
-                        <div className="mb-4 w-full">
-                          <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                            <FiFileText className="mr-2 text-gray-500" /> Select
-                            Template
-                          </label>
-                          <div className="flex items-center border rounded-lg px-3 py-2 focus-within:ring-2 focus-within:ring-purple-500 w-full">
-                            {selectedTemplate ? (
-                              <span className="flex items-center bg-blue-100 text-blue-700 text-sm px-3 py-2 rounded-full w-full">
-                                <FiFileText className="mr-2" />
-                                {selectedTemplate}
-
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    console.log("Clearing selected template");
-                                    setSelectedTemplate("");
-                                  }}
-                                  className="ml-auto text-xs text-red-500 hover:text-red-700"
-                                >
-                                  <FiUserX />
-                                </button>
-                              </span>
-                            ) : (
-                              <select
-                                value={selectedTemplate}
-                                onChange={(e) => {
-                                  console.log(
-                                    "Selected value:",
-                                    e.target.value
-                                  );
-                                  setSelectedTemplate(e.target.value);
-                                }}
-                                className="w-full border-none outline-none text-sm py-2 px-3 bg-transparent"
-                              >
-                                <option value="">-- Select Template --</option>
-                                {templates.slice(0, 3).map((tpl) => {
-                                  const shortName = tpl.name.split(" - ").pop();
-                                  return (
-                                    <option key={tpl._id} value={shortName}>
-                                      {shortName}
-                                    </option>
-                                  );
-                                })}
-                              </select>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="mb-4 w-full">
-                          <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                            <FiUsers className="mr-2 text-gray-500" />
-                            CC
-                            <span className="ml-1 text-xs text-gray-500 font-normal">
-                              (Optional)
-                            </span>
-                          </label>
-
-                          <div className="flex flex-wrap items-center border rounded-lg px-3 py-2 focus-within:ring-2 focus-within:ring-purple-500 w-full">
-                            {ccList.map((email, index) => (
-                              <span
-                                key={index}
-                                className="flex items-center bg-blue-100 text-blue-700 text-sm px-3 py-1 rounded-full mr-2 mb-1"
-                              >
-                                <FiMail className="mr-2" />
-                                {email}
-                                <button
-                                  type="button"
-                                  onClick={() => handleRemoveEmail("cc", index)}
-                                  className="ml-2 text-xs text-red-500 hover:text-red-700"
-                                >
-                                  <FiUserX />
-                                </button>
-                              </span>
                             ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            CC <span className="text-xs text-gray-500">(Optional)</span>
+                          </label>
+                          <div className="border border-gray-300 rounded-lg px-3 py-2 focus-within:ring-2 focus-within:ring-purple-500">
+                            <div className="flex flex-wrap gap-2 mb-2">
+                              {ccList.map((email, index) => (
+                                <span key={index} className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm flex items-center">
+                                  {email}
+                                  <button onClick={() => handleRemoveEmail("cc", index)} className="ml-2 text-red-500 hover:text-red-700">
+                                    <X className="w-3 h-3" />
+                                  </button>
+                                </span>
+                              ))}
+                            </div>
                             <input
                               type="text"
                               value={ccInput}
                               onChange={(e) => setCcInput(e.target.value)}
                               onKeyDown={(e) => handleAddEmail(e, "cc")}
-                              className="w-full outline-none text-sm py-2 px-3"
-                              placeholder="Type and press Enter"
+                              placeholder="Type email and press Enter"
+                              className="w-full outline-none text-sm"
                             />
                           </div>
                         </div>
 
-                        <div className="w-full">
-                          <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                            <FiUsers className="mr-2 text-gray-500" /> BCC
-                            <span className="ml-1 text-xs text-gray-500 font-normal">
-                              (Optional)
-                            </span>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            BCC <span className="text-xs text-gray-500">(Optional)</span>
                           </label>
-                          <div className="flex flex-wrap items-center border rounded-lg px-3 py-2 focus-within:ring-2 focus-within:ring-purple-500 w-full">
-                            {bccList.map((email, index) => (
-                              <span
-                                key={index}
-                                className="flex items-center bg-green-100 text-green-700 text-sm px-3 py-1 rounded-full mr-2 mb-1"
-                              >
-                                <FiMail className="mr-2" />
-                                {email}
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    handleRemoveEmail("bcc", index)
-                                  }
-                                  className="ml-2 text-xs text-red-500 hover:text-red-700"
-                                >
-                                  <FiUserX />
-                                </button>
-                              </span>
-                            ))}
+                          <div className="border border-gray-300 rounded-lg px-3 py-2 focus-within:ring-2 focus-within:ring-purple-500">
+                            <div className="flex flex-wrap gap-2 mb-2">
+                              {bccList.map((email, index) => (
+                                <span key={index} className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm flex items-center">
+                                  {email}
+                                  <button onClick={() => handleRemoveEmail("bcc", index)} className="ml-2 text-red-500 hover:text-red-700">
+                                    <X className="w-3 h-3" />
+                                  </button>
+                                </span>
+                              ))}
+                            </div>
                             <input
                               type="text"
                               value={bccInput}
                               onChange={(e) => setBccInput(e.target.value)}
                               onKeyDown={(e) => handleAddEmail(e, "bcc")}
-                              className="w-full outline-none text-sm py-2 px-3"
-                              placeholder="Type and press Enter"
+                              placeholder="Type email and press Enter"
+                              className="w-full outline-none text-sm"
                             />
                           </div>
                         </div>
@@ -2134,45 +3010,25 @@ const ShopifyScenariosPage = () => {
                     )}
                   </div>
 
-                  <div className="flex justify-end space-x-2 px-4 py-2 border-t bg-gray-50">
+                  <div className="p-6 border-t bg-gray-50 flex justify-end space-x-3">
                     <button
-                      className="px-4 py-2 text-sm border rounded hover:bg-gray-100"
-                      onClick={handleCancel}
+                      onClick={resetForm}
+                      className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
                     >
                       Cancel
                     </button>
                     <button
                       onClick={handleSave}
-                      className="px-4 py-2 text-sm bg-purple-600 text-white rounded hover:bg-purple-700"
+                      className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
                     >
-                      Save
+                      Save Module
                     </button>
                   </div>
                 </>
               )}
             </div>
-          )}
-          <OutlookConnectionModal
-            isOpen={showOutlookModal}
-            onClose={() => setShowOutlookModal(false)}
-            onSuccess={(data) => {
-              console.log("Outlook connection saved", data);
-              setShowOutlookModal(false);
-            }}
-          />
-
-          {/* Gmail Modal */}
-          <ConnectionModal
-            isOpen={showGmailModal}
-            onClose={() => setShowGmailModal(false)}
-          />
-          <WebhookModal
-            showWebhookInfo={showWebhookInfo}
-            setShowWebhookInfo={setShowWebhookInfo}
-            webhookUrl={webhookUrl}
-            loading={loading}
-          />
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

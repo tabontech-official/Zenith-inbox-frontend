@@ -264,7 +264,7 @@ const Sidebar = () => {
             Main
           </p>
           {renderNavLink("Organization", FiGrid, "/organization")}
-          {renderNavLink("Inbox", FiMail, "/inbox")}
+          {renderNavLink("Lead Conversation", FiMail, "/inbox")}
         </div>
 
         <div>
