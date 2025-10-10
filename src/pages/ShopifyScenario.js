@@ -119,6 +119,7 @@ const ShopifyScenariosPage = () => {
   }, [user]);
 
   const webhookUrl = user?.mailhook || "";
+  // const fullname=user?.fullName
   const handleCopy = () => {
     navigator.clipboard.writeText(webhookUrl);
     setCopied(true);
@@ -301,16 +302,13 @@ const ShopifyScenariosPage = () => {
           return;
         }
 
-        const res = await fetch(
-          "https://email-syncing-backend.vercel.app/scenario/details",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ userId }), // ✅ body me userId send
-          }
-        );
+        const res = await fetch("https://email-syncing-backend.vercel.app/scenario/details", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ userId }), // ✅ body me userId send
+        });
 
         const data = await res.json();
         if (data) {
@@ -489,6 +487,93 @@ const ShopifyScenariosPage = () => {
   };
 
   // Flowwise-style Node Component
+  // const FlowNode = ({
+  //   icon: Icon,
+  //   title,
+  //   subtitle,
+  //   color,
+  //   number,
+  //   onEdit,
+  //   onDelete,
+  //   isFirst,
+  //   isLast,
+  //   isRouter,
+  // }) => (
+  //   <div className="relative group">
+  //     <div
+  //       className={`bg-white rounded-xl shadow-lg border-2 ${color} p-6 w-64 hover:shadow-xl transition-all duration-200`}
+  //     >
+  //       {/* Number Badge */}
+  //       <div
+  //         className={`absolute -top-3 -left-3 w-8 h-8 ${color.replace(
+  //           "border-",
+  //           "bg-"
+  //         )} rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md`}
+  //       >
+  //         {number}
+  //       </div>
+
+  //       {/* Icon and Title */}
+  //       <div className="flex items-center space-x-3 mb-3">
+  //         <div
+  //           className={`${color
+  //             .replace("border-", "bg-")
+  //             .replace("-500", "-100")} p-3 rounded-lg`}
+  //         >
+  //           <Icon className={`w-6 h-6 ${color.replace("border-", "text-")}`} />
+  //         </div>
+  //         <div className="flex-1">
+  //           <h3 className="font-semibold text-gray-800 text-sm">{title}</h3>
+  //           <p className="text-xs text-gray-500 mt-1">{subtitle}</p>
+  //         </div>
+  //       </div>
+
+  //       {/* Action Buttons (on hover) */}
+  //       {!isFirst && (
+  //         <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1">
+  //           {onEdit && (
+  //             <button
+  //               onClick={onEdit}
+  //               className="p-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+  //             >
+  //               <Settings className="w-3 h-3" />
+  //             </button>
+  //           )}
+  //           {onDelete && (
+  //             <button
+  //               onClick={onDelete}
+  //               className="p-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+  //             >
+  //               <X className="w-3 h-3" />
+  //             </button>
+  //           )}
+  //         </div>
+  //       )}
+
+  //       {/* Connection Point - Bottom */}
+  //       {!isLast && (
+  //         <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-gray-400 rounded-full border-2 border-white"></div>
+  //       )}
+
+  //       {/* Connection Point - Top */}
+  //       {!isFirst && (
+  //         <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-gray-400 rounded-full border-2 border-white"></div>
+  //       )}
+  //       {isRouter && (
+  //         <button
+  //           onClick={handleViewEmailData}
+  //           className="p-1.5  border rounded-lg border-green-500 text-green-500 transition-colors"
+  //           title="View Test Email"
+  //         >
+  //           <Eye className="w-3 h-3" />
+  //         </button>
+  //       )}
+  //     </div>
+  //   </div>
+  // );
+
+  const [completedSteps, setCompletedSteps] = useState([]);
+
   const FlowNode = ({
     icon: Icon,
     title,
@@ -500,42 +585,77 @@ const ShopifyScenariosPage = () => {
     isFirst,
     isLast,
     isRouter,
+    isWebhook,
+    completed, // ✅ Add this prop for tick animation
   }) => (
     <div className="relative group">
       <div
-        className={`bg-white rounded-xl shadow-lg border-2 ${color} p-6 w-64 hover:shadow-xl transition-all duration-200`}
+        onClick={onEdit}
+        className={`bg-white rounded-xl shadow-lg border-2 ${color} p-6 w-64 hover:shadow-xl transition-all duration-200 relative cursor-pointer ${
+          completed ? "ring-2 ring-green-400 border-green-500" : ""
+        }`}
       >
         {/* Number Badge */}
         <div
-          className={`absolute -top-3 -left-3 w-8 h-8 ${color.replace(
-            "border-",
-            "bg-"
-          )} rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md`}
+          className={`absolute -top-3 -left-3 w-8 h-8 ${
+            completed ? "bg-green-500" : color.replace("border-", "bg-")
+          } rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md transition-all duration-300`}
         >
-          {number}
+          {completed ? "✓" : number}
         </div>
 
-        {/* Icon and Title */}
+        {/* 👁️ Eye Icon (for Router/Webhook) */}
+        {(isRouter || isWebhook) && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleViewEmailData();
+            }}
+            title="View Test Email"
+            className={`absolute top-2 right-2 p-1.5 border ${
+              isWebhook
+                ? "border-red-500 text-red-600 hover:bg-red-50"
+                : "border-green-500 text-green-600 hover:bg-green-50"
+            } rounded-lg transition-colors shadow-sm`}
+          >
+            <Eye className="w-4 h-4" />
+          </button>
+        )}
+
+        {/* Icon + Title */}
         <div className="flex items-center space-x-3 mb-3">
           <div
             className={`${color
               .replace("border-", "bg-")
               .replace("-500", "-100")} p-3 rounded-lg`}
           >
-            <Icon className={`w-6 h-6 ${color.replace("border-", "text-")}`} />
+            <Icon
+              className={`w-6 h-6 ${
+                completed ? "text-green-500" : color.replace("border-", "text-")
+              }`}
+            />
           </div>
           <div className="flex-1">
-            <h3 className="font-semibold text-gray-800 text-sm">{title}</h3>
+            <h3
+              className={`font-semibold text-sm ${
+                completed ? "text-green-600" : "text-gray-800"
+              }`}
+            >
+              {title}
+            </h3>
             <p className="text-xs text-gray-500 mt-1">{subtitle}</p>
           </div>
         </div>
 
-        {/* Action Buttons (on hover) */}
+        {/* Hover Buttons */}
         {!isFirst && (
-          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1">
+          <div className="absolute top-2 right-10 opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1">
             {onEdit && (
               <button
-                onClick={onEdit}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit();
+                }}
                 className="p-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
               >
                 <Settings className="w-3 h-3" />
@@ -543,7 +663,10 @@ const ShopifyScenariosPage = () => {
             )}
             {onDelete && (
               <button
-                onClick={onDelete}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete();
+                }}
                 className="p-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
               >
                 <X className="w-3 h-3" />
@@ -552,23 +675,12 @@ const ShopifyScenariosPage = () => {
           </div>
         )}
 
-        {/* Connection Point - Bottom */}
+        {/* Connection Points */}
         {!isLast && (
           <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-gray-400 rounded-full border-2 border-white"></div>
         )}
-
-        {/* Connection Point - Top */}
         {!isFirst && (
           <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-gray-400 rounded-full border-2 border-white"></div>
-        )}
-        {isRouter && (
-          <button
-            onClick={handleViewEmailData}
-            className="p-1.5  border rounded-lg border-green-500 text-green-500 transition-colors"
-            title="View Test Email"
-          >
-            <Eye className="w-3 h-3" />
-          </button>
         )}
       </div>
     </div>
@@ -628,33 +740,59 @@ const ShopifyScenariosPage = () => {
   //   }
   // };
 
+  const [showRunTestModal, setShowRunTestModal] = useState(false);
+  const [formData, setFormData] = useState({
+    fullName: "Dummy Customer",
+    businessEmail: "",
+    storeName: "Motion Pine",
+    country: "Pakistan",
+    service: "",
+    budget: "100",
+    // helpDescription: "I need domain setup on Motion Pine .com",
+  });
   const handleRunTest = async () => {
     try {
-      toast.loading("Running test scenario...", { id: "test" });
+      toast.loading("Generating test email...", { id: "test" });
 
-      const res = await fetch(`https://email-syncing-backend.vercel.app/mailhook/Run-test-mode`, {
+      // Reset previous run
+      setCompletedSteps([]);
+
+      const res = await fetch("https://email-syncing-backend.vercel.app/mailhook/Run-test-mode", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId: localStorage.getItem("userid"),
+          ...formData,
         }),
       });
 
       const data = await res.json();
 
       if (!data.success) {
-        toast.error("Test failed", { id: "test" });
+        toast.error(data.message || "Test failed", { id: "test" });
         return;
       }
 
-      toast.success(" Test email sent successfully!", { id: "test" });
+      toast.success("Test email sent successfully!", { id: "test" });
+      console.log("✅ Test email sent:", data.testEmail);
 
-      console.log("Test email sent:", data.testEmail);
+      // 🟢 Trigger animated step progression
+      const steps = [
+        "webhook",
+        "router",
+        ...routerBranches.map((_, i) => `branch-${i}`),
+      ];
+      steps.forEach((step, i) => {
+        setTimeout(() => {
+          setCompletedSteps((prev) => [...prev, step]);
+        }, i * 1000); // 1 second delay between steps
+      });
     } catch (err) {
-      console.error("❌ Run Test Error:", err);
+      console.error("Run Test Error:", err);
       toast.error("Run Test failed", { id: "test" });
     }
   };
+
   const [showEmailPreview, setShowEmailPreview] = useState(false);
   const [emailFields, setEmailFields] = useState({});
   const [selectedField, setSelectedField] = useState(null);
@@ -716,7 +854,7 @@ const ShopifyScenariosPage = () => {
                 Update Scenario
               </button>
               <button
-                onClick={handleRunTest}
+                onClick={() => setShowRunTestModal(true)}
                 className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center text-sm"
               >
                 <Zap className="w-4 h-4 mr-2" />
@@ -736,7 +874,9 @@ const ShopifyScenariosPage = () => {
                 color="border-red-500"
                 number={1}
                 isFirst={true}
-                onClick={() => setShowWebhookInfo(true)}
+                completed={completedSteps.includes("webhook")}
+                isWebhook={true}
+                onEdit={() => setShowWebhookInfo(true)} // 👈 clicking anywhere opens WebhookModal
               />
 
               <div className="w-0.5 h-12 bg-gray-300 relative">
@@ -754,6 +894,7 @@ const ShopifyScenariosPage = () => {
                 color="border-green-500"
                 number={2}
                 isRouter={true}
+                completed={completedSteps.includes("router")}
               />
 
               <div className="w-0.5 h-12 bg-gray-300"></div>
@@ -1159,6 +1300,177 @@ const ShopifyScenariosPage = () => {
           email={emailFields}
           onClose={() => setShowEmailPreview(false)}
         />
+      )}
+
+      {showRunTestModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+            {/* Header */}
+            <div className="flex justify-between items-start border-b px-6 py-4">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-800">
+                  Contact {user?.fullName || "Support Team"}
+                </h2>
+                <p className="text-sm text-gray-500 mt-1">
+                  Share a few details to help us understand your needs. We’ll
+                  follow up with you directly.
+                </p>
+              </div>
+              <button
+                onClick={() => setShowRunTestModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 
+          1 0 111.414 1.414L11.414 10l4.293 
+          4.293a1 1 0 01-1.414 1.414L10 
+          11.414l-4.293 4.293a1 1 0 
+          01-1.414-1.414L8.586 10 4.293 
+          5.707a1 1 0 010-1.414z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="px-6 py-5 space-y-4 overflow-y-auto max-h-[70vh]">
+              {/* Business Email */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Business email
+                </label>
+                <input
+                  type="email"
+                  value={formData.businessEmail}
+                  onChange={(e) =>
+                    setFormData({ ...formData, businessEmail: e.target.value })
+                  }
+                  placeholder="Enter your business email"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none"
+                />
+              </div>
+
+              {/* Store Name */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Store name
+                </label>
+                <input
+                  type="text"
+                  value={formData.storeName}
+                  disabled
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 bg-gray-100 text-gray-600 cursor-not-allowed"
+                />
+              </div>
+
+              {/* Country */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Country
+                </label>
+                <input
+                  value={formData.country}
+                  disabled
+                  onChange={(e) =>
+                    setFormData({ ...formData, country: e.target.value })
+                  }
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none"
+                />
+              </div>
+
+              {/* Service */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Select a service offered by {user?.name || "the team"}
+                </label>
+                <select
+                  value={formData.service}
+                  onChange={(e) =>
+                    setFormData({ ...formData, service: e.target.value })
+                  }
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none"
+                >
+                  <option value="">Select service</option>
+                  <option>Troubleshooting</option>
+                  <option>Theme customization</option>
+                  <option>Store build or redesign</option>
+                  <option>Store migration</option>
+                  <option>Website and marketing content</option>
+                  <option>SEO</option>
+                  <option>Site performance and speed</option>
+                  <option>Custom apps and integrations</option>
+                  <option>Store settings configuration</option>
+                  <option>Product and collection setup</option>
+                  <option>Social media marketing</option>
+                  <option>Product descriptions</option>
+                  <option>Search engine advertising</option>
+                  <option>POS setup and migration</option>
+                  <option>Custom domain setup</option>
+                  <option>Conversion rate optimization</option>
+                  <option>Analytics and tracking</option>
+                  <option>Sales channel setup</option>
+                  <option>Logo and visual branding</option>
+                  <option>Business strategy guidance</option>
+                  <option>Website audit and optimization strategy</option>
+                  <option>Sales tax guidance</option>
+                  <option>Product photography</option>
+                  <option>Email marketing</option>
+                  <option>3D modelling</option>
+                  <option>Banner ads</option>
+                  <option>Video and illustrations</option>
+                  <option>Content marketing</option>
+                  <option>Product sourcing guidance</option>
+                </select>
+              </div>
+
+              {/* Budget */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Budget (USD)
+                </label>
+                <input
+                  type="number"
+                  value={formData.budget}
+                  disabled
+                  onChange={(e) =>
+                    setFormData({ ...formData, budget: e.target.value })
+                  }
+                  placeholder="Enter your budget"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none"
+                />
+              </div>
+
+              {/* Help Description */}
+            </div>
+
+            {/* Footer */}
+            <div className="border-t px-6 py-4 flex justify-end space-x-3">
+              <button
+                onClick={() => setShowRunTestModal(false)}
+                className="px-4 py-2 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-100 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setShowRunTestModal(false);
+                  handleRunTest(); // uses formData automatically
+                }}
+                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition"
+              >
+                Generate Test Email
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

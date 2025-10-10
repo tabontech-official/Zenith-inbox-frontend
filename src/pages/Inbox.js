@@ -120,7 +120,7 @@ const Inbox = () => {
         transition={{ duration: 0.4 }}
         className="flex w-full bg-white rounded-2xl shadow-lg m-6 border border-gray-200 overflow-hidden"
       >
-        {/* 📩 Email List */}
+        {/*  Email List */}
         <motion.div
           className="w-1/3 border-r border-gray-200 bg-gray-50 
           overflow-y-auto scrollbar-thin scrollbar-thumb-indigo-300 

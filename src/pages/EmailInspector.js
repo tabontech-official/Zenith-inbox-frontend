@@ -15,7 +15,7 @@ import { useState } from "react";
 export default function EmailInspector({ email, onClose }) {
   const [openSections, setOpenSections] = useState({
     text: true,
-    html: false,
+    html: true,
     sender: true,
     recipient: true,
     attachments: false,
@@ -40,7 +40,7 @@ export default function EmailInspector({ email, onClose }) {
           <div className="flex items-center gap-3">
             <FiMail className="text-purple-600 w-6 h-6" />
             <h2 className="text-lg font-semibold text-gray-800">
-              Email Details
+              Test Email Details
             </h2>
           </div>
           <button
@@ -52,27 +52,53 @@ export default function EmailInspector({ email, onClose }) {
         </div>
 
         <div className="p-6 space-y-4">
-          <div className="bg-gray-50 rounded-lg border p-4 text-sm">
-            <div className="flex items-center gap-2 mb-2 text-gray-700">
-              <FiCalendar className="text-purple-500" />
-              <span className="font-semibold">Date:</span>
-              <span>
-                {email.date
-                  ? new Date(email.date).toLocaleString("en-US", {
-                      dateStyle: "medium",
-                      timeStyle: "short",
-                    })
-                  : "N/A"}
-              </span>
-            </div>
-            <div className="flex items-center gap-2 text-gray-700">
-              <FiFileText className="text-purple-500" />
-              <span className="font-semibold">Subject:</span>
-              <span>{email.subject || "No subject"}</span>
+          <div className="p-6 space-y-4">
+            <div className="bg-gray-50 rounded-lg border p-4 text-sm space-y-2">
+              {/* Date */}
+              <div className="flex items-center gap-2 text-gray-700">
+                <FiCalendar className="text-purple-500" />
+                <span className="font-semibold">Date:</span>
+                <span>
+                  {email.date
+                    ? new Date(email.date).toLocaleString("en-US", {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      })
+                    : "N/A"}
+                </span>
+              </div>
+
+              {/* Subject */}
+              <div className="flex items-center gap-2 text-gray-700">
+                <FiFileText className="text-blue-500" />
+                <span className="font-semibold">Subject:</span>
+                <span>{email.subject || "No subject"}</span>
+              </div>
+
+              {/* Customer Name */}
+              <div className="flex items-center gap-2 text-gray-700">
+                <FiUser className="text-green-500" />
+                <span className="font-semibold">Customer Name:</span>
+                <span>Dummy Customer</span>
+              </div>
+
+              {/* Customer Email */}
+              <div className="flex items-center gap-2 text-gray-700">
+                <FiAtSign className="text-pink-500" />
+                <span className="font-semibold">Customer Email:</span>
+                <span>{senderEmail}</span>
+              </div>
+
+              {/* Optional - Add Mail Icon for Recipient */}
+              <div className="flex items-center gap-2 text-gray-700">
+                <FiMail className="text-orange-500" />
+                <span className="font-semibold">Recipient:</span>
+                <span>{email.recipientAddress || "N/A"}</span>
+              </div>
             </div>
           </div>
 
-          <CollapsibleSection
+          {/* <CollapsibleSection
             title="Plain Text"
             icon={<FiFileText />}
             isOpen={openSections.text}
@@ -81,7 +107,7 @@ export default function EmailInspector({ email, onClose }) {
             <pre className="text-sm text-gray-700 whitespace-pre-wrap font-sans">
               {email.textBody || "No plain text content."}
             </pre>
-          </CollapsibleSection>
+          </CollapsibleSection> */}
 
           <CollapsibleSection
             title="HTML Content"
@@ -97,7 +123,7 @@ export default function EmailInspector({ email, onClose }) {
             ></div>
           </CollapsibleSection>
 
-          <CollapsibleSection
+          {/* <CollapsibleSection
             title="Sender Info"
             icon={<FiUser />}
             isOpen={openSections.sender}
@@ -111,9 +137,9 @@ export default function EmailInspector({ email, onClose }) {
                 <span className="font-semibold">Email:</span> {senderEmail}
               </p>
             </div>
-          </CollapsibleSection>
+          </CollapsibleSection> */}
 
-          <CollapsibleSection
+          {/* <CollapsibleSection
             title="Recipient Info"
             icon={<FiAtSign />}
             isOpen={openSections.recipient}
@@ -122,9 +148,9 @@ export default function EmailInspector({ email, onClose }) {
             <p className="text-sm text-gray-700">
               {email.recipientAddress || "No recipient information."}
             </p>
-          </CollapsibleSection>
+          </CollapsibleSection> */}
 
-          <CollapsibleSection
+          {/* <CollapsibleSection
             title="Attachments"
             icon={<FiPaperclip />}
             isOpen={openSections.attachments}
@@ -139,7 +165,7 @@ export default function EmailInspector({ email, onClose }) {
             ) : (
               <i className="text-gray-500 text-sm">No attachments found.</i>
             )}
-          </CollapsibleSection>
+          </CollapsibleSection> */}
         </div>
       </div>
     </div>
