@@ -129,7 +129,7 @@ const Inbox = () => {
         >
           {/* Header */}
           <div className="p-5 border-b border-gray-200 bg-white sticky top-0 z-10">
-            <h2 className="text-lg font-semibold text-gray-800">Inbox</h2>
+            <h2 className="text-lg font-semibold text-gray-800">Lead Conversation</h2>
             <p className="text-xs text-gray-500 mt-1">Recent conversations</p>
           </div>
 
