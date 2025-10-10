@@ -124,7 +124,6 @@ const AllScenariosPage = () => {
     <Sidebar />
 
     <main className="flex-1 md:ml-64 flex flex-col">
-      {/* Header */}
       <header className="bg-white shadow-sm border-b px-8 py-6 flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 tracking-tight">

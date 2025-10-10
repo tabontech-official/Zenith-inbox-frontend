@@ -42,7 +42,6 @@ const WebhookModal = ({
         className="bg-white rounded-xl shadow-2xl w-[500px] p-6 relative transform animate-slideUp"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Close button */}
         <button
           onClick={() => setShowWebhookInfo(false)}
           className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 transition-colors"
