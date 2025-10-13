@@ -85,6 +85,8 @@ const ShopifyScenariosPage = () => {
   const [body, setBody] = useState("");
   const [delayValue, setDelayValue] = useState("5");
   const [delayUnit, setDelayUnit] = useState("seconds");
+  const [showValidation, setShowValidation] = useState(false);
+  const [isScenarioUpdated, setIsScenarioUpdated] = useState(true);
 
   const [templates, setTemplates] = useState([]);
   const [selectedTemplate, setSelectedTemplate] = useState("");
@@ -257,6 +259,7 @@ const ShopifyScenariosPage = () => {
       }
 
       toast.success("Shopify scenario updated successfully!");
+      setIsScenarioUpdated(true);
     } catch (err) {
       console.error("Error updating scenario:", err);
       toast.error("Failed to update scenario.");
@@ -590,28 +593,66 @@ const ShopifyScenariosPage = () => {
   }) => (
     <div className="relative group">
       <div
-        onClick={onEdit}
+        onClick={() => {
+          if (!completed) {
+            if (title === "Delay") {
+              toast.error(
+                "This delay was skipped because the previous step failed.",
+                {
+                  duration: 5000,
+                  style: {
+                    background: "#fffaf0",
+                    color: "#92400e",
+                    border: "1px solid #fcd34d",
+                  },
+                }
+              );
+            } else {
+              toast.error(
+                "Please select a connection in this module and generate the test email again.",
+                {
+                  duration: 5000,
+                  style: {
+                    background: "#fff0f0",
+                    color: "#b91c1c",
+                    border: "1px solid #fca5a5",
+                  },
+                }
+              );
+            }
+          } else {
+            onEdit && onEdit();
+          }
+        }}
         className={`bg-white rounded-xl shadow-lg border-2 ${color} p-6 w-64 hover:shadow-xl transition-all duration-200 relative cursor-pointer ${
-          completed ? "ring-2 ring-green-400 border-green-500" : ""
+          completed
+            ? "ring-2 ring-green-400 border-green-500"
+            : "ring-2 ring-red-200"
         }`}
       >
-        {/* Number Badge */}
-        <div
-          className={`absolute -top-3 -left-3 w-8 h-8 ${
-            completed ? "bg-green-500" : color.replace("border-", "bg-")
-          } rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md transition-all duration-300`}
-        >
-          {completed ? "✓" : number}
-        </div>
+        {completed !== null && (
+          <div
+            className={`absolute -top-3 -left-3 w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md transition-all duration-300 ${
+              completed ? "bg-green-500" : "bg-red-500"
+            }`}
+          >
+            {completed ? "✓" : "✗"}
+          </div>
+        )}
 
-        {/* 👁️ Eye Icon (for Router/Webhook) */}
         {(isRouter || isWebhook) && (
           <button
             onClick={(e) => {
               e.stopPropagation();
-              handleViewEmailData();
+              if (isWebhook) {
+                // 🟢 Open Webhook Modal
+                setShowWebhookInfo(true);
+              } else {
+                // 🟢 Router still shows email data
+                handleViewEmailData();
+              }
             }}
-            title="View Test Email"
+            title={isWebhook ? "View Webhook Info" : "View Test Email"}
             className={`absolute top-2 right-2 p-1.5 border ${
               isWebhook
                 ? "border-red-500 text-red-600 hover:bg-red-50"
@@ -622,7 +663,6 @@ const ShopifyScenariosPage = () => {
           </button>
         )}
 
-        {/* Icon + Title */}
         <div className="flex items-center space-x-3 mb-3">
           <div
             className={`${color
@@ -647,7 +687,6 @@ const ShopifyScenariosPage = () => {
           </div>
         </div>
 
-        {/* Hover Buttons */}
         {!isFirst && (
           <div className="absolute top-2 right-10 opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1">
             {onEdit && (
@@ -686,7 +725,6 @@ const ShopifyScenariosPage = () => {
     </div>
   );
 
-  // Add Module Button Component
   const AddModuleButton = ({ onClick }) => (
     <button
       onClick={onClick}
@@ -748,15 +786,23 @@ const ShopifyScenariosPage = () => {
     country: "Pakistan",
     service: "",
     budget: "100",
-    // helpDescription: "I need domain setup on Motion Pine .com",
   });
   const handleRunTest = async () => {
+    if (!isScenarioUpdated) {
+      toast.error("Please update the scenario before running the test.", {
+        duration: 5000,
+        style: {
+          background: "#fff0f0",
+          color: "#b91c1c",
+          border: "1px solid #fca5a5",
+        },
+      });
+      return;
+    }
+
+    toast.loading("Generating test email...", { id: "test" });
+
     try {
-      toast.loading("Generating test email...", { id: "test" });
-
-      // Reset previous run
-      setCompletedSteps([]);
-
       const res = await fetch("https://email-syncing-backend.vercel.app/mailhook/Run-test-mode", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -767,29 +813,67 @@ const ShopifyScenariosPage = () => {
       });
 
       const data = await res.json();
+      toast.dismiss("test");
 
-      if (!data.success) {
-        toast.error(data.message || "Test failed", { id: "test" });
-        return;
+      if (data.success) {
+        toast.success("Test completed successfully!");
+        setShowValidation(true);
+        const updatedValidation = [];
+        let previousPassed = true;
+
+        updatedValidation.push({ id: "webhook", passed: true });
+        updatedValidation.push({ id: "router", passed: true });
+
+        for (
+          let branchIndex = 0;
+          branchIndex < routerBranches.length;
+          branchIndex++
+        ) {
+          const branch = routerBranches[branchIndex];
+
+          for (
+            let moduleIndex = 0;
+            moduleIndex < branch.modules.length;
+            moduleIndex++
+          ) {
+            const m = branch.modules[moduleIndex];
+            let passed = true;
+
+            if (m.app.name === "Webhooks" || m.app.name === "Router") {
+              passed = true;
+            } else if (m.app.name === "Delay") {
+              passed = previousPassed;
+            } else if (m.app.name === "Gmail" || m.app.name === "Email") {
+              passed = !!m.connectionId && previousPassed;
+            }
+
+            updatedValidation.push({ id: m.id, passed });
+            previousPassed = passed;
+          }
+        }
+
+        const failedModules = updatedValidation.filter((v) => !v.passed);
+        if (failedModules.length > 0) {
+          toast.error(
+            "Some modules have missing connections. Please select connections in those modules and then run the test again.",
+            {
+              duration: 5000,
+              style: {
+                background: "#fff0f0",
+                color: "#b91c1c",
+                border: "1px solid #fca5a5",
+              },
+            }
+          );
+        }
+        setCompletedSteps(updatedValidation);
+      } else {
+        toast.error(data.message || "Test failed.");
       }
-
-      toast.success("Test email sent successfully!", { id: "test" });
-      console.log("✅ Test email sent:", data.testEmail);
-
-      // 🟢 Trigger animated step progression
-      const steps = [
-        "webhook",
-        "router",
-        ...routerBranches.map((_, i) => `branch-${i}`),
-      ];
-      steps.forEach((step, i) => {
-        setTimeout(() => {
-          setCompletedSteps((prev) => [...prev, step]);
-        }, i * 1000); // 1 second delay between steps
-      });
     } catch (err) {
+      toast.dismiss("test");
       console.error("Run Test Error:", err);
-      toast.error("Run Test failed", { id: "test" });
+      toast.error("Run Test failed.");
     }
   };
 
@@ -874,9 +958,14 @@ const ShopifyScenariosPage = () => {
                 color="border-red-500"
                 number={1}
                 isFirst={true}
-                completed={completedSteps.includes("webhook")}
+                completed={
+                  showValidation
+                    ? completedSteps.find((v) => v.id === "webhook")?.passed ??
+                      null
+                    : null
+                }
                 isWebhook={true}
-                onEdit={() => setShowWebhookInfo(true)} // 👈 clicking anywhere opens WebhookModal
+                onEdit={() => setShowWebhookInfo(true)}
               />
 
               <div className="w-0.5 h-12 bg-gray-300 relative">
@@ -894,7 +983,12 @@ const ShopifyScenariosPage = () => {
                 color="border-green-500"
                 number={2}
                 isRouter={true}
-                completed={completedSteps.includes("router")}
+                completed={
+                  showValidation
+                    ? completedSteps.find((v) => v.id === "router")?.passed ??
+                      null
+                    : null
+                }
               />
 
               <div className="w-0.5 h-12 bg-gray-300"></div>
@@ -909,6 +1003,16 @@ const ShopifyScenariosPage = () => {
                   {branch.modules.length > 0
                     ? branch.modules.map((module, moduleIndex) => {
                         const Icon = iconMap[module.app.icon];
+                        const shouldShowState = showValidation;
+
+                        let validationState = null;
+                        if (showValidation) {
+                          const match = completedSteps.find(
+                            (v) => v.id === module.id
+                          );
+                          validationState = match ? match.passed : null;
+                        }
+
                         return (
                           <React.Fragment key={module.id}>
                             <FlowNode
@@ -927,7 +1031,23 @@ const ShopifyScenariosPage = () => {
                                 handleRemoveModule(branchIndex, module.id)
                               }
                               isLast={moduleIndex === branch.modules.length - 1}
+                              completed={
+                                shouldShowState ? validationState : null
+                              }
                             />
+                            {showValidation &&
+                              validationState === false &&
+                              (module.app.name === "Delay" ? (
+                                <p className="text-sm text-orange-500 mt-2 text-center max-w-xs">
+                                  This delay was skipped because the previous
+                                  step failed.
+                                </p>
+                              ) : (
+                                <p className="text-sm text-red-500 mt-2 text-center max-w-xs">
+                                  This module failed due to missing connection
+                                  or previous step failure.
+                                </p>
+                              ))}
 
                             {moduleIndex < branch.modules.length - 1 && (
                               <div className="w-0.5 h-12 bg-gray-300"></div>
@@ -1072,9 +1192,13 @@ const ShopifyScenariosPage = () => {
                           <div className="flex items-center border border-gray-300 rounded-lg px-2 py-2 focus-within:ring-2 focus-within:ring-purple-500">
                             <select
                               value={selectedConnection}
-                              onChange={(e) =>
-                                setSelectedConnection(e.target.value)
-                              }
+                              // onChange={(e) =>
+                              //   setSelectedConnection(e.target.value)
+                              // }
+                              onChange={(e) => {
+                                setSelectedConnection(e.target.value);
+                                setIsScenarioUpdated(false);
+                              }}
                               className="flex-1 border-none outline-none text-sm bg-transparent"
                             >
                               <option value="">-- Select Connection --</option>
