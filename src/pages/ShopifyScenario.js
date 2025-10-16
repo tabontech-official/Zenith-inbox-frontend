@@ -305,13 +305,16 @@ const ShopifyScenariosPage = () => {
           return;
         }
 
-        const res = await fetch("https://email-syncing-backend.vercel.app/scenario/details", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ userId }), // ✅ body me userId send
-        });
+        const res = await fetch(
+          "https://email-syncing-backend.vercel.app/scenario/details",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ userId }), // ✅ body me userId send
+          }
+        );
 
         const data = await res.json();
         if (data) {
@@ -589,37 +592,38 @@ const ShopifyScenariosPage = () => {
     isLast,
     isRouter,
     isWebhook,
-    completed, // ✅ Add this prop for tick animation
+    completed,
+    module,
   }) => (
     <div className="relative group">
       <div
         onClick={() => {
-          if (!completed) {
-            if (title === "Delay") {
-              toast.error(
-                "This delay was skipped because the previous step failed.",
-                {
-                  duration: 5000,
-                  style: {
-                    background: "#fffaf0",
-                    color: "#92400e",
-                    border: "1px solid #fcd34d",
-                  },
-                }
-              );
-            } else {
-              toast.error(
-                "Please select a connection in this module and generate the test email again.",
-                {
-                  duration: 5000,
-                  style: {
-                    background: "#fff0f0",
-                    color: "#b91c1c",
-                    border: "1px solid #fca5a5",
-                  },
-                }
-              );
-            }
+          const hasConnection =
+            module && module.connectionId && module.connectionId.trim() !== "";
+            const isDelayModule =
+    module?.app?.name?.toLowerCase() === "delay" ||
+    module?.type?.toLowerCase() === "delay";
+
+  // 🟡 Case 1: Always open Delay modal (no toast)
+  if (isDelayModule) {
+    onEdit && onEdit();
+    return;
+  }
+
+          if (!completed && !hasConnection) {
+            toast.error(
+              "Please select a connection in this module and generate the test email again.",
+              {
+                duration: 5000,
+                style: {
+                  background: "#fff0f0",
+                  color: "#b91c1c",
+                  border: "1px solid #fca5a5",
+                },
+              }
+            );
+
+            return;
           } else {
             onEdit && onEdit();
           }
@@ -803,14 +807,17 @@ const ShopifyScenariosPage = () => {
     toast.loading("Generating test email...", { id: "test" });
 
     try {
-      const res = await fetch("https://email-syncing-backend.vercel.app/mailhook/Run-test-mode", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: localStorage.getItem("userid"),
-          ...formData,
-        }),
-      });
+      const res = await fetch(
+        "https://email-syncing-backend.vercel.app/mailhook/Run-test-mode",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: localStorage.getItem("userid"),
+            ...formData,
+          }),
+        }
+      );
 
       const data = await res.json();
       toast.dismiss("test");
@@ -1034,6 +1041,7 @@ const ShopifyScenariosPage = () => {
                               completed={
                                 shouldShowState ? validationState : null
                               }
+                              module={module}
                             />
                             {showValidation &&
                               validationState === false &&
@@ -1045,7 +1053,7 @@ const ShopifyScenariosPage = () => {
                               ) : (
                                 <p className="text-sm text-red-500 mt-2 text-center max-w-xs">
                                   This module failed due to missing connection
-                                  or previous step failure.
+                                  
                                 </p>
                               ))}
 
