@@ -598,30 +598,44 @@ const ShopifyScenariosPage = () => {
     <div className="relative group">
       <div
         onClick={() => {
+          const appName =
+            module?.app?.name?.toString().trim().toLowerCase?.() || "";
+
+          if (
+            appName.includes("webhook") ||
+            title.toLowerCase().includes("webhook")
+          ) {
+            setShowWebhookInfo(true);
+            return;
+          }
+
+          if (
+            appName.includes("router") ||
+            title.toLowerCase().includes("router")
+          ) {
+            handleViewEmailData();
+            return;
+          }
           const hasConnection =
             module && module.connectionId && module.connectionId.trim() !== "";
-            const isDelayModule =
-    module?.app?.name?.toLowerCase() === "delay" ||
-    module?.type?.toLowerCase() === "delay";
+          const isDelayModule =
+            module?.app?.name?.toLowerCase() === "delay" ||
+            module?.type?.toLowerCase() === "delay";
 
-  // 🟡 Case 1: Always open Delay modal (no toast)
-  if (isDelayModule) {
-    onEdit && onEdit();
-    return;
-  }
+          if (isDelayModule) {
+            onEdit && onEdit();
+            return;
+          }
 
           if (!completed && !hasConnection) {
-            toast.error(
-              "Please select a connection in this module and generate the test email again.",
-              {
-                duration: 5000,
-                style: {
-                  background: "#fff0f0",
-                  color: "#b91c1c",
-                  border: "1px solid #fca5a5",
-                },
-              }
-            );
+            toast.error("Please select a connection in this module.", {
+              duration: 5000,
+              style: {
+                background: "#fff0f0",
+                color: "#b91c1c",
+                border: "1px solid #fca5a5",
+              },
+            });
 
             return;
           } else {
@@ -1053,7 +1067,6 @@ const ShopifyScenariosPage = () => {
                               ) : (
                                 <p className="text-sm text-red-500 mt-2 text-center max-w-xs">
                                   This module failed due to missing connection
-                                  
                                 </p>
                               ))}
 
