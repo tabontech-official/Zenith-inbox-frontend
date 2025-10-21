@@ -450,12 +450,9 @@ const Organization = () => {
 
   return (
     <div className="flex bg-gradient-to-br from-indigo-50 via-white to-purple-50 min-h-screen font-inter">
-      {/* Sidebar */}
       <Sidebar />
 
-      {/* Main Section */}
       <div className="flex-1 flex flex-col md:ml-64">
-        {/* ✅ Navbar added on top */}
         <Navbar />
 
         {/* Main Content */}
@@ -499,7 +496,6 @@ const Organization = () => {
             </div>
           </motion.div>
 
-          {/* Stats Cards */}
           <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-10">
             {statCards.map((item, i) => (
               <motion.div
@@ -517,9 +513,7 @@ const Organization = () => {
             ))}
           </section>
 
-          {/* Main Content Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Recent Emails */}
             <motion.div
               className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
               initial={{ opacity: 0 }}
@@ -605,7 +599,6 @@ const Organization = () => {
                 </table>
               </div>
 
-              {/* Pagination */}
               <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-200">
                 <button
                   disabled={page === 1}
@@ -637,7 +630,6 @@ const Organization = () => {
               </div>
             </motion.div>
 
-            {/* Quick Actions */}
             <motion.div
               className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
               initial={{ opacity: 0 }}

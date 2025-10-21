@@ -15,7 +15,6 @@ const Navbar = () => {
   const handleSelect = (type) => {
     console.log("Selected Scenario:", type);
     setOpenScenario(false);
-    // you can redirect or open another modal here based on type
   };
   return (
     <header className="w-full bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-end sticky top-0 z-30 shadow-sm">

@@ -38,7 +38,6 @@ const OrganizationSettingsModal = ({ open, onClose, onSave }) => {
             exit={{ scale: 0.95, opacity: 0, y: 20 }}
             transition={{ duration: 0.2 }}
           >
-            {/* Close Button */}
             <button
               onClick={onClose}
               className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
@@ -46,14 +45,11 @@ const OrganizationSettingsModal = ({ open, onClose, onSave }) => {
               <FiX className="w-5 h-5" />
             </button>
 
-            {/* Modal Title */}
             <h2 className="text-xl font-semibold text-gray-800 mb-4">
               Organization Settings
             </h2>
 
-            {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Organization name */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Organization name <span className="text-red-500">*</span>
@@ -68,7 +64,6 @@ const OrganizationSettingsModal = ({ open, onClose, onSave }) => {
                 />
               </div>
 
-              {/* Region */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Region
@@ -82,7 +77,6 @@ const OrganizationSettingsModal = ({ open, onClose, onSave }) => {
                 />
               </div>
 
-              {/* Timezone */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Timezone <span className="text-red-500">*</span>
@@ -98,7 +92,6 @@ const OrganizationSettingsModal = ({ open, onClose, onSave }) => {
                 />
               </div>
 
-              {/* Country */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Country <span className="text-red-500">*</span>
@@ -113,7 +106,6 @@ const OrganizationSettingsModal = ({ open, onClose, onSave }) => {
                 />
               </div>
 
-              {/* Partner Link */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Partner link
@@ -128,7 +120,6 @@ const OrganizationSettingsModal = ({ open, onClose, onSave }) => {
                 />
               </div>
 
-              {/* Buttons */}
               <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 mt-6">
                 <button
                   type="button"
