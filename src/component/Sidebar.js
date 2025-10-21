@@ -65,29 +65,12 @@ const Sidebar = () => {
         isSidebarOpen ? "translate-x-0" : "-translate-x-full"
       }`}
     >
-      {/* Brand Header */}
       <div className="flex items-center space-x-2 py-5 px-6 border-b border-gray-200 bg-white shadow-sm">
         <FiMail className="text-indigo-500 text-2xl" />
         <span className="font-semibold text-lg text-gray-800">Zenith Inbox</span>
       </div>
 
-      {/* User Info */}
-      <div className="flex items-center space-x-3 py-5 px-6 border-b border-gray-200 bg-gray-50">
-        <img
-          src="https://placehold.co/48x48/E5E7EB/374151?text=U"
-          alt="User Logo"
-          className="rounded-full border border-gray-300 shadow w-12 h-12"
-        />
-        <div>
-          <h1 className="text-base font-semibold text-gray-800 leading-tight">
-            {user?.fullName || "Organization"}
-          </h1>
-          <p className="text-xs text-gray-500 truncate">
-            {user?.email || "user@email.com"}
-          </p>
-        </div>
-      </div>
-
+    
       {/* Navigation */}
       <nav className="flex-1 px-4 py-6 space-y-6 overflow-y-auto">
         <div>
