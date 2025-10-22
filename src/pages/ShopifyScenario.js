@@ -734,7 +734,7 @@ const ShopifyScenariosPage = () => {
         toast.success("Test completed successfully!");
         setShowValidation(true);
         setSelectedServiceForTemplates(formData.service);
-        setShowTemplateModal(true);
+        // setShowTemplateModal(true);
         const userId = localStorage.getItem("userid");
         const res = await fetch(
           `http://localhost:5000/template/alltemplates?userId=${userId}&service=${encodeURIComponent(

@@ -57,7 +57,7 @@ const SetupFlow = () => {
     const userId = user?._id;
 
     const popup = window.open(
-      `https://email-syncing-backend.vercel.app/auth/google?userId=${userId}`,
+      `http://localhost:5000/auth/google?userId=${userId}`,
       "gmailConnect",
       "width=600,height=600"
     );
