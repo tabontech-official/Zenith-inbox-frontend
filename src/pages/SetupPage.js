@@ -55,38 +55,78 @@ const SetupFlow = () => {
 
   const handleGmailConnect = () => {
     const userId = user?._id;
+
     const popup = window.open(
       `https://email-syncing-backend.vercel.app/auth/google?userId=${userId}`,
       "gmailConnect",
       "width=600,height=600"
     );
 
-    window.addEventListener("message", (event) => {
-      if (event.data?.type === "google-auth-success") {
+    const checkPopup = setInterval(() => {
+      if (popup.closed) {
+        clearInterval(checkPopup);
+        // When popup closes, check the URL query for success
+        const params = new URLSearchParams(window.location.search);
+        const status = params.get("status");
+        if (status === "success") {
+          console.log("✅ Gmail connected successfully!");
+          setStep(5);
+        } else if (status === "error") {
+          alert("❌ Failed to connect Gmail. Please try again.");
+        }
       }
+    }, 1000);
+  };
+
+  const handleMicrosoftConnect = () => {
+    const userId = user?._id;
+    const popup = window.open(
+      `http://localhost:5000/auth/microsoft?userId=${userId}`,
+      "microsoftConnect",
+      "width=600,height=600"
+    );
+
+    const handleMessage = (event) => {
+      if (event.data?.type === "microsoft-auth-success") {
+        console.log(" Microsoft account connected successfully!");
+        setStep(5);
+        window.removeEventListener("message", handleMessage);
+        popup.close();
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+  };
+
+
+  const saveSetupProgress = async (data = {}) => {
+    try {
+      const res = await fetch(`http://localhost:5000/auth/setup/${user._id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+
+      const result = await res.json();
+
+      if (result.success) {
+        console.log("✅ Setup progress updated:", result.data);
+      } else {
+        console.error("❌ Failed to update setup progress:", result.message);
+      }
+    } catch (err) {
+      console.error("Error saving setup progress:", err);
+    }
+  };
+
+  const updateStep = async (nextStep, extra = {}) => {
+    setStep(nextStep);
+    await saveSetupProgress({
+      stepCompleted: nextStep,
+      ...extra,
     });
   };
 
-  const [signature, setSignature] = useState("Best,\nThe Zenith Team");
-  const [calendarLink, setCalendarLink] = useState("");
-  // const updateStep = async (nextStep, extra = {}) => {
-  //   const payload = {
-  //     "setup.stepCompleted": nextStep,
-  //     ...extra,
-  //   };
-
-  //   await fetch(`https://email-syncing-backend.vercel.app/auth/setup/${user._id}`, {
-  //     method: "PUT",
-  //     headers: { "Content-Type": "application/json" },
-  //     body: JSON.stringify(payload),
-  //   });
-
-  //   setStep(nextStep);
-  // };
-  // Removed backend update API — local step change only
-  const updateStep = (nextStep) => {
-    setStep(nextStep);
-  };
   const [showValidateButton, setShowValidateButton] = useState(false);
   const [validating, setValidating] = useState(false);
   const [validated, setValidated] = useState(false);
@@ -122,22 +162,21 @@ const SetupFlow = () => {
       const userId = localStorage.getItem("userid");
       const payload = { ...smtpForm, userId, provider: "outlook" };
 
-      const res = await fetch(
-        "https://email-syncing-backend.vercel.app/auth/saveSmtpConnection",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }
-      );
+      const res = await fetch("http://localhost:5000/auth/saveSmtpConnection", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
       if (!res.ok) throw new Error("Failed to save SMTP connection");
-      alert(" SMTP connection saved successfully!");
+      alert("✅ SMTP connection saved successfully!");
+      setStep(5); // Move to next step
     } catch (err) {
       console.error(err);
-      alert(" Failed to save SMTP connection");
+      alert("❌ Failed to save SMTP connection");
     }
   };
+
   const [verificationEmail, setVerificationEmail] = useState(null);
 
   useEffect(() => {
@@ -145,7 +184,7 @@ const SetupFlow = () => {
       const fetchVerification = async () => {
         try {
           const res = await fetch(
-            `https://email-syncing-backend.vercel.app/mailhook/verification/${user._id}`
+            `http://localhost:5000/mailhook/verification/${user._id}`
           );
           const data = await res.json();
           if (data.success) {
@@ -159,14 +198,14 @@ const SetupFlow = () => {
       };
 
       fetchVerification();
-      const interval = setInterval(fetchVerification, 15000); 
+      const interval = setInterval(fetchVerification, 15000);
       return () => clearInterval(interval);
     }
   }, [step, user]);
   const fetchValidateEmail = async () => {
     try {
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/mailhook/validateTest/${user._id}`
+        `http://localhost:5000/mailhook/validateTest/${user._id}`
       );
       const data = await res.json();
 
@@ -187,7 +226,7 @@ const SetupFlow = () => {
       setValidating(true);
 
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/mailhook/validate-forwarding/${user._id}`,
+        `http://localhost:5000/mailhook/validate-forwarding/${user._id}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -215,6 +254,31 @@ const SetupFlow = () => {
       setValidating(false);
     }
   };
+  useEffect(() => {
+    if (!loading && user) {
+      if (user?.setup?.completed || user?.setup?.skipped) {
+        navigate("/organization");
+      }
+    }
+  }, [user, loading, navigate]);
+  const [setupProgress, setSetupProgress] = useState(null);
+
+  useEffect(() => {
+    const fetchSetupProgress = async () => {
+      try {
+        if (!user?._id) return;
+        const res = await fetch(`http://localhost:5000/auth/setup/${user._id}`);
+        const data = await res.json();
+        if (data.success) setSetupProgress(data.data);
+      } catch (err) {
+        console.error("Error fetching setup progress:", err);
+      }
+    };
+
+    if (step === 5) {
+      fetchSetupProgress();
+    }
+  }, [step, user]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-[#F9FAFB] text-center">
@@ -255,7 +319,10 @@ const SetupFlow = () => {
             </button>
 
             <button
-              onClick={() => setStep((prev) => prev + 1)} //  only skip to next step
+              onClick={async () => {
+                await saveSetupProgress({ skipped: true, stepCompleted: step });
+                navigate("/organization");
+              }}
               className="border border-gray-300 text-[#4B5563] hover:bg-gray-50 px-8 py-3 rounded-lg text-sm font-semibold flex items-center justify-center space-x-2"
             >
               <span>Skip Setup</span>
@@ -297,7 +364,6 @@ const SetupFlow = () => {
               </div>
             </div>
 
-            {/* 🟩 Updated instruction section */}
             <div className="mt-6">
               <h4 className="text-lg font-semibold text-[#111827] mb-2">
                 Instructions:
@@ -311,25 +377,17 @@ const SetupFlow = () => {
                 forwarding.
               </p>
 
-              <p
-                // onClick={() => setShowHelp(true)} // You can use a state like `showHelp` to toggle a modal or instructions box
-                className="text-[#4F46E5] text-sm font-semibold cursor-pointer hover:underline"
-              >
+              <p className="text-[#4F46E5] text-sm font-semibold cursor-pointer hover:underline">
                 Need help?
               </p>
             </div>
           </div>
 
           <div className="flex justify-between mt-8">
-            <button
-              onClick={() => setStep(1)}
-              // className="flex items-center space-x-2 px-5 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
-            >
-              {/* <FiArrowLeft /> <span>Back</span> */}
-            </button>
+            <button onClick={() => setStep(1)}></button>
 
             <button
-              onClick={() => setStep(3)}
+              onClick={() => updateStep(3)}
               className="flex items-center space-x-2 px-6 py-2 rounded-lg text-sm font-semibold bg-[#4F46E5] text-white hover:bg-[#4338CA]"
             >
               <span>Next</span> <FiArrowRight />
@@ -462,7 +520,7 @@ const SetupFlow = () => {
 
             {validated ? (
               <button
-                onClick={() => setStep(4)}
+                onClick={() => updateStep(4)}
                 className="flex items-center space-x-2 px-6 py-2 rounded-lg text-sm font-semibold bg-[#4F46E5] text-white hover:bg-[#4338CA]"
               >
                 <span>Next</span> <FiArrowRight />
@@ -666,7 +724,10 @@ const SetupFlow = () => {
 
           <div className="flex justify-between mt-8">
             <button
-              onClick={() => updateStep(step + 1)}
+              onClick={async () => {
+                const nextStep = step + 1;
+                await updateStep(nextStep, { skipped: true });
+              }}
               className="flex items-center space-x-2 px-5 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
             >
               <span>Skip</span>
@@ -697,24 +758,42 @@ const SetupFlow = () => {
                 Setup Checklist
               </h3>
               <p className="text-sm text-[#6B7280]">
-                Everything looks good! You're ready to go live.
+                Here’s a summary of your setup progress:
               </p>
             </div>
 
-            <ul className="space-y-2 text-sm text-[#111827]">
-              {[
-                "Mailhook created and verified",
-                "Forwarding rules configured",
-                "SMTP credentials connected",
-                "AI voice and services defined",
-                "Automation mode selected",
-              ].map((item) => (
-                <li key={item} className="flex items-center space-x-2">
-                  <span className="text-green-600">✓</span>
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
+            {!setupProgress ? (
+              <p className="text-gray-500 text-center py-6">
+                Loading progress...
+              </p>
+            ) : (
+              <ul className="space-y-3 text-sm text-[#111827]">
+                {setupProgress.steps?.map((step) => (
+                  <li
+                    key={step.step}
+                    className="flex items-center justify-between border-b border-gray-100 pb-2"
+                  >
+                    <div className="flex items-center space-x-2">
+                      {step.status === "completed" ? (
+                        <span className="text-green-600">✓</span>
+                      ) : (
+                        <span className="text-yellow-500">❌</span>
+                      )}
+                      <span>{step.title}</span>
+                    </div>
+                    <span
+                      className={`text-xs px-2 py-1 rounded-full ${
+                        step.status === "completed"
+                          ? "bg-green-100 text-green-700"
+                          : "bg-yellow-100 text-yellow-700"
+                      }`}
+                    >
+                      {step.status === "completed" ? "Completed" : "Skipped"}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
 
             <div className="bg-[#F3F4F6] p-4 rounded-lg mt-4 text-sm text-[#4B5563] space-y-1">
               <p>
@@ -723,21 +802,26 @@ const SetupFlow = () => {
                   {user?.mailhook || "loading..."}
                 </span>
               </p>
-              <p>Automation Mode: Auto-Send</p>
+              <p>
+                Automation Mode:{" "}
+                {setupProgress?.completed
+                  ? "Enabled"
+                  : setupProgress?.skipped
+                  ? "Skipped"
+                  : "Pending"}
+              </p>
             </div>
           </div>
 
           <div className="flex justify-between mt-8">
-            <button
-              onClick={() => updateStep(step + 1)}
-              className="flex items-center space-x-2 px-5 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
-            >
-              <span>Skip</span>
-            </button>
+            <button onClick={() => updateStep(step + 1)}></button>
 
             <button
-              onClick={() => {
-                updateStep(5, { "setup.completed": true });
+              onClick={async () => {
+                await saveSetupProgress({
+                  setupCompleted: true,
+                  stepCompleted: 5,
+                });
                 navigate("/organization");
               }}
               className="flex items-center space-x-2 px-6 py-3 rounded-lg text-sm font-semibold bg-[#4F46E5] text-white hover:bg-[#4338CA] shadow-md"

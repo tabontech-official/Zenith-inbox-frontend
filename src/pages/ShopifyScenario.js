@@ -63,6 +63,10 @@ import EmailInspector from "./EmailInspector";
 const ShopifyScenariosPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [templateList, setTemplateList] = useState([]);
+  const [selectedServiceForTemplates, setSelectedServiceForTemplates] =
+    useState("");
   const [open, setOpen] = useState(false);
   const [selectedApp, setSelectedApp] = useState(null);
   const [selectedModule, setSelectedModule] = useState(null);
@@ -155,7 +159,7 @@ const ShopifyScenariosPage = () => {
   const fetchConnections = async () => {
     try {
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/auth/getConnection/${localStorage.getItem(
+        `http://localhost:5000/auth/getConnection/${localStorage.getItem(
           "userid"
         )}`
       );
@@ -175,7 +179,7 @@ const ShopifyScenariosPage = () => {
       const fetchTemplates = async () => {
         try {
           const res = await fetch(
-            `https://email-syncing-backend.vercel.app/template/all?userId=${localStorage.getItem(
+            `http://localhost:5000/template/all?userId=${localStorage.getItem(
               "userid"
             )}&platform=shopify&service=${selectedApp.name}`
           );
@@ -246,7 +250,7 @@ const ShopifyScenariosPage = () => {
 
       // ✅ Always update (PUT)
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/scenario/detail/${scenarioId}`,
+        `http://localhost:5000/scenario/detail/${scenarioId}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -305,16 +309,13 @@ const ShopifyScenariosPage = () => {
           return;
         }
 
-        const res = await fetch(
-          "https://email-syncing-backend.vercel.app/scenario/details",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ userId }), // ✅ body me userId send
-          }
-        );
+        const res = await fetch("http://localhost:5000/scenario/details", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ userId }), // ✅ body me userId send
+        });
 
         const data = await res.json();
         if (data) {
@@ -772,7 +773,7 @@ const ShopifyScenariosPage = () => {
   //     toast.loading("Running test scenario...", { id: "test" });
 
   //     const res = await fetch(
-  //       `https://email-syncing-backend.vercel.app/scenario/run-test/${scenarioId}`,
+  //       `http://localhost:5000/scenario/run-test/${scenarioId}`,
   //       {
   //         method: "POST",
   //         headers: { "Content-Type": "application/json" },
@@ -821,17 +822,14 @@ const ShopifyScenariosPage = () => {
     toast.loading("Generating test email...", { id: "test" });
 
     try {
-      const res = await fetch(
-        "https://email-syncing-backend.vercel.app/mailhook/Run-test-mode",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId: localStorage.getItem("userid"),
-            ...formData,
-          }),
-        }
-      );
+      const res = await fetch("http://localhost:5000/mailhook/Run-test-mode", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: localStorage.getItem("userid"),
+          ...formData,
+        }),
+      });
 
       const data = await res.json();
       toast.dismiss("test");
@@ -839,11 +837,23 @@ const ShopifyScenariosPage = () => {
       if (data.success) {
         toast.success("Test completed successfully!");
         setShowValidation(true);
+        setSelectedServiceForTemplates(formData.service);
+        setShowTemplateModal(true);
+        const userId = localStorage.getItem("userid");
+        const res = await fetch(
+          `http://localhost:5000/template/alltemplates?userId=${userId}&service=${encodeURIComponent(
+            formData.service
+          )}`
+        );
+        const templates = await res.json();
+        setTemplateList(Array.isArray(templates.data) ? templates.data : []);
+
         const updatedValidation = [];
         let previousPassed = true;
 
         updatedValidation.push({ id: "webhook", passed: true });
         updatedValidation.push({ id: "router", passed: true });
+        updatedValidation.push({ id: "template", passed: true });
 
         for (
           let branchIndex = 0;
@@ -907,7 +917,7 @@ const ShopifyScenariosPage = () => {
       toast.loading("Fetching test email...", { id: "email" });
 
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/mailhook/get-test-email/${userId}`
+        `http://localhost:5000/mailhook/get-test-email/${userId}`
       );
       const data = await res.json();
 
@@ -1012,6 +1022,34 @@ const ShopifyScenariosPage = () => {
                 }
               />
 
+              <div className="w-0.5 h-12 bg-gray-300"></div>
+              <FlowNode
+                icon={FiFileText}
+                title="Template"
+                subtitle="Define message structure and content"
+                color="border-blue-500"
+                number={3}
+                completed={
+                  showValidation
+                    ? completedSteps.find((v) => v.id === "template")?.passed ??
+                      null
+                    : null
+                }
+                module={{ app: { name: "Template" } }}
+                onEdit={() => {
+                  if (showTemplateModal) return;
+
+                  if (showValidation) {
+                    setShowTemplateModal(true);
+                  } else {
+                    toast.info(
+                      "Template editor will be available after running a test."
+                    );
+                  }
+                }}
+              />
+
+              {/* Divider below Template before branches */}
               <div className="w-0.5 h-12 bg-gray-300"></div>
             </div>
 
@@ -1613,6 +1651,88 @@ const ShopifyScenariosPage = () => {
               >
                 Generate Test Email
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showTemplateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[80vh] overflow-y-auto">
+            <div className="flex justify-between items-center p-5 border-b">
+              <h2 className="text-lg font-semibold text-gray-800">
+                Templates for {selectedServiceForTemplates || "your service"}
+              </h2>
+              <button
+                onClick={() => setShowTemplateModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-6">
+              {templateList.length === 0 ? (
+                <p className="text-center text-gray-500">
+                  No templates found for this service.
+                </p>
+              ) : (
+                <table className="w-full border-collapse text-sm">
+                  <thead>
+                    <tr className="bg-gray-100 text-gray-700 text-left">
+                      <th className="p-3">Sequence</th>
+                      <th className="p-3">Preview</th>
+                      <th className="p-3 text-center">Active</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {templateList.map((t) => (
+                      <tr key={t._id} className="border-b hover:bg-gray-50">
+                        <td className="p-3">{t.name}</td>
+                        <td className="p-3 text-gray-600">
+                          {t.content.replace(/<[^>]+>/g, "").slice(0, 80)}...
+                        </td>
+                        <td className="p-3 text-center">
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={t.active}
+                              onChange={async () => {
+                                const res = await fetch(
+                                  `http://localhost:5000/template/update/${t._id}`,
+                                  {
+                                    method: "PUT",
+                                    headers: {
+                                      "Content-Type": "application/json",
+                                    },
+                                    body: JSON.stringify({ active: !t.active }),
+                                  }
+                                );
+                                if (res.ok) {
+                                  toast.success(
+                                    `Template ${
+                                      !t.active ? "activated" : "deactivated"
+                                    }`
+                                  );
+                                  setTemplateList((prev) =>
+                                    prev.map((tpl) =>
+                                      tpl._id === t._id
+                                        ? { ...tpl, active: !tpl.active }
+                                        : tpl
+                                    )
+                                  );
+                                }
+                              }}
+                              className="sr-only peer"
+                            />
+                            <div className="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:bg-green-500 transition-colors"></div>
+                            <div className="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full shadow-md transition-transform peer-checked:translate-x-5"></div>
+                          </label>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
           </div>
         </div>
