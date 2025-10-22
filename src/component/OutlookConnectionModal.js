@@ -28,7 +28,7 @@
 //       const payload = { ...form, userId };
 
 //       const res = await fetch(
-//         "http://localhost:5000/auth/saveSmtpConnection",
+//         "https://email-syncing-backend.vercel.app/auth/saveSmtpConnection",
 //         {
 //           method: "POST",
 //           headers: { "Content-Type": "application/json" },
@@ -230,7 +230,7 @@ const OutlookConnectionModal = ({ isOpen, onClose, onSuccess }) => {
       if (connectionType === "other") {
         const payload = { ...form, userId };
         const res = await fetch(
-          "http://localhost:5000/auth/saveSmtpConnection",
+          "https://email-syncing-backend.vercel.app/auth/saveSmtpConnection",
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -243,7 +243,7 @@ const OutlookConnectionModal = ({ isOpen, onClose, onSuccess }) => {
         onSuccess?.(data);
         onClose();
       } else {
-        window.location.href = `http://localhost:5000/auth/outlook?userId=${userId}`;
+        window.location.href = `https://email-syncing-backend.vercel.app/auth/outlook?userId=${userId}`;
       }
     } catch (err) {
       console.error("Error saving connection:", err);
