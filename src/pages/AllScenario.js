@@ -85,7 +85,7 @@ const AllScenariosPage = () => {
     try {
       setLoading(true);
       const res = await fetch(
-        `http://localhost:5000/scenario/user/${userId}`
+        `https://email-syncing-backend.vercel.app/scenario/user/${userId}`
       );
       const data = await res.json();
       setScenarios(data);
@@ -108,7 +108,7 @@ const AllScenariosPage = () => {
     if (!selectedScenario) return;
     try {
       await fetch(
-        `http://localhost:5000/scenario/detail/${selectedScenario._id}`,
+        `https://email-syncing-backend.vercel.app/scenario/detail/${selectedScenario._id}`,
         { method: "DELETE" }
       );
       setDeleteModalOpen(false);
@@ -120,150 +120,200 @@ const AllScenariosPage = () => {
   };
 
   return (
-  <div className="flex bg-gradient-to-br from-gray-50 to-indigo-50 min-h-screen font-inter">
-    <Sidebar />
+    <div className="flex bg-gradient-to-br from-gray-50 to-indigo-50 min-h-screen font-inter">
+      <Sidebar />
 
-    <main className="flex-1 md:ml-64 flex flex-col">
-      <header className="bg-white shadow-sm border-b px-8 py-6 flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
-            All Scenarios
-          </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Manage, edit, and organize all your automation workflows.
-          </p>
-        </div>
-        <button
-          onClick={() => navigate("/scenarios/others")}
-          className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm transition"
-        >
-          + New Scenario
-        </button>
-      </header>
+      <main className="flex-1 md:ml-64 flex flex-col">
+        <header className="bg-white shadow-sm border-b px-8 py-6 flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
+              All Scenarios
+            </h1>
+            <p className="text-sm text-gray-500 mt-1">
+              Manage, edit, and organize all your automation workflows.
+            </p>
+          </div>
 
-      {/* Table Section */}
-      <section className="flex-1 p-8 overflow-x-auto">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-          <table className="w-full text-sm text-left text-gray-600">
-            <thead className="bg-gray-100 text-gray-700 uppercase tracking-wide text-xs">
-              <tr>
-                <th className="px-6 py-3">Scenario</th>
-                <th className="px-6 py-3">Description</th>
-                <th className="px-6 py-3">Type</th>
-                <th className="px-6 py-3">Created At</th>
-                <th className="px-6 py-3 text-right">Actions</th>
-              </tr>
-            </thead>
+          <div className="flex items-center gap-6">
+            {/* Shopify count */}
+            <div className="text-sm text-gray-600 font-medium">
+              Shopify Scenario:{" "}
+              <span className="font-semibold text-indigo-600">
+                {scenarios.filter((s) => s.type === "shopify").length}/1
+              </span>
+            </div>
 
-            <tbody className="divide-y divide-gray-100">
-              {loading ? (
-                <Loader />
-              ) : scenarios.length === 0 ? (
+            {/* Custom count */}
+            <div className="text-sm text-gray-600 font-medium">
+              Custom Scenarios:{" "}
+              <span className="font-semibold text-indigo-600">
+                {scenarios.filter((s) => s.type !== "shopify").length}/2
+              </span>
+            </div>
+
+            {/* Button logic */}
+            <button
+              onClick={() => {
+                const shopifyCount = scenarios.filter(
+                  (s) => s.type === "shopify"
+                ).length;
+                const customCount = scenarios.filter(
+                  (s) => s.type !== "shopify"
+                ).length;
+
+                if (shopifyCount >= 1 && customCount >= 2) {
+                  alert(
+                    "You’ve reached the limit: 1 Shopify + 2 Custom Scenarios."
+                  );
+                  return;
+                }
+
+                // Decide where to go
+                if (shopifyCount < 1) {
+                  // Create Shopify scenario first
+                  navigate("/scenarios/shopify");
+                } else if (customCount < 2) {
+                  // Then allow custom scenarios
+                  navigate("/scenarios/others");
+                }
+              }}
+              className={`px-4 py-2 rounded-lg text-sm font-medium shadow-sm transition ${
+                scenarios.filter((s) => s.type === "shopify").length >= 1 &&
+                scenarios.filter((s) => s.type !== "shopify").length >= 2
+                  ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  : "bg-indigo-600 hover:bg-indigo-500 text-white"
+              }`}
+            >
+              + New Scenario
+            </button>
+          </div>
+        </header>
+
+        {/* Table Section */}
+        <section className="flex-1 p-8 overflow-x-auto">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            <table className="w-full text-sm text-left text-gray-600">
+              <thead className="bg-gray-100 text-gray-700 uppercase tracking-wide text-xs">
                 <tr>
-                  <td
-                    colSpan="5"
-                    className="text-center py-10 text-gray-400 text-base"
-                  >
-                    No scenarios found.
-                  </td>
+                  <th className="px-6 py-3">Scenario</th>
+                  <th className="px-6 py-3">Description</th>
+                  <th className="px-6 py-3">Type</th>
+                  <th className="px-6 py-3">Created At</th>
+                  <th className="px-6 py-3 text-right">Actions</th>
                 </tr>
-              ) : (
-                scenarios.map((scenario, idx) => (
-                  <tr
-                    key={scenario._id}
-                    className={`transition-all duration-200 ${
-                      idx % 2 === 0 ? "bg-white" : "bg-gray-50"
-                    } hover:bg-indigo-50 cursor-pointer`}
-                    onClick={() => handleRowClick(scenario)}
-                  >
-                    <td className="px-6 py-4 flex items-center gap-3 font-semibold text-gray-800">
-                      <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-indigo-100 text-indigo-600">
-                        {getScenarioIcon(scenario)}
-                      </div>
-                      {getScenarioName(scenario)}
-                    </td>
+              </thead>
 
-                    <td className="px-6 py-4 text-gray-600 max-w-sm truncate">
-                      {getScenarioDescription(scenario)}
-                    </td>
-
-                    <td className="px-6 py-4 capitalize text-gray-700">
-                      {scenario.type}
-                    </td>
-
-                    <td className="px-6 py-4 text-gray-500">
-                      {new Date(scenario.createdAt).toLocaleDateString("en-US", {
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                      })}
-                    </td>
-
-                    <td className="px-6 py-4 text-right">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedScenario(scenario);
-                          setDeleteModalOpen(true);
-                        }}
-                        className="text-gray-400 hover:text-red-500 transition"
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
+              <tbody className="divide-y divide-gray-100">
+                {loading ? (
+                  <Loader />
+                ) : scenarios.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan="5"
+                      className="text-center py-10 text-gray-400 text-base"
+                    >
+                      No scenarios found.
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </section>
-    </main>
+                ) : (
+                  scenarios.map((scenario, idx) => (
+                    <tr
+                      key={scenario._id}
+                      className={`transition-all duration-200 ${
+                        idx % 2 === 0 ? "bg-white" : "bg-gray-50"
+                      } hover:bg-indigo-50 cursor-pointer`}
+                      onClick={() => handleRowClick(scenario)}
+                    >
+                      <td className="px-6 py-4 flex items-center gap-3 font-semibold text-gray-800">
+                        <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-indigo-100 text-indigo-600">
+                          {getScenarioIcon(scenario)}
+                        </div>
+                        {getScenarioName(scenario)}
+                      </td>
 
-    {/* 🗑️ Delete Modal */}
-    {deleteModalOpen && (
-      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
-        <div className="bg-white rounded-2xl shadow-xl w-96 p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">
-              Confirm Delete
-            </h2>
-            <button
-              onClick={() => setDeleteModalOpen(false)}
-              className="text-gray-400 hover:text-gray-600 transition"
-            >
-              <X className="w-5 h-5" />
-            </button>
+                      <td className="px-6 py-4 text-gray-600 max-w-sm truncate">
+                        {getScenarioDescription(scenario)}
+                      </td>
+
+                      <td className="px-6 py-4 capitalize text-gray-700">
+                        {scenario.type}
+                      </td>
+
+                      <td className="px-6 py-4 text-gray-500">
+                        {new Date(scenario.createdAt).toLocaleDateString(
+                          "en-US",
+                          {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          }
+                        )}
+                      </td>
+
+                      <td className="px-6 py-4 text-right">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedScenario(scenario);
+                            setDeleteModalOpen(true);
+                          }}
+                          className="text-gray-400 hover:text-red-500 transition"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
+        </section>
+      </main>
 
-          <p className="text-gray-600 mb-6 leading-relaxed">
-            Are you sure you want to delete{" "}
-            <span className="font-semibold text-gray-800">
-              {selectedScenario?.name || "this scenario"}
-            </span>
-            ?
-          </p>
+      {/* 🗑️ Delete Modal */}
+      {deleteModalOpen && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-xl w-96 p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-semibold text-gray-900">
+                Confirm Delete
+              </h2>
+              <button
+                onClick={() => setDeleteModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
-          <div className="flex justify-end space-x-3">
-            <button
-              onClick={() => setDeleteModalOpen(false)}
-              className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleDelete}
-              className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white shadow transition"
-            >
-              Delete
-            </button>
+            <p className="text-gray-600 mb-6 leading-relaxed">
+              Are you sure you want to delete{" "}
+              <span className="font-semibold text-gray-800">
+                {selectedScenario?.name || "this scenario"}
+              </span>
+              ?
+            </p>
+
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setDeleteModalOpen(false)}
+                className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white shadow transition"
+              >
+                Delete
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-    )}
-  </div>
-);
-
+      )}
+    </div>
+  );
 };
 
 export default AllScenariosPage;

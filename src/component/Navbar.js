@@ -40,7 +40,7 @@ const Navbar = () => {
 
         <div className="w-px h-6 bg-gray-300 mx-2"></div>
 
-        <button className="p-2 text-gray-500 hover:text-gray-700 rounded-md hover:bg-gray-100 transition">
+        {/* <button className="p-2 text-gray-500 hover:text-gray-700 rounded-md hover:bg-gray-100 transition">
           <FiHelpCircle className="w-5 h-5" />
         </button>
         <button className="p-2 text-gray-500 hover:text-gray-700 rounded-md hover:bg-gray-100 transition">
@@ -48,7 +48,7 @@ const Navbar = () => {
         </button>
         <button className="p-2 text-gray-500 hover:text-gray-700 rounded-md hover:bg-gray-100 transition">
           <FiBell className="w-5 h-5" />
-        </button>
+        </button> */}
 
         <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-white text-sm font-semibold cursor-pointer hover:bg-purple-700 transition">
           MR

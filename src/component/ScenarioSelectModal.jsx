@@ -1,8 +1,20 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiX, FiShoppingBag, FiSettings } from "react-icons/fi";
+import { useNavigate } from "react-router-dom";
 
-const ScenarioSelectModal = ({ open, onClose, onSelect }) => {
+const ScenarioSelectModal = ({ open, onClose }) => {
+  const navigate = useNavigate();
+
+  const handleSelect = (type) => {
+    if (type === "shopify") {
+      navigate("/scenarios/shopify");
+    } else if (type === "custom") {
+      navigate("/scenarios/others");
+    }
+    onClose(); 
+  };
+
   return (
     <AnimatePresence>
       {open && (
@@ -19,6 +31,7 @@ const ScenarioSelectModal = ({ open, onClose, onSelect }) => {
             exit={{ scale: 0.95, opacity: 0, y: 20 }}
             transition={{ duration: 0.2 }}
           >
+            {/* Close button */}
             <button
               onClick={onClose}
               className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
@@ -26,15 +39,17 @@ const ScenarioSelectModal = ({ open, onClose, onSelect }) => {
               <FiX className="w-5 h-5" />
             </button>
 
+            {/* Title */}
             <h2 className="text-xl font-semibold text-gray-800 mb-6 text-center">
               Choose Scenario Type
             </h2>
 
+            {/* Options */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <motion.button
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
-                onClick={() => onSelect("shopify")}
+                onClick={() => handleSelect("shopify")}
                 className="flex flex-col items-center justify-center border border-gray-200 hover:border-indigo-500 rounded-xl p-6 transition group shadow-sm"
               >
                 <div className="bg-indigo-100 text-indigo-600 p-3 rounded-full mb-3 group-hover:bg-indigo-200">
@@ -51,7 +66,7 @@ const ScenarioSelectModal = ({ open, onClose, onSelect }) => {
               <motion.button
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
-                onClick={() => onSelect("custom")}
+                onClick={() => handleSelect("custom")}
                 className="flex flex-col items-center justify-center border border-gray-200 hover:border-indigo-500 rounded-xl p-6 transition group shadow-sm"
               >
                 <div className="bg-indigo-100 text-indigo-600 p-3 rounded-full mb-3 group-hover:bg-indigo-200">
@@ -66,6 +81,7 @@ const ScenarioSelectModal = ({ open, onClose, onSelect }) => {
               </motion.button>
             </div>
 
+            {/* Cancel button */}
             <div className="mt-6 flex justify-center">
               <button
                 onClick={onClose}

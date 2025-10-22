@@ -109,7 +109,9 @@ const ShopifyScenariosPage = () => {
   const { user } = useContext(UserContext);
   const [showOutlookModal, setShowOutlookModal] = useState(false);
   const [showGmailModal, setShowGmailModal] = useState(false);
-
+  const [showEditTemplateModal, setShowEditTemplateModal] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState(null);
+  const [editContent, setEditContent] = useState("");
 
   useEffect(() => {
     if (user) {
@@ -118,7 +120,7 @@ const ShopifyScenariosPage = () => {
   }, [user]);
 
   const webhookUrl = user?.mailhook || "";
- 
+
   const handleAddEmail = (e, type) => {
     if (e.key === "Enter" || e.key === ",") {
       e.preventDefault();
@@ -326,7 +328,7 @@ const ShopifyScenariosPage = () => {
   useEffect(() => {
     const fetchScenario = async () => {
       try {
-        const userId = localStorage.getItem("userid"); // localStorage se lo
+        const userId = localStorage.getItem("userid");
         if (!userId) {
           console.error("No userId found in localStorage");
           return;
@@ -334,18 +336,28 @@ const ShopifyScenariosPage = () => {
 
         const res = await fetch("http://localhost:5000/scenario/details", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ userId }), // ✅ body me userId send
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId }),
         });
 
         const data = await res.json();
+
         if (data) {
           setScenarioId(data._id);
           setScenarioName(data.name || "");
           setScenarioDescription(data.description || "");
           setRouterBranches(data.routerBranches || []);
+
+          // ✅ NEW: handle activation state
+          if (data.scenarioActive === true) {
+            setAutomationOn(true);
+            localStorage.setItem("scenarioActive", "true");
+          } else {
+            setAutomationOn(false);
+            localStorage.removeItem("scenarioActive");
+          }
+
+          console.log("📊 Scenario Active:", data.scenarioActive);
         }
       } catch (err) {
         console.error("Error fetching scenario:", err);
@@ -702,6 +714,149 @@ const ShopifyScenariosPage = () => {
     service: "",
     budget: "100",
   });
+  useEffect(() => {
+    const fetchTestEmailData = async () => {
+      try {
+        const userId = localStorage.getItem("userid");
+        if (!userId || !showRunTestModal) return;
+
+        const res = await fetch(
+          `http://localhost:5000/mailhook/get-test-data/${userId}`
+        );
+        const data = await res.json();
+
+        if (data.success && data.data) {
+          console.log("✅ Test data loaded:", data.data);
+
+          setFormData({
+            fullName: data.data.fullName || "Dummy Customer",
+            businessEmail: data.data.businessEmail || "",
+            storeName: data.data.storeName || "",
+            country: data.data.country || "",
+            service: data.data.service || "",
+            budget: data.data.budget || "",
+            description: data.data.helpDescription || "", // 🟢 show in description box
+          });
+        } else {
+          console.log("ℹ️ No previous test data found for this user.");
+        }
+      } catch (err) {
+        console.error("❌ Error fetching test data:", err);
+      }
+    };
+
+    if (showRunTestModal) {
+      fetchTestEmailData();
+    }
+  }, [showRunTestModal]);
+
+  // const handleRunTest = async () => {
+  //   if (!isScenarioUpdated) {
+  //     toast.error("Please update the scenario before running the test.", {
+  //       duration: 5000,
+  //       style: {
+  //         background: "#fff0f0",
+  //         color: "#b91c1c",
+  //         border: "1px solid #fca5a5",
+  //       },
+  //     });
+  //     return;
+  //   }
+
+  //   toast.loading("Generating test email...", { id: "test" });
+
+  //   try {
+  //     const res = await fetch("http://localhost:5000/mailhook/Run-test-mode", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({
+  //         userId: localStorage.getItem("userid"),
+  //         fullName: formData.fullName,
+  //         businessEmail: formData.businessEmail,
+  //         storeName: formData.storeName,
+  //         country: formData.country,
+  //         service: formData.service,
+  //         budget: formData.budget,
+  //         helpDescription: formData.description,
+  //       }),
+  //     });
+
+  //     const data = await res.json();
+  //     toast.dismiss("test");
+
+  //     if (data.success) {
+  //       toast.success("Test completed successfully!");
+  //       setShowValidation(true);
+  //       setSelectedServiceForTemplates(formData.service);
+  //       // setShowTemplateModal(true);
+  //       const userId = localStorage.getItem("userid");
+  //       const res = await fetch(
+  //         `http://localhost:5000/template/alltemplates?userId=${userId}&service=${encodeURIComponent(
+  //           formData.service
+  //         )}`
+  //       );
+  //       const templates = await res.json();
+  //       setTemplateList(Array.isArray(templates.data) ? templates.data : []);
+
+  //       const updatedValidation = [];
+  //       let previousPassed = true;
+
+  //       updatedValidation.push({ id: "webhook", passed: true });
+  //       updatedValidation.push({ id: "router", passed: true });
+  //       updatedValidation.push({ id: "template", passed: true });
+
+  //       for (
+  //         let branchIndex = 0;
+  //         branchIndex < routerBranches.length;
+  //         branchIndex++
+  //       ) {
+  //         const branch = routerBranches[branchIndex];
+
+  //         for (
+  //           let moduleIndex = 0;
+  //           moduleIndex < branch.modules.length;
+  //           moduleIndex++
+  //         ) {
+  //           const m = branch.modules[moduleIndex];
+  //           let passed = true;
+
+  //           if (m.app.name === "Webhooks" || m.app.name === "Router") {
+  //             passed = true;
+  //           } else if (m.app.name === "Delay") {
+  //             passed = previousPassed;
+  //           } else if (m.app.name === "Gmail" || m.app.name === "Email") {
+  //             passed = !!m.connectionId && previousPassed;
+  //           }
+
+  //           updatedValidation.push({ id: m.id, passed });
+  //           previousPassed = passed;
+  //         }
+  //       }
+
+  //       const failedModules = updatedValidation.filter((v) => !v.passed);
+  //       if (failedModules.length > 0) {
+  //         toast.error(
+  //           "Some modules have missing connections. Please select connections in those modules and then run the test again.",
+  //           {
+  //             duration: 5000,
+  //             style: {
+  //               background: "#fff0f0",
+  //               color: "#b91c1c",
+  //               border: "1px solid #fca5a5",
+  //             },
+  //           }
+  //         );
+  //       }
+  //       setCompletedSteps(updatedValidation);
+  //     } else {
+  //       toast.error(data.message || "Test failed.");
+  //     }
+  //   } catch (err) {
+  //     toast.dismiss("test");
+  //     console.error("Run Test Error:", err);
+  //     toast.error("Run Test failed.");
+  //   }
+  // };
   const handleRunTest = async () => {
     if (!isScenarioUpdated) {
       toast.error("Please update the scenario before running the test.", {
@@ -723,7 +878,13 @@ const ShopifyScenariosPage = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId: localStorage.getItem("userid"),
-          ...formData,
+          fullName: formData.fullName,
+          businessEmail: formData.businessEmail,
+          storeName: formData.storeName,
+          country: formData.country,
+          service: formData.service,
+          budget: formData.budget,
+          helpDescription: formData.description,
         }),
       });
 
@@ -734,7 +895,8 @@ const ShopifyScenariosPage = () => {
         toast.success("Test completed successfully!");
         setShowValidation(true);
         setSelectedServiceForTemplates(formData.service);
-        // setShowTemplateModal(true);
+
+        // ✅ Fetch templates
         const userId = localStorage.getItem("userid");
         const res = await fetch(
           `http://localhost:5000/template/alltemplates?userId=${userId}&service=${encodeURIComponent(
@@ -744,6 +906,7 @@ const ShopifyScenariosPage = () => {
         const templates = await res.json();
         setTemplateList(Array.isArray(templates.data) ? templates.data : []);
 
+        // ✅ VALIDATION LOGIC
         const updatedValidation = [];
         let previousPassed = true;
 
@@ -766,12 +929,35 @@ const ShopifyScenariosPage = () => {
             const m = branch.modules[moduleIndex];
             let passed = true;
 
-            if (m.app.name === "Webhooks" || m.app.name === "Router") {
+            const appName = (m.app?.name || "").toLowerCase();
+            const conn = m.connectionId ? m.connectionId.toString().trim() : "";
+
+            if (appName.includes("webhook") || appName.includes("router")) {
               passed = true;
-            } else if (m.app.name === "Delay") {
+            } else if (appName.includes("delay")) {
               passed = previousPassed;
-            } else if (m.app.name === "Gmail" || m.app.name === "Email") {
-              passed = !!m.connectionId && previousPassed;
+            } else if (
+              appName.includes("gmail") ||
+              appName.includes("email") ||
+              appName.includes("follow") ||
+              appName.includes("initial")
+            ) {
+              // 🚫 Treat empty, "(empty)", "null", or "undefined" as invalid
+              const hasValidConnection =
+                conn !== "" &&
+                conn !== "(empty)" &&
+                conn !== "null" &&
+                conn !== "undefined";
+
+              passed = hasValidConnection && previousPassed;
+
+              if (!hasValidConnection) {
+                console.warn(
+                  `⚠️ Module "${m.app.name}" in Branch ${
+                    branchIndex + 1
+                  } is missing connectionId`
+                );
+              }
             }
 
             updatedValidation.push({ id: m.id, passed });
@@ -792,7 +978,15 @@ const ShopifyScenariosPage = () => {
               },
             }
           );
+
+          console.warn(
+            "❌ Test failed — Missing module connections detected:",
+            failedModules
+          );
+        } else {
+          console.log("✅ All modules passed validation.");
         }
+
         setCompletedSteps(updatedValidation);
       } else {
         toast.error(data.message || "Test failed.");
@@ -888,50 +1082,77 @@ const ShopifyScenariosPage = () => {
                     checked={automationOn}
                     onChange={async () => {
                       const newState = !automationOn;
-                      console.log("🟡 Toggle:", newState ? "ON" : "OFF");
+                      console.clear();
+                      console.groupCollapsed(
+                        `🟣 SCENARIO TOGGLE → ${
+                          newState ? "Activating" : "Deactivating"
+                        }`
+                      );
+
+                      routerBranches.forEach((branch, i) => {
+                        branch.modules.forEach((m, j) => {
+                          console.log(`   ↳ Module ${j + 1}:`, {
+                            moduleName: m.app?.name,
+                            connectionId: m.connectionId || "(empty)",
+                            emailType: m.emailType || "(none)",
+                            description: m.description || "",
+                          });
+                        });
+                        console.groupEnd();
+                      });
 
                       if (newState) {
                         const missingModules = [];
 
-                        const missingConnections = routerBranches.some(
-                          (branch, i) =>
-                            branch.modules.some((m, j) => {
-                              const appName =
-                                m.app?.name?.toLowerCase?.() || "";
-                              const isEmailModule =
-                                appName.includes("email") ||
-                                appName.includes("gmail");
+                        routerBranches.forEach((branch, i) => {
+                          branch.modules.forEach((m, j) => {
+                            const rawName = m.app?.name || "";
+                            const appName = rawName.toLowerCase();
 
-                              const missing =
-                                isEmailModule &&
-                                (!m.connectionId ||
-                                  m.connectionId.trim() === "");
+                            const isEmailModule =
+                              appName.includes("gmail") ||
+                              appName.includes("email") ||
+                              appName.includes("follow") ||
+                              appName.includes("initial");
 
-                              if (missing) {
-                                missingModules.push({
-                                  branchIndex: i + 1,
-                                  moduleIndex: j + 1,
-                                  moduleName: m.app.name,
-                                  connectionId: m.connectionId,
-                                });
-                              }
+                            const connection =
+                              m.connectionId &&
+                              typeof m.connectionId === "string"
+                                ? m.connectionId.trim()
+                                : (m.connectionId ?? "").toString().trim();
 
-                              return missing;
-                            })
-                        );
+                            const missing =
+                              isEmailModule &&
+                              (connection === "" ||
+                                connection === "(empty)" ||
+                                connection === "undefined" ||
+                                connection === "null");
 
-                        console.log("🚨 Missing modules:", missingModules);
+                            if (missing) {
+                              missingModules.push({
+                                branchIndex: i + 1,
+                                moduleIndex: j + 1,
+                                moduleName: rawName,
+                                connectionId: connection || "(empty)",
+                              });
+                            }
+                          });
+                        });
 
-                        if (missingConnections) {
-                          const missingNames = missingModules
-                            .map(
-                              (m) =>
-                                `• Branch ${m.branchIndex} → ${m.moduleName} (no connection)`
+                        if (missingModules.length > 0) {
+                          console.warn(
+                            "Activation Blocked — Missing Connections:"
+                          );
+                          missingModules.forEach((m) =>
+                            console.warn(
+                              `   → Branch ${m.branchIndex}, Module ${m.moduleIndex}: ${m.moduleName} (no connection)`
                             )
-                            .join("\n");
+                          );
 
                           toast.error(
-                            `⚠️ Automation cannot be activated.\n\nMissing connections in:\n${missingNames}`,
+                            `Scenario cannot be activated.\n\nMissing connections in:\n${missingModules
+                              .map((m) => `• ${m.moduleName} (no connection)`)
+                              .join("\n")}`,
                             {
                               duration: 7000,
                               style: {
@@ -945,62 +1166,58 @@ const ShopifyScenariosPage = () => {
 
                           setAutomationOn(false);
                           console.log(
-                            "❌ Automation blocked due to missing connections"
+                            "Automation blocked — missing Email/Gmail connections"
                           );
+                          console.groupEnd();
+                          console.groupEnd();
                           return;
                         }
+
+                        console.log(
+                          "Validation passed — all modules connected."
+                        );
+                        console.groupEnd();
                       }
 
                       setAutomationOn(newState);
-
                       if (newState) {
                         localStorage.setItem("scenarioActive", "true");
                       } else {
                         localStorage.removeItem("scenarioActive");
                       }
+                      console.groupEnd();
 
-                      // 💾 Step 2: Update scenario in DB
                       try {
                         const userId = localStorage.getItem("userid");
-                        const scenarioId = localStorage.getItem("scenarioId"); // or use from state
-
-                        const payload = {
-                          userId,
-                          automationActive: newState, // <-- new field
-                        };
+                        const scenarioIdValue =
+                          scenarioId || localStorage.getItem("scenarioId");
 
                         const res = await fetch(
-                          `http://localhost:5000/scenario/updateAutomation/${scenarioId}`,
+                          `http://localhost:5000/scenario/updateAutomation/${scenarioIdValue}`,
                           {
                             method: "PUT",
                             headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify(payload),
+                            body: JSON.stringify({
+                              userId,
+                              automationActive: newState,
+                            }),
                           }
                         );
 
                         const data = await res.json();
                         if (data.success) {
-                          console.log(
-                            "✅ Scenario automation state updated in DB"
-                          );
                         } else {
-                          console.error(
-                            "❌ Failed to update automation state in DB:",
-                            data.message
-                          );
                         }
-                      } catch (err) {
-                        console.error(
-                          "🔥 Error updating automation state in DB:",
-                          err
-                        );
-                      }
+                      } catch (err) {}
+                      console.groupEnd();
 
                       toast.success(
                         `Automation ${
                           newState ? "activated" : "deactivated"
                         } successfully!`
                       );
+
+                      console.groupEnd();
                     }}
                     className="sr-only peer"
                   />
@@ -1212,7 +1429,7 @@ const ShopifyScenariosPage = () => {
                         icon: "Gmail",
                       },
                       {
-                        name: "Delay Step",
+                        name: "Delay",
                         base: "Delay",
                         color: "bg-blue-500",
                         icon: "Delay",
@@ -1537,7 +1754,6 @@ const ShopifyScenariosPage = () => {
       {showRunTestModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
-            {/* Header */}
             <div className="flex justify-between items-start border-b px-6 py-4">
               <div>
                 <h2 className="text-lg font-semibold text-gray-800">
@@ -1572,9 +1788,7 @@ const ShopifyScenariosPage = () => {
               </button>
             </div>
 
-            {/* Body */}
             <div className="px-6 py-5 space-y-4 overflow-y-auto max-h-[70vh]">
-              {/* Business Email */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Business email
@@ -1590,7 +1804,6 @@ const ShopifyScenariosPage = () => {
                 />
               </div>
 
-              {/* Store Name */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Store name
@@ -1603,7 +1816,6 @@ const ShopifyScenariosPage = () => {
                 />
               </div>
 
-              {/* Country */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Country
@@ -1618,7 +1830,6 @@ const ShopifyScenariosPage = () => {
                 />
               </div>
 
-              {/* Service */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Select a service offered by {user?.name || "the team"}
@@ -1663,7 +1874,6 @@ const ShopifyScenariosPage = () => {
                 </select>
               </div>
 
-              {/* Budget */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Budget (USD)
@@ -1679,11 +1889,8 @@ const ShopifyScenariosPage = () => {
                   className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none"
                 />
               </div>
-
-              {/* Help Description */}
             </div>
 
-            {/* Footer */}
             <div className="border-t px-6 py-4 flex justify-end space-x-3">
               <button
                 onClick={() => setShowRunTestModal(false)}
@@ -1694,7 +1901,7 @@ const ShopifyScenariosPage = () => {
               <button
                 onClick={() => {
                   setShowRunTestModal(false);
-                  handleRunTest(); // uses formData automatically
+                  handleRunTest();
                 }}
                 className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition"
               >
@@ -1752,11 +1959,12 @@ const ShopifyScenariosPage = () => {
                 </div>
               ) : (
                 <table className="w-full border-collapse text-sm bg-white rounded-lg shadow-sm overflow-hidden">
-                  <thead className="sticky top-0 bg-gray-100">
+                  <thead className="sticky top-0 bg-gray-100 z-10">
                     <tr className="text-gray-700 text-left border-b">
-                      <th className="p-3">Service</th>
-                      <th className="p-3">Template</th>
-                      <th className="p-3 text-center">Status</th>
+                      <th className="p-3 w-[15%]">Service</th>
+                      <th className="p-3 w-[45%]">Template</th>
+                      <th className="p-3 text-center w-[15%]">Status</th>
+                      <th className="p-3 text-center w-[15%]">Action</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1766,13 +1974,14 @@ const ShopifyScenariosPage = () => {
                         templateList[i - 1]?.service !== t.service ? (
                           <tr className="bg-gray-50 border-t-4 border-gray-200">
                             <td
-                              colSpan={3}
+                              colSpan={4}
                               className="p-3 text-gray-900 font-semibold text-sm uppercase tracking-wide"
                             >
                               {t.service || "General Service"}
                             </td>
                           </tr>
                         ) : null}
+
                         <tr className="border-b hover:bg-purple-50 transition-colors">
                           <td className="p-3 font-medium text-gray-800">
                             {t.name}
@@ -1813,6 +2022,19 @@ const ShopifyScenariosPage = () => {
                               <div className="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full shadow-md transition-transform peer-checked:translate-x-5"></div>
                             </label>
                           </td>
+
+                          <td className="p-3 text-center">
+                            <button
+                              onClick={() => {
+                                setEditingTemplate(t);
+                                setEditContent(t.content || "");
+                                setShowEditTemplateModal(true);
+                              }}
+                              className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs rounded-md font-medium transition-colors"
+                            >
+                              Edit
+                            </button>
+                          </td>
                         </tr>
                       </React.Fragment>
                     ))}
@@ -1827,6 +2049,306 @@ const ShopifyScenariosPage = () => {
                 className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:shadow-md transition-transform hover:scale-[1.02]"
               >
                 View More Templates
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showRunTestModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+            {/* Header */}
+            <div className="flex justify-between items-start border-b px-6 py-4">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-800">
+                  Contact {user?.fullName || "Support Team"}
+                </h2>
+                <p className="text-sm text-gray-500 mt-1">
+                  Fill out the details below to run a test scenario.
+                </p>
+              </div>
+              <button
+                onClick={() => setShowRunTestModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="px-6 py-5 space-y-4 overflow-y-auto max-h-[70vh]">
+              {/* Business Email */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Business Email <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="email"
+                  value={formData.businessEmail}
+                  onChange={(e) =>
+                    setFormData({ ...formData, businessEmail: e.target.value })
+                  }
+                  placeholder="Enter your business email"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none"
+                />
+              </div>
+
+              {/* Store Name */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Store Name
+                </label>
+                <input
+                  type="text"
+                  value={formData.storeName}
+                  onChange={(e) =>
+                    setFormData({ ...formData, storeName: e.target.value })
+                  }
+                  placeholder="Enter your store name"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none"
+                />
+              </div>
+
+              {/* Country */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Country
+                </label>
+                <input
+                  type="text"
+                  value={formData.country}
+                  onChange={(e) =>
+                    setFormData({ ...formData, country: e.target.value })
+                  }
+                  placeholder="Enter your country"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none"
+                />
+              </div>
+
+              {/* Service */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Select a Service Offered by {user?.name || "the team"}
+                </label>
+                <select
+                  value={formData.service}
+                  onChange={(e) =>
+                    setFormData({ ...formData, service: e.target.value })
+                  }
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none"
+                >
+                  <option value="">Select service</option>
+                  <option>Troubleshooting</option>
+                  <option>Theme customization</option>
+                  <option>Store build or redesign</option>
+                  <option>Store migration</option>
+                  <option>Website and marketing content</option>
+                  <option>SEO</option>
+                  <option>Site performance and speed</option>
+                  <option>Custom apps and integrations</option>
+                  <option>Store settings configuration</option>
+                  <option>Product and collection setup</option>
+                  <option>Social media marketing</option>
+                  <option>Product descriptions</option>
+                  <option>Search engine advertising</option>
+                  <option>POS setup and migration</option>
+                  <option>Custom domain setup</option>
+                  <option>Conversion rate optimization</option>
+                  <option>Analytics and tracking</option>
+                  <option>Sales channel setup</option>
+                  <option>Logo and visual branding</option>
+                  <option>Business strategy guidance</option>
+                  <option>Website audit and optimization strategy</option>
+                  <option>Sales tax guidance</option>
+                  <option>Product photography</option>
+                  <option>Email marketing</option>
+                  <option>3D modelling</option>
+                  <option>Banner ads</option>
+                  <option>Video and illustrations</option>
+                  <option>Content marketing</option>
+                  <option>Product sourcing guidance</option>
+                </select>
+              </div>
+
+              {/* Budget */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Budget (USD)
+                </label>
+                <input
+                  type="number"
+                  value={formData.budget}
+                  onChange={(e) =>
+                    setFormData({ ...formData, budget: e.target.value })
+                  }
+                  placeholder="Enter your budget"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none"
+                />
+              </div>
+
+              {/* ✅ New Description Box */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Description
+                </label>
+                <textarea
+                  rows="4"
+                  value={formData.description || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
+                  placeholder="Describe your project, problem, or goal..."
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 resize-none focus:ring-2 focus:ring-green-500 focus:outline-none"
+                ></textarea>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="border-t px-6 py-4 flex justify-end space-x-3">
+              <button
+                onClick={() => setShowRunTestModal(false)}
+                className="px-4 py-2 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-100 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setShowRunTestModal(false);
+                  handleRunTest();
+                }}
+                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition"
+              >
+                Generate Test Email
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showEditTemplateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+            <div className="flex justify-between items-center p-5 border-b bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
+              <h2 className="text-lg font-semibold">
+                Edit Template — {editingTemplate?.name}
+              </h2>
+              <button
+                onClick={() => setShowEditTemplateModal(false)}
+                className="text-white hover:text-gray-200 hover:bg-white/10 p-1 rounded-full transition"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-5 overflow-y-auto flex-1 space-y-4 bg-gray-50">
+              <label className="block text-sm font-semibold text-gray-700">
+                Template Content
+              </label>
+
+              <ReactQuill
+                theme="snow"
+                value={editContent}
+                onChange={setEditContent}
+                className=" rounded-lg shadow-sm"
+                style={{
+                  border: "1px solid #e5e7eb",
+                  borderRadius: "0.5rem",
+                }}
+                modules={{
+                  toolbar: [
+                    [{ header: [1, 2, false] }],
+                    ["bold", "italic", "underline", "strike"],
+                    [{ list: "ordered" }, { list: "bullet" }],
+                    ["link"],
+                    ["clean"],
+                  ],
+                }}
+              />
+
+              {/* Insert Fields */}
+              <div className="border rounded-lg bg-white p-3 mt-4">
+                <p className="text-sm font-semibold text-gray-700 mb-2">
+                  Insert Fields
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    "Full name",
+                    "Business email",
+                    "Store name",
+                    "Store URL",
+                    "Country",
+                    "Service",
+                    "Budget",
+                    "Problem & Goal",
+                  ].map((field) => (
+                    <button
+                      key={field}
+                      onClick={() => {
+                        const placeholder = `{{${field}}}`;
+                        // ✅ Insert exactly at cursor position, without line break
+                        const quill = document.querySelector(".ql-editor");
+                        if (quill) {
+                          const sel = window.getSelection();
+                          const range = sel.getRangeAt(0);
+                          const textNode = document.createTextNode(placeholder);
+                          range.insertNode(textNode);
+                          // Move cursor to end of inserted text
+                          range.setStartAfter(textNode);
+                          range.setEndAfter(textNode);
+                          sel.removeAllRanges();
+                          sel.addRange(range);
+                        }
+                      }}
+                      className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium hover:bg-purple-200 transition"
+                    >
+                      {field}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="border-t p-4 bg-white flex justify-end space-x-3">
+              <button
+                onClick={() => setShowEditTemplateModal(false)}
+                className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-100 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    const res = await fetch(
+                      `http://localhost:5000/template/update/${editingTemplate._id}`,
+                      {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ content: editContent }),
+                      }
+                    );
+                    const data = await res.json();
+                    if (data.success) {
+                      toast.success("Template updated successfully!");
+                      setShowEditTemplateModal(false);
+                      setTemplateList((prev) =>
+                        prev.map((tpl) =>
+                          tpl._id === editingTemplate._id
+                            ? { ...tpl, content: editContent }
+                            : tpl
+                        )
+                      );
+                    } else {
+                      toast.error(data.message || "Failed to update template.");
+                    }
+                  } catch (err) {
+                    console.error("Error updating template:", err);
+                    toast.error("Error updating template.");
+                  }
+                }}
+                className="px-5 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition"
+              >
+                Save Changes
               </button>
             </div>
           </div>

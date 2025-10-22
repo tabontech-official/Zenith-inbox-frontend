@@ -222,23 +222,29 @@ const OutlookConnectionModal = ({ isOpen, onClose, onSuccess }) => {
     try {
       const userId = localStorage.getItem("userid");
 
+      if (!userId) {
+        alert("User not found. Please login again.");
+        return;
+      }
+
       if (connectionType === "other") {
         const payload = { ...form, userId };
-
-        const res = await fetch("http://localhost:5000/auth/saveSmtpConnection", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
+        const res = await fetch(
+          "http://localhost:5000/auth/saveSmtpConnection",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          }
+        );
 
         if (!res.ok) throw new Error("Failed to save connection");
         const data = await res.json();
         onSuccess?.(data);
+        onClose();
       } else {
-        window.location.href = "http://localhost:5000/auth/outlook";
+        window.location.href = `http://localhost:5000/auth/outlook?userId=${userId}`;
       }
-
-      onClose();
     } catch (err) {
       console.error("Error saving connection:", err);
     }
@@ -387,7 +393,8 @@ const OutlookConnectionModal = ({ isOpen, onClose, onSuccess }) => {
           {connectionType === "microsoft" && (
             <div className="flex flex-col items-center justify-center py-6">
               <p className="text-sm text-gray-600 mb-3 text-center">
-                Connect your Outlook (Microsoft 365) account securely using OAuth.
+                Connect your Outlook (Microsoft 365) account securely using
+                OAuth.
               </p>
               <button
                 onClick={() => handleSubmit()}
