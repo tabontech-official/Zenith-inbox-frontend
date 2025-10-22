@@ -91,7 +91,6 @@ const ShopifyScenariosPage = () => {
   const [delayUnit, setDelayUnit] = useState("seconds");
   const [showValidation, setShowValidation] = useState(false);
   const [isScenarioUpdated, setIsScenarioUpdated] = useState(true);
-
   const [templates, setTemplates] = useState([]);
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [cc, setCc] = useState("");
@@ -111,13 +110,7 @@ const ShopifyScenariosPage = () => {
   const [showOutlookModal, setShowOutlookModal] = useState(false);
   const [showGmailModal, setShowGmailModal] = useState(false);
 
-  const handleAddClick = () => {
-    if (selectedApp?.name === "Email") {
-      setShowOutlookModal(true);
-    } else if (selectedApp?.name === "Gmail") {
-      setShowGmailModal(true);
-    }
-  };
+
   useEffect(() => {
     if (user) {
       setLoading(false);
@@ -125,13 +118,7 @@ const ShopifyScenariosPage = () => {
   }, [user]);
 
   const webhookUrl = user?.mailhook || "";
-  // const fullname=user?.fullName
-  const handleCopy = () => {
-    navigator.clipboard.writeText(webhookUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
+ 
   const handleAddEmail = (e, type) => {
     if (e.key === "Enter" || e.key === ",") {
       e.preventDefault();
@@ -175,23 +162,39 @@ const ShopifyScenariosPage = () => {
   }, []);
 
   useEffect(() => {
-    if (selectedApp?.name) {
-      const fetchTemplates = async () => {
-        try {
-          const res = await fetch(
-            `http://localhost:5000/template/all?userId=${localStorage.getItem(
-              "userid"
-            )}&platform=shopify&service=${selectedApp.name}`
-          );
-          const data = await res.json();
-          setTemplates(data);
-        } catch (err) {
-          console.error("Error fetching templates:", err);
-        }
-      };
+    const fetchTemplates = async () => {
+      try {
+        const userId = localStorage.getItem("userid");
+        const res = await fetch(
+          `http://localhost:5000/template/all?userId=${userId}`
+        );
+        const data = await res.json();
+
+        const filtered = data.filter(
+          (t) => !t.service || !t.service.toLowerCase().startsWith("general")
+        );
+
+        const grouped = {};
+        filtered.forEach((t) => {
+          if (!grouped[t.service]) grouped[t.service] = [];
+          if (grouped[t.service].length < 3) grouped[t.service].push(t);
+        });
+
+        const firstTwoServices = Object.keys(grouped).slice(0, 2);
+        const limited = firstTwoServices.flatMap((key) => grouped[key]);
+        setTemplateList(limited);
+
+        const areAllActive = limited.every((t) => t.active === true);
+        setAllActive(areAllActive);
+      } catch (err) {
+        console.error("❌ Error fetching templates:", err);
+      }
+    };
+
+    if (showTemplateModal && !showValidation) {
       fetchTemplates();
     }
-  }, [selectedApp]);
+  }, [showTemplateModal, showValidation]);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -209,35 +212,6 @@ const ShopifyScenariosPage = () => {
     };
   }, []);
 
-  const apps = [
-    { name: "Delay", color: "bg-blue-500", icon: "Delay" },
-    { name: "Email", color: "bg-purple-500", icon: "Email" },
-    { name: "Gmail", color: "bg-red-500", icon: "Gmail" },
-  ];
-
-  const availableData = [
-    {
-      module: "Gmail",
-      type: "Send an Email",
-      fields: [
-        { name: "Message ID", type: "text" },
-        { name: "Subject", type: "text" },
-        { name: "Date", type: "date" },
-        { name: "HTML content", type: "html" },
-        {
-          name: "Sender",
-          type: "object",
-          subFields: ["Name", "Email address"],
-        },
-        { name: "Recipients[]", type: "array" },
-        { name: "Copy Recipients[]", type: "array" },
-        { name: "Blind copy recipients[]", type: "array" },
-        { name: "Attachments[]", type: "array" },
-        { name: "Headers", type: "object" },
-      ],
-    },
-  ];
-
   const handleSaveScenario = async () => {
     try {
       const payload = {
@@ -246,9 +220,9 @@ const ShopifyScenariosPage = () => {
         description: scenarioDescription,
         type: "shopify",
         routerBranches,
+        scenarioActive: localStorage.getItem("scenarioActive") === "true",
       };
 
-      // ✅ Always update (PUT)
       const res = await fetch(
         `http://localhost:5000/scenario/detail/${scenarioId}`,
         {
@@ -269,7 +243,56 @@ const ShopifyScenariosPage = () => {
       toast.error("Failed to update scenario.");
     }
   };
+  const handleToggleTemplate = async (templateId, newStatus) => {
+    try {
+      const res = await fetch(
+        `http://localhost:5000/template/status/${templateId}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ active: newStatus }),
+        }
+      );
 
+      const data = await res.json();
+      if (data.success) {
+        toast.success(`Template ${newStatus ? "activated" : "deactivated"}!`);
+      } else {
+        toast.error(data.message || "Failed to update template status.");
+      }
+    } catch (err) {
+      console.error("Error updating template:", err);
+      toast.error("Error updating template status.");
+    }
+  };
+
+  const handleToggleAllTemplates = async (newStatus) => {
+    try {
+      const res = await fetch(
+        `http://localhost:5000/template/templatestatus/all`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: localStorage.getItem("userid"),
+            active: newStatus,
+          }),
+        }
+      );
+
+      const data = await res.json();
+      if (data.success) {
+        toast.success(
+          `All templates ${newStatus ? "activated" : "deactivated"}!`
+        );
+      } else {
+        toast.error(data.message || "Failed to update templates.");
+      }
+    } catch (err) {
+      console.error(" Error updating all templates:", err);
+      toast.error("Error updating all templates.");
+    }
+  };
   const iconMap = {
     Delay: Clock,
     Email: FiMail,
@@ -331,7 +354,35 @@ const ShopifyScenariosPage = () => {
 
     fetchScenario();
   }, []);
+  const [allActive, setAllActive] = useState(false);
 
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      try {
+        const userId = localStorage.getItem("userid");
+        const res = await fetch(
+          `http://localhost:5000/template/all?userId=${userId}`
+        );
+        const data = await res.json();
+
+        const grouped = {};
+        data.forEach((t) => {
+          if (!grouped[t.service]) grouped[t.service] = [];
+          if (grouped[t.service].length < 3) grouped[t.service].push(t);
+        });
+
+        const firstTwoServices = Object.keys(grouped).slice(0, 2);
+        const limited = firstTwoServices.flatMap((key) => grouped[key]);
+        setTemplateList(limited);
+      } catch (err) {
+        console.error("❌ Error fetching templates:", err);
+      }
+    };
+
+    if (showTemplateModal && !showValidation) {
+      fetchTemplates();
+    }
+  }, [showTemplateModal, showValidation]);
   const handleSave = () => {
     if (editingBranch !== null) {
       const updatedBranches = [...routerBranches];
@@ -347,8 +398,31 @@ const ShopifyScenariosPage = () => {
         selectedApp?.name === "Gmail"
       ) {
         type = selectedApp.name === "Email" ? "Custom Email" : "Send an Email";
-        description = `Send email via ${selectedApp.name}`;
+        description = `Send email via ${selectedAppType || selectedApp.name}`;
       }
+
+      const moduleData = {
+        id: editingModuleId || Date.now(),
+        app: {
+          ...selectedApp,
+          name:
+            selectedApp.displayName ||
+            selectedTemplate ||
+            selectedApp.defaultTemplate ||
+            "Unnamed Module",
+          color: selectedApp.color,
+          icon: selectedApp.icon,
+        },
+        type,
+        description,
+        connectionId: selectedConnection,
+        template: selectedTemplate,
+        cc: ccList,
+        bcc: bccList,
+        delayValue,
+        delayUnit,
+        emailType: selectedAppType || selectedApp?.name || "",
+      };
 
       if (editingModuleId) {
         const moduleIndex = updatedBranches[editingBranch].modules.findIndex(
@@ -357,30 +431,11 @@ const ShopifyScenariosPage = () => {
         if (moduleIndex >= 0) {
           updatedBranches[editingBranch].modules[moduleIndex] = {
             ...updatedBranches[editingBranch].modules[moduleIndex],
-            app: selectedApp,
-            type,
-            description,
-            connectionId: selectedConnection,
-            template: selectedTemplate,
-            cc: ccList,
-            bcc: bccList,
-            delayValue,
-            delayUnit,
+            ...moduleData,
           };
         }
       } else {
-        updatedBranches[editingBranch].modules.push({
-          id: Date.now(),
-          app: selectedApp,
-          type,
-          description,
-          connectionId: selectedConnection,
-          template: selectedTemplate,
-          cc: ccList,
-          bcc: bccList,
-          delayValue,
-          delayUnit,
-        });
+        updatedBranches[editingBranch].modules.push(moduleData);
       }
 
       setRouterBranches(updatedBranches);
@@ -389,23 +444,6 @@ const ShopifyScenariosPage = () => {
     }
 
     resetForm();
-  };
-
-  const handleCancel = () => {
-    setSelectedApp(null);
-    setEditingBranch(null);
-    setEditingModuleId(null);
-
-    setSelectedConnection("");
-    setSelectedTemplate("");
-    setSubject("");
-    setCcList([]);
-    setBccList([]);
-    setCcInput("");
-    setBccInput("");
-    setDelayValue("5");
-    setDelayUnit("seconds");
-    setOpen(false);
   };
 
   const handleRemoveModule = (branchIndex, moduleId) => {
@@ -430,154 +468,36 @@ const ShopifyScenariosPage = () => {
     setSelectedBranchIndex(branchIndex);
     setEditingBranch(branchIndex);
     setEditingModuleId(module.id);
-    setOpen(true);
 
-    setSelectedApp(module.app);
-    setSelectedConnection(module.connectionId || "");
-    setSelectedTemplate(module.template || "");
-    setSubject(module.subject || "");
-    setCcList(module.cc || []);
-    setBccList(module.bcc || []);
-    setDelayValue(module.delayValue || "5");
-    setDelayUnit(module.delayUnit || "seconds");
+    // Detect type (Delay vs Email/Gmail)
+    const isDelayModule =
+      module.app?.name?.toLowerCase() === "delay" ||
+      module.type?.toLowerCase() === "delay";
+
+    if (isDelayModule) {
+      setSelectedApp({
+        name: "Delay",
+        color: "bg-blue-500",
+        icon: "Delay",
+        type: "Delay",
+      });
+      setDelayValue(module.delayValue || "5");
+      setDelayUnit(module.delayUnit || "seconds");
+      setSelectedAppType("Delay");
+    } else {
+      setSelectedApp(module.app || {});
+      setSelectedAppType(module.emailType || module.app?.name || ""); // ✅ add this
+      setSelectedConnection(module.connectionId || "");
+      setSelectedTemplate(module.template || "");
+      setSubject(module.subject || "");
+      setCcList(module.cc || []);
+      setBccList(module.bcc || []);
+      setDelayValue(module.delayValue || "5");
+      setDelayUnit(module.delayUnit || "seconds");
+    }
+
+    setOpen(true); // keep this at the end
   };
-
-  const handleRouterHover = () => {
-    setRouterHovered(true);
-  };
-
-  const handleRouterLeave = () => {
-    setRouterHovered(false);
-  };
-
-  const addRouterBranch = () => {
-    const newBranch = {
-      id: routerBranches.length + 1,
-      hasModule: false,
-      condition: null,
-      modules: [],
-    };
-    setRouterBranches([...routerBranches, newBranch]);
-  };
-
-  const handleBranchPlusClick = (branchIndex) => {
-    setSelectedBranchIndex(branchIndex);
-    setEditingBranch(branchIndex);
-    setOpen(true);
-  };
-
-  const handleConditionClick = () => {
-    setShowDataPanel(true);
-  };
-
-  const addModuleToBranch = (branchIndex) => {
-    setEditingBranch(branchIndex);
-    setOpen(true);
-  };
-  const renderConnectionLine = (startX, startY, endX, endY) => {
-    return (
-      <svg
-        className="absolute top-0 left-0 w-full h-full pointer-events-none"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <line
-          x1={startX}
-          y1={startY}
-          x2={endX}
-          y2={endY}
-          stroke="gray"
-          strokeWidth="2"
-          strokeDasharray="5,5"
-        />
-      </svg>
-    );
-  };
-
-  // Flowwise-style Node Component
-  // const FlowNode = ({
-  //   icon: Icon,
-  //   title,
-  //   subtitle,
-  //   color,
-  //   number,
-  //   onEdit,
-  //   onDelete,
-  //   isFirst,
-  //   isLast,
-  //   isRouter,
-  // }) => (
-  //   <div className="relative group">
-  //     <div
-  //       className={`bg-white rounded-xl shadow-lg border-2 ${color} p-6 w-64 hover:shadow-xl transition-all duration-200`}
-  //     >
-  //       {/* Number Badge */}
-  //       <div
-  //         className={`absolute -top-3 -left-3 w-8 h-8 ${color.replace(
-  //           "border-",
-  //           "bg-"
-  //         )} rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md`}
-  //       >
-  //         {number}
-  //       </div>
-
-  //       {/* Icon and Title */}
-  //       <div className="flex items-center space-x-3 mb-3">
-  //         <div
-  //           className={`${color
-  //             .replace("border-", "bg-")
-  //             .replace("-500", "-100")} p-3 rounded-lg`}
-  //         >
-  //           <Icon className={`w-6 h-6 ${color.replace("border-", "text-")}`} />
-  //         </div>
-  //         <div className="flex-1">
-  //           <h3 className="font-semibold text-gray-800 text-sm">{title}</h3>
-  //           <p className="text-xs text-gray-500 mt-1">{subtitle}</p>
-  //         </div>
-  //       </div>
-
-  //       {/* Action Buttons (on hover) */}
-  //       {!isFirst && (
-  //         <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1">
-  //           {onEdit && (
-  //             <button
-  //               onClick={onEdit}
-  //               className="p-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-  //             >
-  //               <Settings className="w-3 h-3" />
-  //             </button>
-  //           )}
-  //           {onDelete && (
-  //             <button
-  //               onClick={onDelete}
-  //               className="p-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-  //             >
-  //               <X className="w-3 h-3" />
-  //             </button>
-  //           )}
-  //         </div>
-  //       )}
-
-  //       {/* Connection Point - Bottom */}
-  //       {!isLast && (
-  //         <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-gray-400 rounded-full border-2 border-white"></div>
-  //       )}
-
-  //       {/* Connection Point - Top */}
-  //       {!isFirst && (
-  //         <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-gray-400 rounded-full border-2 border-white"></div>
-  //       )}
-  //       {isRouter && (
-  //         <button
-  //           onClick={handleViewEmailData}
-  //           className="p-1.5  border rounded-lg border-green-500 text-green-500 transition-colors"
-  //           title="View Test Email"
-  //         >
-  //           <Eye className="w-3 h-3" />
-  //         </button>
-  //       )}
-  //     </div>
-  //   </div>
-  // );
 
   const [completedSteps, setCompletedSteps] = useState([]);
 
@@ -627,7 +547,13 @@ const ShopifyScenariosPage = () => {
             onEdit && onEdit();
             return;
           }
-
+          if (
+            title.toLowerCase().includes("template") ||
+            module?.app?.name?.toLowerCase() === "template"
+          ) {
+            onEdit && onEdit();
+            return;
+          }
           if (!completed && !hasConnection) {
             toast.error("Please select a connection in this module.", {
               duration: 5000,
@@ -733,7 +659,6 @@ const ShopifyScenariosPage = () => {
           </div>
         )}
 
-        {/* Connection Points */}
         {!isLast && (
           <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-gray-400 rounded-full border-2 border-white"></div>
         )}
@@ -767,35 +692,6 @@ const ShopifyScenariosPage = () => {
     setDelayUnit("seconds");
     setOpen(false);
   };
-
-  // const handleRunTest = async () => {
-  //   try {
-  //     toast.loading("Running test scenario...", { id: "test" });
-
-  //     const res = await fetch(
-  //       `http://localhost:5000/scenario/run-test/${scenarioId}`,
-  //       {
-  //         method: "POST",
-  //         headers: { "Content-Type": "application/json" },
-  //         body: JSON.stringify({
-  //           userId: localStorage.getItem("userid"),
-  //         }),
-  //       }
-  //     );
-
-  //     const data = await res.json();
-
-  //     if (res.ok) {
-  //       toast.success("Scenario test executed successfully!", { id: "test" });
-  //       console.log("Test result:", data);
-  //     } else {
-  //       toast.error(data.message || "Test failed.", { id: "test" });
-  //     }
-  //   } catch (err) {
-  //     console.error("Error running test:", err);
-  //     toast.error("Failed to run test.", { id: "test" });
-  //   }
-  // };
 
   const [showRunTestModal, setShowRunTestModal] = useState(false);
   const [formData, setFormData] = useState({
@@ -911,6 +807,8 @@ const ShopifyScenariosPage = () => {
   const [showEmailPreview, setShowEmailPreview] = useState(false);
   const [emailFields, setEmailFields] = useState({});
   const [selectedField, setSelectedField] = useState(null);
+  const [automationOn, setAutomationOn] = useState(false);
+
   const handleViewEmailData = async () => {
     try {
       const userId = localStorage.getItem("userid");
@@ -935,6 +833,7 @@ const ShopifyScenariosPage = () => {
       toast.error("Failed to fetch email.", { id: "email" });
     }
   };
+  const [selectedAppType, setSelectedAppType] = useState("");
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -957,17 +856,19 @@ const ShopifyScenariosPage = () => {
                 Configure your automation workflow
               </p>
             </div>
-            <div className="flex space-x-3">
+            <div className="flex items-center flex-wrap gap-3">
               <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center text-sm">
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back
               </button>
+
               <button
                 onClick={handleSaveScenario}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center text-sm"
               >
                 Update Scenario
               </button>
+
               <button
                 onClick={() => setShowRunTestModal(true)}
                 className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center text-sm"
@@ -975,6 +876,147 @@ const ShopifyScenariosPage = () => {
                 <Zap className="w-4 h-4 mr-2" />
                 Run Test
               </button>
+
+              <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-full shadow-sm border ml-2">
+                <span className="text-sm font-medium text-gray-700">
+                  Activate Scenario
+                </span>
+
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={automationOn}
+                    onChange={async () => {
+                      const newState = !automationOn;
+                      console.log("🟡 Toggle:", newState ? "ON" : "OFF");
+
+                      if (newState) {
+                        const missingModules = [];
+
+                        const missingConnections = routerBranches.some(
+                          (branch, i) =>
+                            branch.modules.some((m, j) => {
+                              const appName =
+                                m.app?.name?.toLowerCase?.() || "";
+                              const isEmailModule =
+                                appName.includes("email") ||
+                                appName.includes("gmail");
+
+                              const missing =
+                                isEmailModule &&
+                                (!m.connectionId ||
+                                  m.connectionId.trim() === "");
+
+                              if (missing) {
+                                missingModules.push({
+                                  branchIndex: i + 1,
+                                  moduleIndex: j + 1,
+                                  moduleName: m.app.name,
+                                  connectionId: m.connectionId,
+                                });
+                              }
+
+                              return missing;
+                            })
+                        );
+
+                        console.log("🚨 Missing modules:", missingModules);
+
+                        if (missingConnections) {
+                          const missingNames = missingModules
+                            .map(
+                              (m) =>
+                                `• Branch ${m.branchIndex} → ${m.moduleName} (no connection)`
+                            )
+                            .join("\n");
+
+                          toast.error(
+                            `⚠️ Automation cannot be activated.\n\nMissing connections in:\n${missingNames}`,
+                            {
+                              duration: 7000,
+                              style: {
+                                background: "#fff0f0",
+                                color: "#b91c1c",
+                                border: "1px solid #fca5a5",
+                                whiteSpace: "pre-line",
+                              },
+                            }
+                          );
+
+                          setAutomationOn(false);
+                          console.log(
+                            "❌ Automation blocked due to missing connections"
+                          );
+                          return;
+                        }
+                      }
+
+                      setAutomationOn(newState);
+
+                      if (newState) {
+                        localStorage.setItem("scenarioActive", "true");
+                      } else {
+                        localStorage.removeItem("scenarioActive");
+                      }
+
+                      // 💾 Step 2: Update scenario in DB
+                      try {
+                        const userId = localStorage.getItem("userid");
+                        const scenarioId = localStorage.getItem("scenarioId"); // or use from state
+
+                        const payload = {
+                          userId,
+                          automationActive: newState, // <-- new field
+                        };
+
+                        const res = await fetch(
+                          `http://localhost:5000/scenario/updateAutomation/${scenarioId}`,
+                          {
+                            method: "PUT",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify(payload),
+                          }
+                        );
+
+                        const data = await res.json();
+                        if (data.success) {
+                          console.log(
+                            "✅ Scenario automation state updated in DB"
+                          );
+                        } else {
+                          console.error(
+                            "❌ Failed to update automation state in DB:",
+                            data.message
+                          );
+                        }
+                      } catch (err) {
+                        console.error(
+                          "🔥 Error updating automation state in DB:",
+                          err
+                        );
+                      }
+
+                      toast.success(
+                        `Automation ${
+                          newState ? "activated" : "deactivated"
+                        } successfully!`
+                      );
+                    }}
+                    className="sr-only peer"
+                  />
+
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:ring-2 peer-focus:ring-indigo-300 rounded-full peer-checked:bg-indigo-600 transition-all"></div>
+                  <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm peer-checked:translate-x-5 transition-transform"></div>
+                </label>
+
+                <span
+                  className={`text-xs font-semibold ${
+                    automationOn ? "text-green-600" : "text-gray-400"
+                  }`}
+                >
+                  {automationOn ? "ON" : "OFF"}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -1038,18 +1080,10 @@ const ShopifyScenariosPage = () => {
                 module={{ app: { name: "Template" } }}
                 onEdit={() => {
                   if (showTemplateModal) return;
-
-                  if (showValidation) {
-                    setShowTemplateModal(true);
-                  } else {
-                    toast.info(
-                      "Template editor will be available after running a test."
-                    );
-                  }
+                  setShowTemplateModal(true);
                 }}
               />
 
-              {/* Divider below Template before branches */}
               <div className="w-0.5 h-12 bg-gray-300"></div>
             </div>
 
@@ -1076,7 +1110,13 @@ const ShopifyScenariosPage = () => {
                           <React.Fragment key={module.id}>
                             <FlowNode
                               icon={Icon}
-                              title={module.app.name}
+                              title={
+                                module.app.name === "First Email"
+                                  ? "First Follow-up"
+                                  : module.app.name === "Second Email"
+                                  ? "Second Follow-up"
+                                  : module.app.name
+                              }
                               subtitle={module.description}
                               color={`border-${module.app.color.replace(
                                 "bg-",
@@ -1151,23 +1191,70 @@ const ShopifyScenariosPage = () => {
                       Choose an app to add to your workflow
                     </p>
                   </div>
-                  <div className="p-4 max-h-96 overflow-y-auto">
-                    {apps.map((app, idx) => {
-                      const Icon = iconMap[app.icon];
+                  <div className="p-4 max-h-96 overflow-y-auto space-y-3">
+                    {[
+                      {
+                        name: "Initial Email",
+                        base: "Gmail",
+                        color: "bg-red-500",
+                        icon: "Gmail",
+                      },
+                      {
+                        name: "First Follow-up",
+                        base: "Gmail",
+                        color: "bg-red-500",
+                        icon: "Gmail",
+                      },
+                      {
+                        name: "Second Follow-up",
+                        base: "Gmail",
+                        color: "bg-red-500",
+                        icon: "Gmail",
+                      },
+                      {
+                        name: "Delay Step",
+                        base: "Delay",
+                        color: "bg-blue-500",
+                        icon: "Delay",
+                      },
+                    ].map((item, idx) => {
+                      const Icon = iconMap[item.icon];
                       return (
                         <div
                           key={idx}
-                          onClick={() => setSelectedApp(app)}
-                          className="flex items-center p-4 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors border border-transparent hover:border-purple-200"
+                          onClick={() => {
+                            // Map friendly names to consistent internal names
+                            let templateName = "";
+                            if (item.name === "Initial Email")
+                              templateName = "Initial Email";
+                            else if (item.name === "First Follow-up")
+                              templateName = "First Follow-up";
+                            else if (item.name === "Second Follow-up")
+                              templateName = "Second Follow-up";
+
+                            setSelectedApp({
+                              name: item.base,
+                              displayName: item.name, // show Follow-up names in modal + FlowNode
+                              color: item.color,
+                              icon: item.icon,
+                              defaultTemplate: templateName,
+                            });
+
+                            setSelectedTemplate(templateName);
+                          }}
+                          className="flex items-center p-4 rounded-lg border border-gray-200 hover:border-purple-500 hover:bg-purple-50 cursor-pointer transition-colors"
                         >
                           <div
-                            className={`w-12 h-12 ${app.color} rounded-lg flex items-center justify-center text-white`}
+                            className={`w-12 h-12 ${item.color} rounded-lg flex items-center justify-center text-white`}
                           >
                             <Icon className="w-6 h-6" />
                           </div>
-                          <span className="ml-4 font-medium text-gray-800">
-                            {app.name}
-                          </span>
+                          <div className="ml-4">
+                            <p className="font-medium text-gray-800 text-sm">
+                              {item.name}
+                            </p>
+                            <p className="text-xs text-gray-500">{item.base}</p>
+                          </div>
                         </div>
                       );
                     })}
@@ -1177,8 +1264,9 @@ const ShopifyScenariosPage = () => {
                 <>
                   <div className="p-6 border-b bg-gradient-to-r from-purple-600 to-purple-500 text-white flex justify-between items-center">
                     <h3 className="font-semibold text-lg">
-                      {selectedApp.name}
+                      {selectedApp.displayName || selectedApp.name}
                     </h3>
+
                     <button
                       onClick={resetForm}
                       className="hover:bg-white hover:bg-opacity-20 p-1 rounded"
@@ -1188,7 +1276,8 @@ const ShopifyScenariosPage = () => {
                   </div>
 
                   <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
-                    {selectedApp.name === "Delay" ? (
+                    {selectedApp?.name === "Delay" ||
+                    selectedApp?.type === "Delay" ? (
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Delay Duration <span className="text-red-500">*</span>
@@ -1213,130 +1302,90 @@ const ShopifyScenariosPage = () => {
                       </div>
                     ) : (
                       <>
-                        {/* <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Connection <span className="text-red-500">*</span>
-                          </label>
-                          <select
-                            value={selectedConnection}
-                            onChange={(e) =>
-                              setSelectedConnection(e.target.value)
-                            }
-                            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                          >
-                            <option value="">-- Select Connection --</option>
-                            {connections
-                              .filter((c) => {
-                                if (selectedApp?.name === "Email")
-                                  return (
-                                    c.provider === "smtp" ||
-                                    c.provider === "outlook"
-                                  );
-                                if (selectedApp?.name === "Gmail")
-                                  return c.provider === "gmail";
-                                return false;
-                              })
-                              .map((c) => (
-                                <option key={c._id} value={c._id}>
-                                  {c.provider.toUpperCase()} - {c.email}
-                                </option>
-                              ))}
-                          </select>
-                        </div> */}
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Connection <span className="text-red-500">*</span>
+                            Select Application{" "}
+                            <span className="text-red-500">*</span>
                           </label>
-
-                          <div className="flex items-center border border-gray-300 rounded-lg px-2 py-2 focus-within:ring-2 focus-within:ring-purple-500">
-                            <select
-                              value={selectedConnection}
-                              // onChange={(e) =>
-                              //   setSelectedConnection(e.target.value)
-                              // }
-                              onChange={(e) => {
-                                setSelectedConnection(e.target.value);
-                                setIsScenarioUpdated(false);
-                              }}
-                              className="flex-1 border-none outline-none text-sm bg-transparent"
-                            >
-                              <option value="">-- Select Connection --</option>
-                              {connections
-                                .filter((c) => {
-                                  if (selectedApp?.name === "Email")
-                                    return (
-                                      c.provider === "smtp" ||
-                                      c.provider === "outlook"
-                                    );
-                                  if (selectedApp?.name === "Gmail")
-                                    return c.provider === "gmail";
-                                  return false;
-                                })
-                                .map((c) => (
-                                  <option key={c._id} value={c._id}>
-                                    {c.provider.toUpperCase()} - {c.email}
-                                  </option>
-                                ))}
-                            </select>
-
-                            <button
-                              onClick={() => {
-                                if (selectedApp?.name === "Email") {
-                                  setShowOutlookModal(true);
-                                } else if (selectedApp?.name === "Gmail") {
-                                  setShowGmailModal(true);
-                                }
-                              }}
-                              className="ml-2 border border-purple-500 text-purple-600 hover:bg-purple-50 rounded-md px-3 py-1 text-sm font-medium"
-                            >
-                              Add
-                            </button>
-                          </div>
+                          <select
+                            value={selectedAppType}
+                            onChange={(e) => setSelectedAppType(e.target.value)}
+                            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                          >
+                            <option value="">-- Choose App Type --</option>
+                            <option value="Gmail">Gmail</option>
+                            <option value="Email">Email (SMTP/Outlook)</option>
+                          </select>
                         </div>
+
+                        {selectedAppType && (
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Connection <span className="text-red-500">*</span>
+                            </label>
+
+                            <div className="flex items-center border border-gray-300 rounded-lg px-2 py-2 focus-within:ring-2 focus-within:ring-purple-500">
+                              <select
+                                value={selectedConnection}
+                                onChange={(e) => {
+                                  setSelectedConnection(e.target.value);
+                                  setIsScenarioUpdated(false);
+                                }}
+                                className="flex-1 border-none outline-none text-sm bg-transparent"
+                              >
+                                <option value="">
+                                  -- Select Connection --
+                                </option>
+                                {connections
+                                  .filter((c) => {
+                                    if (selectedAppType === "Email")
+                                      return (
+                                        c.provider === "smtp" ||
+                                        c.provider === "outlook"
+                                      );
+                                    if (selectedAppType === "Gmail")
+                                      return c.provider === "gmail";
+                                    return false;
+                                  })
+                                  .map((c) => (
+                                    <option key={c._id} value={c._id}>
+                                      {c.provider.toUpperCase()} - {c.email}
+                                    </option>
+                                  ))}
+                              </select>
+
+                              <button
+                                onClick={() => {
+                                  if (selectedAppType === "Email") {
+                                    setShowOutlookModal(true);
+                                  } else if (selectedAppType === "Gmail") {
+                                    setShowGmailModal(true);
+                                  }
+                                }}
+                                className="ml-2 border border-purple-500 text-purple-600 hover:bg-purple-50 rounded-md px-3 py-1 text-sm font-medium"
+                              >
+                                Add
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Template <span className="text-red-500">*</span>
-                          </label>
-                          <select
-                            value={selectedTemplate}
-                            onChange={(e) =>
-                              setSelectedTemplate(e.target.value)
-                            }
-                            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                          >
-                            <option value="">-- Select Template --</option>
-                            {templates
-                              .filter(
-                                (tpl) =>
-                                  tpl.service === "General" &&
-                                  (tpl.name.includes("Initial Email") ||
-                                    tpl.name.includes("First Email") ||
-                                    tpl.name.includes("Second Email"))
-                              )
-                              .sort((a, b) => {
-                                const order = [
-                                  "Initial Email",
-                                  "First Email",
-                                  "Second Email",
-                                ];
-                                const aIndex = order.findIndex((t) =>
-                                  a.name.includes(t)
-                                );
-                                const bIndex = order.findIndex((t) =>
-                                  b.name.includes(t)
-                                );
-                                return aIndex - bIndex;
-                              })
-                              .map((tpl) => {
-                                const shortName =
-                                  tpl.name.split(" - ")[1] || tpl.name;
-                                return (
-                                  <option key={tpl._id} value={tpl.name}>
-                                    {shortName}
-                                  </option>
-                                );
-                              })}
-                          </select>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Template
+                            </label>
+                            <input
+                              type="text"
+                              value={
+                                selectedApp?.defaultTemplate ||
+                                selectedTemplate ||
+                                "N/A"
+                              }
+                              readOnly
+                              className="w-full border border-gray-300 rounded-lg px-4 py-2 bg-gray-100 text-gray-700"
+                            />
+                          </div>
                         </div>
 
                         <div>
@@ -1657,82 +1706,128 @@ const ShopifyScenariosPage = () => {
       )}
       {showTemplateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[80vh] overflow-y-auto">
-            <div className="flex justify-between items-center p-5 border-b">
-              <h2 className="text-lg font-semibold text-gray-800">
-                Templates for {selectedServiceForTemplates || "your service"}
-              </h2>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col overflow-hidden transition-all">
+            <div className="flex justify-between items-center p-5 border-b bg-gradient-to-r from-purple-600 to-indigo-600 text-white">
+              <div>
+                <h2 className="text-lg font-semibold">Templates Overview</h2>
+                <p className="text-xs text-purple-100">
+                  Showing 3 templates per service
+                </p>
+              </div>
+              <div className="flex items-center space-x-3">
+                <span className="text-sm font-medium">
+                  {allActive ? "Deactivate All" : "Activate All"}
+                </span>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={allActive}
+                    onChange={async () => {
+                      const newStatus = !allActive;
+                      setAllActive(newStatus);
+                      setTemplateList((prev) =>
+                        prev.map((t) => ({ ...t, active: newStatus }))
+                      );
+                      await handleToggleAllTemplates(newStatus);
+                    }}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-green-500 transition-colors"></div>
+                  <div className="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full shadow-md transition-transform peer-checked:translate-x-5"></div>
+                </label>
+              </div>
               <button
                 onClick={() => setShowTemplateModal(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-white hover:text-gray-100 hover:bg-white/10 rounded-full p-1 transition"
               >
                 ✕
               </button>
             </div>
 
-            <div className="p-6">
+            <div className="p-6 overflow-y-auto flex-1 bg-gray-50">
               {templateList.length === 0 ? (
-                <p className="text-center text-gray-500">
-                  No templates found for this service.
-                </p>
+                <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-purple-500 mb-3"></div>
+                  <p>Loading templates...</p>
+                </div>
               ) : (
-                <table className="w-full border-collapse text-sm">
-                  <thead>
-                    <tr className="bg-gray-100 text-gray-700 text-left">
-                      <th className="p-3">Sequence</th>
-                      <th className="p-3">Preview</th>
-                      <th className="p-3 text-center">Active</th>
+                <table className="w-full border-collapse text-sm bg-white rounded-lg shadow-sm overflow-hidden">
+                  <thead className="sticky top-0 bg-gray-100">
+                    <tr className="text-gray-700 text-left border-b">
+                      <th className="p-3">Service</th>
+                      <th className="p-3">Template</th>
+                      <th className="p-3 text-center">Status</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {templateList.map((t) => (
-                      <tr key={t._id} className="border-b hover:bg-gray-50">
-                        <td className="p-3">{t.name}</td>
-                        <td className="p-3 text-gray-600">
-                          {t.content.replace(/<[^>]+>/g, "").slice(0, 80)}...
-                        </td>
-                        <td className="p-3 text-center">
-                          <label className="relative inline-flex items-center cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={t.active}
-                              onChange={async () => {
-                                const res = await fetch(
-                                  `http://localhost:5000/template/update/${t._id}`,
-                                  {
-                                    method: "PUT",
-                                    headers: {
-                                      "Content-Type": "application/json",
-                                    },
-                                    body: JSON.stringify({ active: !t.active }),
-                                  }
-                                );
-                                if (res.ok) {
-                                  toast.success(
-                                    `Template ${
-                                      !t.active ? "activated" : "deactivated"
-                                    }`
-                                  );
+                    {templateList.map((t, i) => (
+                      <React.Fragment key={t._id || i}>
+                        {i === 0 ||
+                        templateList[i - 1]?.service !== t.service ? (
+                          <tr className="bg-gray-50 border-t-4 border-gray-200">
+                            <td
+                              colSpan={3}
+                              className="p-3 text-gray-900 font-semibold text-sm uppercase tracking-wide"
+                            >
+                              {t.service || "General Service"}
+                            </td>
+                          </tr>
+                        ) : null}
+                        <tr className="border-b hover:bg-purple-50 transition-colors">
+                          <td className="p-3 font-medium text-gray-800">
+                            {t.name}
+                          </td>
+                          <td className="p-3 text-gray-600 truncate max-w-[300px]">
+                            {t.content.replace(/<[^>]+>/g, "").slice(0, 100)}...
+                          </td>
+                          <td className="p-3 text-center">
+                            <label className="relative inline-flex items-center cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={t.active}
+                                onChange={async () => {
+                                  const newStatus = !t.active;
                                   setTemplateList((prev) =>
                                     prev.map((tpl) =>
                                       tpl._id === t._id
-                                        ? { ...tpl, active: !tpl.active }
+                                        ? { ...tpl, active: newStatus }
                                         : tpl
                                     )
                                   );
-                                }
-                              }}
-                              className="sr-only peer"
-                            />
-                            <div className="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:bg-green-500 transition-colors"></div>
-                            <div className="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full shadow-md transition-transform peer-checked:translate-x-5"></div>
-                          </label>
-                        </td>
-                      </tr>
+                                  await handleToggleTemplate(t._id, newStatus);
+                                  setAllActive((prevList) => {
+                                    const updatedList = templateList.map(
+                                      (tpl) =>
+                                        tpl._id === t._id
+                                          ? { ...tpl, active: newStatus }
+                                          : tpl
+                                    );
+                                    return updatedList.every(
+                                      (tpl) => tpl.active
+                                    );
+                                  });
+                                }}
+                                className="sr-only peer"
+                              />
+                              <div className="w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-green-500 transition-colors"></div>
+                              <div className="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full shadow-md transition-transform peer-checked:translate-x-5"></div>
+                            </label>
+                          </td>
+                        </tr>
+                      </React.Fragment>
                     ))}
                   </tbody>
                 </table>
               )}
+            </div>
+
+            <div className="flex-shrink-0 px-6 py-4 border-t bg-white flex justify-end">
+              <button
+                onClick={() => window.open("/templates", "_blank")}
+                className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:shadow-md transition-transform hover:scale-[1.02]"
+              >
+                View More Templates
+              </button>
             </div>
           </div>
         </div>
