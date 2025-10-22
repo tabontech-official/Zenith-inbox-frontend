@@ -11,6 +11,7 @@ import {
 import { useLocation, useNavigate } from "react-router-dom";
 import { UserContext } from "../component/UserContext";
 import { FaMicrosoft } from "react-icons/fa";
+import toast from "react-hot-toast";
 
 const SetupFlow = () => {
   const navigate = useNavigate();
@@ -81,7 +82,7 @@ const SetupFlow = () => {
   const handleMicrosoftConnect = () => {
     const userId = user?._id;
     const popup = window.open(
-      `https://email-syncing-backend.vercel.app/auth/microsoft?userId=${userId}`,
+      `https://email-syncing-backend.vercel.app/auth/outlook?userId=${userId}`,
       "microsoftConnect",
       "width=600,height=600"
     );
@@ -97,7 +98,6 @@ const SetupFlow = () => {
 
     window.addEventListener("message", handleMessage);
   };
-
 
   const saveSetupProgress = async (data = {}) => {
     try {
@@ -237,23 +237,27 @@ const SetupFlow = () => {
       const data = await res.json();
 
       if (data.success) {
-        console.log(
-          " Test email sent successfully. Checking for validation..."
+        toast.success(
+          "✅ Test email sent successfully! Checking for validation..."
         );
 
+        // Wait 8 seconds, then check if validation succeeded
         setTimeout(async () => {
           await fetchValidateEmail();
           setValidating(false);
         }, 8000);
       } else {
-        alert(" Failed to send validation email");
+        // 🔴 Show backend message in toast
+        toast.error(data.message || "❌ Failed to send validation email.");
         setValidating(false);
       }
     } catch (err) {
       console.error("Error validating forwarding:", err);
+      toast.error("⚠️ Something went wrong while validating forwarding.");
       setValidating(false);
     }
   };
+
   useEffect(() => {
     if (!loading && user) {
       if (user?.setup?.completed || user?.setup?.skipped) {
@@ -377,7 +381,12 @@ const SetupFlow = () => {
                 forwarding.
               </p>
 
-              <p className="text-[#4F46E5] text-sm font-semibold cursor-pointer hover:underline">
+              <p
+                onClick={() => {
+                  window.open("/pages/mailhook/instruction", "_blank");
+                }}
+                className="text-[#4F46E5] text-sm font-semibold cursor-pointer hover:underline"
+              >
                 Need help?
               </p>
             </div>
@@ -416,103 +425,83 @@ const SetupFlow = () => {
             />
           </div>
 
-          <div className="border border-[#E5E7EB] rounded-lg p-6 bg-white text-center space-y-4">
-            {!validated ? (
+          {/* 💌 Latest Email Section */}
+          <div className="bg-white border border-[#E5E7EB] rounded-2xl shadow-sm p-6 w-full max-w-md mx-auto space-y-4 text-center transition-all duration-300">
+            <div className="flex items-center justify-center space-x-2">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="w-6 h-6 text-[#4F46E5]"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 8l9 6 9-6m-9 6V4"
+                />
+              </svg>
+              <h2 className="text-lg font-semibold text-[#111827]">
+                Latest Email Received
+              </h2>
+            </div>
+
+            {verificationEmail ? (
               <>
-                {!validating ? (
-                  <>
-                    {!verificationEmail ? (
-                      <>
-                        <div className="w-8 h-8 border-4 border-[#E5E7EB] border-t-[#4F46E5] rounded-full animate-spin mx-auto"></div>
-                        <p className="text-[#111827] font-medium text-sm">
-                          Fetching Gmail verification link...
-                        </p>
-                        <p className="text-sm text-[#6B7280]">
-                          Waiting for the Gmail verification email to arrive...
-                        </p>
-                      </>
-                    ) : (
-                      <>
-                        <div className="bg-white border border-[#E5E7EB] rounded-2xl shadow-sm p-6 w-full max-w-md mx-auto space-y-4 text-center transition-all duration-300">
-                          <div className="flex items-center justify-center space-x-2">
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              className="w-6 h-6 text-[#4F46E5]"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M3 8l9 6 9-6m-9 6V4"
-                              />
-                            </svg>
-                            <h2 className="text-lg font-semibold text-[#111827]">
-                              Gmail Verification Email
-                            </h2>
-                          </div>
+                <div className="bg-[#F9FAFB] rounded-xl p-4 text-left space-y-2">
+                  <p className="text-sm text-[#374151]">
+                    <strong>From:</strong>{" "}
+                    <span className="text-[#4F46E5]">
+                      {verificationEmail.sender}
+                    </span>
+                  </p>
+                  <p className="text-sm text-[#374151]">
+                    <strong>Subject:</strong>{" "}
+                    <span className="font-medium">
+                      {verificationEmail.subject}
+                    </span>
+                  </p>
+                  <p className="text-sm text-[#6B7280]">
+                    <strong>Date:</strong>{" "}
+                    {new Date(verificationEmail.date).toLocaleString()}
+                  </p>
+                </div>
 
-                          <div className="bg-[#F9FAFB] rounded-xl p-4 text-left space-y-2">
-                            <p className="text-sm text-[#374151]">
-                              <strong>From:</strong>{" "}
-                              <span className="text-[#4F46E5]">
-                                {verificationEmail.sender}
-                              </span>
-                            </p>
-                            <p className="text-sm text-[#374151]">
-                              <strong>Subject:</strong>{" "}
-                              <span className="font-medium">
-                                {verificationEmail.subject}
-                              </span>
-                            </p>
-                            <p className="text-sm text-[#6B7280]">
-                              <strong>Date:</strong>{" "}
-                              {new Date(
-                                verificationEmail.date
-                              ).toLocaleString()}
-                            </p>
-                          </div>
+                <div className="bg-white border border-gray-200 rounded-lg p-4 text-left max-h-64 overflow-y-auto text-sm text-gray-700">
+                  {verificationEmail.textBody}
+                </div>
 
-                          {verificationEmail.verificationUrl ? (
-                            <a
-                              href={verificationEmail.verificationUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="block w-full bg-[#4F46E5] hover:bg-[#4338CA] text-white font-semibold py-2 rounded-lg transition-colors"
-                            >
-                              Verify Forwarding
-                            </a>
-                          ) : (
-                            <p className="text-[#EF4444] text-sm font-medium">
-                              Waiting for Gmail verification email... please
-                              check again in a few seconds.
-                            </p>
-                          )}
-                        </div>
-                      </>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    <div className="w-8 h-8 border-4 border-[#E5E7EB] border-t-[#4F46E5] rounded-full animate-spin mx-auto"></div>
-                    <p className="text-[#111827] font-medium text-sm">
-                      Waiting for you to verify forwarding...
-                    </p>
-                  </>
+                {/* Only show Verify button if Gmail verification link exists */}
+                {verificationEmail.verificationUrl && (
+                  <a
+                    href={verificationEmail.verificationUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block w-full bg-[#4F46E5] hover:bg-[#4338CA] text-white font-semibold py-2 rounded-lg transition-colors"
+                  >
+                    Verify Forwarding
+                  </a>
                 )}
               </>
             ) : (
-              <>
-                <div className="border border-blue-400 rounded-md p-3 text-sm text-[#111827] bg-blue-50 w-full text-center">
-                  Congratulations — your mailhook is verified successfully!
-                </div>
-                <div className="bg-green-50 text-green-700 text-sm px-4 py-2 rounded-md w-full text-center border border-green-200">
-                  ✓ Verification Complete ✓
-                </div>
-              </>
+              <p className="text-gray-500 text-sm">
+                Waiting for email... please complete Gmail forwarding setup.
+              </p>
             )}
+          </div>
+
+          <div className="mt-10 border-t border-gray-200 pt-6">
+            <details className="group">
+              <summary
+                onClick={() => {
+                  window.open("/pages/mailhook/instruction", "_blank");
+                }}
+                className="cursor-pointer text-[#4F46E5] font-semibold text-sm hover:underline flex items-center gap-1"
+              >
+                Need help setting up Gmail forwarding?
+              </summary>
+            </details>
           </div>
 
           <div className="flex justify-between mt-8">
@@ -592,7 +581,7 @@ const SetupFlow = () => {
                 OAuth 2.0.
               </p>
               <button
-                // onClick={handleMicrosoftConnect}
+                onClick={handleMicrosoftConnect}
                 className="bg-[#0078D4] hover:bg-[#0063B1] text-white px-6 py-3 rounded-lg text-sm font-semibold shadow-md flex items-center justify-center gap-2 mx-auto"
               >
                 <FaMicrosoft className="text-lg" />

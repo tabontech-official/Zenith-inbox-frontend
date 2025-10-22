@@ -63,6 +63,7 @@ import ProtectedRoute from "./Protection/Protected";
 import SetupPage from "./pages/SetupPage";
 import SetupFlow from "./pages/SetupPage";
 import Inbox from "./pages/Inbox";
+import MailhookSetupGuide from "./pages/MailhookSetupGuide";
 
 function App() {
   return (
@@ -120,6 +121,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <OthersScenariosPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/pages/mailhook/instruction"
+            element={
+              <ProtectedRoute>
+                <MailhookSetupGuide />
               </ProtectedRoute>
             }
           />

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Sidebar from "../component/Sidebar";
-import Navbar from "../component/Navbar"; 
+import Navbar from "../component/Navbar";
 import { useNavigate } from "react-router-dom";
 import {
   FiMail,
@@ -113,41 +113,45 @@ const Organization = () => {
       color: "bg-gray-50 text-gray-700 border border-gray-200",
     },
   ];
-const [recentScenarios, setRecentScenarios] = useState([]);
-const [scenariosLoading, setScenariosLoading] = useState(false);
+  const [recentScenarios, setRecentScenarios] = useState([]);
+  const [scenariosLoading, setScenariosLoading] = useState(false);
 
-const fetchRecentScenarios = async () => {
-  try {
-    setScenariosLoading(true);
-    const userId = localStorage.getItem("userid");
-    if (!userId) return;
+  const fetchRecentScenarios = async () => {
+    try {
+      setScenariosLoading(true);
+      const userId = localStorage.getItem("userid");
+      if (!userId) return;
 
-    const res = await axios.get(
-      `https://email-syncing-backend.vercel.app/scenario/user/${userId}`
-    );
+      const res = await axios.get(
+        `https://email-syncing-backend.vercel.app/scenario/user/${userId}`
+      );
 
-    const scenarios = Array.isArray(res.data)
-      ? res.data
-      : res.data.data || [];
+      const scenarios = Array.isArray(res.data)
+        ? res.data
+        : res.data.data || [];
 
-    // sort by createdAt and take only latest 5
-    const recent = scenarios
-      .sort(
-        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-      )
-      .slice(0, 5);
+      // sort by createdAt and take only latest 5
+      const recent = scenarios
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .slice(0, 5);
 
-    setRecentScenarios(recent);
-  } catch (err) {
-    console.error("Error fetching scenarios:", err);
-  } finally {
-    setScenariosLoading(false);
-  }
-};
-useEffect(() => {
-  fetchUser();
-  fetchRecentScenarios();
-}, []);
+      setRecentScenarios(recent);
+    } catch (err) {
+      console.error("Error fetching scenarios:", err);
+    } finally {
+      setScenariosLoading(false);
+    }
+  };
+  useEffect(() => {
+    fetchUser();
+    fetchRecentScenarios();
+  }, []);
+  // 🔹 Group scenarios by type for progress display (e.g. 1/2)
+  const groupedScenarios = recentScenarios.reduce((acc, s) => {
+    if (!acc[s.type]) acc[s.type] = [];
+    acc[s.type].push(s);
+    return acc;
+  }, {});
 
   return (
     <div className="flex bg-gradient-to-br from-indigo-50 via-white to-purple-50 min-h-screen font-inter">
@@ -205,108 +209,110 @@ useEffect(() => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.05 * i, duration: 0.4 }}
               >
-                <p className="text-sm font-medium text-gray-500">{item.label}</p>
+                <p className="text-sm font-medium text-gray-500">
+                  {item.label}
+                </p>
                 <h2 className="text-4xl font-semibold mt-2 text-gray-900">
                   {item.value}
                 </h2>
               </motion.div>
             ))}
           </section>
-{/* 🧩 Recent Scenarios Section */}
-<motion.div
-  className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-10"
-  initial={{ opacity: 0 }}
-  animate={{ opacity: 1 }}
-  transition={{ duration: 0.5 }}
->
-  <div className="flex justify-between items-center mb-4">
-    <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-      <FiInbox className="text-indigo-600" /> Recent Scenarios
-    </h3>
-    <button
-      onClick={() => navigate("/scenarios/all")}
-      className="text-sm text-indigo-600 font-medium hover:underline"
-    >
-      View More →
-    </button>
-  </div>
+          {/* 🧩 Recent Scenarios Section */}
+          <motion.div
+            className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-10"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+          >
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                <FiInbox className="text-indigo-600" /> Recent Scenarios
+              </h3>
+              <button
+                onClick={() => navigate("/scenarios/all")}
+                className="text-sm text-indigo-600 font-medium hover:underline"
+              >
+                View More →
+              </button>
+            </div>
 
-  <div className="overflow-x-auto">
-    <table className="w-full text-sm">
-      <thead className="bg-gray-50 text-gray-500 border-b">
-        <tr>
-          <th className="py-2 px-3 text-left">Scenario Name</th>
-          <th className="py-2 px-3 text-left">Type</th>
-          <th className="py-2 px-3 text-left">Status</th>
-          <th className="py-2 px-3 text-left">Created</th>
-        </tr>
-      </thead>
-      <tbody>
-        {scenariosLoading ? (
-          <tr>
-            <td
-              colSpan={4}
-              className="py-8 text-center text-gray-500"
-            >
-              Loading scenarios...
-            </td>
-          </tr>
-        ) : recentScenarios.length > 0 ? (
-          recentScenarios.map((s, i) => (
-            <motion.tr
-              key={s._id}
-              className="border-b last:border-none hover:bg-gray-50 transition cursor-pointer"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.05 * i, duration: 0.4 }}
-              onClick={() =>
-                navigate(
-                  s.type === "shopify"
-                    ? `/scenarios/shopify/${s._id}`
-                    : `/scenarios/others/${s._id}`
-                )
-              }
-            >
-              <td className="py-3 px-3 font-semibold text-gray-800">
-                {s.name || "Untitled Scenario"}
-              </td>
-              <td className="py-3 px-3 capitalize text-gray-600">
-                {s.type || "N/A"}
-              </td>
-              <td className="py-3 px-3">
-                {s.scenarioActive ? (
-                  <span className="bg-green-100 text-green-700 px-3 py-1 text-xs rounded-full font-medium">
-                    Active
-                  </span>
-                ) : (
-                  <span className="bg-red-100 text-red-700 px-3 py-1 text-xs rounded-full font-medium">
-                    Inactive
-                  </span>
-                )}
-              </td>
-              <td className="py-3 px-3 text-gray-500">
-                {new Date(s.createdAt).toLocaleDateString("en-US", {
-                  year: "numeric",
-                  month: "short",
-                  day: "numeric",
-                })}
-              </td>
-            </motion.tr>
-          ))
-        ) : (
-          <tr>
-            <td
-              colSpan={4}
-              className="py-8 text-center text-gray-400 italic"
-            >
-              No scenarios found
-            </td>
-          </tr>
-        )}
-      </tbody>
-    </table>
-  </div>
-</motion.div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 text-gray-500 border-b">
+                  <tr>
+                    <th className="py-2 px-3 text-left">Scenario Name</th>
+                    <th className="py-2 px-3 text-left">Type</th>
+                    <th className="py-2 px-3 text-left">Status</th>
+                    <th className="py-2 px-3 text-left">Created</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {scenariosLoading ? (
+                    <tr>
+                      <td
+                        colSpan={4}
+                        className="py-8 text-center text-gray-500"
+                      >
+                        Loading scenarios...
+                      </td>
+                    </tr>
+                  ) : recentScenarios.length > 0 ? (
+                    recentScenarios.map((s, i) => (
+                      <motion.tr
+                        key={s._id}
+                        className="border-b last:border-none hover:bg-gray-50 transition cursor-pointer"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.05 * i, duration: 0.4 }}
+                        onClick={() =>
+                          navigate(
+                            s.type === "shopify"
+                              ? `/scenarios/shopify/${s._id}`
+                              : `/scenarios/others/${s._id}`
+                          )
+                        }
+                      >
+                        <td className="py-3 px-3 font-semibold text-gray-800">
+                          {s.name || "Untitled Scenario"}
+                        </td>
+                        <td className="py-3 px-3 capitalize text-gray-600">
+                          {s.type || "N/A"}
+                        </td>
+                        <td className="py-3 px-3">
+                          {s.scenarioActive ? (
+                            <span className="bg-green-100 text-green-700 px-3 py-1 text-xs rounded-full font-medium">
+                              Active
+                            </span>
+                          ) : (
+                            <span className="bg-red-100 text-red-700 px-3 py-1 text-xs rounded-full font-medium">
+                              Inactive
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3 px-3 text-gray-500">
+                          {new Date(s.createdAt).toLocaleDateString("en-US", {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          })}
+                        </td>
+                      </motion.tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td
+                        colSpan={4}
+                        className="py-8 text-center text-gray-400 italic"
+                      >
+                        No scenarios found
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </motion.div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <motion.div
