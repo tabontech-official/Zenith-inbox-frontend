@@ -2,9 +2,10 @@ import React, { useState, useEffect } from "react";
 import Sidebar from "../component/Sidebar";
 import ConnectionModal from "../component/ConnectionModal";
 import OutlookConnectionModal from "../component/OutlookConnectionModal";
-import { FaGoogle, FaMicrosoft, FaEnvelope } from "react-icons/fa";
+import { FaGoogle, FaMicrosoft, FaEnvelope, FaTrashAlt } from "react-icons/fa";
 import axios from "axios";
 import toast from "react-hot-toast";
+import ConfirmDeleteModal from "../component/ConformationModel";
 
 const ConnectionsPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -12,49 +13,63 @@ const ConnectionsPage = () => {
   const [connections, setConnections] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // 🧱 Delete modal states
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [connectionToDelete, setConnectionToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
-
-  const handleConnectionAdded = (newConn) => {
-    const savedConn = newConn.connection || newConn;
-
-    setConnections((prev) => [...prev, savedConn]);
-
-    toast.success(`${savedConn.provider} connected successfully! `);
-  };
-
   const openOutlookModal = () => setIsOutlookModalOpen(true);
   const closeOutlookModal = () => setIsOutlookModalOpen(false);
 
+  const fetchConnections = async () => {
+    try {
+      const userId = localStorage.getItem("userid");
+      if (!userId) return setLoading(false);
+      setLoading(true);
+      const res = await axios.get(
+        `https://email-syncing-backend.vercel.app/auth/getConnection/${userId}`
+      );
+      setConnections(res.data || []);
+    } catch (err) {
+      toast.error("Failed to load connections");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchConnections = async () => {
-      try {
-        const userId = localStorage.getItem("userid");
-        if (!userId) {
-          console.warn(" No userId in localStorage");
-          setLoading(false);
-          return;
-        }
-        const res = await axios.get(
-          `https://email-syncing-backend.vercel.app/auth/getConnection/${userId}`
-        );
-
-        setConnections(res.data);
-      } catch (err) {
-        console.error(" Failed to fetch connections:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchConnections();
   }, []);
 
-  const providerIcon = (provider) => {
-    if (!provider) {
-      return <FaEnvelope className="text-gray-500 h-6 w-6" />;
-    }
+  const handleConnectionAdded = async (newConn) => {
+    toast.success(`${newConn.provider} connected successfully!`);
+    await fetchConnections();
+  };
 
+  // 🗑️ Delete handler
+  const handleDeleteConfirm = async () => {
+    if (!connectionToDelete) return;
+    setDeleting(true);
+    try {
+      await axios.delete(
+        `https://email-syncing-backend.vercel.app/auth/deleteConnection/${connectionToDelete._id}`
+      );
+      toast.success("Connection deleted successfully!");
+      setConnections((prev) =>
+        prev.filter((c) => c._id !== connectionToDelete._id)
+      );
+      setDeleteModalOpen(false);
+    } catch (err) {
+      toast.error("Failed to delete connection");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const providerIcon = (provider) => {
+    if (!provider) return <FaEnvelope className="text-gray-500 h-6 w-6" />;
     switch (provider.toLowerCase()) {
       case "gmail":
         return <FaGoogle className="text-red-500 h-6 w-6" />;
@@ -95,7 +110,7 @@ const ConnectionsPage = () => {
     <div className="flex">
       <Sidebar />
       <div className="ml-64 flex-1 min-h-screen bg-gray-50 font-sans text-gray-800">
-        <header className="flex items-center justify-between p-6 bg-white border-b border-gray-200">
+        <header className="flex items-center justify-between p-6 bg-white border-b border-gray-200 sticky top-0 z-10">
           <h1 className="text-2xl font-bold text-gray-800">Connections</h1>
           <div className="flex space-x-3">
             <button
@@ -117,12 +132,6 @@ const ConnectionsPage = () => {
         </header>
 
         <main className="container mx-auto p-8">
-          <nav className="flex items-center mb-6 text-sm font-medium text-gray-600">
-            <span className="relative pb-1 text-purple-600 border-b-2 border-purple-600">
-              All Connections
-            </span>
-          </nav>
-
           {loading ? (
             <Loader />
           ) : connections.length === 0 ? (
@@ -131,38 +140,48 @@ const ConnectionsPage = () => {
               <p className="text-lg">
                 You haven’t created any connections yet.
               </p>
-              <div className="flex space-x-3 mt-4">
-                <button
-                  onClick={openModal}
-                  className="px-5 py-2 text-sm font-medium bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
-                >
-                  + Gmail Connection
-                </button>
-                <button
-                  onClick={openOutlookModal}
-                  className="px-5 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-                >
-                  + Outlook Connection
-                </button>
-              </div>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {connections.map((conn) => (
                 <div
                   key={conn._id}
-                  className="flex items-center justify-between p-5 bg-white border rounded-lg shadow-sm hover:shadow-md transition"
+                  className="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition p-5 relative"
                 >
                   <div className="flex items-center space-x-3">
-                    {providerIcon(conn.provider)}
+                    <div className="flex-shrink-0">
+                      {providerIcon(conn.provider)}
+                    </div>
                     <div>
-                      <h3 className="text-base font-semibold text-gray-800">
+                      <h3 className="text-base font-semibold text-gray-800 truncate">
                         {conn.email}
                       </h3>
-                      <p className="text-sm text-gray-500 capitalize">
+                      <p className="text-xs text-gray-500 capitalize">
                         {conn.provider} connection
                       </p>
                     </div>
+                  </div>
+
+                  <div className="mt-4 border-t pt-3 flex justify-between items-center text-sm text-gray-600">
+                    <span>
+                      Added on{" "}
+                      {new Date(conn.createdAt).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                    </span>
+
+                    <button
+                      onClick={() => {
+                        setConnectionToDelete(conn);
+                        setDeleteModalOpen(true);
+                      }}
+                      className="flex items-center space-x-1 text-red-600 hover:text-red-800 transition"
+                    >
+                      <FaTrashAlt className="h-4 w-4" />
+                      <span>Delete</span>
+                    </button>
                   </div>
                 </div>
               ))}
@@ -170,16 +189,34 @@ const ConnectionsPage = () => {
           )}
         </main>
       </div>
+
+      {/* Connection Modals */}
       <ConnectionModal
         isOpen={isModalOpen}
-        onClose={closeModal}
+        onClose={() => {
+          closeModal();
+          fetchConnections();
+        }}
         onSuccess={handleConnectionAdded}
       />
+
       <OutlookConnectionModal
         isOpen={isOutlookModalOpen}
-        onClose={closeOutlookModal}
+        onClose={() => {
+          closeOutlookModal();
+          fetchConnections();
+        }}
         onSuccess={handleConnectionAdded}
-      />{" "}
+      />
+
+      <ConfirmDeleteModal
+        isOpen={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        connectionId={connectionToDelete?._id}
+        onDeleted={(id) => {
+          setConnections((prev) => prev.filter((conn) => conn._id !== id));
+        }}
+      />
     </div>
   );
 };
