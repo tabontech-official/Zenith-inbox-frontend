@@ -285,16 +285,21 @@ const SetupFlow = () => {
       const data = await res.json();
 
       if (data.success) {
-        toast.success(`✅ Test email sent to ${data.sentTo}`);
-        startValidationLoop(); // 🔹 start polling backend
+        toast.success(
+          `validating your connection please wait until its complete.`
+        );
+        startValidationLoop();
       } else {
-        toast.error(data.message || "❌ Failed to send validation email.");
+        toast.error(
+          data.message ||
+            "Failed to validate your connection please make sure your forwarding connection setup properly."
+        );
         setValidating(false);
         setValidationPhase(false);
       }
     } catch (err) {
       console.error("Error sending test email:", err);
-      toast.error("⚠️ Something went wrong while sending the test email.");
+      toast.error("Something went wrong while validating connection.");
       setValidating(false);
       setValidationPhase(false);
     }
@@ -326,7 +331,6 @@ const SetupFlow = () => {
     }
   }, [step, user]);
 
-  // Initial 10-second timer before showing Validate input
   const CountdownTimer = () => {
     const [seconds, setSeconds] = useState(10);
     useEffect(() => {
@@ -352,7 +356,6 @@ const SetupFlow = () => {
     );
   };
 
-  // Re-usable looping timer with dynamic hints
   const LoopingTimer = ({ loop, message }) => {
     const [seconds, setSeconds] = useState(10);
     useEffect(() => {
@@ -385,7 +388,6 @@ const SetupFlow = () => {
       </div>
     );
   };
-  // Timer with alternating message every 10s
   const MailhookWaitingTimer = () => {
     const [seconds, setSeconds] = useState(10);
     const [message, setMessage] = useState(
@@ -469,7 +471,7 @@ const SetupFlow = () => {
 
     const checkValidation = async () => {
       attempts++;
-      console.log(`🕐 Checking validation attempt ${attempts}...`);
+      console.log(`Checking validation attempt ${attempts}...`);
 
       try {
         const res = await fetch(
@@ -478,27 +480,26 @@ const SetupFlow = () => {
         const data = await res.json();
 
         if (data.success) {
-          console.log("✅ Validation email detected:", data.data);
+          console.log("Validation email detected:", data.data);
           setVerificationEmail(data.data);
           setValidated(true);
           setValidating(false);
           setValidationPhase(false);
           setValidationFailed(false);
-          toast.success("✅ Forwarding confirmed!");
-          return; // ✅ stop checking
+          toast.success("Forwarding confirmed!");
+          return; //  stop checking
         }
 
         if (attempts < maxAttempts) {
           // Wait 10 seconds before next check
           setTimeout(checkValidation, 10000);
         } else {
-          // ❌ No validation email found after 5 attempts
-          console.log("❌ Validation failed after 5 checks");
+          console.log("Validation failed after 5 checks");
           setValidating(false);
           setValidationPhase(false);
           setValidationFailed(true);
           toast.error(
-            "⚠️ No validation email detected. Please verify your Gmail forwarding."
+            "Sorry we cannot validate your connection.please also make sure your mailhook forwarding setup properly."
           );
         }
       } catch (err) {
@@ -513,7 +514,6 @@ const SetupFlow = () => {
       }
     };
 
-    // 🔹 Start first validation check immediately
     checkValidation();
   };
 
@@ -547,7 +547,6 @@ const SetupFlow = () => {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-5 mt-6">
-            {/* Start Setup Button */}
             <button
               onClick={() => setStep(2)}
               className="bg-[#4F46E5] hover:bg-[#4338CA] text-white px-8 py-3 rounded-lg text-sm font-semibold flex items-center justify-center space-x-2 shadow-md transition"
@@ -556,7 +555,6 @@ const SetupFlow = () => {
               <FiArrowRight />
             </button>
 
-            {/* Skip Setup Link */}
             <span
               onClick={async () => {
                 await saveSetupProgress({ skipped: true, stepCompleted: 1 });
@@ -653,7 +651,6 @@ const SetupFlow = () => {
             Automatically send your leads to Zenith Inbox.
           </p>
 
-          {/* Mailhook Display */}
           <div className="bg-[#F3F4F6] text-[#4F46E5] px-4 py-3 rounded-lg flex justify-between items-center font-mono text-sm mb-6">
             Forward emails to: <span>{user?.mailhook || "loading..."}</span>
             <FiCopy
@@ -664,19 +661,15 @@ const SetupFlow = () => {
             />
           </div>
 
-          {/* Main Card */}
           <div className="border border-[#E5E7EB] rounded-2xl shadow-sm p-6 w-full max-w-md mx-auto text-center">
             <h3 className="text-lg font-semibold text-[#111827] mb-4">
               Email Receiving
             </h3>
 
-            {/* Email Receiving Box */}
             <div className="bg-[#F9FAFB] border border-gray-200 rounded-lg p-4 text-left text-sm text-gray-700 mb-6 shadow-inner">
-              {/* 1️⃣ If validating (timer phase after click) */}
               {validationPhase ? (
                 <MailhookWaitingTimer message="Waiting for validation email..." />
               ) : validated ? (
-                /* 4️⃣ Success message after validation confirmed */
                 <div className="text-center py-6">
                   <div className="flex flex-col items-center justify-center space-y-2">
                     <FiCheck className="text-green-600 text-3xl" />
@@ -689,7 +682,6 @@ const SetupFlow = () => {
                   </div>
                 </div>
               ) : verificationEmail ? (
-                /* 2️⃣ Gmail confirmation email arrived */
                 <>
                   <p className="mb-2">
                     <strong>From:</strong>{" "}
@@ -708,7 +700,6 @@ const SetupFlow = () => {
                     {new Date(verificationEmail.date).toLocaleString()}
                   </p>
 
-                  {/* formatted email body */}
                   <div
                     className="border-t border-gray-200 mt-3 pt-3 max-h-48 overflow-y-auto text-sm leading-relaxed text-gray-700"
                     dangerouslySetInnerHTML={{
@@ -718,7 +709,6 @@ const SetupFlow = () => {
                     }}
                   />
 
-                  {/* Gmail Verification Notice */}
                   {verificationEmail.isGmailVerification && (
                     <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 rounded-lg p-4 mt-4 text-center text-sm">
                       <p className="font-semibold mb-1">
@@ -732,12 +722,10 @@ const SetupFlow = () => {
                   )}
                 </>
               ) : (
-                /* 1️⃣ Before any email arrives */
                 <MailhookWaitingTimer />
               )}
             </div>
 
-            {/* 2️⃣ Input visible only when Gmail confirmation email detected */}
             {verificationEmail && !validationPhase && !validated && (
               <div className="space-y-3 mt-6">
                 <p className="text-sm text-gray-600">
@@ -758,7 +746,6 @@ const SetupFlow = () => {
               </div>
             )}
 
-            {/* 3️⃣ Error message when validation fails */}
             {validationFailed && !validated && (
               <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4 mt-6 text-center">
                 <p className="font-semibold mb-2">
@@ -780,14 +767,10 @@ const SetupFlow = () => {
             )}
           </div>
 
-          {/* Footer Buttons */}
           <div className="mt-10 border-t border-gray-200 pt-6 flex justify-between items-center">
-            <span className="text-[#4F46E5] text-sm font-semibold cursor-pointer hover:underline">
-              {/* Skip */}
-            </span>
+            <span className="text-[#4F46E5] text-sm font-semibold cursor-pointer hover:underline"></span>
 
             {!validated ? (
-              /* Validate Button */
               <button
                 disabled={
                   validating ||
@@ -813,7 +796,6 @@ const SetupFlow = () => {
                 <FiArrowRight />
               </button>
             ) : (
-              /* ✅ Success State → Show Next Button */
               <button
                 onClick={() => updateStep(4)}
                 className="flex items-center space-x-2 px-6 py-2 rounded-lg text-sm font-semibold bg-green-600 text-white hover:bg-green-700 transition"
@@ -823,7 +805,6 @@ const SetupFlow = () => {
             )}
           </div>
 
-          {/* Help link */}
           {!validated && (
             <p
               onClick={() =>
