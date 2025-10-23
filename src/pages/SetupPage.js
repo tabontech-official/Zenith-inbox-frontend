@@ -571,7 +571,7 @@ const SetupFlow = () => {
           </p>
         </div>
       )}
-
+ 
       {step === 2 && (
         <div className="bg-white shadow-md rounded-xl p-8 sm:p-10 max-w-2xl w-[90%] text-left">
           <h2 className="text-2xl font-bold text-[#111827] text-center mb-2">
