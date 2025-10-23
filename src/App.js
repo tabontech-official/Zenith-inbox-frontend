@@ -182,8 +182,22 @@ function App() {
           />
         </Routes>
 
-        {/* Toasts */}
-        <Toaster position="top-right" reverseOrder={false} />
+        <Toaster
+          position="top-right"
+          containerStyle={{
+            top: "70px",
+          }}
+          toastOptions={{
+            duration: 4000,
+            style: {
+              background: "#fff",
+              color: "#333",
+              border: "1px solid #e5e7eb",
+              padding: "12px 16px",
+              borderRadius: "8px",
+            },
+          }}
+        />
       </Router>
     </UserProvider>
   );

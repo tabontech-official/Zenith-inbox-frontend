@@ -162,7 +162,11 @@ const ShopifyScenariosPage = () => {
   useEffect(() => {
     fetchConnections();
   }, []);
-
+  useEffect(() => {
+    if (open) {
+      fetchConnections();
+    }
+  }, [open]);
   useEffect(() => {
     const fetchTemplates = async () => {
       try {
@@ -309,17 +313,15 @@ const ShopifyScenariosPage = () => {
           ? "Shopify scenario updated successfully!"
           : "Shopify scenario created successfully!"
       );
-
+      setShowValidation(false);
+      setCompletedSteps([]);
       setIsScenarioUpdated(true);
 
-      const refresh = await fetch(
-        "https://email-syncing-backend.vercel.app/scenario/details",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId: localStorage.getItem("userid") }),
-        }
-      );
+      const refresh = await fetch("https://email-syncing-backend.vercel.app/scenario/details", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: localStorage.getItem("userid") }),
+      });
       const freshData = await refresh.json();
 
       if (freshData) {
@@ -499,14 +501,11 @@ const ShopifyScenariosPage = () => {
           return;
         }
 
-        const res = await fetch(
-          "https://email-syncing-backend.vercel.app/scenario/details",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ userId }),
-          }
-        );
+        const res = await fetch("https://email-syncing-backend.vercel.app/scenario/details", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId }),
+        });
 
         const data = await res.json();
 
@@ -687,7 +686,7 @@ const ShopifyScenariosPage = () => {
       setDelayUnit(module.delayUnit || "seconds");
     }
 
-    setOpen(true); 
+    setOpen(true);
   };
 
   const [completedSteps, setCompletedSteps] = useState([]);
@@ -888,10 +887,10 @@ const ShopifyScenariosPage = () => {
   const [formData, setFormData] = useState({
     fullName: "Dummy Customer",
     businessEmail: "",
-    storeName: "Motion Pine",
-    country: "Pakistan",
+    storeName: "Dummy Store",
+    country: "USA",
     service: "",
-    budget: "100",
+    budget: "10000",
   });
   useEffect(() => {
     const fetchTestEmailData = async () => {
@@ -1037,6 +1036,19 @@ const ShopifyScenariosPage = () => {
   //   }
   // };
   const handleRunTest = async () => {
+    const { businessEmail, service, description } = formData;
+
+    if (!businessEmail?.trim() || !service?.trim() || !description?.trim()) {
+      toast.error("Please fill all required fields before running the test.", {
+        duration: 4000,
+        style: {
+          background: "#fff0f0",
+          color: "#b91c1c",
+          border: "1px solid #fca5a5",
+        },
+      });
+      return; // ❌ Stop execution if validation fails
+    }
     if (!isScenarioUpdated) {
       toast.error("Please update the scenario before running the test.", {
         duration: 5000,
@@ -1052,23 +1064,20 @@ const ShopifyScenariosPage = () => {
     toast.loading("Generating test email...", { id: "test" });
 
     try {
-      const res = await fetch(
-        "https://email-syncing-backend.vercel.app/mailhook/Run-test-mode",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId: localStorage.getItem("userid"),
-            fullName: formData.fullName,
-            businessEmail: formData.businessEmail,
-            storeName: formData.storeName,
-            country: formData.country,
-            service: formData.service,
-            budget: formData.budget,
-            helpDescription: formData.description,
-          }),
-        }
-      );
+      const res = await fetch("https://email-syncing-backend.vercel.app/mailhook/Run-test-mode", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: localStorage.getItem("userid"),
+          fullName: formData.fullName,
+          businessEmail: formData.businessEmail,
+          storeName: formData.storeName,
+          country: formData.country,
+          service: formData.service,
+          budget: formData.budget,
+          helpDescription: formData.description,
+        }),
+      });
 
       const data = await res.json();
       toast.dismiss("test");
@@ -1233,10 +1242,10 @@ const ShopifyScenariosPage = () => {
               </p>
             </div>
             <div className="flex items-center flex-wrap gap-3">
-              <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center text-sm">
+              {/* <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center text-sm">
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back
-              </button>
+              </button> */}
 
               <button
                 onClick={handleSaveScenario}
@@ -1933,7 +1942,7 @@ const ShopifyScenariosPage = () => {
         />
       )}
 
-      {showRunTestModal && (
+      {/* {showRunTestModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
             <div className="flex justify-between items-start border-b px-6 py-4">
@@ -2080,8 +2089,31 @@ const ShopifyScenariosPage = () => {
               >
                 Cancel
               </button>
+
               <button
                 onClick={() => {
+                  // Validation check before closing modal
+                  const { businessEmail, service, description } = formData;
+
+                  if (
+                    !businessEmail.trim() ||
+                    !service.trim() ||
+                    !description.trim()
+                  ) {
+                    toast.error(
+                      "Please fill all required fields before continuing.",
+                      {
+                        duration: 4000,
+                        style: {
+                          background: "#fff0f0",
+                          color: "#b91c1c",
+                          border: "1px solid #fca5a5",
+                        },
+                      }
+                    );
+                    return;
+                  }
+
                   setShowRunTestModal(false);
                   handleRunTest();
                 }}
@@ -2092,7 +2124,7 @@ const ShopifyScenariosPage = () => {
             </div>
           </div>
         </div>
-      )}
+      )} */}
       {showTemplateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col overflow-hidden transition-all">
@@ -2259,7 +2291,7 @@ const ShopifyScenariosPage = () => {
 
             {/* Body */}
             <div className="px-6 py-5 space-y-4 overflow-y-auto max-h-[70vh]">
-              {/* Business Email */}
+              {/* Business Email (editable) */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Business Email <span className="text-red-500">*</span>
@@ -2275,39 +2307,33 @@ const ShopifyScenariosPage = () => {
                 />
               </div>
 
-              {/* Store Name */}
+              {/* Store Name (disabled, prefilled) */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Store Name
                 </label>
                 <input
                   type="text"
-                  value={formData.storeName}
-                  onChange={(e) =>
-                    setFormData({ ...formData, storeName: e.target.value })
-                  }
-                  placeholder="Enter your store name"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none"
+                  value={formData.storeName || "Dummy Store"}
+                  disabled
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 bg-gray-100 text-gray-600 cursor-not-allowed"
                 />
               </div>
 
-              {/* Country */}
+              {/* Country (disabled, prefilled) */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Country
                 </label>
                 <input
                   type="text"
-                  value={formData.country}
-                  onChange={(e) =>
-                    setFormData({ ...formData, country: e.target.value })
-                  }
-                  placeholder="Enter your country"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none"
+                  value={formData.country || "USA"}
+                  disabled
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 bg-gray-100 text-gray-600 cursor-not-allowed"
                 />
               </div>
 
-              {/* Service */}
+              {/* Service (editable) */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Select a Service Offered by {user?.name || "the team"}
@@ -2352,23 +2378,20 @@ const ShopifyScenariosPage = () => {
                 </select>
               </div>
 
-              {/* Budget */}
+              {/* Budget (disabled, prefilled) */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Budget (USD)
                 </label>
                 <input
                   type="number"
-                  value={formData.budget}
-                  onChange={(e) =>
-                    setFormData({ ...formData, budget: e.target.value })
-                  }
-                  placeholder="Enter your budget"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none"
+                  value={formData.budget || 10000}
+                  disabled
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 bg-gray-100 text-gray-600 cursor-not-allowed"
                 />
               </div>
 
-              {/* ✅ New Description Box */}
+              {/* Description (editable) */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Description
@@ -2395,8 +2418,31 @@ const ShopifyScenariosPage = () => {
               </button>
               <button
                 onClick={() => {
-                  setShowRunTestModal(false);
+                  // Validate before closing
+                  const { businessEmail, service, description } = formData;
+
+                  if (
+                    !businessEmail?.trim() ||
+                    !service?.trim() ||
+                    !description?.trim()
+                  ) {
+                    toast.error(
+                      "Please fill all required fields before continuing.",
+                      {
+                        duration: 4000,
+                        style: {
+                          background: "#fff0f0",
+                          color: "#b91c1c",
+                          border: "1px solid #fca5a5",
+                        },
+                      }
+                    );
+                    return; // ❌ Stop here — modal stays open
+                  }
+
+                  // ✅ All fields valid, now run the test and close
                   handleRunTest();
+                  setShowRunTestModal(false);
                 }}
                 className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition"
               >

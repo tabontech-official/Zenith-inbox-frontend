@@ -101,11 +101,14 @@ const SetupFlow = () => {
 
   const saveSetupProgress = async (data = {}) => {
     try {
-      const res = await fetch(`https://email-syncing-backend.vercel.app/auth/setup/${user._id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
+      const res = await fetch(
+        `https://email-syncing-backend.vercel.app/auth/setup/${user._id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        }
+      );
 
       const result = await res.json();
 
@@ -162,11 +165,14 @@ const SetupFlow = () => {
       const userId = localStorage.getItem("userid");
       const payload = { ...smtpForm, userId, provider: "outlook" };
 
-      const res = await fetch("https://email-syncing-backend.vercel.app/auth/saveSmtpConnection", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const res = await fetch(
+        "https://email-syncing-backend.vercel.app/auth/saveSmtpConnection",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
 
       if (!res.ok) throw new Error("Failed to save SMTP connection");
       alert("✅ SMTP connection saved successfully!");
@@ -271,7 +277,9 @@ const SetupFlow = () => {
     const fetchSetupProgress = async () => {
       try {
         if (!user?._id) return;
-        const res = await fetch(`https://email-syncing-backend.vercel.app/auth/setup/${user._id}`);
+        const res = await fetch(
+          `https://email-syncing-backend.vercel.app/auth/setup/${user._id}`
+        );
         const data = await res.json();
         if (data.success) setSetupProgress(data.data);
       } catch (err) {
@@ -303,37 +311,44 @@ const SetupFlow = () => {
       </div>
 
       {step === 1 && (
-        <div className="bg-white shadow-md rounded-xl p-8 sm:p-10 max-w-lg w-[90%]">
-          <h1 className="text-2xl sm:text-3xl font-bold text-[#111827] mb-4">
-            Never miss a lead again.
-          </h1>
+  <div className="bg-white shadow-md rounded-xl p-8 sm:p-10 max-w-lg w-[90%] text-center">
+    <h1 className="text-2xl sm:text-3xl font-bold text-[#111827] mb-4">
+      Never miss a lead again.
+    </h1>
 
-          <p className="text-[#4B5563] text-base mb-8 leading-relaxed">
-            We’ll create your mailhook and help you forward new leads to it.
-            Then we’ll set up how your replies are sent (SMTP).
-          </p>
+    <p className="text-[#4B5563] text-base mb-8 leading-relaxed">
+      We’ll create your mailhook and help you forward new leads to it. 
+      Then we’ll set up how your replies are sent (SMTP).
+    </p>
 
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <button
-              onClick={() => setStep(2)}
-              className="bg-[#4F46E5] hover:bg-[#4338CA] text-white px-8 py-3 rounded-lg text-sm font-semibold flex items-center justify-center space-x-2 shadow-md"
-            >
-              <span>Start 60-sec Setup</span>
-              <FiArrowRight />
-            </button>
+    <div className="flex flex-col sm:flex-row items-center justify-center gap-5 mt-6">
+      {/* Start Setup Button */}
+      <button
+        onClick={() => setStep(2)}
+        className="bg-[#4F46E5] hover:bg-[#4338CA] text-white px-8 py-3 rounded-lg text-sm font-semibold flex items-center justify-center space-x-2 shadow-md transition"
+      >
+        <span>Start 60-sec Setup</span>
+        <FiArrowRight />
+      </button>
 
-            <button
-              onClick={async () => {
-                await saveSetupProgress({ skipped: true, stepCompleted: step });
-                navigate("/organization");
-              }}
-              className="border border-gray-300 text-[#4B5563] hover:bg-gray-50 px-8 py-3 rounded-lg text-sm font-semibold flex items-center justify-center space-x-2"
-            >
-              <span>Skip Setup</span>
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Skip Setup Link */}
+      <span
+        onClick={async () => {
+          await saveSetupProgress({ skipped: true, stepCompleted: 1 });
+          navigate("/organization");
+        }}
+        className="text-[#4F46E5] text-sm font-semibold cursor-pointer hover:underline hover:text-[#3730A3] transition-colors"
+      >
+        Skip Setup
+      </span>
+    </div>
+
+    <p className="text-xs text-gray-400 mt-6">
+      You can complete setup later from your Organization Settings.
+    </p>
+  </div>
+)}
+
 
       {step === 2 && (
         <div className="bg-white shadow-md rounded-xl p-8 sm:p-10 max-w-2xl w-[90%] text-left">
@@ -404,7 +419,7 @@ const SetupFlow = () => {
           </div>
         </div>
       )}
-
+      {/* 
       {step === 3 && (
         <div className="bg-white shadow-md rounded-xl p-8 sm:p-10 max-w-2xl w-[90%] text-left">
           <h2 className="text-2xl font-bold text-[#111827] text-center mb-2">
@@ -425,7 +440,6 @@ const SetupFlow = () => {
             />
           </div>
 
-          {/* 💌 Latest Email Section */}
           <div className="bg-white border border-[#E5E7EB] rounded-2xl shadow-sm p-6 w-full max-w-md mx-auto space-y-4 text-center transition-all duration-300">
             <div className="flex items-center justify-center space-x-2">
               <svg
@@ -472,7 +486,6 @@ const SetupFlow = () => {
                   {verificationEmail.textBody}
                 </div>
 
-                {/* Only show Verify button if Gmail verification link exists */}
                 {verificationEmail.verificationUrl && (
                   <a
                     href={verificationEmail.verificationUrl}
@@ -530,6 +543,136 @@ const SetupFlow = () => {
                 <span>Waiting...</span>
               </button>
             )}
+          </div>
+        </div>
+      )} */}
+      {step === 3 && (
+        <div className="bg-white shadow-md rounded-xl p-8 sm:p-10 max-w-2xl w-[90%] text-left">
+          <h2 className="text-2xl font-bold text-[#111827] text-center mb-2">
+            Set up Forwarding
+          </h2>
+          <p className="text-[#4B5563] text-center mb-8">
+            Automatically send your leads to Zenith Inbox.
+          </p>
+
+          <div className="bg-[#F3F4F6] text-[#4F46E5] px-4 py-3 rounded-lg flex justify-between items-center font-mono text-sm mb-6">
+            Forward emails to: <span>{user?.mailhook || "loading..."}</span>
+            <FiCopy
+              className="text-gray-500 cursor-pointer"
+              onClick={() => {
+                if (user?.mailhook)
+                  navigator.clipboard.writeText(user.mailhook);
+              }}
+            />
+          </div>
+
+          {/* 💌 Latest Email Section */}
+          <div className="bg-white border border-[#E5E7EB] rounded-2xl shadow-sm p-6 w-full max-w-md mx-auto space-y-4 text-center transition-all duration-300">
+            <div className="flex items-center justify-center space-x-2">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="w-6 h-6 text-[#4F46E5]"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 8l9 6 9-6m-9 6V4"
+                />
+              </svg>
+              <h2 className="text-lg font-semibold text-[#111827]">
+                 Email Receiving
+              </h2>
+            </div>
+
+            {verificationEmail ? (
+              <>
+                <div className="bg-[#F9FAFB] rounded-xl p-4 text-left space-y-2">
+                  <p className="text-sm text-[#374151]">
+                    <strong>From:</strong>{" "}
+                    <span className="text-[#4F46E5]">
+                      {verificationEmail.sender}
+                    </span>
+                  </p>
+                  <p className="text-sm text-[#374151]">
+                    <strong>Subject:</strong>{" "}
+                    <span className="font-medium">
+                      {verificationEmail.subject}
+                    </span>
+                  </p>
+                  <p className="text-sm text-[#6B7280]">
+                    <strong>Date:</strong>{" "}
+                    {new Date(verificationEmail.date).toLocaleString()}
+                  </p>
+                </div>
+
+                <div className="bg-white border border-gray-200 rounded-lg p-4 text-left max-h-64 overflow-y-auto text-sm text-gray-700">
+                  {verificationEmail.textBody}
+                </div>
+
+                {verificationEmail.verificationUrl && (
+                  <a
+                    href={verificationEmail.verificationUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block w-full bg-[#4F46E5] hover:bg-[#4338CA] text-white font-semibold py-2 rounded-lg transition-colors"
+                  >
+                    Verify Forwarding
+                  </a>
+                )}
+              </>
+            ) : (
+              <p className="text-gray-500 text-sm">
+                Waiting for email... please complete Gmail forwarding setup.
+              </p>
+            )}
+          </div>
+
+          {/* 👇 Need help + Buttons Section */}
+          <div className="mt-10 border-t border-gray-200 pt-6 text-center">
+            <details className="group">
+              <summary
+                onClick={() => {
+                  window.open("/pages/mailhook/instruction", "_blank");
+                }}
+                className="cursor-pointer text-[#4F46E5] font-semibold text-sm hover:underline inline-flex items-center gap-1"
+              >
+                Need help setting up Gmail forwarding?
+              </summary>
+            </details>
+
+            {/* ✅ Buttons now appear here */}
+            <div className="flex justify-between mt-8">
+              <span
+                onClick={async () => {
+                  await updateStep(4, { skipped: true });
+                }}
+                className="text-[#4F46E5] text-sm font-semibold cursor-pointer hover:underline"
+              >
+                Skip
+              </span>
+
+              <div className="flex gap-3">
+                {/* <button
+            onClick={async () => {
+              await updateStep(4, { skipped: true });
+            }}
+            className="flex items-center space-x-2 px-5 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
+          >
+            <span>Skip</span>
+          </button> */}
+
+                <button
+                  onClick={() => updateStep(4)}
+                  className="flex items-center space-x-2 px-6 py-2 rounded-lg text-sm font-semibold bg-[#4F46E5] text-white hover:bg-[#4338CA]"
+                >
+                  <span>Next</span> <FiArrowRight />
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -712,15 +855,15 @@ const SetupFlow = () => {
           )}
 
           <div className="flex justify-between mt-8">
-            <button
+            <span
               onClick={async () => {
                 const nextStep = step + 1;
                 await updateStep(nextStep, { skipped: true });
               }}
-              className="flex items-center space-x-2 px-5 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
+              className="text-[#4F46E5] text-sm font-semibold cursor-pointer hover:underline"
             >
               <span>Skip</span>
-            </button>
+            </span>
 
             <button
               onClick={() => updateStep(5)}
@@ -791,14 +934,14 @@ const SetupFlow = () => {
                   {user?.mailhook || "loading..."}
                 </span>
               </p>
-              <p>
+              {/* <p>
                 Automation Mode:{" "}
                 {setupProgress?.completed
                   ? "Enabled"
                   : setupProgress?.skipped
                   ? "Skipped"
                   : "Pending"}
-              </p>
+              </p> */}
             </div>
           </div>
 
