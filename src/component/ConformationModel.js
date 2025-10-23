@@ -18,7 +18,7 @@ const ConfirmDeleteModal = ({ isOpen, onClose, connectionId, onDeleted }) => {
       setLoading(true);
 
       const res = await axios.delete(
-        `http://localhost:5000/mailhook/deleteConnection/${connectionId}`
+        `https://email-syncing-backend.vercel.app/mailhook/deleteConnection/${connectionId}`
       );
 
       if (res.data.success) {
