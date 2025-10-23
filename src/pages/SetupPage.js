@@ -729,7 +729,7 @@ const SetupFlow = () => {
             {verificationEmail && !validationPhase && !validated && (
               <div className="space-y-3 mt-6">
                 <p className="text-sm text-gray-600">
-                  Enter the email address you want to validate:
+                 Enter the email address where you’ve set up forwarding to verify your setup. 
                 </p>
                 <input
                   type="email"
