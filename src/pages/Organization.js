@@ -176,7 +176,7 @@ const Organization = () => {
               </p>
             </div>
 
-            <div className="flex items-center gap-3 mt-4 sm:mt-0 bg-white px-4 py-2 rounded-full shadow-sm border">
+            {/* <div className="flex items-center gap-3 mt-4 sm:mt-0 bg-white px-4 py-2 rounded-full shadow-sm border">
               <span className="text-sm font-medium text-gray-700">
                 Automation
               </span>
@@ -197,7 +197,7 @@ const Organization = () => {
               >
                 {automationOn ? "ON" : "OFF"}
               </span>
-            </div>
+            </div> */}
           </motion.div>
 
           <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-10">

@@ -2,30 +2,24 @@ import React, { useEffect, useState } from "react";
 import { Mail, Clock, Server, Layers, Trash2, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../component/Sidebar";
+import ScenarioSelectModal from "../component/ScenarioSelectModal"; // ✅ Import modal
 
 const getScenarioName = (scenario) => {
   if (scenario.name && scenario.name.trim() !== "") return scenario.name;
-
   const modules = scenario.routerBranches?.[0]?.modules || [];
-  if (
-    modules.some((m) => m.type === "Send an Email" && m.app?.name === "Gmail")
-  )
+  if (modules.some((m) => m.type === "Send an Email" && m.app?.name === "Gmail"))
     return "Gmail Scenario";
-  if (modules.some((m) => m.type === "Custom Email"))
-    return "Outlook/SMTP Scenario";
+  if (modules.some((m) => m.type === "Custom Email")) return "Outlook/SMTP Scenario";
   if (modules.some((m) => m.type === "Delay")) return "Delay Scenario";
   if (modules.length > 1) return "Mixed Scenario";
-
   return "Untitled Scenario";
 };
 
 const getScenarioDescription = (scenario) => {
   if (scenario.description && scenario.description.trim() !== "")
     return scenario.description;
-
   const modules = scenario.routerBranches?.[0]?.modules || [];
   if (modules.length > 0) return modules.map((m) => m.description).join(", ");
-
   return "No description available";
 };
 
@@ -73,6 +67,7 @@ const AllScenariosPage = () => {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedScenario, setSelectedScenario] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [openScenarioModal, setOpenScenarioModal] = useState(false); // ✅ Modal state
 
   const navigate = useNavigate();
 
@@ -88,7 +83,7 @@ const AllScenariosPage = () => {
         `https://email-syncing-backend.vercel.app/scenario/user/${userId}`
       );
       const data = await res.json();
-      setScenarios(data);
+      setScenarios(Array.isArray(data) ? data : data.data || []);
     } catch (err) {
       console.error("Error fetching scenarios:", err);
     } finally {
@@ -119,6 +114,12 @@ const AllScenariosPage = () => {
     }
   };
 
+  const handleSelectScenario = (type) => {
+    setOpenScenarioModal(false);
+    if (type === "shopify") navigate("/scenarios/shopify");
+    else navigate("/scenarios/others");
+  };
+
   return (
     <div className="flex bg-gradient-to-br from-gray-50 to-indigo-50 min-h-screen font-inter">
       <Sidebar />
@@ -135,7 +136,6 @@ const AllScenariosPage = () => {
           </div>
 
           <div className="flex items-center gap-6">
-            {/* Shopify count */}
             <div className="text-sm text-gray-600 font-medium">
               Shopify Scenario:{" "}
               <span className="font-semibold text-indigo-600">
@@ -143,7 +143,6 @@ const AllScenariosPage = () => {
               </span>
             </div>
 
-            {/* Custom count */}
             <div className="text-sm text-gray-600 font-medium">
               Custom Scenarios:{" "}
               <span className="font-semibold text-indigo-600">
@@ -151,7 +150,7 @@ const AllScenariosPage = () => {
               </span>
             </div>
 
-            {/* Button logic */}
+            {/* ✅ Open scenario selection modal instead of direct navigation */}
             <button
               onClick={() => {
                 const shopifyCount = scenarios.filter(
@@ -162,20 +161,11 @@ const AllScenariosPage = () => {
                 ).length;
 
                 if (shopifyCount >= 1 && customCount >= 2) {
-                  alert(
-                    "You’ve reached the limit: 1 Shopify + 2 Custom Scenarios."
-                  );
+                  alert("You’ve reached the limit: 1 Shopify + 2 Custom Scenarios.");
                   return;
                 }
 
-                // Decide where to go
-                if (shopifyCount < 1) {
-                  // Create Shopify scenario first
-                  navigate("/scenarios/shopify");
-                } else if (customCount < 2) {
-                  // Then allow custom scenarios
-                  navigate("/scenarios/others");
-                }
+                setOpenScenarioModal(true);
               }}
               className={`px-4 py-2 rounded-lg text-sm font-medium shadow-sm transition ${
                 scenarios.filter((s) => s.type === "shopify").length >= 1 &&
@@ -189,7 +179,6 @@ const AllScenariosPage = () => {
           </div>
         </header>
 
-        {/* Table Section */}
         <section className="flex-1 p-8 overflow-x-auto">
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
             <table className="w-full text-sm text-left text-gray-600">
@@ -240,14 +229,11 @@ const AllScenariosPage = () => {
                       </td>
 
                       <td className="px-6 py-4 text-gray-500">
-                        {new Date(scenario.createdAt).toLocaleDateString(
-                          "en-US",
-                          {
-                            year: "numeric",
-                            month: "short",
-                            day: "numeric",
-                          }
-                        )}
+                        {new Date(scenario.createdAt).toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        })}
                       </td>
 
                       <td className="px-6 py-4 text-right">
@@ -312,6 +298,13 @@ const AllScenariosPage = () => {
           </div>
         </div>
       )}
+
+      {/* ✅ Scenario Select Modal (Same as Organization page) */}
+      <ScenarioSelectModal
+        open={openScenarioModal}
+        onClose={() => setOpenScenarioModal(false)}
+        onSelect={handleSelectScenario}
+      />
     </div>
   );
 };
