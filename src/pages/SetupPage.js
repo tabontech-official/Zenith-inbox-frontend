@@ -1,3 +1,1130 @@
+// import React, { useContext, useEffect, useState } from "react";
+// import {
+//   FiMail,
+//   FiArrowRight,
+//   FiArrowLeft,
+//   FiCopy,
+//   FiCheck,
+//   FiEyeOff,
+//   FiEye,
+//   FiAlertCircle,
+//   FiClock,
+// } from "react-icons/fi";
+// import { useLocation, useNavigate } from "react-router-dom";
+// import { UserContext } from "../component/UserContext";
+// import { FaMicrosoft } from "react-icons/fa";
+// import toast from "react-hot-toast";
+
+// const SetupFlow = () => {
+//   const navigate = useNavigate();
+//   const { user, loading } = useContext(UserContext);
+//   const location = useLocation();
+//   const query = new URLSearchParams(location.search);
+//   const stepFromURL = parseInt(query.get("step"), 10);
+//   const [step, setStep] = useState(stepFromURL || 1);
+//   const [testSent, setTestSent] = useState(false);
+//   const [sendingMode, setSendingMode] = useState("Auto-Send");
+//   const [followUp1, setFollowUp1] = useState(2);
+//   const [followUp2, setFollowUp2] = useState(5);
+//   const [safetyNet, setSafetyNet] = useState(true);
+//   const [followUp1Unit, setFollowUp1Unit] = useState("days");
+//   const [followUp2Unit, setFollowUp2Unit] = useState("days");
+
+//   const progressWidth =
+//     step === 1
+//       ? "14%"
+//       : step === 2
+//       ? "28%"
+//       : step === 3
+//       ? "42%"
+//       : step === 4
+//       ? "56%"
+//       : step === 5
+//       ? "70%"
+//       : step === 6
+//       ? "84%"
+//       : "100%";
+
+//   const [selectedTone, setSelectedTone] = useState("Friendly");
+//   const [selectedServices, setSelectedServices] = useState(["Store Setup"]);
+
+//   const toggleService = (service) => {
+//     setSelectedServices((prev) =>
+//       prev.includes(service)
+//         ? prev.filter((s) => s !== service)
+//         : [...prev, service]
+//     );
+//   };
+
+//   const handleGmailConnect = () => {
+//     const userId = user?._id;
+
+//     const popup = window.open(
+//       `https://email-syncing-backend.vercel.app/auth/google?userId=${userId}`,
+//       "gmailConnect",
+//       "width=600,height=600"
+//     );
+
+//     const checkPopup = setInterval(() => {
+//       if (popup.closed) {
+//         clearInterval(checkPopup);
+//         // When popup closes, check the URL query for success
+//         const params = new URLSearchParams(window.location.search);
+//         const status = params.get("status");
+//         if (status === "success") {
+//           console.log("✅ Gmail connected successfully!");
+//           setStep(5);
+//         } else if (status === "error") {
+//           alert("❌ Failed to connect Gmail. Please try again.");
+//         }
+//       }
+//     }, 1000);
+//   };
+
+//   const handleMicrosoftConnect = () => {
+//     const userId = user?._id;
+//     const popup = window.open(
+//       `https://email-syncing-backend.vercel.app/auth/outlook?userId=${userId}`,
+//       "microsoftConnect",
+//       "width=600,height=600"
+//     );
+
+//     const handleMessage = (event) => {
+//       if (event.data?.type === "microsoft-auth-success") {
+//         console.log(" Microsoft account connected successfully!");
+//         setStep(5);
+//         window.removeEventListener("message", handleMessage);
+//         popup.close();
+//       }
+//     };
+
+//     window.addEventListener("message", handleMessage);
+//   };
+
+//   const saveSetupProgress = async (data = {}) => {
+//     try {
+//       const res = await fetch(
+//         `https://email-syncing-backend.vercel.app/auth/setup/${user._id}`,
+//         {
+//           method: "PUT",
+//           headers: { "Content-Type": "application/json" },
+//           body: JSON.stringify(data),
+//         }
+//       );
+
+//       const result = await res.json();
+
+//       if (result.success) {
+//         console.log("✅ Setup progress updated:", result.data);
+//       } else {
+//         console.error("❌ Failed to update setup progress:", result.message);
+//       }
+//     } catch (err) {
+//       console.error("Error saving setup progress:", err);
+//     }
+//   };
+
+//   const updateStep = async (nextStep, extra = {}) => {
+//     setStep(nextStep);
+//     await saveSetupProgress({
+//       stepCompleted: nextStep,
+//       ...extra,
+//     });
+//   };
+
+//   const [showValidateButton, setShowValidateButton] = useState(false);
+//   const [validating, setValidating] = useState(false);
+//   const [validated, setValidated] = useState(false);
+
+//   useEffect(() => {
+//     if (step === 3) {
+//       setValidated(false);
+//       setValidating(false);
+//       const timer = setTimeout(() => setShowValidateButton(true), 10000);
+//       return () => clearTimeout(timer);
+//     } else {
+//       setShowValidateButton(false);
+//     }
+//   }, [step]);
+//   const [selectedTab, setSelectedTab] = useState("Gmail");
+//   const [showPassword, setShowPassword] = useState(false);
+//   const [smtpForm, setSmtpForm] = useState({
+//     name: "My SMTP Connection",
+//     email: "",
+//     fullName: "",
+//     username: "",
+//     password: "",
+//     host: "smtp.office365.com",
+//     port: 587,
+//   });
+
+//   const handleSmtpChange = (e) => {
+//     setSmtpForm({ ...smtpForm, [e.target.name]: e.target.value });
+//   };
+
+//   const handleSmtpSave = async () => {
+//     try {
+//       const userId = localStorage.getItem("userid");
+//       const payload = { ...smtpForm, userId, provider: "outlook" };
+
+//       const res = await fetch(
+//         "https://email-syncing-backend.vercel.app/auth/saveSmtpConnection",
+//         {
+//           method: "POST",
+//           headers: { "Content-Type": "application/json" },
+//           body: JSON.stringify(payload),
+//         }
+//       );
+
+//       if (!res.ok) throw new Error("Failed to save SMTP connection");
+//       alert("✅ SMTP connection saved successfully!");
+//       setStep(5); // Move to next step
+//     } catch (err) {
+//       console.error(err);
+//       alert("❌ Failed to save SMTP connection");
+//     }
+//   };
+
+//   const [verificationEmail, setVerificationEmail] = useState(null);
+
+//   useEffect(() => {
+//     if (step === 3 && user?._id) {
+//       const fetchVerification = async () => {
+//         try {
+//           const res = await fetch(
+//             `https://email-syncing-backend.vercel.app/mailhook/verification/${user._id}`
+//           );
+//           const data = await res.json();
+
+//           if (data.success) {
+//             const email = data.data;
+//             let autoEmail = "";
+//             let isGmailVerification = false;
+//             let cleanedBody = email.textBody || "";
+
+//             // 🔹 Detect Gmail forwarding confirmation email
+//             if (
+//               email.sender
+//                 ?.toLowerCase()
+//                 .includes("forwarding-noreply@google.com") &&
+//               email.subject
+//                 ?.toLowerCase()
+//                 .includes("has requested to automatically forward")
+//             ) {
+//               isGmailVerification = true;
+
+//               // Extract Gmail address from subject or body using regex
+//               const match =
+//                 email.subject.match(/([\w._%+-]+@gmail\.com)/i) ||
+//                 email.textBody.match(/([\w._%+-]+@gmail\.com)/i);
+//               if (match) autoEmail = match[1];
+
+//               // Simplify Gmail verification message for cleaner display
+//               cleanedBody =
+//                 "📩 Gmail forwarding request detected.\n\nTo confirm forwarding, please open Gmail and click the verification link included in this message.\n\nOnce confirmed, return here to validate.";
+//             }
+
+//             // 🔹 Format body with line breaks
+//             cleanedBody = cleanedBody.replace(/\n/g, "<br/>");
+
+//             // 🔹 Update verification email state
+//             setVerificationEmail({
+//               ...email,
+//               toEmail: autoEmail || email.toEmail || "",
+//               isGmailVerification,
+//               formattedBody: cleanedBody,
+//             });
+//           } else {
+//             setVerificationEmail(null);
+//           }
+//         } catch (err) {
+//           console.error("Error fetching verification email:", err);
+//         }
+//       };
+
+//       fetchVerification();
+//       const interval = setInterval(fetchVerification, 15000);
+//       return () => clearInterval(interval);
+//     }
+//   }, [step, user]);
+
+//   const fetchValidateEmail = async () => {
+//     try {
+//       const res = await fetch(
+//         `https://email-syncing-backend.vercel.app/mailhook/validateTest/${user._id}`
+//       );
+//       const data = await res.json();
+
+//       if (data.success) {
+//         console.log(" Validation email found:", data.data);
+//         setVerificationEmail(data.data);
+//         setValidated(true);
+//       } else {
+//         console.log(" Not yet validated:", data.message);
+//         setValidated(false);
+//       }
+//     } catch (err) {
+//       console.error("Error fetching validation email:", err);
+//     }
+//   };
+//   const handleValidateForwarding = async () => {
+//     try {
+//       if (!verificationEmail?.toEmail) {
+//         toast.error("Please enter a valid email address.");
+//         return;
+//       }
+
+//       setValidating(true);
+//       setValidated(false);
+//       setValidationFailed(false);
+//       setValidationPhase(true); // 🔹 Show waiting timer, hide input
+
+//       const res = await fetch(
+//         `https://email-syncing-backend.vercel.app/mailhook/validate-forwarding/${user._id}`,
+//         {
+//           method: "POST",
+//           headers: { "Content-Type": "application/json" },
+//           body: JSON.stringify({ toEmail: verificationEmail.toEmail }),
+//         }
+//       );
+
+//       const data = await res.json();
+
+//       if (data.success) {
+//         toast.success(
+//           `validating your connection please wait until its complete.`
+//         );
+//         startValidationLoop();
+//       } else {
+//         toast.error(
+//           data.message ||
+//             "Failed to validate your connection please make sure your forwarding connection setup properly."
+//         );
+//         setValidating(false);
+//         setValidationPhase(false);
+//       }
+//     } catch (err) {
+//       console.error("Error sending test email:", err);
+//       toast.error("Something went wrong while validating connection.");
+//       setValidating(false);
+//       setValidationPhase(false);
+//     }
+//   };
+
+//  useEffect(() => {
+//   if (!loading && user) {
+//     if (user?.setup?.completed) {
+//       navigate("/organization");
+//     }
+//   }
+// }, [user, loading, navigate]);
+
+//   const [setupProgress, setSetupProgress] = useState(null);
+
+//   useEffect(() => {
+//     const fetchSetupProgress = async () => {
+//       try {
+//         if (!user?._id) return;
+//         const res = await fetch(
+//           `https://email-syncing-backend.vercel.app/auth/setup/${user._id}`
+//         );
+//         const data = await res.json();
+//         if (data.success) setSetupProgress(data.data);
+//       } catch (err) {
+//         console.error("Error fetching setup progress:", err);
+//       }
+//     };
+
+//     if (step === 5) {
+//       fetchSetupProgress();
+//     }
+//   }, [step, user]);
+
+//   const CountdownTimer = () => {
+//     const [seconds, setSeconds] = useState(10);
+//     useEffect(() => {
+//       if (seconds <= 0) return;
+//       const t = setTimeout(() => setSeconds((s) => s - 1), 1000);
+//       return () => clearTimeout(t);
+//     }, [seconds]);
+
+//     const progress = ((10 - seconds) / 10) * 100;
+
+//     return (
+//       <div className="text-center w-full">
+//         <p className="text-sm text-gray-600 mb-2">
+//           Preparing validation options in {seconds}s…
+//         </p>
+//         <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+//           <div
+//             className="h-full bg-[#4F46E5] transition-all duration-1000"
+//             style={{ width: `${progress}%` }}
+//           />
+//         </div>
+//       </div>
+//     );
+//   };
+
+//   const LoopingTimer = ({ loop, message }) => {
+//     const [seconds, setSeconds] = useState(10);
+//     useEffect(() => {
+//       const i = setInterval(
+//         () => setSeconds((s) => (s <= 1 ? 10 : s - 1)),
+//         1000
+//       );
+//       return () => clearInterval(i);
+//     }, []);
+
+//     const progress = ((10 - seconds) / 10) * 100;
+//     const hints = [
+//       "Waiting for your forwarded email…",
+//       "Still checking — please confirm forwarding is active.",
+//       "If it’s taking long, re-check Gmail/Outlook forwarding rules.",
+//     ];
+//     const hint = hints[Math.min(loop, hints.length - 1)];
+
+//     return (
+//       <div className="text-center space-y-2">
+//         <p className="text-sm text-gray-600">{hint}</p>
+//         <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+//           <div
+//             className="h-full bg-[#4F46E5] transition-all duration-1000"
+//             style={{ width: `${progress}%` }}
+//           />
+//         </div>
+//         <p className="text-xs text-gray-400">Checking again in {seconds}s…</p>
+//         {message && <p className="text-xs text-gray-500">{message}</p>}
+//       </div>
+//     );
+//   };
+//   const MailhookWaitingTimer = () => {
+//     const [seconds, setSeconds] = useState(10);
+//     const [message, setMessage] = useState(
+//       "Waiting for email... please complete Gmail forwarding setup."
+//     );
+//     const [showAlert, setShowAlert] = useState(false);
+
+//     useEffect(() => {
+//       const tick = setInterval(() => {
+//         setSeconds((s) => (s <= 1 ? 10 : s - 1));
+//       }, 1000);
+
+//       const toggleMessage = setInterval(() => {
+//         setShowAlert((prev) => !prev);
+//         setMessage((prev) =>
+//           prev.includes("Waiting")
+//             ? "No email received on mailhook. Please ensure your email forwarding is active."
+//             : "Waiting for forwarded email... please complete Gmail forwarding setup."
+//         );
+//       }, 10000);
+
+//       return () => {
+//         clearInterval(tick);
+//         clearInterval(toggleMessage);
+//       };
+//     }, []);
+
+//     const progress = ((10 - seconds) / 10) * 100;
+//     const [validationPhase, setValidationPhase] = useState(false);
+
+//     return (
+//       <div className="text-center space-y-3 transition-all duration-300">
+//         <div className="flex justify-center items-center gap-2 text-gray-700">
+//           {showAlert ? (
+//             <FiAlertCircle className="text-red-500 text-lg animate-pulse" />
+//           ) : (
+//             <FiMail className="text-[#4F46E5] text-lg animate-pulse" />
+//           )}
+//           <p className="text-sm text-gray-600 transition-all duration-500">
+//             {showAlert ? (
+//               <span className="flex items-center justify-center gap-2 text-red-600 font-medium">
+//                 No email received on mailhook.
+//               </span>
+//             ) : (
+//               <span className="flex items-center justify-center gap-2 text-gray-700 font-medium">
+//                 Waiting for email...
+//               </span>
+//             )}
+//           </p>
+//         </div>
+
+//         <p className="text-xs text-gray-500">
+//           {showAlert
+//             ? "Make sure you’ve forwarded emails to the correct mailhook address."
+//             : "Keep this tab open while we check your mailhook."}
+//         </p>
+
+//         {/* Progress Bar */}
+//         <div className="h-2 bg-gray-200 rounded-full overflow-hidden mt-2">
+//           <div
+//             className={`h-full transition-all duration-1000 ${
+//               showAlert ? "bg-red-500" : "bg-[#4F46E5]"
+//             }`}
+//             style={{ width: `${progress}%` }}
+//           />
+//         </div>
+
+//         <div className="flex items-center justify-center gap-1 text-xs text-gray-400 mt-1">
+//           <FiClock />
+//           <span>Checking again in {seconds}s…</span>
+//         </div>
+//       </div>
+//     );
+//   };
+//   const [validationPhase, setValidationPhase] = useState(false);
+//   const [validationFailed, setValidationFailed] = useState(false);
+//   const startValidationLoop = async () => {
+//     let attempts = 0;
+//     const maxAttempts = 3;
+//     setValidationFailed(false);
+
+//     const checkValidation = async () => {
+//       attempts++;
+//       console.log(`Checking validation attempt ${attempts}...`);
+
+//       try {
+//         const res = await fetch(
+//           `https://email-syncing-backend.vercel.app/mailhook/validateTest/${user._id}`
+//         );
+//         const data = await res.json();
+
+//         if (data.success) {
+//           console.log("Validation email detected:", data.data);
+//           setVerificationEmail(data.data);
+//           setValidated(true);
+//           setValidating(false);
+//           setValidationPhase(false);
+//           setValidationFailed(false);
+//           toast.success("Forwarding confirmed!");
+//           return; //  stop checking
+//         }
+
+//         if (attempts < maxAttempts) {
+//           // Wait 10 seconds before next check
+//           setTimeout(checkValidation, 10000);
+//         } else {
+//           console.log("Validation failed after 5 checks");
+//           setValidating(false);
+//           setValidationPhase(false);
+//           setValidationFailed(true);
+//           toast.error(
+//             "Sorry we cannot validate your connection.please also make sure your mailhook forwarding setup properly."
+//           );
+//         }
+//       } catch (err) {
+//         console.error("Error checking validation:", err);
+//         if (attempts < maxAttempts) {
+//           setTimeout(checkValidation, 10000);
+//         } else {
+//           setValidating(false);
+//           setValidationPhase(false);
+//           setValidationFailed(true);
+//         }
+//       }
+//     };
+
+//     checkValidation();
+//   };
+
+//   return (
+//     <div className="min-h-screen flex flex-col items-center justify-center bg-[#F9FAFB] text-center">
+//       <div className="flex flex-col items-center mb-10">
+//         <div className="flex items-center space-x-2 mb-3">
+//           <FiMail className="text-[#4F46E5] text-2xl" />
+//           <span className="font-semibold text-lg text-[#111827]">
+//             Zenith Inbox
+//           </span>
+//         </div>
+
+//         <div className="w-72 sm:w-[28rem] h-[6px] bg-[#E0E7FF] rounded-full overflow-hidden">
+//           <div
+//             className="h-full bg-[#4F46E5] rounded-full transition-all duration-500"
+//             style={{ width: progressWidth }}
+//           ></div>
+//         </div>
+//       </div>
+
+//       {step === 1 && (
+//         <div className="bg-white shadow-md rounded-xl p-8 sm:p-10 max-w-lg w-[90%] text-center relative">
+//           <span
+//             onClick={async () => {
+//               await saveSetupProgress({ skipped: true, stepCompleted: 1 });
+//               navigate("/organization");
+//             }}
+//             className="absolute left-4 top-4 text-[#4F46E5] text-xs sm:text-sm font-semibold cursor-pointer hover:underline hover:text-[#3730A3] transition-colors"
+//           >
+//             Skip
+//           </span>
+
+//           <h1 className="text-2xl sm:text-3xl font-bold text-[#111827] mb-4 mt-4">
+//             Never miss a lead again.
+//           </h1>
+
+//           <p className="text-[#4B5563] text-base mb-8 leading-relaxed">
+//             We’ll create your mailhook and help you forward new leads to it.
+//             Then we’ll set up how your replies are sent (SMTP).
+//           </p>
+
+//           <div className="flex items-center justify-center mt-6">
+//             <button
+//               onClick={() => setStep(2)}
+//               className="bg-[#4F46E5] hover:bg-[#4338CA] text-white px-8 py-3 rounded-lg text-sm font-semibold flex items-center justify-center space-x-2 shadow-md transition"
+//             >
+//               <span>Start 60-sec Setup</span>
+//               <FiArrowRight />
+//             </button>
+//           </div>
+
+//           <p className="text-xs text-gray-400 mt-6">
+//             You can complete setup later from your Organization Settings.
+//           </p>
+//         </div>
+//       )}
+
+//       {step === 2 && (
+//         <div className="bg-white shadow-md rounded-xl p-8 sm:p-10 max-w-2xl w-[90%] text-left relative">
+//           {/* Back button in top-left corner */}
+//           <span
+//             onClick={() => setStep(1)}
+//             className="absolute left-4 top-4 text-[#4F46E5] text-xs sm:text-sm font-semibold cursor-pointer hover:underline hover:text-[#3730A3] transition-colors"
+//           >
+//             ← Back
+//           </span>
+
+//           <h2 className="text-2xl font-bold text-[#111827] text-center mb-2 mt-4">
+//             Your Mailhook is Ready
+//           </h2>
+//           <p className="text-[#4B5563] text-center mb-8">
+//             This is a private, unique address just for your leads.
+//           </p>
+
+//           <div className="border border-[#E5E7EB] rounded-xl p-6 space-y-6">
+//             <div>
+//               <div className="flex justify-between items-center mb-2">
+//                 <h3 className="font-semibold text-[#111827]">
+//                   Your Unique Mailhook
+//                 </h3>
+//                 <span className="text-green-700 bg-green-100 text-xs px-3 py-1 rounded-full">
+//                   Private & Unique
+//                 </span>
+//               </div>
+
+//               <div className="bg-[#F3F4F6] text-[#4F46E5] px-4 py-3 rounded-lg flex justify-between items-center font-mono text-sm">
+//                 {user?.mailhook || "loading-mailhook@zenith-inbox.com"}
+//                 <FiCopy
+//                   className="text-gray-500 cursor-pointer"
+//                   onClick={() => {
+//                     if (user?.mailhook) {
+//                       navigator.clipboard.writeText(user.mailhook);
+//                     }
+//                   }}
+//                 />
+//               </div>
+//             </div>
+
+//             <div className="mt-6">
+//               <h4 className="text-lg font-semibold text-[#111827] mb-2">
+//                 Instructions:
+//               </h4>
+//               <p className="text-[#4B5563] text-sm leading-relaxed mb-4">
+//                 You can forward your business emails to this mailhook.{" "}
+//                 <span className="font-semibold text-[#111827]">
+//                   Click “Need help?” below
+//                 </span>{" "}
+//                 to see detailed instructions on how to properly set up email
+//                 forwarding.
+//               </p>
+
+//               <p
+//                 onClick={() => {
+//                   window.open("/pages/mailhook/instruction", "_blank");
+//                 }}
+//                 className="text-[#4F46E5] text-sm font-semibold cursor-pointer hover:underline"
+//               >
+//                 Need help?
+//               </p>
+//             </div>
+//           </div>
+
+//           <div className="flex justify-end mt-8">
+//             <button
+//               onClick={() => updateStep(3)}
+//               className="flex items-center space-x-2 px-6 py-2 rounded-lg text-sm font-semibold bg-[#4F46E5] text-white hover:bg-[#4338CA]"
+//             >
+//               <span>Next</span> <FiArrowRight />
+//             </button>
+//           </div>
+//         </div>
+//       )}
+
+//       {step === 3 && (
+//         <div className="bg-white shadow-md rounded-xl p-8 sm:p-10 max-w-2xl w-[90%] text-left relative">
+//           <h2 className="text-2xl font-bold text-[#111827] text-center mb-2">
+//             Set up Forwarding
+//           </h2>
+//           <p className="text-[#4B5563] text-center mb-8">
+//             Automatically send your leads to Zenith Inbox.
+//           </p>
+
+//           <div className="bg-[#F3F4F6] text-[#4F46E5] px-4 py-3 rounded-lg flex justify-between items-center font-mono text-sm mb-6">
+//             Forward emails to: <span>{user?.mailhook || "loading..."}</span>
+//             <FiCopy
+//               className="text-gray-500 cursor-pointer"
+//               onClick={() =>
+//                 user?.mailhook && navigator.clipboard.writeText(user.mailhook)
+//               }
+//             />
+//           </div>
+
+//           <div className="border border-[#E5E7EB] rounded-2xl shadow-sm p-6 w-full max-w-md mx-auto text-center">
+//             <h3 className="text-lg font-semibold text-[#111827] mb-4">
+//               Email Receiving
+//             </h3>
+
+//             <div className="bg-[#F9FAFB] border border-gray-200 rounded-lg p-4 text-left text-sm text-gray-700 mb-6 shadow-inner">
+//               {validationPhase ? (
+//                 <MailhookWaitingTimer message="Waiting for validation email..." />
+//               ) : validated ? (
+//                 <div className="text-center py-6">
+//                   <div className="flex flex-col items-center justify-center space-y-2">
+//                     <FiCheck className="text-green-600 text-3xl" />
+//                     <h4 className="text-lg font-semibold text-green-700">
+//                       Mailhook connected successfully!
+//                     </h4>
+//                     <p className="text-sm text-gray-600">
+//                       Your Gmail forwarding setup is verified.
+//                     </p>
+//                   </div>
+//                 </div>
+//               ) : verificationEmail ? (
+//                 <>
+//                   <p className="mb-2">
+//                     <strong>From:</strong>{" "}
+//                     <span className="text-[#4F46E5]">
+//                       {verificationEmail.sender}
+//                     </span>
+//                   </p>
+//                   <p className="mb-2">
+//                     <strong>Subject:</strong>{" "}
+//                     <span className="font-medium">
+//                       {verificationEmail.subject}
+//                     </span>
+//                   </p>
+//                   <p className="mb-2 text-gray-600">
+//                     <strong>Date:</strong>{" "}
+//                     {new Date(verificationEmail.date).toLocaleString()}
+//                   </p>
+
+//                   <div
+//                     className="border-t border-gray-200 mt-3 pt-3 max-h-48 overflow-y-auto text-sm leading-relaxed text-gray-700"
+//                     dangerouslySetInnerHTML={{
+//                       __html:
+//                         verificationEmail.formattedBody ||
+//                         verificationEmail.textBody,
+//                     }}
+//                   />
+
+//                   {verificationEmail.isGmailVerification && (
+//                     <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 rounded-lg p-4 mt-4 text-center text-sm">
+//                       <p className="font-semibold mb-1">
+//                         Gmail forwarding confirmation detected!
+//                       </p>
+//                       <p>
+//                         Please open Gmail and click the verification link in
+//                         your inbox to approve forwarding.
+//                       </p>
+//                     </div>
+//                   )}
+//                 </>
+//               ) : (
+//                 <MailhookWaitingTimer />
+//               )}
+//             </div>
+
+//             {verificationEmail && !validationPhase && !validated && (
+//               <div className="space-y-3 mt-6">
+//                 <p className="text-sm text-gray-600">
+//                   Enter the email address where you’ve set up forwarding to
+//                   verify your setup.
+//                 </p>
+//                 <input
+//                   type="email"
+//                   placeholder="Enter your email address"
+//                   className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:ring-2 focus:ring-[#4F46E5] outline-none"
+//                   value={verificationEmail?.toEmail || ""}
+//                   onChange={(e) =>
+//                     setVerificationEmail({
+//                       ...verificationEmail,
+//                       toEmail: e.target.value,
+//                     })
+//                   }
+//                 />
+//               </div>
+//             )}
+
+//             {validationFailed && !validated && (
+//               <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4 mt-6 text-center">
+//                 <p className="font-semibold mb-2">
+//                   Your mailhook forwarding may not be set up correctly.
+//                 </p>
+//                 <p className="text-sm mb-3">
+//                   Please check your Gmail or Outlook forwarding settings.
+//                 </p>
+//                 <p
+//                   onClick={() =>
+//                     window.open("/pages/mailhook/instruction", "_blank")
+//                   }
+//                   className="text-[#4F46E5] text-sm font-semibold cursor-pointer hover:underline"
+//                 >
+//                   Need help setting up Gmail forwarding? Click here to view
+//                   instructions.
+//                 </p>
+//               </div>
+//             )}
+//           </div>
+
+//           <div className="mt-10 border-t border-gray-200 pt-6 flex justify-between items-center">
+//             <span className="text-[#4F46E5] text-sm font-semibold cursor-pointer hover:underline"></span>
+
+//             {!validated ? (
+//               <button
+//                 disabled={
+//                   validating ||
+//                   !verificationEmail ||
+//                   !verificationEmail?.toEmail?.trim()
+//                 }
+//                 onClick={async () => {
+//                   setValidating(true);
+//                   setValidationFailed(false);
+//                   setValidationPhase(true);
+//                   await handleValidateForwarding();
+//                   startValidationLoop();
+//                 }}
+//                 className={`flex items-center space-x-2 px-6 py-2 rounded-lg text-sm font-semibold text-white transition ${
+//                   validating
+//                     ? "bg-gray-400 cursor-not-allowed"
+//                     : verificationEmail?.toEmail?.trim()
+//                     ? "bg-[#4F46E5] hover:bg-[#4338CA]"
+//                     : "bg-gray-300 cursor-not-allowed"
+//                 }`}
+//               >
+//                 {validating ? "Validating..." : "Validate Forwarding"}
+//                 <FiArrowRight />
+//               </button>
+//             ) : (
+//               <button
+//                 onClick={() => updateStep(4)}
+//                 className="flex items-center space-x-2 px-6 py-2 rounded-lg text-sm font-semibold bg-green-600 text-white hover:bg-green-700 transition"
+//               >
+//                 <span>Next</span> <FiArrowRight />
+//               </button>
+//             )}
+//           </div>
+
+//           {!validated && (
+//             <p
+//               onClick={() =>
+//                 window.open("/pages/mailhook/instruction", "_blank")
+//               }
+//               className="text-[#4F46E5] text-sm font-semibold cursor-pointer hover:underline mt-4 text-center"
+//             >
+//               Need help setting up Gmail forwarding?
+//             </p>
+//           )}
+//         </div>
+//       )}
+
+//       {step === 4 && (
+//         <div className="bg-white shadow-md rounded-xl p-8 sm:p-10 max-w-2xl w-[90%] text-left mx-auto">
+//           <h2 className="text-2xl font-bold text-[#111827] text-center mb-2">
+//             Set up Sending (SMTP)
+//           </h2>
+//           <p className="text-[#4B5563] text-center mb-8">
+//             Configure how Zenith Inbox will send replies from your own email
+//             address.
+//           </p>
+
+//           <div className="flex border border-gray-300 rounded-lg overflow-hidden mb-6 w-full sm:w-[26rem] mx-auto">
+//             {["Gmail", "Microsoft", "Other"].map((tab) => (
+//               <button
+//                 key={tab}
+//                 onClick={() => setSelectedTab(tab)}
+//                 className={`w-1/3 px-4 py-2 text-sm font-medium text-center transition-colors ${
+//                   selectedTab === tab
+//                     ? "border-b-2 border-[#4F46E5] text-[#4F46E5] bg-[#EEF2FF]"
+//                     : "text-gray-500 hover:text-[#4F46E5] bg-white"
+//                 }`}
+//               >
+//                 {tab}
+//               </button>
+//             ))}
+//           </div>
+
+//           {selectedTab === "Gmail" && (
+//             <div className="border border-[#E5E7EB] rounded-lg p-8 text-center space-y-4">
+//               <p className="text-[#4B5563]">
+//                 Connect your Gmail account securely using OAuth 2.0.
+//               </p>
+//               <button
+//                 onClick={handleGmailConnect}
+//                 className="bg-[#EA4335] hover:bg-[#C33D2D] text-white px-6 py-3 rounded-lg text-sm font-semibold shadow-md"
+//               >
+//                 Connect with Gmail
+//               </button>
+//             </div>
+//           )}
+
+//           {selectedTab === "Microsoft" && (
+//             <div className="border border-[#E5E7EB] rounded-lg p-8 text-center space-y-4">
+//               <p className="text-[#4B5563]">
+//                 Connect your Outlook or Microsoft 365 account securely using
+//                 OAuth 2.0.
+//               </p>
+//               <button
+//                 onClick={handleMicrosoftConnect}
+//                 className="bg-[#0078D4] hover:bg-[#0063B1] text-white px-6 py-3 rounded-lg text-sm font-semibold shadow-md flex items-center justify-center gap-2 mx-auto"
+//               >
+//                 <FaMicrosoft className="text-lg" />
+//                 Connect with Outlook
+//               </button>
+//             </div>
+//           )}
+
+//           {selectedTab === "Other" && (
+//             <div className="border border-[#E5E7EB] rounded-lg p-6 space-y-5">
+//               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+//                 <div>
+//                   <label className="block text-sm font-medium text-[#111827] mb-1">
+//                     Connection Name
+//                   </label>
+//                   <input
+//                     type="text"
+//                     name="name"
+//                     value={smtpForm.name}
+//                     onChange={handleSmtpChange}
+//                     className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-[#4F46E5] outline-none"
+//                     placeholder="My SMTP Connection"
+//                   />
+//                 </div>
+//                 <div>
+//                   <label className="block text-sm font-medium text-[#111827] mb-1">
+//                     Email Address
+//                   </label>
+//                   <input
+//                     type="email"
+//                     name="email"
+//                     value={smtpForm.email}
+//                     onChange={handleSmtpChange}
+//                     className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-[#4F46E5] outline-none"
+//                     placeholder="yourname@outlook.com"
+//                   />
+//                 </div>
+//               </div>
+
+//               <div>
+//                 <label className="block text-sm font-medium text-[#111827] mb-1">
+//                   Full Name
+//                 </label>
+//                 <input
+//                   type="text"
+//                   name="fullName"
+//                   value={smtpForm.fullName}
+//                   onChange={handleSmtpChange}
+//                   className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-[#4F46E5] outline-none"
+//                   placeholder="Your full name"
+//                 />
+//               </div>
+
+//               <div>
+//                 <label className="block text-sm font-medium text-[#111827] mb-1">
+//                   Username
+//                 </label>
+//                 <input
+//                   type="text"
+//                   name="username"
+//                   value={smtpForm.username}
+//                   onChange={handleSmtpChange}
+//                   className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-[#4F46E5] outline-none"
+//                   placeholder="Usually same as email"
+//                 />
+//               </div>
+
+//               <div>
+//                 <label className="block text-sm font-medium text-[#111827] mb-1">
+//                   Password / App Password
+//                 </label>
+//                 <div className="relative">
+//                   <input
+//                     type={showPassword ? "text" : "password"}
+//                     name="password"
+//                     value={smtpForm.password}
+//                     onChange={handleSmtpChange}
+//                     className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-[#4F46E5] outline-none pr-10"
+//                     placeholder="Enter password"
+//                   />
+//                   <button
+//                     type="button"
+//                     onClick={() => setShowPassword(!showPassword)}
+//                     className="absolute right-3 top-2.5 text-gray-500 hover:text-gray-700"
+//                   >
+//                     {showPassword ? <FiEyeOff /> : <FiEye />}
+//                   </button>
+//                 </div>
+//                 <p className="text-xs text-gray-500 mt-1">
+//                   If MFA is enabled, use an Outlook App Password.
+//                 </p>
+//               </div>
+
+//               <div className="grid grid-cols-2 gap-4">
+//                 <div>
+//                   <label className="block text-sm font-medium text-[#111827] mb-1">
+//                     SMTP Host
+//                   </label>
+//                   <input
+//                     type="text"
+//                     name="host"
+//                     value={smtpForm.host}
+//                     onChange={handleSmtpChange}
+//                     className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-[#4F46E5] outline-none"
+//                   />
+//                 </div>
+//                 <div>
+//                   <label className="block text-sm font-medium text-[#111827] mb-1">
+//                     Port
+//                   </label>
+//                   <input
+//                     type="number"
+//                     name="port"
+//                     value={smtpForm.port}
+//                     onChange={handleSmtpChange}
+//                     className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-[#4F46E5] outline-none"
+//                   />
+//                 </div>
+//               </div>
+
+//               <button
+//                 onClick={handleSmtpSave}
+//                 className="w-full bg-[#4F46E5] hover:bg-[#4338CA] text-white py-2 rounded-md text-sm font-semibold transition"
+//               >
+//                 Save Connection
+//               </button>
+//             </div>
+//           )}
+
+//           <div className="flex justify-between mt-8">
+//             <span
+//               onClick={async () => {
+//                 const nextStep = step + 1;
+//                 await updateStep(nextStep, { skipped: true });
+//               }}
+//               className="text-[#4F46E5] text-sm font-semibold cursor-pointer hover:underline"
+//             >
+//               <span>Skip</span>
+//             </span>
+
+//             <button
+//               onClick={() => updateStep(5)}
+//               className="flex items-center space-x-2 px-6 py-2 rounded-lg text-sm font-semibold bg-[#4F46E5] text-white hover:bg-[#4338CA]"
+//             >
+//               <span>Next</span> <FiArrowRight />
+//             </button>
+//           </div>
+//         </div>
+//       )}
+
+//       {step === 5 && (
+//         <div className="bg-white shadow-md rounded-xl p-8 sm:p-10 max-w-2xl w-[90%] text-left mx-auto">
+//           <h2 className="text-2xl font-bold text-[#111827] text-center mb-2">
+//             Review &amp; Go Live
+//           </h2>
+//           <p className="text-[#4B5563] text-center mb-8">
+//             Confirm your setup and enable automation.
+//           </p>
+
+//           <div className="border border-[#E5E7EB] rounded-lg p-6 space-y-4 mb-8">
+//             <div>
+//               <h3 className="font-semibold text-[#111827] mb-1">
+//                 Setup Checklist
+//               </h3>
+//               <p className="text-sm text-[#6B7280]">
+//                 Here’s a summary of your setup progress:
+//               </p>
+//             </div>
+
+//             {!setupProgress ? (
+//               <p className="text-gray-500 text-center py-6">
+//                 Loading progress...
+//               </p>
+//             ) : (
+//               <ul className="space-y-3 text-sm text-[#111827]">
+//                 {setupProgress.steps?.map((step) => (
+//                   <li
+//                     key={step.step}
+//                     className="flex items-center justify-between border-b border-gray-100 pb-2"
+//                   >
+//                     <div className="flex items-center space-x-2">
+//                       {step.status === "completed" ? (
+//                         <span className="text-green-600">✓</span>
+//                       ) : (
+//                         <span className="text-yellow-500">❌</span>
+//                       )}
+//                       <span>{step.title}</span>
+//                     </div>
+//                     <span
+//                       className={`text-xs px-2 py-1 rounded-full ${
+//                         step.status === "completed"
+//                           ? "bg-green-100 text-green-700"
+//                           : "bg-yellow-100 text-yellow-700"
+//                       }`}
+//                     >
+//                       {step.status === "completed" ? "Completed" : "Skipped"}
+//                     </span>
+//                   </li>
+//                 ))}
+//               </ul>
+//             )}
+
+//             <div className="bg-[#F3F4F6] p-4 rounded-lg mt-4 text-sm text-[#4B5563] space-y-1">
+//               <p>
+//                 Your Mailhook:{" "}
+//                 <span className="text-[#4F46E5] font-mono">
+//                   {user?.mailhook || "loading..."}
+//                 </span>
+//               </p>
+//               {/* <p>
+//                 Automation Mode:{" "}
+//                 {setupProgress?.completed
+//                   ? "Enabled"
+//                   : setupProgress?.skipped
+//                   ? "Skipped"
+//                   : "Pending"}
+//               </p> */}
+//             </div>
+//           </div>
+
+//           <div className="flex justify-between mt-8">
+//             <button onClick={() => updateStep(step + 1)}></button>
+
+//             <button
+//               onClick={async () => {
+//                 await saveSetupProgress({
+//                   setupCompleted: true,
+//                   stepCompleted: 5,
+//                 });
+//                 navigate("/organization");
+//               }}
+//               className="flex items-center space-x-2 px-6 py-3 rounded-lg text-sm font-semibold bg-[#4F46E5] text-white hover:bg-[#4338CA] shadow-md"
+//             >
+//               <span>Start building scenarios...</span>
+//             </button>
+//           </div>
+//         </div>
+//       )}
+//     </div>
+//   );
+// };
+
+// export default SetupFlow;
 import React, { useContext, useEffect, useState } from "react";
 import {
   FiMail,
