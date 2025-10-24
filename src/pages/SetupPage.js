@@ -103,11 +103,14 @@ const SetupFlow = () => {
 
   const saveSetupProgress = async (data = {}) => {
     try {
-      const res = await fetch(`https://email-syncing-backend.vercel.app/auth/setup/${user._id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
+      const res = await fetch(
+        `https://email-syncing-backend.vercel.app/auth/setup/${user._id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        }
+      );
 
       const result = await res.json();
 
@@ -164,11 +167,14 @@ const SetupFlow = () => {
       const userId = localStorage.getItem("userid");
       const payload = { ...smtpForm, userId, provider: "outlook" };
 
-      const res = await fetch("https://email-syncing-backend.vercel.app/auth/saveSmtpConnection", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const res = await fetch(
+        "https://email-syncing-backend.vercel.app/auth/saveSmtpConnection",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
 
       if (!res.ok) throw new Error("Failed to save SMTP connection");
       alert("✅ SMTP connection saved successfully!");
@@ -318,7 +324,9 @@ const SetupFlow = () => {
     const fetchSetupProgress = async () => {
       try {
         if (!user?._id) return;
-        const res = await fetch(`https://email-syncing-backend.vercel.app/auth/setup/${user._id}`);
+        const res = await fetch(
+          `https://email-syncing-backend.vercel.app/auth/setup/${user._id}`
+        );
         const data = await res.json();
         if (data.success) setSetupProgress(data.data);
       } catch (err) {
@@ -536,8 +544,18 @@ const SetupFlow = () => {
       </div>
 
       {step === 1 && (
-        <div className="bg-white shadow-md rounded-xl p-8 sm:p-10 max-w-lg w-[90%] text-center">
-          <h1 className="text-2xl sm:text-3xl font-bold text-[#111827] mb-4">
+        <div className="bg-white shadow-md rounded-xl p-8 sm:p-10 max-w-lg w-[90%] text-center relative">
+          <span
+            onClick={async () => {
+              await saveSetupProgress({ skipped: true, stepCompleted: 1 });
+              navigate("/organization");
+            }}
+            className="absolute left-4 top-4 text-[#4F46E5] text-xs sm:text-sm font-semibold cursor-pointer hover:underline hover:text-[#3730A3] transition-colors"
+          >
+            Skip
+          </span>
+
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#111827] mb-4 mt-4">
             Never miss a lead again.
           </h1>
 
@@ -546,7 +564,7 @@ const SetupFlow = () => {
             Then we’ll set up how your replies are sent (SMTP).
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-5 mt-6">
+          <div className="flex items-center justify-center mt-6">
             <button
               onClick={() => setStep(2)}
               className="bg-[#4F46E5] hover:bg-[#4338CA] text-white px-8 py-3 rounded-lg text-sm font-semibold flex items-center justify-center space-x-2 shadow-md transition"
@@ -554,16 +572,6 @@ const SetupFlow = () => {
               <span>Start 60-sec Setup</span>
               <FiArrowRight />
             </button>
-
-            <span
-              onClick={async () => {
-                await saveSetupProgress({ skipped: true, stepCompleted: 1 });
-                navigate("/organization");
-              }}
-              className="text-[#4F46E5] text-sm font-semibold cursor-pointer hover:underline hover:text-[#3730A3] transition-colors"
-            >
-              Skip Setup
-            </span>
           </div>
 
           <p className="text-xs text-gray-400 mt-6">
@@ -571,10 +579,18 @@ const SetupFlow = () => {
           </p>
         </div>
       )}
- 
+
       {step === 2 && (
-        <div className="bg-white shadow-md rounded-xl p-8 sm:p-10 max-w-2xl w-[90%] text-left">
-          <h2 className="text-2xl font-bold text-[#111827] text-center mb-2">
+        <div className="bg-white shadow-md rounded-xl p-8 sm:p-10 max-w-2xl w-[90%] text-left relative">
+          {/* Back button in top-left corner */}
+          <span
+            onClick={() => setStep(1)}
+            className="absolute left-4 top-4 text-[#4F46E5] text-xs sm:text-sm font-semibold cursor-pointer hover:underline hover:text-[#3730A3] transition-colors"
+          >
+            ← Back
+          </span>
+
+          <h2 className="text-2xl font-bold text-[#111827] text-center mb-2 mt-4">
             Your Mailhook is Ready
           </h2>
           <p className="text-[#4B5563] text-center mb-8">
@@ -629,9 +645,7 @@ const SetupFlow = () => {
             </div>
           </div>
 
-          <div className="flex justify-between mt-8">
-            <button onClick={() => setStep(1)}></button>
-
+          <div className="flex justify-end mt-8">
             <button
               onClick={() => updateStep(3)}
               className="flex items-center space-x-2 px-6 py-2 rounded-lg text-sm font-semibold bg-[#4F46E5] text-white hover:bg-[#4338CA]"
@@ -729,7 +743,8 @@ const SetupFlow = () => {
             {verificationEmail && !validationPhase && !validated && (
               <div className="space-y-3 mt-6">
                 <p className="text-sm text-gray-600">
-                 Enter the email address where you’ve set up forwarding to verify your setup. 
+                  Enter the email address where you’ve set up forwarding to
+                  verify your setup.
                 </p>
                 <input
                   type="email"

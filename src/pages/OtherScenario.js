@@ -2465,7 +2465,338 @@ const OthersScenariosPage = () => {
     </div>
   </div>
 </div>
+{/* === Add/Edit Module Modal (existing logic) === */}
+{open && (
+  <div
+    ref={modalRef}
+    className="absolute left-1/2 top-32 transform -translate-x-1/2 bg-white rounded-lg shadow-xl w-96 z-20 border"
+  >
+    {!selectedApp ? (
+      <>
+        <div className="p-4 border-b">
+          <h2 className="text-xs font-semibold text-gray-500">ALL APPS</h2>
+        </div>
+        <ul className="max-h-80 overflow-y-auto">
+          {apps.map((app, idx) => (
+            <li
+              key={idx}
+              onClick={() => setSelectedApp(app)}
+              className="flex items-center px-4 py-3 hover:bg-gray-50 cursor-pointer"
+            >
+              <div
+                className={`w-8 h-8 flex items-center justify-center rounded-full text-white ${app.color}`}
+              >
+                {renderIcon(app.icon)}
+              </div>
+              <span className="ml-3 text-sm text-gray-700">{app.name}</span>
+            </li>
+          ))}
+        </ul>
+        <div className="p-3 border-t">
+          <div className="flex items-center px-2 py-2 border rounded-md text-gray-500 text-sm">
+            <Search className="mr-2 w-4 h-4" />
+            <input
+              type="text"
+              placeholder="Search apps or modules"
+              className="flex-1 outline-none text-gray-600 text-sm"
+            />
+          </div>
+        </div>
+      </>
+    ) : (
+      <>
+        <div
+          className="flex items-center px-4 py-3 text-sm text-purple-600 cursor-pointer hover:underline"
+          onClick={() => setSelectedApp(null)}
+        >
+          <ArrowLeft className="mr-2 w-4 h-4" /> BACK
+        </div>
 
+        <div className="flex flex-col items-center text-center p-6 bg-red-50">
+          <div
+            className={`w-12 h-12 flex items-center justify-center rounded-full text-white mb-3 ${selectedApp.color}`}
+          >
+            {renderIcon(selectedApp.icon)}
+          </div>
+          <h2 className="text-lg font-semibold">{selectedApp.name}</h2>
+          <span className="text-xs text-purple-600 mt-1 px-2 py-0.5 rounded bg-purple-100">
+            Built-in
+          </span>
+        </div>
+
+        <div className="p-4 border-b">
+          <h3 className="text-xs font-semibold text-gray-500 mb-2">ACTIONS</h3>
+          <div
+            className="flex items-start cursor-pointer hover:bg-gray-50 p-2 rounded"
+            onClick={() => {
+              if (selectedApp.name === "Delay") {
+                setSelectedModule("delay");
+              } else if (selectedApp.name === "Email") {
+                setSelectedModule("customEmail");
+              } else {
+                setSelectedModule("sendEmail");
+              }
+            }}
+          >
+            <div
+              className={`w-8 h-8 flex items-center justify-center rounded-full text-white mr-3 ${selectedApp.color}`}
+            >
+              {renderIcon(selectedApp.icon)}
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gray-700">
+                {selectedApp.name === "Delay" ? "Sleep" : "Send an email"}
+              </p>
+              <p className="text-xs text-gray-500">
+                {selectedApp.name === "Delay"
+                  ? "Suspend the execution of a scenario."
+                  : "Send an email via Gmail."}
+              </p>
+            </div>
+          </div>
+        </div>
+      </>
+    )}
+  </div>
+)}
+{(selectedModule === "delay" ||
+  selectedModule === "sendEmail" ||
+  selectedModule === "customEmail") && (
+  <div className="absolute top-10 right-10 bg-white rounded-lg shadow-xl w-[500px] border z-20">
+    <div className="flex justify-between items-center px-4 py-2 bg-gradient-to-r from-[#e45341] to-[#f46654] text-white rounded-t-lg">
+      <h3 className="font-semibold">{selectedApp?.name || "Module"}</h3>
+      <div className="space-x-2 text-sm">
+        <button>⋮</button>
+        <button>?</button>
+        <button onClick={() => setSelectedModule(null)}>✕</button>
+      </div>
+    </div>
+
+    <div className="p-4">
+      {/* Delay Module */}
+      {selectedModule === "delay" && (
+        <>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Delay <span className="text-red-500">*</span>
+          </label>
+          <div className="flex space-x-2">
+            <input
+              type="number"
+              className="w-20 border rounded px-2 py-1 text-sm"
+              value={delayValue}
+              onChange={(e) => setDelayValue(e.target.value)}
+            />
+            <select
+              className="border rounded px-2 py-1 text-sm"
+              value={delayUnit}
+              onChange={(e) => setDelayUnit(e.target.value)}
+            >
+              <option value="seconds">Seconds</option>
+              <option value="minutes">Minutes</option>
+              <option value="hours">Hours</option>
+            </select>
+          </div>
+        </>
+      )}
+
+      {/* Gmail Module */}
+      {selectedModule === "sendEmail" && (
+        <>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Gmail Connection <span className="text-red-500">*</span>
+          </label>
+
+          <div className="relative w-full mb-4">
+            <button
+              type="button"
+              onClick={() => setShowDropdown(!showDropdown)}
+              className="w-full flex justify-between items-center border rounded px-3 py-2 text-sm bg-white shadow-sm"
+            >
+              {selectedConnections.length > 0 ? (
+                <span className="flex flex-wrap gap-2">
+                  {selectedConnections.map((id) => {
+                    const conn = connections.find((c) => c._id === id);
+                    if (!conn) return null;
+                    return (
+                      <span
+                        key={id}
+                        className="flex items-center px-2 py-1 bg-purple-100 rounded text-xs"
+                      >
+                        <FaGoogle className="text-red-500 mr-1" />
+                        Gmail: {conn.email}
+                      </span>
+                    );
+                  })}
+                </span>
+              ) : (
+                "Select Gmail Connection"
+              )}
+              <span>▾</span>
+            </button>
+
+            {showDropdown && (
+              <ul className="absolute z-10 mt-1 w-full border rounded bg-white shadow-lg max-h-60 overflow-y-auto">
+                {connections
+                  .filter((conn) => conn.provider === "gmail")
+                  .map((conn) => (
+                    <li
+                      key={conn._id}
+                      onClick={() => {
+                        setSelectedConnections([conn._id]);
+                        setShowDropdown(false);
+                      }}
+                      className={`flex items-center px-3 py-2 cursor-pointer hover:bg-gray-100 text-sm ${
+                        selectedConnections.includes(conn._id)
+                          ? "bg-purple-100"
+                          : ""
+                      }`}
+                    >
+                      <FaGoogle className="text-red-500 mr-2" />
+                      Gmail: {conn.email}
+                    </li>
+                  ))}
+              </ul>
+            )}
+          </div>
+
+          {selectedConnections.map((connId) => {
+            const conn = connections.find((c) => c._id === connId);
+            if (!conn) return null;
+
+            const key = makeKey(
+              selectedBranchIndex,
+              selectedModuleIndex ??
+                routerBranches[editingBranch]?.modules.length,
+              connId
+            );
+
+            return (
+              <div
+                key={connId}
+                className="mb-6 border rounded p-3 bg-gray-50"
+              >
+                <h4 className="flex items-center mb-2 text-sm font-semibold text-gray-700">
+                  <FaGoogle className="text-red-500 mr-2" />
+                  Gmail: {conn.email}
+                </h4>
+
+                {/* CC */}
+                <div className="mt-3">
+                  <label className="text-sm font-medium text-gray-700 mb-1 block">
+                    CC (Optional)
+                  </label>
+                  <div className="flex flex-wrap items-center border rounded-lg px-3 py-2">
+                    {(connectionCCs[key] || []).map((email, index) => (
+                      <span
+                        key={index}
+                        className="flex items-center bg-blue-100 text-blue-700 text-sm px-3 py-1 rounded-full mr-2 mb-1"
+                      >
+                        {email}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveCC(key, index)}
+                          className="ml-2 text-xs text-red-500 hover:text-red-700"
+                        >
+                          ✕
+                        </button>
+                      </span>
+                    ))}
+                    <input
+                      type="text"
+                      onKeyDown={(e) => handleAddCC(e, key)}
+                      className="flex-1 outline-none text-sm py-2 px-3"
+                      placeholder="Type and press Enter"
+                    />
+                  </div>
+                </div>
+
+                {/* BCC */}
+                <div className="mt-3">
+                  <label className="text-sm font-medium text-gray-700 mb-1 block">
+                    BCC (Optional)
+                  </label>
+                  <div className="flex flex-wrap items-center border rounded-lg px-3 py-2">
+                    {(connectionBCCs[key] || []).map((email, index) => (
+                      <span
+                        key={index}
+                        className="flex items-center bg-green-100 text-green-700 text-sm px-3 py-1 rounded-full mr-2 mb-1"
+                      >
+                        {email}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveBCC(key, index)}
+                          className="ml-2 text-xs text-red-500 hover:text-red-700"
+                        >
+                          ✕
+                        </button>
+                      </span>
+                    ))}
+                    <input
+                      type="text"
+                      onKeyDown={(e) => handleAddBCC(e, key)}
+                      className="flex-1 outline-none text-sm py-2 px-3"
+                      placeholder="Type and press Enter"
+                    />
+                  </div>
+                </div>
+
+                {/* Subject */}
+                <input
+                  type="text"
+                  value={connectionSubjects[connId] || ""}
+                  onChange={(e) =>
+                    setConnectionSubjects((prev) => ({
+                      ...prev,
+                      [connId]: e.target.value,
+                    }))
+                  }
+                  className="w-full border rounded px-6 py-3 text-sm mb-3 mt-3"
+                  placeholder="Email subject"
+                />
+
+                {/* Template Editor */}
+                <ReactQuill
+                  theme="snow"
+                  value={connectionTemplates[connId] || ""}
+                  onChange={(value) =>
+                    setConnectionTemplates((prev) => ({
+                      ...prev,
+                      [connId]: value,
+                    }))
+                  }
+                  className="h-40 mb-2"
+                />
+              </div>
+            );
+          })}
+        </>
+      )}
+
+      {/* Custom Email (Outlook/SMTP) */}
+      {selectedModule === "customEmail" && (
+        <div className="text-sm text-gray-600 italic">
+          Outlook/SMTP configuration logic same as Gmail — you can reuse same
+          dropdown and fields here if you already had it.
+        </div>
+      )}
+    </div>
+
+    <div className="flex justify-end space-x-2 px-4 py-2 border-t">
+      <button
+        className="px-4 py-2 text-sm border rounded"
+        onClick={() => setSelectedModule(null)}
+      >
+        Cancel
+      </button>
+      <button
+        onClick={handleSave}
+        className="px-4 py-2 text-sm bg-purple-600 text-white rounded hover:bg-purple-700"
+      >
+        Save
+      </button>
+    </div>
+  </div>
+)}
 
       </div>
       {showDraftModal && (
