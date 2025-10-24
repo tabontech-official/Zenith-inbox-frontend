@@ -149,7 +149,6 @@
 //   }
 // };
 
-
 //   const Loader = () => (
 //     <div className="flex flex-col justify-center items-center py-10">
 //       <svg
@@ -441,7 +440,8 @@ export default function Template() {
       const nonGeneral = res.data.filter(
         (t) => t.service?.toLowerCase() !== "general"
       );
-      const allActive = nonGeneral.length > 0 && nonGeneral.every((t) => t.active);
+      const allActive =
+        nonGeneral.length > 0 && nonGeneral.every((t) => t.active);
       setGlobalActive(allActive);
     } catch (err) {
       toast.error("Failed to fetch templates");
@@ -524,41 +524,39 @@ export default function Template() {
     }
   };
 
-const handleToggle = async (id, currentStatus) => {
-  const template = templates.find((tpl) => tpl._id === id);
+  const handleToggle = async (id, currentStatus) => {
+    const template = templates.find((tpl) => tpl._id === id);
 
-  if (template?.service?.toLowerCase() === "general" && currentStatus) {
-    toast.error("You cannot deactivate General templates.");
-    return;
-  }
+    if (template?.service?.toLowerCase() === "general" && currentStatus) {
+      toast.error("You cannot deactivate General templates.");
+      return;
+    }
 
-  setTemplates((prev) =>
-    prev.map((tpl) =>
-      tpl._id === id ? { ...tpl, active: !currentStatus } : tpl
-    )
-  );
-
-  try {
-    await axios.put(
-      `https://email-syncing-backend.vercel.app/template/update/${id}`,
-      { active: !currentStatus }
-    );
-
-    toast.success(
-      `Template ${!currentStatus ? "activated" : "deactivated"} successfully`
-    );
-  } catch (err) {
-    // ❌ Rollback on failure
     setTemplates((prev) =>
       prev.map((tpl) =>
-        tpl._id === id ? { ...tpl, active: currentStatus } : tpl
+        tpl._id === id ? { ...tpl, active: !currentStatus } : tpl
       )
     );
-    toast.error("Failed to toggle template status");
-  }
-};
 
+    try {
+      await axios.put(
+        `https://email-syncing-backend.vercel.app/template/update/${id}`,
+        { active: !currentStatus }
+      );
 
+      toast.success(
+        `Template ${!currentStatus ? "activated" : "deactivated"} successfully`
+      );
+    } catch (err) {
+      // ❌ Rollback on failure
+      setTemplates((prev) =>
+        prev.map((tpl) =>
+          tpl._id === id ? { ...tpl, active: currentStatus } : tpl
+        )
+      );
+      toast.error("Failed to toggle template status");
+    }
+  };
 
   // ✅ Global Toggle Handler
   const handleGlobalToggle = async () => {
@@ -573,9 +571,7 @@ const handleToggle = async (id, currentStatus) => {
         const newStatus = res.data.toggledTo;
         setGlobalActive(newStatus);
         toast.success(
-          newStatus
-            ? "All  templates activated"
-            : "All  templates deactivated"
+          newStatus ? "All  templates activated" : "All  templates deactivated"
         );
         fetchTemplates();
       } else {
@@ -651,7 +647,6 @@ const handleToggle = async (id, currentStatus) => {
             </span>
           </div>
         </header>
-
         <main className="container mx-auto p-8">
           <div className="bg-white shadow rounded-lg overflow-hidden">
             <table className="w-full border-collapse">
@@ -743,8 +738,7 @@ const handleToggle = async (id, currentStatus) => {
             </table>
           </div>
         </main>
-
- <div className="fixed inset-0 z-50 flex pointer-events-none">
+        <div className="fixed inset-0 z-50 flex pointer-events-none">
           <div
             className={`flex-1 bg-black transition-opacity duration-300 ${
               isDrawerOpen ? "opacity-40 pointer-events-auto" : "opacity-0"
@@ -858,7 +852,8 @@ const handleToggle = async (id, currentStatus) => {
               </button>
             </div>
           </div>
-        </div>      </div>
+        </div>{" "}
+      </div>
     </div>
   );
 }
