@@ -64,6 +64,7 @@ import SetupPage from "./pages/SetupPage";
 import SetupFlow from "./pages/SetupPage";
 import Inbox from "./pages/Inbox";
 import MailhookSetupGuide from "./pages/MailhookSetupGuide";
+import Profile from "./pages/Profile";
 
 function App() {
   return (
@@ -177,6 +178,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Template />
+              </ProtectedRoute>
+            }
+          />
+           <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
               </ProtectedRoute>
             }
           />

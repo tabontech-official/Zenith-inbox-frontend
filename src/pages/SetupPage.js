@@ -311,13 +311,14 @@ const SetupFlow = () => {
     }
   };
 
-  useEffect(() => {
-    if (!loading && user) {
-      if (user?.setup?.completed || user?.setup?.skipped) {
-        navigate("/organization");
-      }
+ useEffect(() => {
+  if (!loading && user) {
+    if (user?.setup?.completed) {
+      navigate("/organization");
     }
-  }, [user, loading, navigate]);
+  }
+}, [user, loading, navigate]);
+
   const [setupProgress, setSetupProgress] = useState(null);
 
   useEffect(() => {
