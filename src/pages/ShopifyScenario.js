@@ -167,43 +167,11 @@ const ShopifyScenariosPage = () => {
       fetchConnections();
     }
   }, [open]);
-  useEffect(() => {
-    const fetchTemplates = async () => {
-      try {
-        const userId = localStorage.getItem("userid");
-        const res = await fetch(
-          `https://email-syncing-backend.vercel.app/template/all?userId=${userId}`
-        );
-        const data = await res.json();
-
-        const filtered = data.filter(
-          (t) => !t.service || !t.service.toLowerCase().startsWith("general")
-        );
-
-        const grouped = {};
-        filtered.forEach((t) => {
-          if (!grouped[t.service]) grouped[t.service] = [];
-          if (grouped[t.service].length < 3) grouped[t.service].push(t);
-        });
-
-        const firstTwoServices = Object.keys(grouped).slice(0, 2);
-        const limited = firstTwoServices.flatMap((key) => grouped[key]);
-        setTemplateList(limited);
-
-        const areAllActive = limited.every((t) => t.active === true);
-        setAllActive(areAllActive);
-      } catch (err) {
-        console.error("Error fetching templates:", err);
-      }
-    };
-
-    if (showTemplateModal && !showValidation) {
-      fetchTemplates();
-    }
-  }, [showTemplateModal, showValidation]);
 
   useEffect(() => {
     function handleClickOutside(event) {
+      if (showOutlookModal || showGmailModal) return;
+
       if (modalRef.current && !modalRef.current.contains(event.target)) {
         setOpen(false);
         setShowFilterDialog(false);
@@ -216,39 +184,7 @@ const ShopifyScenariosPage = () => {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, []);
-
-  // const handleSaveScenario = async () => {
-  //   try {
-  //     const payload = {
-  //       userId: localStorage.getItem("userid"),
-  //       name: scenarioName,
-  //       description: scenarioDescription,
-  //       type: "shopify",
-  //       routerBranches,
-  //       scenarioActive: localStorage.getItem("scenarioActive") === "true",
-  //     };
-
-  //     const res = await fetch(
-  //       `https://email-syncing-backend.vercel.app/scenario/detail/${scenarioId}`,
-  //       {
-  //         method: "PUT",
-  //         headers: { "Content-Type": "application/json" },
-  //         body: JSON.stringify(payload),
-  //       }
-  //     );
-
-  //     if (!res.ok) {
-  //       throw new Error("Failed to update scenario");
-  //     }
-
-  //     toast.success("Shopify scenario updated successfully!");
-  //     setIsScenarioUpdated(true);
-  //   } catch (err) {
-  //     console.error("Error updating scenario:", err);
-  //     toast.error("Failed to update scenario.");
-  //   }
-  // };
+  }, [showOutlookModal, showGmailModal]);
 
   const handleSaveScenario = async () => {
     const payload = {
@@ -405,27 +341,6 @@ const ShopifyScenariosPage = () => {
     Router: GitBranch,
   };
 
-  // useState(() => {
-  //   setSavedModule({
-  //     app: { name: "Webhooks", color: "bg-red-500", icon: "Webhooks" },
-  //     type: "Custom mailhook",
-  //     description: "Custom mailhook",
-  //   });
-  //   setSavedSecondModule({
-  //     app: { name: "Router", color: "bg-green-400", icon: "Router" },
-  //     type: "Router",
-  //     description: "Route to different paths",
-  //   });
-  //   setSavedThirdModule({
-  //     app: { name: "Gmail", color: "bg-red-500", icon: "Gmail" },
-  //     type: "Send an Email",
-  //     description: "Send an email",
-  //   });
-  //   setShowRouterBranches(true);
-  //   setRouterBranches([
-  //     { id: 2, hasModule: false, condition: null, modules: [] },
-  //   ]);
-  // }, []);
   useEffect(() => {
     setSavedModule({
       app: { name: "Webhooks", color: "bg-red-500", icon: "Webhooks" },
@@ -451,47 +366,6 @@ const ShopifyScenariosPage = () => {
     );
   }, []);
 
-  // useEffect(() => {
-  //   const fetchScenario = async () => {
-  //     try {
-  //       const userId = localStorage.getItem("userid");
-  //       if (!userId) {
-  //         console.error("No userId found in localStorage");
-  //         return;
-  //       }
-
-  //       const res = await fetch("https://email-syncing-backend.vercel.app/scenario/details", {
-  //         method: "POST",
-  //         headers: { "Content-Type": "application/json" },
-  //         body: JSON.stringify({ userId }),
-  //       });
-
-  //       const data = await res.json();
-
-  //       if (data) {
-  //         setScenarioId(data._id);
-  //         setScenarioName(data.name || "");
-  //         setScenarioDescription(data.description || "");
-  //         setRouterBranches(data.routerBranches || []);
-
-  //         // ✅ NEW: handle activation state
-  //         if (data.scenarioActive === true) {
-  //           setAutomationOn(true);
-  //           localStorage.setItem("scenarioActive", "true");
-  //         } else {
-  //           setAutomationOn(false);
-  //           localStorage.removeItem("scenarioActive");
-  //         }
-
-  //         console.log("📊 Scenario Active:", data.scenarioActive);
-  //       }
-  //     } catch (err) {
-  //       console.error("Error fetching scenario:", err);
-  //     }
-  //   };
-
-  //   fetchScenario();
-  // }, []);
   useEffect(() => {
     const fetchScenario = async () => {
       try {
@@ -547,166 +421,75 @@ const ShopifyScenariosPage = () => {
 
   const [allActive, setAllActive] = useState(false);
 
-  useEffect(() => {
-    const fetchTemplates = async () => {
-      try {
-        const userId = localStorage.getItem("userid");
-        const res = await fetch(
-          `https://email-syncing-backend.vercel.app/template/all?userId=${userId}`
-        );
-        const data = await res.json();
-
-        const grouped = {};
-        data.forEach((t) => {
-          if (!grouped[t.service]) grouped[t.service] = [];
-          if (grouped[t.service].length < 3) grouped[t.service].push(t);
-        });
-
-        const firstTwoServices = Object.keys(grouped).slice(0, 2);
-        const limited = firstTwoServices.flatMap((key) => grouped[key]);
-        setTemplateList(limited);
-      } catch (err) {
-        console.error("Error fetching templates:", err);
-      }
-    };
-
-    if (showTemplateModal && !showValidation) {
-      fetchTemplates();
-    }
-  }, [showTemplateModal, showValidation]);
-  // const handleSave = () => {
-  //   if (editingBranch !== null) {
-  //     const updatedBranches = [...routerBranches];
-
-  //     let type = "";
-  //     let description = "";
-
-  //     if (selectedApp?.name === "Delay") {
-  //       type = "Delay";
-  //       description = `Wait ${delayValue} ${delayUnit}`;
-  //     } else if (
-  //       selectedApp?.name === "Email" ||
-  //       selectedApp?.name === "Gmail"
-  //     ) {
-  //       type = selectedApp.name === "Email" ? "Custom Email" : "Send an Email";
-  //       description = `Send email via ${selectedAppType || selectedApp.name}`;
-  //     }
-
-  //     const moduleData = {
-  //       id: editingModuleId || Date.now(),
-  //       app: {
-  //         ...selectedApp,
-  //         name:
-  //           selectedApp.displayName ||
-  //           selectedTemplate ||
-  //           selectedApp.defaultTemplate ||
-  //           "Unnamed Module",
-  //         color: selectedApp.color,
-  //         icon: selectedApp.icon,
-  //       },
-  //       type,
-  //       description,
-  //       connectionId: selectedConnection,
-  //       template: selectedTemplate,
-  //       cc: ccList,
-  //       bcc: bccList,
-  //       delayValue,
-  //       delayUnit,
-  //       emailType: selectedAppType || selectedApp?.name || "",
-  //     };
-
-  //     if (editingModuleId) {
-  //       const moduleIndex = updatedBranches[editingBranch].modules.findIndex(
-  //         (m) => m.id === editingModuleId
-  //       );
-  //       if (moduleIndex >= 0) {
-  //         updatedBranches[editingBranch].modules[moduleIndex] = {
-  //           ...updatedBranches[editingBranch].modules[moduleIndex],
-  //           ...moduleData,
-  //         };
-  //       }
-  //     } else {
-  //       updatedBranches[editingBranch].modules.push(moduleData);
-  //     }
-
-  //     setRouterBranches(updatedBranches);
-  //     setEditingBranch(null);
-  //     setEditingModuleId(null);
-  //   }
-
-  //   resetForm();
-  // };
-
-
   const handleSave = () => {
-  if (editingBranch !== null) {
-    const updatedBranches = [...routerBranches];
+    if (editingBranch !== null) {
+      const updatedBranches = [...routerBranches];
 
-    let type = "";
-    let description = "";
+      let type = "";
+      let description = "";
 
-    const isDelay = selectedApp?.name === "Delay";
+      const isDelay = selectedApp?.name === "Delay";
 
-    if (isDelay) {
-      type = "Delay";
-      if (delayValue && delayUnit) {
-        description = `Wait ${delayValue} ${delayUnit}`;
+      if (isDelay) {
+        type = "Delay";
+        if (delayValue && delayUnit) {
+          description = `Wait ${delayValue} ${delayUnit}`;
+        } else {
+          description = "Delay (no duration set)";
+        }
+      } else if (
+        selectedApp?.name === "Email" ||
+        selectedApp?.name === "Gmail"
+      ) {
+        type = selectedApp.name === "Email" ? "Custom Email" : "Send an Email";
+        description = `Send email via ${selectedAppType || selectedApp.name}`;
+      }
+
+      const moduleData = {
+        id: editingModuleId || Date.now(),
+        app: {
+          ...selectedApp,
+          name:
+            selectedApp.displayName ||
+            selectedTemplate ||
+            selectedApp.defaultTemplate ||
+            "Unnamed Module",
+          color: selectedApp.color,
+          icon: selectedApp.icon,
+        },
+        type,
+        description,
+        connectionId: selectedConnection,
+        template: selectedTemplate,
+        cc: ccList,
+        bcc: bccList,
+        emailType: selectedAppType || selectedApp?.name || "",
+        ...(isDelay
+          ? { delayValue: delayValue || "", delayUnit: delayUnit || "" } // ✅ include only if Delay
+          : {}), // ✅ remove delay fields from non-delay modules
+      };
+
+      if (editingModuleId) {
+        const moduleIndex = updatedBranches[editingBranch].modules.findIndex(
+          (m) => m.id === editingModuleId
+        );
+        if (moduleIndex >= 0) {
+          updatedBranches[editingBranch].modules[moduleIndex] = {
+            ...updatedBranches[editingBranch].modules[moduleIndex],
+            ...moduleData,
+          };
+        }
       } else {
-        description = "Delay (no duration set)";
+        updatedBranches[editingBranch].modules.push(moduleData);
       }
-    } else if (
-      selectedApp?.name === "Email" ||
-      selectedApp?.name === "Gmail"
-    ) {
-      type = selectedApp.name === "Email" ? "Custom Email" : "Send an Email";
-      description = `Send email via ${selectedAppType || selectedApp.name}`;
+
+      setRouterBranches(updatedBranches);
+      setEditingBranch(null);
+      setEditingModuleId(null);
     }
 
-    const moduleData = {
-      id: editingModuleId || Date.now(),
-      app: {
-        ...selectedApp,
-        name:
-          selectedApp.displayName ||
-          selectedTemplate ||
-          selectedApp.defaultTemplate ||
-          "Unnamed Module",
-        color: selectedApp.color,
-        icon: selectedApp.icon,
-      },
-      type,
-      description,
-      connectionId: selectedConnection,
-      template: selectedTemplate,
-      cc: ccList,
-      bcc: bccList,
-      emailType: selectedAppType || selectedApp?.name || "",
-      ...(isDelay
-        ? { delayValue: delayValue || "", delayUnit: delayUnit || "" } // ✅ include only if Delay
-        : {}), // ✅ remove delay fields from non-delay modules
-    };
-
-    if (editingModuleId) {
-      const moduleIndex = updatedBranches[editingBranch].modules.findIndex(
-        (m) => m.id === editingModuleId
-      );
-      if (moduleIndex >= 0) {
-        updatedBranches[editingBranch].modules[moduleIndex] = {
-          ...updatedBranches[editingBranch].modules[moduleIndex],
-          ...moduleData,
-        };
-      }
-    } else {
-      updatedBranches[editingBranch].modules.push(moduleData);
-    }
-
-    setRouterBranches(updatedBranches);
-    setEditingBranch(null);
-    setEditingModuleId(null);
-  }
-
-  resetForm();
-};
+    resetForm();
+  };
 
   const handleRemoveModule = (branchIndex, moduleId) => {
     const updatedBranches = [...routerBranches];
@@ -851,10 +634,8 @@ const ShopifyScenariosPage = () => {
             onClick={(e) => {
               e.stopPropagation();
               if (isWebhook) {
-                // 🟢 Open Webhook Modal
                 setShowWebhookInfo(true);
               } else {
-                // 🟢 Router still shows email data
                 handleViewEmailData();
               }
             }}
@@ -953,6 +734,18 @@ const ShopifyScenariosPage = () => {
     setDelayUnit("seconds");
     setOpen(false);
   };
+  const resetFormFields = () => {
+    setSelectedConnection("");
+    setSelectedTemplate("");
+    setCcList([]);
+    setBccList([]);
+    setCcInput("");
+    setBccInput("");
+    setDelayValue("5");
+    setDelayUnit("seconds");
+    setSubject("");
+    setBody("");
+  };
 
   const [showRunTestModal, setShowRunTestModal] = useState(false);
   const [formData, setFormData] = useState({
@@ -999,113 +792,6 @@ const ShopifyScenariosPage = () => {
     }
   }, [showRunTestModal]);
 
-  // const handleRunTest = async () => {
-  //   if (!isScenarioUpdated) {
-  //     toast.error("Please update the scenario before running the test.", {
-  //       duration: 5000,
-  //       style: {
-  //         background: "#fff0f0",
-  //         color: "#b91c1c",
-  //         border: "1px solid #fca5a5",
-  //       },
-  //     });
-  //     return;
-  //   }
-
-  //   toast.loading("Generating test email...", { id: "test" });
-
-  //   try {
-  //     const res = await fetch("https://email-syncing-backend.vercel.app/mailhook/Run-test-mode", {
-  //       method: "POST",
-  //       headers: { "Content-Type": "application/json" },
-  //       body: JSON.stringify({
-  //         userId: localStorage.getItem("userid"),
-  //         fullName: formData.fullName,
-  //         businessEmail: formData.businessEmail,
-  //         storeName: formData.storeName,
-  //         country: formData.country,
-  //         service: formData.service,
-  //         budget: formData.budget,
-  //         helpDescription: formData.description,
-  //       }),
-  //     });
-
-  //     const data = await res.json();
-  //     toast.dismiss("test");
-
-  //     if (data.success) {
-  //       toast.success("Test completed successfully!");
-  //       setShowValidation(true);
-  //       setSelectedServiceForTemplates(formData.service);
-  //       // setShowTemplateModal(true);
-  //       const userId = localStorage.getItem("userid");
-  //       const res = await fetch(
-  //         `https://email-syncing-backend.vercel.app/template/alltemplates?userId=${userId}&service=${encodeURIComponent(
-  //           formData.service
-  //         )}`
-  //       );
-  //       const templates = await res.json();
-  //       setTemplateList(Array.isArray(templates.data) ? templates.data : []);
-
-  //       const updatedValidation = [];
-  //       let previousPassed = true;
-
-  //       updatedValidation.push({ id: "webhook", passed: true });
-  //       updatedValidation.push({ id: "router", passed: true });
-  //       updatedValidation.push({ id: "template", passed: true });
-
-  //       for (
-  //         let branchIndex = 0;
-  //         branchIndex < routerBranches.length;
-  //         branchIndex++
-  //       ) {
-  //         const branch = routerBranches[branchIndex];
-
-  //         for (
-  //           let moduleIndex = 0;
-  //           moduleIndex < branch.modules.length;
-  //           moduleIndex++
-  //         ) {
-  //           const m = branch.modules[moduleIndex];
-  //           let passed = true;
-
-  //           if (m.app.name === "Webhooks" || m.app.name === "Router") {
-  //             passed = true;
-  //           } else if (m.app.name === "Delay") {
-  //             passed = previousPassed;
-  //           } else if (m.app.name === "Gmail" || m.app.name === "Email") {
-  //             passed = !!m.connectionId && previousPassed;
-  //           }
-
-  //           updatedValidation.push({ id: m.id, passed });
-  //           previousPassed = passed;
-  //         }
-  //       }
-
-  //       const failedModules = updatedValidation.filter((v) => !v.passed);
-  //       if (failedModules.length > 0) {
-  //         toast.error(
-  //           "Some modules have missing connections. Please select connections in those modules and then run the test again.",
-  //           {
-  //             duration: 5000,
-  //             style: {
-  //               background: "#fff0f0",
-  //               color: "#b91c1c",
-  //               border: "1px solid #fca5a5",
-  //             },
-  //           }
-  //         );
-  //       }
-  //       setCompletedSteps(updatedValidation);
-  //     } else {
-  //       toast.error(data.message || "Test failed.");
-  //     }
-  //   } catch (err) {
-  //     toast.dismiss("test");
-  //     console.error("Run Test Error:", err);
-  //     toast.error("Run Test failed.");
-  //   }
-  // };
   const handleRunTest = async () => {
     const { businessEmail, service, description } = formData;
 
@@ -1118,8 +804,50 @@ const ShopifyScenariosPage = () => {
           border: "1px solid #fca5a5",
         },
       });
-      return; // ❌ Stop execution if validation fails
+      return;
     }
+    try {
+      const userId = localStorage.getItem("userid");
+
+      const res = await fetch(
+        `https://email-syncing-backend.vercel.app/template/alltemplates/query?userId=${userId}&service=${encodeURIComponent(
+          service
+        )}`
+      );
+      const data = await res.json();
+
+      if (!data.success) {
+        toast.error("Failed to fetch templates for this service.");
+        return;
+      }
+
+      const allTemplates = data.data || [];
+
+      const hasInactiveTemplates = allTemplates.some((t) => !t.active);
+
+      if (hasInactiveTemplates) {
+        setTemplateList(allTemplates);
+        setShowTemplateModal(true);
+
+        toast.error(
+          "Please activate these templates before running the test.",
+          {
+            duration: 5000,
+            style: {
+              background: "#fff0f0",
+              color: "#b91c1c",
+              border: "1px solid #fca5a5",
+            },
+          }
+        );
+
+        return;
+      }
+    } catch (err) {
+      console.error("Error checking template status:", err);
+      toast.error("Error checking template status.");
+    }
+
     if (!isScenarioUpdated) {
       toast.error("Please update the scenario before running the test.", {
         duration: 5000,
@@ -1158,7 +886,6 @@ const ShopifyScenariosPage = () => {
         setShowValidation(true);
         setSelectedServiceForTemplates(formData.service);
 
-        // ✅ Fetch templates
         const userId = localStorage.getItem("userid");
         const res = await fetch(
           `https://email-syncing-backend.vercel.app/template/alltemplates?userId=${userId}&service=${encodeURIComponent(
@@ -1168,7 +895,6 @@ const ShopifyScenariosPage = () => {
         const templates = await res.json();
         setTemplateList(Array.isArray(templates.data) ? templates.data : []);
 
-        // ✅ VALIDATION LOGIC
         const updatedValidation = [];
         let previousPassed = true;
 
@@ -1204,7 +930,6 @@ const ShopifyScenariosPage = () => {
               appName.includes("follow") ||
               appName.includes("initial")
             ) {
-              // 🚫 Treat empty, "(empty)", "null", or "undefined" as invalid
               const hasValidConnection =
                 conn !== "" &&
                 conn !== "(empty)" &&
@@ -1215,7 +940,7 @@ const ShopifyScenariosPage = () => {
 
               if (!hasValidConnection) {
                 console.warn(
-                  `⚠️ Module "${m.app.name}" in Branch ${
+                  ` Module "${m.app.name}" in Branch ${
                     branchIndex + 1
                   } is missing connectionId`
                 );
@@ -1242,11 +967,11 @@ const ShopifyScenariosPage = () => {
           );
 
           console.warn(
-            "❌ Test failed — Missing module connections detected:",
+            " Test failed — Missing module connections detected:",
             failedModules
           );
         } else {
-          console.log("✅ All modules passed validation.");
+          console.log(" All modules passed validation.");
         }
 
         setCompletedSteps(updatedValidation);
@@ -1558,7 +1283,23 @@ const ShopifyScenariosPage = () => {
                 }
                 module={{ app: { name: "Template" } }}
                 onEdit={() => {
+                  if (!showValidation) {
+                    toast.error(
+                      "You need to run the test before viewing templates.",
+                      {
+                        duration: 4000,
+                        style: {
+                          background: "#fff0f0",
+                          color: "#b91c1c",
+                          border: "1px solid #fca5a5",
+                        },
+                      }
+                    );
+                    return;
+                  }
+
                   if (showTemplateModal) return;
+
                   setShowTemplateModal(true);
                 }}
               />
@@ -1786,9 +1527,23 @@ const ShopifyScenariosPage = () => {
                             Select Application{" "}
                             <span className="text-red-500">*</span>
                           </label>
-                          <select
+                          {/* <select
                             value={selectedAppType}
                             onChange={(e) => setSelectedAppType(e.target.value)}
+                            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                          >
+                            <option value="">-- Choose App Type --</option>
+                            <option value="Gmail">Gmail</option>
+                            <option value="Email">Email (SMTP/Outlook)</option>
+                          </select> */}
+                          <select
+                            value={selectedAppType}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              setSelectedAppType(value);
+
+                              fetchConnections();
+                            }}
                             className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                           >
                             <option value="">-- Choose App Type --</option>
@@ -1985,6 +1740,7 @@ const ShopifyScenariosPage = () => {
           onSuccess={(data) => {
             setShowOutlookModal(false);
             fetchConnections();
+            resetFormFields();
           }}
         />
         <WebhookModal
@@ -2003,6 +1759,7 @@ const ShopifyScenariosPage = () => {
             setShowGmailModal(false);
             setShowOutlookModal(false);
             fetchConnections();
+            resetFormFields();
           }}
         />
       </div>
@@ -2013,150 +1770,6 @@ const ShopifyScenariosPage = () => {
         />
       )}
 
-   
-      {showTemplateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col overflow-hidden transition-all">
-            <div className="flex justify-between items-center p-5 border-b bg-gradient-to-r from-purple-600 to-indigo-600 text-white">
-              <div>
-                <h2 className="text-lg font-semibold">Templates Overview</h2>
-                <p className="text-xs text-purple-100">
-                  Showing 3 templates per service
-                </p>
-              </div>
-              <div className="flex items-center space-x-3">
-                <span className="text-sm font-medium">
-                  {allActive ? "Deactivate All" : "Activate All"}
-                </span>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={allActive}
-                    onChange={async () => {
-                      const newStatus = !allActive;
-                      setAllActive(newStatus);
-                      setTemplateList((prev) =>
-                        prev.map((t) => ({ ...t, active: newStatus }))
-                      );
-                      await handleToggleAllTemplates(newStatus);
-                    }}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-green-500 transition-colors"></div>
-                  <div className="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full shadow-md transition-transform peer-checked:translate-x-5"></div>
-                </label>
-              </div>
-              <button
-                onClick={() => setShowTemplateModal(false)}
-                className="text-white hover:text-gray-100 hover:bg-white/10 rounded-full p-1 transition"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="p-6 overflow-y-auto flex-1 bg-gray-50">
-              {templateList.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-gray-500">
-                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-purple-500 mb-3"></div>
-                  <p>Loading templates...</p>
-                </div>
-              ) : (
-                <table className="w-full border-collapse text-sm bg-white rounded-lg shadow-sm overflow-hidden">
-                  <thead className="sticky top-0 bg-gray-100 z-10">
-                    <tr className="text-gray-700 text-left border-b">
-                      <th className="p-3 w-[15%]">Service</th>
-                      <th className="p-3 w-[45%]">Template</th>
-                      <th className="p-3 text-center w-[15%]">Status</th>
-                      <th className="p-3 text-center w-[15%]">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {templateList.map((t, i) => (
-                      <React.Fragment key={t._id || i}>
-                        {i === 0 ||
-                        templateList[i - 1]?.service !== t.service ? (
-                          <tr className="bg-gray-50 border-t-4 border-gray-200">
-                            <td
-                              colSpan={4}
-                              className="p-3 text-gray-900 font-semibold text-sm uppercase tracking-wide"
-                            >
-                              {t.service || "General Service"}
-                            </td>
-                          </tr>
-                        ) : null}
-
-                        <tr className="border-b hover:bg-purple-50 transition-colors">
-                          <td className="p-3 font-medium text-gray-800">
-                            {t.name}
-                          </td>
-                          <td className="p-3 text-gray-600 truncate max-w-[300px]">
-                            {t.content.replace(/<[^>]+>/g, "").slice(0, 100)}...
-                          </td>
-                          <td className="p-3 text-center">
-                            <label className="relative inline-flex items-center cursor-pointer">
-                              <input
-                                type="checkbox"
-                                checked={t.active}
-                                onChange={async () => {
-                                  const newStatus = !t.active;
-                                  setTemplateList((prev) =>
-                                    prev.map((tpl) =>
-                                      tpl._id === t._id
-                                        ? { ...tpl, active: newStatus }
-                                        : tpl
-                                    )
-                                  );
-                                  await handleToggleTemplate(t._id, newStatus);
-                                  setAllActive((prevList) => {
-                                    const updatedList = templateList.map(
-                                      (tpl) =>
-                                        tpl._id === t._id
-                                          ? { ...tpl, active: newStatus }
-                                          : tpl
-                                    );
-                                    return updatedList.every(
-                                      (tpl) => tpl.active
-                                    );
-                                  });
-                                }}
-                                className="sr-only peer"
-                              />
-                              <div className="w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-green-500 transition-colors"></div>
-                              <div className="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full shadow-md transition-transform peer-checked:translate-x-5"></div>
-                            </label>
-                          </td>
-
-                          <td className="p-3 text-center">
-                            <button
-                              onClick={() => {
-                                setEditingTemplate(t);
-                                setEditContent(t.content || "");
-                                setShowEditTemplateModal(true);
-                              }}
-                              className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs rounded-md font-medium transition-colors"
-                            >
-                              Edit
-                            </button>
-                          </td>
-                        </tr>
-                      </React.Fragment>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-
-            <div className="flex-shrink-0 px-6 py-4 border-t bg-white flex justify-end">
-              <button
-                onClick={() => window.open("/templates", "_blank")}
-                className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:shadow-md transition-transform hover:scale-[1.02]"
-              >
-                View More Templates
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
       {showRunTestModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
@@ -2341,133 +1954,389 @@ const ShopifyScenariosPage = () => {
           </div>
         </div>
       )}
-
-      {showEditTemplateModal && (
+      {(showTemplateModal || showEditTemplateModal) && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
-            <div className="flex justify-between items-center p-5 border-b bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
-              <h2 className="text-lg font-semibold">
-                Edit Template — {editingTemplate?.name}
-              </h2>
-              <button
-                onClick={() => setShowEditTemplateModal(false)}
-                className="text-white hover:text-gray-200 hover:bg-white/10 p-1 rounded-full transition"
-              >
-                ✕
-              </button>
-            </div>
+          <div className="flex gap-4 w-full max-w-6xl max-h-[90vh] p-4">
+            {/* 🟢 Left: Templates Overview */}
+            {showTemplateModal && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 transition-all duration-300">
+                <div
+                  className={`flex w-full max-w-6xl max-h-[90vh] p-4 transition-all duration-500 ${
+                    showEditTemplateModal ? "justify-between" : "justify-center"
+                  }`}
+                >
+                  {/* 🟣 Templates Overview Modal */}
+                  <div
+                    className={`bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden transition-all duration-500 ${
+                      showEditTemplateModal ? "max-w-[55%]" : "max-w-3xl"
+                    }`}
+                  >
+                    <div className="flex justify-between items-center p-5 border-b bg-gradient-to-r from-purple-600 to-indigo-600 text-white">
+                      <div>
+                        <h2 className="text-lg font-semibold">
+                          Templates Overview
+                        </h2>
+                        <p className="text-xs text-purple-100">
+                          Showing 3 templates per service
+                        </p>
+                      </div>
 
-            <div className="p-5 overflow-y-auto flex-1 space-y-4 bg-gray-50">
-              <label className="block text-sm font-semibold text-gray-700">
-                Template Content
-              </label>
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-white font-medium">
+                            {selectedServiceForTemplates || "Selected Service"}
+                          </span>
 
-              <ReactQuill
-                theme="snow"
-                value={editContent}
-                onChange={setEditContent}
-                className=" rounded-lg shadow-sm"
-                style={{
-                  border: "1px solid #e5e7eb",
-                  borderRadius: "0.5rem",
-                }}
-                modules={{
-                  toolbar: [
-                    [{ header: [1, 2, false] }],
-                    ["bold", "italic", "underline", "strike"],
-                    [{ list: "ordered" }, { list: "bullet" }],
-                    ["link"],
-                    ["clean"],
-                  ],
-                }}
-              />
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={templateList.every((t) => t.active)}
+                              onChange={async (e) => {
+                                const newStatus = e.target.checked;
 
-              {/* Insert Fields */}
-              <div className="border rounded-lg bg-white p-3 mt-4">
-                <p className="text-sm font-semibold text-gray-700 mb-2">
-                  Insert Fields
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {[
-                    "Full name",
-                    "Business email",
-                    "Store name",
-                    "Store URL",
-                    "Country",
-                    "Service",
-                    "Budget",
-                    "Problem & Goal",
-                  ].map((field) => (
-                    <button
-                      key={field}
-                      onClick={() => {
-                        const placeholder = `{{${field}}}`;
-                        // ✅ Insert exactly at cursor position, without line break
-                        const quill = document.querySelector(".ql-editor");
-                        if (quill) {
-                          const sel = window.getSelection();
-                          const range = sel.getRangeAt(0);
-                          const textNode = document.createTextNode(placeholder);
-                          range.insertNode(textNode);
-                          // Move cursor to end of inserted text
-                          range.setStartAfter(textNode);
-                          range.setEndAfter(textNode);
-                          sel.removeAllRanges();
-                          sel.addRange(range);
-                        }
+                                const updates = templateList.map((t) =>
+                                  fetch(
+                                    `https://email-syncing-backend.vercel.app/template/status/${t._id}`,
+                                    {
+                                      method: "PATCH",
+                                      headers: {
+                                        "Content-Type": "application/json",
+                                      },
+                                      body: JSON.stringify({
+                                        active: newStatus,
+                                      }),
+                                    }
+                                  )
+                                );
+
+                                await Promise.all(updates);
+                                toast.success(
+                                  `All ${selectedServiceForTemplates} templates ${
+                                    newStatus ? "activated" : "deactivated"
+                                  } successfully!`
+                                );
+
+                                setTemplateList((prev) =>
+                                  prev.map((tpl) => ({
+                                    ...tpl,
+                                    active: newStatus,
+                                  }))
+                                );
+                              }}
+                              className="sr-only peer"
+                            />
+                            <div className="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:bg-green-500 transition-colors"></div>
+                            <div className="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full shadow-md transition-transform peer-checked:translate-x-5"></div>
+                          </label>
+
+                          <span
+                            className={`text-xs font-semibold ${
+                              templateList.every((t) => t.active)
+                                ? "text-green-300"
+                                : "text-gray-300"
+                            }`}
+                          >
+                            {templateList.every((t) => t.active) ? "ON" : "OFF"}
+                          </span>
+                        </div>
+
+                        {/* Close Button */}
+                        <button
+                          onClick={() => setShowTemplateModal(false)}
+                          className="text-white hover:text-gray-100 hover:bg-white/10 rounded-full p-1 transition"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Body */}
+                    <div className="p-6 overflow-y-auto flex-1 bg-gray-50">
+                      {templateList.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-purple-500 mb-3"></div>
+                          <p>Loading templates...</p>
+                        </div>
+                      ) : (
+                        <table className="w-full border-collapse text-sm bg-white rounded-lg shadow-sm overflow-hidden">
+                          <thead className="sticky top-0 bg-gray-100 z-10">
+                            <tr className="text-gray-700 text-left border-b">
+                              <th className="p-3 w-[25%]">Service</th>
+                              <th className="p-3 w-[45%]">Template</th>
+                              <th className="p-3 text-center w-[15%]">
+                                Status
+                              </th>
+                              <th className="p-3 text-center w-[15%]">
+                                Action
+                              </th>
+                            </tr>
+                          </thead>
+
+                          <tbody>
+                            {templateList.map((t, i) => (
+                              <React.Fragment key={t._id || i}>
+                                {/* Group by service */}
+                                {i === 0 ||
+                                templateList[i - 1]?.service !== t.service ? (
+                                  <tr className="bg-gray-50 border-t-4 border-gray-200">
+                                    <td
+                                      colSpan={4}
+                                      className="p-3 text-gray-900 font-semibold text-sm uppercase tracking-wide"
+                                    >
+                                      {t.service || "General Service"}
+                                    </td>
+                                  </tr>
+                                ) : null}
+
+                                <tr
+                                  className={`border-b transition-colors ${
+                                    !t.active
+                                      ? "bg-red-50"
+                                      : "hover:bg-purple-50"
+                                  }`}
+                                >
+                                  {/* 🟢 Service Name (clean) */}
+                                  <td className="p-3 font-medium text-gray-800 flex items-center">
+                                    {t.service || t.name.split(" - ")[0]}
+                                    {!t.active && (
+                                      <span className="ml-2 text-red-500 text-xs font-semibold">
+                                        ✗ Inactive
+                                      </span>
+                                    )}
+                                  </td>
+
+                                  {/* 🟣 Template Name */}
+                                  <td className="p-3 text-gray-700 font-medium">
+                                    {t.name.includes("Initial")
+                                      ? "Initial Email"
+                                      : t.name.includes("First")
+                                      ? "First Follow-up"
+                                      : t.name.includes("Second")
+                                      ? "Second Follow-up"
+                                      : "Template"}
+                                  </td>
+
+                                  {/* 🟢 Status Toggle */}
+                                  <td className="p-3 text-center">
+                                    <label className="relative inline-flex items-center cursor-pointer">
+                                      <input
+                                        type="checkbox"
+                                        checked={t.active}
+                                        onChange={async () => {
+                                          const newStatus = !t.active;
+                                          setTemplateList((prev) =>
+                                            prev.map((tpl) =>
+                                              tpl._id === t._id
+                                                ? { ...tpl, active: newStatus }
+                                                : tpl
+                                            )
+                                          );
+                                          await handleToggleTemplate(
+                                            t._id,
+                                            newStatus
+                                          );
+                                        }}
+                                        className="sr-only peer"
+                                      />
+                                      <div className="w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-green-500 transition-colors"></div>
+                                      <div className="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full shadow-md transition-transform peer-checked:translate-x-5"></div>
+                                    </label>
+                                  </td>
+
+                                  {/* 🟣 Action */}
+                                  <td className="p-3 text-center">
+                                    <button
+                                      onClick={() => {
+                                        setEditingTemplate(t);
+                                        setEditContent(t.content || "");
+                                        setShowEditTemplateModal(true);
+                                      }}
+                                      className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs rounded-md font-medium transition-colors"
+                                    >
+                                      Edit
+                                    </button>
+                                  </td>
+                                </tr>
+                              </React.Fragment>
+                            ))}
+                          </tbody>
+                        </table>
+                      )}
+                    </div>
+                    <div className="border-t bg-gray-50 p-3 text-center">
+                      <button
+                        onClick={() => {
+                          if (!selectedServiceForTemplates) {
+                            toast.error(
+                              "No service selected to view templates.",
+                              {
+                                duration: 3000,
+                                style: {
+                                  background: "#fff0f0",
+                                  color: "#b91c1c",
+                                  border: "1px solid #fca5a5",
+                                },
+                              }
+                            );
+                            return;
+                          }
+                          window.open(
+                            `/templates?service=${encodeURIComponent(
+                              selectedServiceForTemplates
+                            )}`,
+                            "_blank"
+                          );
+                        }}
+                        className="text-sm text-indigo-600 hover:underline transition"
+                      >
+                        View More Services Templates
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 🟠 Edit Template (slides in from right) */}
+                  {showEditTemplateModal && (
+                    <div
+                      className="bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden max-w-[45%] transition-all duration-500 transform translate-x-0 animate-slideIn"
+                      style={{
+                        animation: "slideIn 0.4s ease-out forwards",
                       }}
-                      className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium hover:bg-purple-200 transition"
                     >
-                      {field}
-                    </button>
-                  ))}
+                      {/* Header */}
+                      <div className="flex justify-between items-center p-5 border-b bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
+                        <h2 className="text-lg font-semibold">
+                          Edit Template — {editingTemplate?.name}
+                        </h2>
+                        <button
+                          onClick={() => setShowEditTemplateModal(false)}
+                          className="text-white hover:text-gray-200 hover:bg-white/10 p-1 rounded-full transition"
+                        >
+                          ✕
+                        </button>
+                      </div>
+
+                      {/* Body */}
+                      <div className="p-5 overflow-y-auto flex-1 space-y-4 bg-gray-50">
+                        <label className="block text-sm font-semibold text-gray-700">
+                          Template Content
+                        </label>
+
+                        <ReactQuill
+                          theme="snow"
+                          value={editContent}
+                          onChange={setEditContent}
+                          className="rounded-lg shadow-sm"
+                          style={{
+                            border: "1px solid #e5e7eb",
+                            borderRadius: "0.5rem",
+                          }}
+                          modules={{
+                            toolbar: [
+                              [{ header: [1, 2, false] }],
+                              ["bold", "italic", "underline", "strike"],
+                              [{ list: "ordered" }, { list: "bullet" }],
+                              ["link"],
+                              ["clean"],
+                            ],
+                          }}
+                        />
+
+                        {/* Insert Fields */}
+                        <div className="border rounded-lg bg-white p-3 mt-4">
+                          <p className="text-sm font-semibold text-gray-700 mb-2">
+                            Insert Fields
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {[
+                              "Full name",
+                              "Business email",
+                              "Store name",
+                              "Store URL",
+                              "Country",
+                              "Service",
+                              "Budget",
+                              "Problem & Goal",
+                            ].map((field) => (
+                              <button
+                                key={field}
+                                onClick={() => {
+                                  const placeholder = `{{${field}}}`;
+                                  const quill =
+                                    document.querySelector(".ql-editor");
+                                  if (quill) {
+                                    const sel = window.getSelection();
+                                    const range = sel.getRangeAt(0);
+                                    const textNode =
+                                      document.createTextNode(placeholder);
+                                    range.insertNode(textNode);
+                                    range.setStartAfter(textNode);
+                                    range.setEndAfter(textNode);
+                                    sel.removeAllRanges();
+                                    sel.addRange(range);
+                                  }
+                                }}
+                                className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium hover:bg-purple-200 transition"
+                              >
+                                {field}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Footer */}
+                      <div className="border-t p-4 bg-white flex justify-end space-x-3">
+                        <button
+                          onClick={() => setShowEditTemplateModal(false)}
+                          className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-100 transition"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={async () => {
+                            try {
+                              const res = await fetch(
+                                `https://email-syncing-backend.vercel.app/template/update/${editingTemplate._id}`,
+                                {
+                                  method: "PUT",
+                                  headers: {
+                                    "Content-Type": "application/json",
+                                  },
+                                  body: JSON.stringify({
+                                    content: editContent,
+                                  }),
+                                }
+                              );
+                              const data = await res.json();
+                              if (data.success) {
+                                toast.success("Template updated successfully!");
+                                setTemplateList((prev) =>
+                                  prev.map((tpl) =>
+                                    tpl._id === editingTemplate._id
+                                      ? { ...tpl, content: editContent }
+                                      : tpl
+                                  )
+                                );
+                              } else {
+                                toast.error(
+                                  data.message || "Failed to update template."
+                                );
+                              }
+                            } catch (err) {
+                              console.error("Error updating template:", err);
+                              toast.error("Error updating template.");
+                            }
+                          }}
+                          className="px-5 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition"
+                        >
+                          Save Changes
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
-
-            {/* Footer */}
-            <div className="border-t p-4 bg-white flex justify-end space-x-3">
-              <button
-                onClick={() => setShowEditTemplateModal(false)}
-                className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-100 transition"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={async () => {
-                  try {
-                    const res = await fetch(
-                      `https://email-syncing-backend.vercel.app/template/update/${editingTemplate._id}`,
-                      {
-                        method: "PUT",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ content: editContent }),
-                      }
-                    );
-                    const data = await res.json();
-                    if (data.success) {
-                      toast.success("Template updated successfully!");
-                      setShowEditTemplateModal(false);
-                      setTemplateList((prev) =>
-                        prev.map((tpl) =>
-                          tpl._id === editingTemplate._id
-                            ? { ...tpl, content: editContent }
-                            : tpl
-                        )
-                      );
-                    } else {
-                      toast.error(data.message || "Failed to update template.");
-                    }
-                  } catch (err) {
-                    console.error("Error updating template:", err);
-                    toast.error("Error updating template.");
-                  }
-                }}
-                className="px-5 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition"
-              >
-                Save Changes
-              </button>
-            </div>
+            )}
           </div>
         </div>
       )}

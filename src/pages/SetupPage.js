@@ -106,14 +106,14 @@ const SetupFlow = () => {
 
   const saveSetupProgress = async (data = {}) => {
     try {
-      const res = await fetch(
-        `https://email-syncing-backend.vercel.app/auth/setup/${user._id}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data),
-        }
-      );
+      const res = await fetch(`https://email-syncing-backend.vercel.app/auth/setup/${user._id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...data,
+          updatedAt: new Date(),
+        }),
+      });
 
       const result = await res.json();
 
@@ -128,11 +128,38 @@ const SetupFlow = () => {
   };
 
   const updateStep = async (nextStep, extra = {}) => {
-    setStep(nextStep);
-    await saveSetupProgress({
-      stepCompleted: nextStep,
-      ...extra,
-    });
+    // Wait until user is loaded
+    if (!user?._id) {
+      console.warn("⚠️ User not loaded yet, retrying...");
+      setTimeout(() => updateStep(nextStep, extra), 500);
+      return;
+    }
+
+    const isSkipped = extra?.skipped === true;
+    const status = isSkipped ? "skipped" : "completed";
+
+    try {
+      // ✅ Trigger API to save progress
+      const res = await fetch(`https://email-syncing-backend.vercel.app/auth/setup/${user._id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          stepCompleted: nextStep,
+          stepStatus: status,
+          ...extra,
+        }),
+      });
+
+      const result = await res.json();
+      if (result.success) {
+        console.log(`✅ Step ${nextStep} saved (${status})`);
+        setStep(nextStep); // move only after successful save
+      } else {
+        console.error("❌ Failed to save step:", result.message);
+      }
+    } catch (err) {
+      console.error("Error saving setup progress:", err);
+    }
   };
 
   const [showValidateButton, setShowValidateButton] = useState(false);
@@ -160,14 +187,11 @@ const SetupFlow = () => {
       const userId = localStorage.getItem("userid");
       const payload = { ...smtpForm, userId, provider: "outlook" };
 
-      const res = await fetch(
-        "https://email-syncing-backend.vercel.app/auth/saveSmtpConnection",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }
-      );
+      const res = await fetch("https://email-syncing-backend.vercel.app/auth/saveSmtpConnection", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
       if (!res.ok) throw new Error("Failed to save SMTP connection");
       alert("✅ SMTP connection saved successfully!");
@@ -419,7 +443,6 @@ const SetupFlow = () => {
 
   useEffect(() => {
     if (!loading && user) {
-      // redirect only if setup is done and user didn't come to fix skipped steps
       const hasSkippedStep = user?.setup?.steps?.some(
         (s) => s.status === "skipped" || s.status === "incomplete"
       );
@@ -436,9 +459,7 @@ const SetupFlow = () => {
     const fetchSetupProgress = async () => {
       try {
         if (!user?._id) return;
-        const res = await fetch(
-          `https://email-syncing-backend.vercel.app/auth/setup/${user._id}`
-        );
+        const res = await fetch(`https://email-syncing-backend.vercel.app/auth/setup/${user._id}`);
         const data = await res.json();
         if (data.success) setSetupProgress(data.data);
       } catch (err) {
@@ -771,7 +792,13 @@ const SetupFlow = () => {
 
           <div className="flex items-center justify-center mt-6">
             <button
-              onClick={() => setStep(2)}
+              onClick={async () => {
+                await saveSetupProgress({
+                  stepCompleted: 1,
+                  stepStatus: "completed",
+                });
+                setStep(2);
+              }}
               className="bg-[#4F46E5] hover:bg-[#4338CA] text-white px-8 py-3 rounded-lg text-sm font-semibold flex items-center justify-center space-x-2 shadow-md transition"
             >
               <span>Start 60-sec Setup</span>
@@ -787,9 +814,12 @@ const SetupFlow = () => {
 
       {step === 2 && (
         <div className="bg-white shadow-md rounded-xl p-8 sm:p-10 max-w-2xl w-[90%] text-left relative">
-          {/* Back button (top-left) */}
+          {/* 🔹 Back button (top-left) */}
           <span
-            onClick={() => setStep(1)}
+            onClick={async () => {
+              // ✅ Save current progress as skipped before going back
+              await updateStep(1, { skipped: true });
+            }}
             className="absolute left-4 top-4 text-[#4F46E5] text-xs sm:text-sm font-semibold cursor-pointer hover:underline hover:text-[#3730A3] transition-colors"
           >
             ← Back
@@ -830,6 +860,7 @@ const SetupFlow = () => {
                   onClick={() => {
                     if (user?.mailhook) {
                       navigator.clipboard.writeText(user.mailhook);
+                      toast.success("Mailhook copied!");
                     }
                   }}
                 />
@@ -850,9 +881,26 @@ const SetupFlow = () => {
             </div>
           </div>
 
-          <div className="flex justify-end mt-8">
+          {/* 🔹 Footer Buttons */}
+          <div className="flex justify-between items-center mt-8">
+            {/* Optional Skip Button */}
+            <span
+              onClick={async () => {
+                await updateStep(3, { skipped: true });
+              }}
+              className="text-[#4F46E5] text-sm font-semibold cursor-pointer hover:underline"
+            >
+              Skip
+            </span>
+
             <button
-              onClick={() => updateStep(3)}
+              onClick={async () => {
+                await saveSetupProgress({
+                  stepCompleted: 2,
+                  stepStatus: "completed",
+                });
+                setStep(3);
+              }}
               className="flex items-center space-x-2 px-6 py-2 rounded-lg text-sm font-semibold bg-[#4F46E5] text-white hover:bg-[#4338CA]"
             >
               <span>Next</span> <FiArrowRight />
@@ -1015,7 +1063,6 @@ const SetupFlow = () => {
               )}
           </div>
 
-          {/* Bottom Buttons */}
           <div className="mt-10 border-t border-gray-200 pt-6 flex justify-between items-center">
             <span className="text-[#4F46E5] text-sm font-semibold cursor-pointer hover:underline"></span>
 

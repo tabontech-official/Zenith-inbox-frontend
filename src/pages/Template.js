@@ -3,36 +3,39 @@
 // import axios from "axios";
 // import ReactQuill from "react-quill";
 // import "react-quill/dist/quill.snow.css";
-// import { ToastContainer, toast } from "react-toastify";
-// import "react-toastify/dist/ReactToastify.css";
-
+// import toast from "react-hot-toast";
 // export default function Template() {
 //   const [templates, setTemplates] = useState([]);
 //   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 //   const quillRef = useRef(null);
 //   const [loading, setLoading] = useState(false);
-
 //   const [editingId, setEditingId] = useState(null);
 //   const [platform, setPlatform] = useState("");
 //   const [service, setService] = useState("");
 //   const [content, setContent] = useState("");
+//   const [sequenceType, setSequenceType] = useState("");
 //   const [conditions, setConditions] = useState([
 //     { field: "subject", operator: "contains", value: "" },
 //   ]);
-//   const [sequenceType, setSequenceType] = useState("");
 
-//   const [deleteId, setDeleteId] = useState(null);
-//   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+//   const [globalActive, setGlobalActive] = useState(false);
 
-//   // ✅ Fetch templates from backend
 //   const fetchTemplates = async () => {
 //     try {
 //       setLoading(true);
 //       const userId = localStorage.getItem("userid");
-//       const res = await axios.get("https://email-syncing-backend.vercel.app/template/all", {
-//         params: { userId },
-//       });
+//       const res = await axios.get(
+//         "https://email-syncing-backend.vercel.app/template/all",
+//         { params: { userId } }
+//       );
 //       setTemplates(res.data);
+
+//       const nonGeneral = res.data.filter(
+//         (t) => t.service?.toLowerCase() !== "general"
+//       );
+//       const allActive =
+//         nonGeneral.length > 0 && nonGeneral.every((t) => t.active);
+//       setGlobalActive(allActive);
 //     } catch (err) {
 //       toast.error("Failed to fetch templates");
 //     } finally {
@@ -44,7 +47,6 @@
 //     fetchTemplates();
 //   }, []);
 
-//   // ✅ Format sequence type (Initial / First / Second)
 //   const formatSequenceName = (name = "") => {
 //     const lower = name.toLowerCase();
 //     if (lower.includes("initial")) return "Initial Email";
@@ -53,14 +55,12 @@
 //     return name;
 //   };
 
-//   // ✅ Group templates by service name
 //   const groupedTemplates = templates.reduce((acc, tpl) => {
 //     if (!acc[tpl.service]) acc[tpl.service] = [];
 //     acc[tpl.service].push(tpl);
 //     return acc;
 //   }, {});
 
-//   // ✅ For Quill variable insertion
 //   const insertField = (placeholder) => {
 //     const editor = quillRef.current.getEditor();
 //     const range = editor.getSelection();
@@ -98,7 +98,10 @@
 //         );
 //         toast.success("Template updated successfully!");
 //       } else {
-//         await axios.post("https://email-syncing-backend.vercel.app/template/create", payload);
+//         await axios.post(
+//           "https://email-syncing-backend.vercel.app/template/create",
+//           payload
+//         );
 //         toast.success("Template created successfully!");
 //       }
 
@@ -115,39 +118,63 @@
 //   };
 
 //   const handleToggle = async (id, currentStatus) => {
-//   const template = templates.find((tpl) => tpl._id === id);
+//     const template = templates.find((tpl) => tpl._id === id);
 
-//   // 🚫 Prevent disabling General templates
-//   if (template?.service === "General" && currentStatus) {
-//     toast.warning("You cannot deactivate General templates.");
-//     return;
-//   }
+//     if (template?.service?.toLowerCase() === "general" && currentStatus) {
+//       toast.error("You cannot deactivate General templates.");
+//       return;
+//     }
 
-//   // ✅ Instantly update UI for other templates
-//   setTemplates((prev) =>
-//     prev.map((tpl) =>
-//       tpl._id === id ? { ...tpl, active: !currentStatus } : tpl
-//     )
-//   );
-
-//   try {
-//     await axios.put(`https://email-syncing-backend.vercel.app/template/update/${id}`, {
-//       active: !currentStatus,
-//     });
-
-//     toast.info(
-//       `Template ${!currentStatus ? "activated" : "deactivated"} successfully`
-//     );
-//   } catch (err) {
-//     // ❌ Rollback on failure
 //     setTemplates((prev) =>
 //       prev.map((tpl) =>
-//         tpl._id === id ? { ...tpl, active: currentStatus } : tpl
+//         tpl._id === id ? { ...tpl, active: !currentStatus } : tpl
 //       )
 //     );
-//     toast.error("Failed to toggle template status");
-//   }
-// };
+
+//     try {
+//       await axios.put(
+//         `https://email-syncing-backend.vercel.app/template/update/${id}`,
+//         { active: !currentStatus }
+//       );
+
+//       toast.success(
+//         `Template ${!currentStatus ? "activated" : "deactivated"} successfully`
+//       );
+//     } catch (err) {
+//       // ❌ Rollback on failure
+//       setTemplates((prev) =>
+//         prev.map((tpl) =>
+//           tpl._id === id ? { ...tpl, active: currentStatus } : tpl
+//         )
+//       );
+//       toast.error("Failed to toggle template status");
+//     }
+//   };
+
+//   // ✅ Global Toggle Handler
+//   const handleGlobalToggle = async () => {
+//     try {
+//       const userId = localStorage.getItem("userid");
+//       const res = await axios.patch(
+//         "https://email-syncing-backend.vercel.app/template/templatestatus/all",
+//         { userId }
+//       );
+
+//       if (res.data.success) {
+//         const newStatus = res.data.toggledTo;
+//         setGlobalActive(newStatus);
+//         toast.success(
+//           newStatus ? "All  templates activated" : "All  templates deactivated"
+//         );
+//         fetchTemplates();
+//       } else {
+//         toast.error(res.data.message || "Failed to update all templates");
+//       }
+//     } catch (err) {
+//       console.error("Error updating all templates:", err);
+//       toast.error("Error updating all templates");
+//     }
+//   };
 
 //   const Loader = () => (
 //     <div className="flex flex-col justify-center items-center py-10">
@@ -178,7 +205,6 @@
 //   return (
 //     <div className="flex">
 //       <Sidebar />
-//       <ToastContainer position="top-right" autoClose={3000} />
 //       <div className="flex-1 min-h-screen bg-gray-50 lg:ml-64">
 //         <header className="flex items-center justify-between px-8 py-5 bg-white border-b shadow-sm">
 //           <div>
@@ -189,8 +215,31 @@
 //               Manage, customize, and activate your Shopify service templates
 //             </p>
 //           </div>
-//         </header>
 
+//           {/* ✅ Global Toggle Switch */}
+//           <div className="flex items-center gap-3">
+//             <span className="text-sm font-medium text-gray-700">
+//               All Templates
+//             </span>
+//             <label className="relative inline-flex items-center cursor-pointer">
+//               <input
+//                 type="checkbox"
+//                 checked={globalActive}
+//                 onChange={handleGlobalToggle}
+//                 className="sr-only peer"
+//               />
+//               <div className="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:bg-green-500 transition-colors"></div>
+//               <div className="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full shadow-md transition-transform peer-checked:translate-x-5"></div>
+//             </label>
+//             <span
+//               className={`text-xs font-semibold ${
+//                 globalActive ? "text-green-600" : "text-gray-400"
+//               }`}
+//             >
+//               {globalActive ? "ON" : "OFF"}
+//             </span>
+//           </div>
+//         </header>
 //         <main className="container mx-auto p-8">
 //           <div className="bg-white shadow rounded-lg overflow-hidden">
 //             <table className="w-full border-collapse">
@@ -223,7 +272,6 @@
 //                 ) : Object.keys(groupedTemplates).length > 0 ? (
 //                   Object.entries(groupedTemplates).map(([service, group]) => (
 //                     <React.Fragment key={service}>
-//                       {/* Group Header Row */}
 //                       <tr className="bg-gray-100">
 //                         <td
 //                           colSpan="5"
@@ -283,8 +331,6 @@
 //             </table>
 //           </div>
 //         </main>
-
-//         {/* Drawer for editing/creating */}
 //         <div className="fixed inset-0 z-50 flex pointer-events-none">
 //           <div
 //             className={`flex-1 bg-black transition-opacity duration-300 ${
@@ -399,23 +445,25 @@
 //               </button>
 //             </div>
 //           </div>
-//         </div>
+//         </div>{" "}
 //       </div>
 //     </div>
 //   );
 // }
-
 import React, { useState, useEffect, useRef } from "react";
 import Sidebar from "../component/Sidebar";
 import axios from "axios";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import toast from "react-hot-toast";
+import { useLocation, useNavigate } from "react-router-dom";
+
 export default function Template() {
   const [templates, setTemplates] = useState([]);
+  const [filteredTemplates, setFilteredTemplates] = useState([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const quillRef = useRef(null);
   const [loading, setLoading] = useState(false);
+
   const [editingId, setEditingId] = useState(null);
   const [platform, setPlatform] = useState("");
   const [service, setService] = useState("");
@@ -424,19 +472,29 @@ export default function Template() {
   const [conditions, setConditions] = useState([
     { field: "subject", operator: "contains", value: "" },
   ]);
-
   const [globalActive, setGlobalActive] = useState(false);
+  const quillRef = useRef(null);
 
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // 🟣 Extract ?service= param from URL
+  const urlParams = new URLSearchParams(location.search);
+  const [selectedServiceFilter, setSelectedServiceFilter] = useState(
+    urlParams.get("service") || "All"
+  );
+
+  // 🟢 Fetch Templates
   const fetchTemplates = async () => {
     try {
       setLoading(true);
       const userId = localStorage.getItem("userid");
-      const res = await axios.get(
-        "https://email-syncing-backend.vercel.app/template/all",
-        { params: { userId } }
-      );
-      setTemplates(res.data);
+      const res = await axios.get("https://email-syncing-backend.vercel.app/template/all", {
+        params: { userId },
+      });
 
+      setTemplates(res.data);
+      setFilteredTemplates(res.data);
       const nonGeneral = res.data.filter(
         (t) => t.service?.toLowerCase() !== "general"
       );
@@ -454,6 +512,21 @@ export default function Template() {
     fetchTemplates();
   }, []);
 
+  // 🟢 Filter Templates whenever dropdown changes
+  useEffect(() => {
+    if (selectedServiceFilter === "All") {
+      setFilteredTemplates(templates);
+      navigate("/templates"); // Remove query param
+    } else {
+      const filtered = templates.filter(
+        (t) =>
+          t.service?.toLowerCase() === selectedServiceFilter.toLowerCase()
+      );
+      setFilteredTemplates(filtered);
+      navigate(`/templates?service=${encodeURIComponent(selectedServiceFilter)}`);
+    }
+  }, [selectedServiceFilter, templates]);
+
   const formatSequenceName = (name = "") => {
     const lower = name.toLowerCase();
     if (lower.includes("initial")) return "Initial Email";
@@ -462,7 +535,7 @@ export default function Template() {
     return name;
   };
 
-  const groupedTemplates = templates.reduce((acc, tpl) => {
+  const groupedTemplates = filteredTemplates.reduce((acc, tpl) => {
     if (!acc[tpl.service]) acc[tpl.service] = [];
     acc[tpl.service].push(tpl);
     return acc;
@@ -505,10 +578,7 @@ export default function Template() {
         );
         toast.success("Template updated successfully!");
       } else {
-        await axios.post(
-          "https://email-syncing-backend.vercel.app/template/create",
-          payload
-        );
+        await axios.post("https://email-syncing-backend.vercel.app/template/create", payload);
         toast.success("Template created successfully!");
       }
 
@@ -526,7 +596,6 @@ export default function Template() {
 
   const handleToggle = async (id, currentStatus) => {
     const template = templates.find((tpl) => tpl._id === id);
-
     if (template?.service?.toLowerCase() === "general" && currentStatus) {
       toast.error("You cannot deactivate General templates.");
       return;
@@ -539,16 +608,13 @@ export default function Template() {
     );
 
     try {
-      await axios.put(
-        `https://email-syncing-backend.vercel.app/template/update/${id}`,
-        { active: !currentStatus }
-      );
-
+      await axios.put(`https://email-syncing-backend.vercel.app/template/update/${id}`, {
+        active: !currentStatus,
+      });
       toast.success(
         `Template ${!currentStatus ? "activated" : "deactivated"} successfully`
       );
     } catch (err) {
-      // ❌ Rollback on failure
       setTemplates((prev) =>
         prev.map((tpl) =>
           tpl._id === id ? { ...tpl, active: currentStatus } : tpl
@@ -558,7 +624,6 @@ export default function Template() {
     }
   };
 
-  // ✅ Global Toggle Handler
   const handleGlobalToggle = async () => {
     try {
       const userId = localStorage.getItem("userid");
@@ -566,19 +631,17 @@ export default function Template() {
         "https://email-syncing-backend.vercel.app/template/templatestatus/all",
         { userId }
       );
-
       if (res.data.success) {
         const newStatus = res.data.toggledTo;
         setGlobalActive(newStatus);
         toast.success(
-          newStatus ? "All  templates activated" : "All  templates deactivated"
+          newStatus ? "All templates activated" : "All templates deactivated"
         );
         fetchTemplates();
       } else {
         toast.error(res.data.message || "Failed to update all templates");
       }
     } catch (err) {
-      console.error("Error updating all templates:", err);
       toast.error("Error updating all templates");
     }
   };
@@ -613,6 +676,7 @@ export default function Template() {
     <div className="flex">
       <Sidebar />
       <div className="flex-1 min-h-screen bg-gray-50 lg:ml-64">
+        {/* HEADER */}
         <header className="flex items-center justify-between px-8 py-5 bg-white border-b shadow-sm">
           <div>
             <h1 className="text-2xl font-semibold text-gray-800 tracking-tight">
@@ -623,7 +687,7 @@ export default function Template() {
             </p>
           </div>
 
-          {/* ✅ Global Toggle Switch */}
+          {/* Global Toggle */}
           <div className="flex items-center gap-3">
             <span className="text-sm font-medium text-gray-700">
               All Templates
@@ -647,6 +711,31 @@ export default function Template() {
             </span>
           </div>
         </header>
+
+        {/* FILTER BAR */}
+        <div className="flex items-center justify-between px-8 py-4 bg-white border-b">
+          <div className="flex items-center gap-3">
+            <label className="text-sm font-medium text-gray-700">
+              Filter by Service:
+            </label>
+            <select
+              value={selectedServiceFilter}
+              onChange={(e) => setSelectedServiceFilter(e.target.value)}
+              className="border border-gray-300 rounded-lg px-3 py-1 text-sm focus:ring-2 focus:ring-purple-500"
+            >
+              <option value="All">All Services</option>
+              {[...new Set(templates.map((t) => t.service).filter(Boolean))].map(
+                (srv) => (
+                  <option key={srv} value={srv}>
+                    {srv}
+                  </option>
+                )
+              )}
+            </select>
+          </div>
+        </div>
+
+        {/* MAIN CONTENT */}
         <main className="container mx-auto p-8">
           <div className="bg-white shadow rounded-lg overflow-hidden">
             <table className="w-full border-collapse">
@@ -668,7 +757,6 @@ export default function Template() {
                   ))}
                 </tr>
               </thead>
-
               <tbody>
                 {loading ? (
                   <tr>
@@ -677,14 +765,14 @@ export default function Template() {
                     </td>
                   </tr>
                 ) : Object.keys(groupedTemplates).length > 0 ? (
-                  Object.entries(groupedTemplates).map(([service, group]) => (
-                    <React.Fragment key={service}>
+                  Object.entries(groupedTemplates).map(([srv, group]) => (
+                    <React.Fragment key={srv}>
                       <tr className="bg-gray-100">
                         <td
                           colSpan="5"
                           className="p-3 font-semibold text-gray-800 text-base"
                         >
-                          {service}
+                          {srv}
                         </td>
                       </tr>
 
@@ -738,6 +826,8 @@ export default function Template() {
             </table>
           </div>
         </main>
+
+        {/* SIDE DRAWER */}
         <div className="fixed inset-0 z-50 flex pointer-events-none">
           <div
             className={`flex-1 bg-black transition-opacity duration-300 ${
@@ -852,7 +942,7 @@ export default function Template() {
               </button>
             </div>
           </div>
-        </div>{" "}
+        </div>
       </div>
     </div>
   );
