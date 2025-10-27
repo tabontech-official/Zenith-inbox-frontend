@@ -119,17 +119,22 @@ const Navbar = () => {
     setOpenScenario(false);
   };
 
-  const setupCompleted = user?.setup?.completed === true;
+  // Check if any step is skipped or incomplete
+  const hasSkippedStep = user?.setup?.steps?.some(
+    (step) => step.status === "skipped" || step.status === "incomplete"
+  );
 
-  const handleWizardClick = () => {
-    if (!user) return;
-    const skippedStep = user?.setup?.steps?.find((s) => s.status === "skipped");
-    if (skippedStep) {
-      navigate(`/setup?step=${skippedStep.step}`);
-    } else {
-      navigate("/setup");
-    }
-  };
+  const setupCompleted = !hasSkippedStep; // if none skipped, wizard completed
+const handleWizardClick = () => {
+  if (!user) return;
+  const skippedStep = user?.setup?.steps?.find((s) => s.status === "skipped");
+  if (skippedStep) {
+    navigate(`/setup?step=${skippedStep.step}`);
+  } else {
+    navigate("/setup");
+  }
+};
+
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -214,12 +219,12 @@ const Navbar = () => {
                 <FiUser /> My Profile
               </button>
 
-              <button
+              {/* <button
                 onClick={handleLogout}
                 className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
               >
                 <FiLogOut /> Logout
-              </button>
+              </button> */}
             </div>
           )}
         </div>

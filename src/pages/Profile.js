@@ -152,24 +152,40 @@ const Profile = () => {
             </div>
 
             <div className="mt-10 bg-purple-50 rounded-lg p-6 text-sm text-purple-800 flex items-center justify-between">
-              <div>
-                <p className="font-semibold">Account Status</p>
-                <p className="text-xs mt-1">
-                  {user?.setup?.completed
-                    ? "Your account setup is complete and verified."
-                    : "Your setup is not yet complete. Please finish the wizard to verify your account."}
-                </p>
-              </div>
+              {(() => {
+                const steps = user?.setup?.steps || [];
+                const allCompleted =
+                  steps.length > 0 &&
+                  steps.every((s) => s.status === "completed");
+                const hasSkipped = steps.some(
+                  (s) => s.status === "skipped" || s.status === "incomplete"
+                );
 
-              <span
-                className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                  user?.setup?.completed
-                    ? "bg-green-100 text-green-700"
-                    : "bg-yellow-100 text-yellow-700"
-                }`}
-              >
-                {user?.setup?.completed ? "Verified" : "Pending"}
-              </span>
+                return (
+                  <div className="flex items-center justify-between w-full">
+                    <div>
+                      <p className="font-semibold text-sm text-gray-800">
+                        Account Status
+                      </p>
+                      <p className="text-xs text-gray-600 mt-1">
+                        {allCompleted && !hasSkipped
+                          ? "Your account setup is complete and verified."
+                          : "Your setup is not yet complete. Please finish all wizard steps to verify your account."}
+                      </p>
+                    </div>
+
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        allCompleted && !hasSkipped
+                          ? "bg-green-100 text-green-700"
+                          : "bg-yellow-100 text-yellow-700"
+                      }`}
+                    >
+                      {allCompleted && !hasSkipped ? "Verified" : "Unverified"}
+                    </span>
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </div>

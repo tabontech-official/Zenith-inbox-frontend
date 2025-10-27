@@ -10,6 +10,8 @@ import {
   FiAlertCircle,
   FiClock,
   FiRefreshCcw,
+  FiCheckCircle,
+  FiAlertTriangle,
 } from "react-icons/fi";
 import { useLocation, useNavigate } from "react-router-dom";
 import { UserContext } from "../component/UserContext";
@@ -104,11 +106,14 @@ const SetupFlow = () => {
 
   const saveSetupProgress = async (data = {}) => {
     try {
-      const res = await fetch(`https://email-syncing-backend.vercel.app/auth/setup/${user._id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
+      const res = await fetch(
+        `https://email-syncing-backend.vercel.app/auth/setup/${user._id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        }
+      );
 
       const result = await res.json();
 
@@ -155,11 +160,14 @@ const SetupFlow = () => {
       const userId = localStorage.getItem("userid");
       const payload = { ...smtpForm, userId, provider: "outlook" };
 
-      const res = await fetch("https://email-syncing-backend.vercel.app/auth/saveSmtpConnection", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const res = await fetch(
+        "https://email-syncing-backend.vercel.app/auth/saveSmtpConnection",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
 
       if (!res.ok) throw new Error("Failed to save SMTP connection");
       alert("✅ SMTP connection saved successfully!");
@@ -401,7 +409,7 @@ const SetupFlow = () => {
         setValidationFailed(true);
       }
     } catch (err) {
-      console.error("❌ Error during validation process:", err);
+      console.error(" Error during validation process:", err);
       toast.error("Something went wrong while validating connection.");
       setValidating(false);
       setValidationPhase(false);
@@ -411,7 +419,12 @@ const SetupFlow = () => {
 
   useEffect(() => {
     if (!loading && user) {
-      if (user?.setup?.completed) {
+      // redirect only if setup is done and user didn't come to fix skipped steps
+      const hasSkippedStep = user?.setup?.steps?.some(
+        (s) => s.status === "skipped" || s.status === "incomplete"
+      );
+
+      if (user?.setup?.completed && !hasSkippedStep) {
         navigate("/organization");
       }
     }
@@ -423,7 +436,9 @@ const SetupFlow = () => {
     const fetchSetupProgress = async () => {
       try {
         if (!user?._id) return;
-        const res = await fetch(`https://email-syncing-backend.vercel.app/auth/setup/${user._id}`);
+        const res = await fetch(
+          `https://email-syncing-backend.vercel.app/auth/setup/${user._id}`
+        );
         const data = await res.json();
         if (data.success) setSetupProgress(data.data);
       } catch (err) {
@@ -734,12 +749,13 @@ const SetupFlow = () => {
 
       {step === 1 && (
         <div className="bg-white shadow-md rounded-xl p-8 sm:p-10 max-w-lg w-[90%] text-center relative">
+          {/* Skip Button (bottom-left corner) */}
           <span
             onClick={async () => {
               await saveSetupProgress({ skipped: true, stepCompleted: 1 });
               navigate("/organization");
             }}
-            className="absolute left-4 top-4 text-[#4F46E5] text-xs sm:text-sm font-semibold cursor-pointer hover:underline hover:text-[#3730A3] transition-colors"
+            className="absolute bottom-4 left-4 text-[#4F46E5] text-xs sm:text-sm font-semibold cursor-pointer hover:underline hover:text-[#3730A3] transition-colors"
           >
             Skip
           </span>
@@ -771,7 +787,7 @@ const SetupFlow = () => {
 
       {step === 2 && (
         <div className="bg-white shadow-md rounded-xl p-8 sm:p-10 max-w-2xl w-[90%] text-left relative">
-          {/* Back button in top-left corner */}
+          {/* Back button (top-left) */}
           <span
             onClick={() => setStep(1)}
             className="absolute left-4 top-4 text-[#4F46E5] text-xs sm:text-sm font-semibold cursor-pointer hover:underline hover:text-[#3730A3] transition-colors"
@@ -779,7 +795,17 @@ const SetupFlow = () => {
             ← Back
           </span>
 
-          <h2 className="text-2xl font-bold text-[#111827] text-center mb-2 mt-4">
+          {/* Need help (top-right) */}
+          <span
+            onClick={() => {
+              window.open("/pages/mailhook/instruction", "_blank");
+            }}
+            className="absolute right-4 top-4 text-[#4F46E5] text-xs sm:text-sm font-semibold cursor-pointer hover:underline hover:text-[#3730A3] transition-colors"
+          >
+            Need help?
+          </span>
+
+          <h2 className="text-2xl font-bold text-[#111827] text-center mb-2 mt-8">
             Your Mailhook is Ready
           </h2>
           <p className="text-[#4B5563] text-center mb-8">
@@ -815,21 +841,11 @@ const SetupFlow = () => {
                 Instructions:
               </h4>
               <p className="text-[#4B5563] text-sm leading-relaxed mb-4">
-                You can forward your business emails to this mailhook.{" "}
+                You can forward your business emails to this mailhook address.{" "}
                 <span className="font-semibold text-[#111827]">
-                  Click “Need help?” below
+                  Follow the instructions in the Help Guide
                 </span>{" "}
-                to see detailed instructions on how to properly set up email
-                forwarding.
-              </p>
-
-              <p
-                onClick={() => {
-                  window.open("/pages/mailhook/instruction", "_blank");
-                }}
-                className="text-[#4F46E5] text-sm font-semibold cursor-pointer hover:underline"
-              >
-                Need help?
+                to ensure forwarding works properly.
               </p>
             </div>
           </div>
@@ -847,6 +863,12 @@ const SetupFlow = () => {
 
       {step === 3 && (
         <div className="bg-white shadow-md rounded-xl p-8 sm:p-10 max-w-2xl w-[90%] text-left relative">
+          <span
+            onClick={() => window.open("/pages/mailhook/instruction", "_blank")}
+            className="absolute right-4 top-4 text-[#4F46E5] text-xs sm:text-sm font-semibold cursor-pointer hover:underline hover:text-[#3730A3] transition-colors"
+          >
+            Need help?
+          </span>
           <h2 className="text-2xl font-bold text-[#111827] text-center mb-2">
             Set up Forwarding
           </h2>
@@ -958,21 +980,16 @@ const SetupFlow = () => {
               ) : (
                 <MailhookWaitingTimer />
               )}
-              {!validationPhase &&
-                !validated &&
-                showValidateButton &&
-                !verificationEmail?.sender && (
-                  <button
-                    onClick={handleRetryValidation}
-                    className="mt-4 flex items-center justify-center mx-auto space-x-2 px-5 py-2 border border-[#4F46E5] text-[#4F46E5] rounded-lg text-sm font-semibold hover:bg-[#EEF2FF] transition"
-                  >
-                    <FiRefreshCcw className="text-[#4F46E5]" />
-                    <span>Retry Checking</span>
-                  </button>
-                )}
             </div>
-
-            {/* Email Input (shows only when manual validation needed) */}
+            {!validationPhase && !validated && showValidateButton && (
+              <button
+                onClick={handleRetryValidation}
+                className="mt-4 flex items-center justify-center mx-auto space-x-2 px-5 py-2 border border-[#4F46E5] text-[#4F46E5] rounded-lg text-sm font-semibold hover:bg-[#EEF2FF] transition"
+              >
+                <FiRefreshCcw className="text-[#4F46E5]" />
+                <span>Retry Checking</span>
+              </button>
+            )}
             {!validationPhase &&
               !validated &&
               (showValidateButton ||
@@ -996,26 +1013,6 @@ const SetupFlow = () => {
                   />
                 </div>
               )}
-
-            {/* {validationFailed && !validated && !validating && (
-              <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4 mt-6 text-center">
-                <p className="font-semibold mb-2">
-                  Your mailhook forwarding may not be set up correctly.
-                </p>
-                <p className="text-sm mb-3">
-                  Please check your Gmail or Outlook forwarding settings.
-                </p>
-                <p
-                  onClick={() =>
-                    window.open("/pages/mailhook/instruction", "_blank")
-                  }
-                  className="text-[#4F46E5] text-sm font-semibold cursor-pointer hover:underline"
-                >
-                  Need help setting up Gmail forwarding? Click here to view
-                  instructions.
-                </p>
-              </div>
-            )} */}
           </div>
 
           {/* Bottom Buttons */}
@@ -1057,17 +1054,6 @@ const SetupFlow = () => {
               </button>
             )}
           </div>
-
-          {!validated && (
-            <p
-              onClick={() =>
-                window.open("/pages/mailhook/instruction", "_blank")
-              }
-              className="text-[#4F46E5] text-sm font-semibold cursor-pointer hover:underline mt-4 text-center"
-            >
-              Need help setting up Email forwarding?
-            </p>
-          )}
         </div>
       )}
 
@@ -1301,10 +1287,11 @@ const SetupFlow = () => {
                   >
                     <div className="flex items-center space-x-2">
                       {step.status === "completed" ? (
-                        <span className="text-green-600">✓</span>
+                        <FiCheckCircle className="text-green-600 text-lg" />
                       ) : (
-                        <span className="text-yellow-500">❌</span>
+                        <FiAlertTriangle className="text-yellow-500 text-lg" />
                       )}
+
                       <span>{step.title}</span>
                     </div>
                     <span

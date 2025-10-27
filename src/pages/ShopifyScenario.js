@@ -645,7 +645,6 @@ const ShopifyScenariosPage = () => {
     let type = "";
     let description = "";
 
-    // detect Delay
     const isDelay = selectedApp?.name === "Delay";
 
     if (isDelay) {
