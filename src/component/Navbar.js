@@ -104,6 +104,7 @@ import { useNavigate } from "react-router-dom";
 import OrganizationSettingsModal from "./OrganizationSettingsModal";
 import ScenarioSelectModal from "./ScenarioSelectModal";
 import { UserContext } from "./UserContext";
+import axios from "axios";
 
 const Navbar = () => {
   const [open, setOpen] = useState(false);
@@ -146,10 +147,24 @@ const handleWizardClick = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleLogout = () => {
-    localStorage.clear();
-    navigate("/login");
+ const handleLogout = async () => {
+    const userId = localStorage.getItem("userid");
+    try {
+      await fetch(
+        `https://email-syncing-backend.vercel.app/auth/logout/${userId}`,
+        { method: "POST" }
+      );
+      localStorage.clear();
+      navigate("/login", { replace: true });
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
   };
+const handleSkipSetup = async () => {
+  const userId = localStorage.getItem("userid");
+  await axios.post(`https://email-syncing-backend.vercel.app/auth/skip-all/${userId}`);
+  alert("All setup steps skipped successfully!");
+};
 
   return (
     <header className="w-full bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-end sticky top-0 z-30 shadow-sm">
@@ -188,16 +203,17 @@ const handleWizardClick = () => {
         </button>
 
         <div className="w-px h-6 bg-gray-300 mx-2"></div>
-
-        {/* <button className="p-2 text-gray-500 hover:text-gray-700 rounded-md hover:bg-gray-100 transition">
+{/* 
+        <button className="p-2 text-gray-500 hover:text-gray-700 rounded-md hover:bg-gray-100 transition">
           <FiHelpCircle className="w-5 h-5" />
         </button>
         <button className="p-2 text-gray-500 hover:text-gray-700 rounded-md hover:bg-gray-100 transition">
           <FiSend className="w-5 h-5" />
-        </button>
-        <button className="p-2 text-gray-500 hover:text-gray-700 rounded-md hover:bg-gray-100 transition">
-          <FiBell className="w-5 h-5" />
         </button> */}
+        <button onClick={handleSkipSetup} className="p-2 text-gray-500 hover:text-gray-700 rounded-md hover:bg-gray-100 transition">
+          {/* <FiBell className="w-5 h-5" /> */}
+          reset
+        </button>
 
         <div className="relative" ref={profileRef}>
           <div
@@ -219,12 +235,12 @@ const handleWizardClick = () => {
                 <FiUser /> My Profile
               </button>
 
-              {/* <button
+              <button
                 onClick={handleLogout}
                 className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
               >
                 <FiLogOut /> Logout
-              </button> */}
+              </button>
             </div>
           )}
         </div>
