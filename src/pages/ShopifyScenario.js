@@ -148,7 +148,7 @@ const ShopifyScenariosPage = () => {
   const fetchConnections = async () => {
     try {
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/auth/getConnection/${localStorage.getItem(
+        `http://localhost:5000/auth/getConnection/${localStorage.getItem(
           "userid"
         )}`
       );
@@ -172,7 +172,7 @@ const ShopifyScenariosPage = () => {
       try {
         const userId = localStorage.getItem("userid");
         const res = await fetch(
-          `https://email-syncing-backend.vercel.app/template/all?userId=${userId}`
+          `http://localhost:5000/template/all?userId=${userId}`
         );
         const data = await res.json();
 
@@ -230,7 +230,7 @@ const ShopifyScenariosPage = () => {
   //     };
 
   //     const res = await fetch(
-  //       `https://email-syncing-backend.vercel.app/scenario/detail/${scenarioId}`,
+  //       `http://localhost:5000/scenario/detail/${scenarioId}`,
   //       {
   //         method: "PUT",
   //         headers: { "Content-Type": "application/json" },
@@ -265,7 +265,7 @@ const ShopifyScenariosPage = () => {
 
       if (scenarioId) {
         res = await fetch(
-          `https://email-syncing-backend.vercel.app/scenario/detail/${scenarioId}`,
+          `http://localhost:5000/scenario/detail/${scenarioId}`,
           {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
@@ -278,7 +278,7 @@ const ShopifyScenariosPage = () => {
         console.warn(
           "Scenario not found or update failed — creating new one..."
         );
-        res = await fetch(`https://email-syncing-backend.vercel.app/scenario`, {
+        res = await fetch(`http://localhost:5000/scenario`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
@@ -317,7 +317,7 @@ const ShopifyScenariosPage = () => {
       setCompletedSteps([]);
       setIsScenarioUpdated(true);
 
-      const refresh = await fetch("https://email-syncing-backend.vercel.app/scenario/details", {
+      const refresh = await fetch("http://localhost:5000/scenario/details", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: localStorage.getItem("userid") }),
@@ -350,7 +350,7 @@ const ShopifyScenariosPage = () => {
   const handleToggleTemplate = async (templateId, newStatus) => {
     try {
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/template/status/${templateId}`,
+        `http://localhost:5000/template/status/${templateId}`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -373,7 +373,7 @@ const ShopifyScenariosPage = () => {
   const handleToggleAllTemplates = async (newStatus) => {
     try {
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/template/templatestatus/all`,
+        `http://localhost:5000/template/templatestatus/all`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -460,7 +460,7 @@ const ShopifyScenariosPage = () => {
   //         return;
   //       }
 
-  //       const res = await fetch("https://email-syncing-backend.vercel.app/scenario/details", {
+  //       const res = await fetch("http://localhost:5000/scenario/details", {
   //         method: "POST",
   //         headers: { "Content-Type": "application/json" },
   //         body: JSON.stringify({ userId }),
@@ -501,7 +501,7 @@ const ShopifyScenariosPage = () => {
           return;
         }
 
-        const res = await fetch("https://email-syncing-backend.vercel.app/scenario/details", {
+        const res = await fetch("http://localhost:5000/scenario/details", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ userId }),
@@ -552,7 +552,7 @@ const ShopifyScenariosPage = () => {
       try {
         const userId = localStorage.getItem("userid");
         const res = await fetch(
-          `https://email-syncing-backend.vercel.app/template/all?userId=${userId}`
+          `http://localhost:5000/template/all?userId=${userId}`
         );
         const data = await res.json();
 
@@ -574,68 +574,140 @@ const ShopifyScenariosPage = () => {
       fetchTemplates();
     }
   }, [showTemplateModal, showValidation]);
+  // const handleSave = () => {
+  //   if (editingBranch !== null) {
+  //     const updatedBranches = [...routerBranches];
+
+  //     let type = "";
+  //     let description = "";
+
+  //     if (selectedApp?.name === "Delay") {
+  //       type = "Delay";
+  //       description = `Wait ${delayValue} ${delayUnit}`;
+  //     } else if (
+  //       selectedApp?.name === "Email" ||
+  //       selectedApp?.name === "Gmail"
+  //     ) {
+  //       type = selectedApp.name === "Email" ? "Custom Email" : "Send an Email";
+  //       description = `Send email via ${selectedAppType || selectedApp.name}`;
+  //     }
+
+  //     const moduleData = {
+  //       id: editingModuleId || Date.now(),
+  //       app: {
+  //         ...selectedApp,
+  //         name:
+  //           selectedApp.displayName ||
+  //           selectedTemplate ||
+  //           selectedApp.defaultTemplate ||
+  //           "Unnamed Module",
+  //         color: selectedApp.color,
+  //         icon: selectedApp.icon,
+  //       },
+  //       type,
+  //       description,
+  //       connectionId: selectedConnection,
+  //       template: selectedTemplate,
+  //       cc: ccList,
+  //       bcc: bccList,
+  //       delayValue,
+  //       delayUnit,
+  //       emailType: selectedAppType || selectedApp?.name || "",
+  //     };
+
+  //     if (editingModuleId) {
+  //       const moduleIndex = updatedBranches[editingBranch].modules.findIndex(
+  //         (m) => m.id === editingModuleId
+  //       );
+  //       if (moduleIndex >= 0) {
+  //         updatedBranches[editingBranch].modules[moduleIndex] = {
+  //           ...updatedBranches[editingBranch].modules[moduleIndex],
+  //           ...moduleData,
+  //         };
+  //       }
+  //     } else {
+  //       updatedBranches[editingBranch].modules.push(moduleData);
+  //     }
+
+  //     setRouterBranches(updatedBranches);
+  //     setEditingBranch(null);
+  //     setEditingModuleId(null);
+  //   }
+
+  //   resetForm();
+  // };
+
+
   const handleSave = () => {
-    if (editingBranch !== null) {
-      const updatedBranches = [...routerBranches];
+  if (editingBranch !== null) {
+    const updatedBranches = [...routerBranches];
 
-      let type = "";
-      let description = "";
+    let type = "";
+    let description = "";
 
-      if (selectedApp?.name === "Delay") {
-        type = "Delay";
+    // detect Delay
+    const isDelay = selectedApp?.name === "Delay";
+
+    if (isDelay) {
+      type = "Delay";
+      if (delayValue && delayUnit) {
         description = `Wait ${delayValue} ${delayUnit}`;
-      } else if (
-        selectedApp?.name === "Email" ||
-        selectedApp?.name === "Gmail"
-      ) {
-        type = selectedApp.name === "Email" ? "Custom Email" : "Send an Email";
-        description = `Send email via ${selectedAppType || selectedApp.name}`;
-      }
-
-      const moduleData = {
-        id: editingModuleId || Date.now(),
-        app: {
-          ...selectedApp,
-          name:
-            selectedApp.displayName ||
-            selectedTemplate ||
-            selectedApp.defaultTemplate ||
-            "Unnamed Module",
-          color: selectedApp.color,
-          icon: selectedApp.icon,
-        },
-        type,
-        description,
-        connectionId: selectedConnection,
-        template: selectedTemplate,
-        cc: ccList,
-        bcc: bccList,
-        delayValue,
-        delayUnit,
-        emailType: selectedAppType || selectedApp?.name || "",
-      };
-
-      if (editingModuleId) {
-        const moduleIndex = updatedBranches[editingBranch].modules.findIndex(
-          (m) => m.id === editingModuleId
-        );
-        if (moduleIndex >= 0) {
-          updatedBranches[editingBranch].modules[moduleIndex] = {
-            ...updatedBranches[editingBranch].modules[moduleIndex],
-            ...moduleData,
-          };
-        }
       } else {
-        updatedBranches[editingBranch].modules.push(moduleData);
+        description = "Delay (no duration set)";
       }
-
-      setRouterBranches(updatedBranches);
-      setEditingBranch(null);
-      setEditingModuleId(null);
+    } else if (
+      selectedApp?.name === "Email" ||
+      selectedApp?.name === "Gmail"
+    ) {
+      type = selectedApp.name === "Email" ? "Custom Email" : "Send an Email";
+      description = `Send email via ${selectedAppType || selectedApp.name}`;
     }
 
-    resetForm();
-  };
+    const moduleData = {
+      id: editingModuleId || Date.now(),
+      app: {
+        ...selectedApp,
+        name:
+          selectedApp.displayName ||
+          selectedTemplate ||
+          selectedApp.defaultTemplate ||
+          "Unnamed Module",
+        color: selectedApp.color,
+        icon: selectedApp.icon,
+      },
+      type,
+      description,
+      connectionId: selectedConnection,
+      template: selectedTemplate,
+      cc: ccList,
+      bcc: bccList,
+      emailType: selectedAppType || selectedApp?.name || "",
+      ...(isDelay
+        ? { delayValue: delayValue || "", delayUnit: delayUnit || "" } // ✅ include only if Delay
+        : {}), // ✅ remove delay fields from non-delay modules
+    };
+
+    if (editingModuleId) {
+      const moduleIndex = updatedBranches[editingBranch].modules.findIndex(
+        (m) => m.id === editingModuleId
+      );
+      if (moduleIndex >= 0) {
+        updatedBranches[editingBranch].modules[moduleIndex] = {
+          ...updatedBranches[editingBranch].modules[moduleIndex],
+          ...moduleData,
+        };
+      }
+    } else {
+      updatedBranches[editingBranch].modules.push(moduleData);
+    }
+
+    setRouterBranches(updatedBranches);
+    setEditingBranch(null);
+    setEditingModuleId(null);
+  }
+
+  resetForm();
+};
 
   const handleRemoveModule = (branchIndex, moduleId) => {
     const updatedBranches = [...routerBranches];
@@ -899,7 +971,7 @@ const ShopifyScenariosPage = () => {
         if (!userId || !showRunTestModal) return;
 
         const res = await fetch(
-          `https://email-syncing-backend.vercel.app/mailhook/get-test-data/${userId}`
+          `http://localhost:5000/mailhook/get-test-data/${userId}`
         );
         const data = await res.json();
 
@@ -944,7 +1016,7 @@ const ShopifyScenariosPage = () => {
   //   toast.loading("Generating test email...", { id: "test" });
 
   //   try {
-  //     const res = await fetch("https://email-syncing-backend.vercel.app/mailhook/Run-test-mode", {
+  //     const res = await fetch("http://localhost:5000/mailhook/Run-test-mode", {
   //       method: "POST",
   //       headers: { "Content-Type": "application/json" },
   //       body: JSON.stringify({
@@ -969,7 +1041,7 @@ const ShopifyScenariosPage = () => {
   //       // setShowTemplateModal(true);
   //       const userId = localStorage.getItem("userid");
   //       const res = await fetch(
-  //         `https://email-syncing-backend.vercel.app/template/alltemplates?userId=${userId}&service=${encodeURIComponent(
+  //         `http://localhost:5000/template/alltemplates?userId=${userId}&service=${encodeURIComponent(
   //           formData.service
   //         )}`
   //       );
@@ -1064,7 +1136,7 @@ const ShopifyScenariosPage = () => {
     toast.loading("Generating test email...", { id: "test" });
 
     try {
-      const res = await fetch("https://email-syncing-backend.vercel.app/mailhook/Run-test-mode", {
+      const res = await fetch("http://localhost:5000/mailhook/Run-test-mode", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -1090,7 +1162,7 @@ const ShopifyScenariosPage = () => {
         // ✅ Fetch templates
         const userId = localStorage.getItem("userid");
         const res = await fetch(
-          `https://email-syncing-backend.vercel.app/template/alltemplates?userId=${userId}&service=${encodeURIComponent(
+          `http://localhost:5000/template/alltemplates?userId=${userId}&service=${encodeURIComponent(
             formData.service
           )}`
         );
@@ -1200,7 +1272,7 @@ const ShopifyScenariosPage = () => {
       toast.loading("Fetching test email...", { id: "email" });
 
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/mailhook/get-test-email/${userId}`
+        `http://localhost:5000/mailhook/get-test-email/${userId}`
       );
       const data = await res.json();
 
@@ -1384,7 +1456,7 @@ const ShopifyScenariosPage = () => {
                           scenarioId || localStorage.getItem("scenarioId");
 
                         const res = await fetch(
-                          `https://email-syncing-backend.vercel.app/scenario/updateAutomation/${scenarioIdValue}`,
+                          `http://localhost:5000/scenario/updateAutomation/${scenarioIdValue}`,
                           {
                             method: "PUT",
                             headers: { "Content-Type": "application/json" },
@@ -1942,189 +2014,7 @@ const ShopifyScenariosPage = () => {
         />
       )}
 
-      {/* {showRunTestModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
-            <div className="flex justify-between items-start border-b px-6 py-4">
-              <div>
-                <h2 className="text-lg font-semibold text-gray-800">
-                  Contact {user?.fullName || "Support Team"}
-                </h2>
-                <p className="text-sm text-gray-500 mt-1">
-                  Share a few details to help us understand your needs. We’ll
-                  follow up with you directly.
-                </p>
-              </div>
-              <button
-                onClick={() => setShowRunTestModal(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 
-          1 0 111.414 1.414L11.414 10l4.293 
-          4.293a1 1 0 01-1.414 1.414L10 
-          11.414l-4.293 4.293a1 1 0 
-          01-1.414-1.414L8.586 10 4.293 
-          5.707a1 1 0 010-1.414z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </button>
-            </div>
-
-            <div className="px-6 py-5 space-y-4 overflow-y-auto max-h-[70vh]">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Business email
-                </label>
-                <input
-                  type="email"
-                  value={formData.businessEmail}
-                  onChange={(e) =>
-                    setFormData({ ...formData, businessEmail: e.target.value })
-                  }
-                  placeholder="Enter your business email"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Store name
-                </label>
-                <input
-                  type="text"
-                  value={formData.storeName}
-                  disabled
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 bg-gray-100 text-gray-600 cursor-not-allowed"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Country
-                </label>
-                <input
-                  value={formData.country}
-                  disabled
-                  onChange={(e) =>
-                    setFormData({ ...formData, country: e.target.value })
-                  }
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Select a service offered by {user?.name || "the team"}
-                </label>
-                <select
-                  value={formData.service}
-                  onChange={(e) =>
-                    setFormData({ ...formData, service: e.target.value })
-                  }
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none"
-                >
-                  <option value="">Select service</option>
-                  <option>Troubleshooting</option>
-                  <option>Theme customization</option>
-                  <option>Store build or redesign</option>
-                  <option>Store migration</option>
-                  <option>Website and marketing content</option>
-                  <option>SEO</option>
-                  <option>Site performance and speed</option>
-                  <option>Custom apps and integrations</option>
-                  <option>Store settings configuration</option>
-                  <option>Product and collection setup</option>
-                  <option>Social media marketing</option>
-                  <option>Product descriptions</option>
-                  <option>Search engine advertising</option>
-                  <option>POS setup and migration</option>
-                  <option>Custom domain setup</option>
-                  <option>Conversion rate optimization</option>
-                  <option>Analytics and tracking</option>
-                  <option>Sales channel setup</option>
-                  <option>Logo and visual branding</option>
-                  <option>Business strategy guidance</option>
-                  <option>Website audit and optimization strategy</option>
-                  <option>Sales tax guidance</option>
-                  <option>Product photography</option>
-                  <option>Email marketing</option>
-                  <option>3D modelling</option>
-                  <option>Banner ads</option>
-                  <option>Video and illustrations</option>
-                  <option>Content marketing</option>
-                  <option>Product sourcing guidance</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Budget (USD)
-                </label>
-                <input
-                  type="number"
-                  value={formData.budget}
-                  disabled
-                  onChange={(e) =>
-                    setFormData({ ...formData, budget: e.target.value })
-                  }
-                  placeholder="Enter your budget"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none"
-                />
-              </div>
-            </div>
-
-            <div className="border-t px-6 py-4 flex justify-end space-x-3">
-              <button
-                onClick={() => setShowRunTestModal(false)}
-                className="px-4 py-2 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-100 transition"
-              >
-                Cancel
-              </button>
-
-              <button
-                onClick={() => {
-                  // Validation check before closing modal
-                  const { businessEmail, service, description } = formData;
-
-                  if (
-                    !businessEmail.trim() ||
-                    !service.trim() ||
-                    !description.trim()
-                  ) {
-                    toast.error(
-                      "Please fill all required fields before continuing.",
-                      {
-                        duration: 4000,
-                        style: {
-                          background: "#fff0f0",
-                          color: "#b91c1c",
-                          border: "1px solid #fca5a5",
-                        },
-                      }
-                    );
-                    return;
-                  }
-
-                  setShowRunTestModal(false);
-                  handleRunTest();
-                }}
-                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition"
-              >
-                Generate Test Email
-              </button>
-            </div>
-          </div>
-        </div>
-      )} */}
+   
       {showTemplateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col overflow-hidden transition-all">
@@ -2548,7 +2438,7 @@ const ShopifyScenariosPage = () => {
                 onClick={async () => {
                   try {
                     const res = await fetch(
-                      `https://email-syncing-backend.vercel.app/template/update/${editingTemplate._id}`,
+                      `http://localhost:5000/template/update/${editingTemplate._id}`,
                       {
                         method: "PUT",
                         headers: { "Content-Type": "application/json" },

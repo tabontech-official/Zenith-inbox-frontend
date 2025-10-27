@@ -14,7 +14,7 @@ const Inbox = () => {
       setLoading(true);
       const userId = localStorage.getItem("userid");
       const res = await axios.get(
-        `https://email-syncing-backend.vercel.app/mailhook/getAllEmailsData/${userId}`
+        `http://localhost:5000/mailhook/getAllEmailsData/${userId}`
       );
       const data = res.data?.data?.rootEmails || [];
       setEmails(data);
