@@ -35,7 +35,7 @@ const OutlookConnectionModal = ({ isOpen, onClose, onSuccess }) => {
       // 🔥 Force provider to smtp
       const payload = { ...form, provider: "smtp", userId };
 
-      const res = await fetch("http://localhost:5000/auth/saveSmtpConnection", {
+      const res = await fetch("https://email-syncing-backend.vercel.app/auth/saveSmtpConnection", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -66,7 +66,7 @@ const OutlookConnectionModal = ({ isOpen, onClose, onSuccess }) => {
 
     // 🟢 Open OAuth popup
     const popup = window.open(
-      `http://localhost:5000/auth/outlook?userId=${userId}`,
+      `https://email-syncing-backend.vercel.app/auth/outlook?userId=${userId}`,
       "microsoftConnect",
       "width=600,height=600,left=400,top=150"
     );

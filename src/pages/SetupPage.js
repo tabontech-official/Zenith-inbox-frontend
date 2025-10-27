@@ -61,7 +61,7 @@ const SetupFlow = () => {
     const userId = user?._id;
 
     const popup = window.open(
-      `http://localhost:5000/auth/google?userId=${userId}`,
+      `https://email-syncing-backend.vercel.app/auth/google?userId=${userId}`,
       "gmailConnect",
       "width=600,height=600"
     );
@@ -85,7 +85,7 @@ const SetupFlow = () => {
   const handleMicrosoftConnect = () => {
     const userId = user?._id;
     const popup = window.open(
-      `http://localhost:5000/auth/outlook?userId=${userId}`,
+      `https://email-syncing-backend.vercel.app/auth/outlook?userId=${userId}`,
       "microsoftConnect",
       "width=600,height=600"
     );
@@ -104,7 +104,7 @@ const SetupFlow = () => {
 
   const saveSetupProgress = async (data = {}) => {
     try {
-      const res = await fetch(`http://localhost:5000/auth/setup/${user._id}`, {
+      const res = await fetch(`https://email-syncing-backend.vercel.app/auth/setup/${user._id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
@@ -155,7 +155,7 @@ const SetupFlow = () => {
       const userId = localStorage.getItem("userid");
       const payload = { ...smtpForm, userId, provider: "outlook" };
 
-      const res = await fetch("http://localhost:5000/auth/saveSmtpConnection", {
+      const res = await fetch("https://email-syncing-backend.vercel.app/auth/saveSmtpConnection", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -194,7 +194,7 @@ const SetupFlow = () => {
 
       try {
         const res = await fetch(
-          `http://localhost:5000/mailhook/verification/${user._id}`
+          `https://email-syncing-backend.vercel.app/mailhook/verification/${user._id}`
         );
         const data = await res.json();
 
@@ -273,7 +273,7 @@ const SetupFlow = () => {
   const fetchValidateEmail = async () => {
     try {
       const res = await fetch(
-        `http://localhost:5000/mailhook/validateTest/${user._id}`
+        `https://email-syncing-backend.vercel.app/mailhook/validateTest/${user._id}`
       );
       const data = await res.json();
 
@@ -304,7 +304,7 @@ const SetupFlow = () => {
 
   //     // Send request to trigger test email
   //     const res = await fetch(
-  //       `http://localhost:5000/mailhook/validate-forwarding/${user._id}`,
+  //       `https://email-syncing-backend.vercel.app/mailhook/validate-forwarding/${user._id}`,
   //       {
   //         method: "POST",
   //         headers: { "Content-Type": "application/json" },
@@ -351,7 +351,7 @@ const SetupFlow = () => {
 
       // 1️⃣ Trigger the backend to send a test email
       const res = await fetch(
-        `http://localhost:5000/mailhook/validate-forwarding/${user._id}`,
+        `https://email-syncing-backend.vercel.app/mailhook/validate-forwarding/${user._id}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -423,7 +423,7 @@ const SetupFlow = () => {
     const fetchSetupProgress = async () => {
       try {
         if (!user?._id) return;
-        const res = await fetch(`http://localhost:5000/auth/setup/${user._id}`);
+        const res = await fetch(`https://email-syncing-backend.vercel.app/auth/setup/${user._id}`);
         const data = await res.json();
         if (data.success) setSetupProgress(data.data);
       } catch (err) {
@@ -586,7 +586,7 @@ const SetupFlow = () => {
 
   //     try {
   //       const res = await fetch(
-  //         `http://localhost:5000/mailhook/validateTest/${user._id}`
+  //         `https://email-syncing-backend.vercel.app/mailhook/validateTest/${user._id}`
   //       );
   //       const data = await res.json();
 
@@ -650,7 +650,7 @@ const SetupFlow = () => {
 
       try {
         const res = await fetch(
-          `http://localhost:5000/mailhook/validateTest/${user._id}`
+          `https://email-syncing-backend.vercel.app/mailhook/validateTest/${user._id}`
         );
         const data = await res.json();
 

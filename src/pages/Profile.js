@@ -31,7 +31,7 @@ const Profile = () => {
   const handleSave = async () => {
     try {
       const res = await fetch(
-        `http://localhost:5000/auth/updateUserAndOrganization/${user._id}`,
+        `https://email-syncing-backend.vercel.app/auth/updateUserAndOrganization/${user._id}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },

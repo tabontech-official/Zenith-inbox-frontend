@@ -148,7 +148,7 @@ const ShopifyScenariosPage = () => {
   const fetchConnections = async () => {
     try {
       const res = await fetch(
-        `http://localhost:5000/auth/getConnection/${localStorage.getItem(
+        `https://email-syncing-backend.vercel.app/auth/getConnection/${localStorage.getItem(
           "userid"
         )}`
       );
@@ -172,7 +172,7 @@ const ShopifyScenariosPage = () => {
       try {
         const userId = localStorage.getItem("userid");
         const res = await fetch(
-          `http://localhost:5000/template/all?userId=${userId}`
+          `https://email-syncing-backend.vercel.app/template/all?userId=${userId}`
         );
         const data = await res.json();
 
@@ -230,7 +230,7 @@ const ShopifyScenariosPage = () => {
   //     };
 
   //     const res = await fetch(
-  //       `http://localhost:5000/scenario/detail/${scenarioId}`,
+  //       `https://email-syncing-backend.vercel.app/scenario/detail/${scenarioId}`,
   //       {
   //         method: "PUT",
   //         headers: { "Content-Type": "application/json" },
@@ -265,7 +265,7 @@ const ShopifyScenariosPage = () => {
 
       if (scenarioId) {
         res = await fetch(
-          `http://localhost:5000/scenario/detail/${scenarioId}`,
+          `https://email-syncing-backend.vercel.app/scenario/detail/${scenarioId}`,
           {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
@@ -278,7 +278,7 @@ const ShopifyScenariosPage = () => {
         console.warn(
           "Scenario not found or update failed — creating new one..."
         );
-        res = await fetch(`http://localhost:5000/scenario`, {
+        res = await fetch(`https://email-syncing-backend.vercel.app/scenario`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
@@ -317,7 +317,7 @@ const ShopifyScenariosPage = () => {
       setCompletedSteps([]);
       setIsScenarioUpdated(true);
 
-      const refresh = await fetch("http://localhost:5000/scenario/details", {
+      const refresh = await fetch("https://email-syncing-backend.vercel.app/scenario/details", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: localStorage.getItem("userid") }),
@@ -350,7 +350,7 @@ const ShopifyScenariosPage = () => {
   const handleToggleTemplate = async (templateId, newStatus) => {
     try {
       const res = await fetch(
-        `http://localhost:5000/template/status/${templateId}`,
+        `https://email-syncing-backend.vercel.app/template/status/${templateId}`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -373,7 +373,7 @@ const ShopifyScenariosPage = () => {
   const handleToggleAllTemplates = async (newStatus) => {
     try {
       const res = await fetch(
-        `http://localhost:5000/template/templatestatus/all`,
+        `https://email-syncing-backend.vercel.app/template/templatestatus/all`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -460,7 +460,7 @@ const ShopifyScenariosPage = () => {
   //         return;
   //       }
 
-  //       const res = await fetch("http://localhost:5000/scenario/details", {
+  //       const res = await fetch("https://email-syncing-backend.vercel.app/scenario/details", {
   //         method: "POST",
   //         headers: { "Content-Type": "application/json" },
   //         body: JSON.stringify({ userId }),
@@ -501,7 +501,7 @@ const ShopifyScenariosPage = () => {
           return;
         }
 
-        const res = await fetch("http://localhost:5000/scenario/details", {
+        const res = await fetch("https://email-syncing-backend.vercel.app/scenario/details", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ userId }),
@@ -552,7 +552,7 @@ const ShopifyScenariosPage = () => {
       try {
         const userId = localStorage.getItem("userid");
         const res = await fetch(
-          `http://localhost:5000/template/all?userId=${userId}`
+          `https://email-syncing-backend.vercel.app/template/all?userId=${userId}`
         );
         const data = await res.json();
 
@@ -971,7 +971,7 @@ const ShopifyScenariosPage = () => {
         if (!userId || !showRunTestModal) return;
 
         const res = await fetch(
-          `http://localhost:5000/mailhook/get-test-data/${userId}`
+          `https://email-syncing-backend.vercel.app/mailhook/get-test-data/${userId}`
         );
         const data = await res.json();
 
@@ -1016,7 +1016,7 @@ const ShopifyScenariosPage = () => {
   //   toast.loading("Generating test email...", { id: "test" });
 
   //   try {
-  //     const res = await fetch("http://localhost:5000/mailhook/Run-test-mode", {
+  //     const res = await fetch("https://email-syncing-backend.vercel.app/mailhook/Run-test-mode", {
   //       method: "POST",
   //       headers: { "Content-Type": "application/json" },
   //       body: JSON.stringify({
@@ -1041,7 +1041,7 @@ const ShopifyScenariosPage = () => {
   //       // setShowTemplateModal(true);
   //       const userId = localStorage.getItem("userid");
   //       const res = await fetch(
-  //         `http://localhost:5000/template/alltemplates?userId=${userId}&service=${encodeURIComponent(
+  //         `https://email-syncing-backend.vercel.app/template/alltemplates?userId=${userId}&service=${encodeURIComponent(
   //           formData.service
   //         )}`
   //       );
@@ -1136,7 +1136,7 @@ const ShopifyScenariosPage = () => {
     toast.loading("Generating test email...", { id: "test" });
 
     try {
-      const res = await fetch("http://localhost:5000/mailhook/Run-test-mode", {
+      const res = await fetch("https://email-syncing-backend.vercel.app/mailhook/Run-test-mode", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -1162,7 +1162,7 @@ const ShopifyScenariosPage = () => {
         // ✅ Fetch templates
         const userId = localStorage.getItem("userid");
         const res = await fetch(
-          `http://localhost:5000/template/alltemplates?userId=${userId}&service=${encodeURIComponent(
+          `https://email-syncing-backend.vercel.app/template/alltemplates?userId=${userId}&service=${encodeURIComponent(
             formData.service
           )}`
         );
@@ -1272,7 +1272,7 @@ const ShopifyScenariosPage = () => {
       toast.loading("Fetching test email...", { id: "email" });
 
       const res = await fetch(
-        `http://localhost:5000/mailhook/get-test-email/${userId}`
+        `https://email-syncing-backend.vercel.app/mailhook/get-test-email/${userId}`
       );
       const data = await res.json();
 
@@ -1456,7 +1456,7 @@ const ShopifyScenariosPage = () => {
                           scenarioId || localStorage.getItem("scenarioId");
 
                         const res = await fetch(
-                          `http://localhost:5000/scenario/updateAutomation/${scenarioIdValue}`,
+                          `https://email-syncing-backend.vercel.app/scenario/updateAutomation/${scenarioIdValue}`,
                           {
                             method: "PUT",
                             headers: { "Content-Type": "application/json" },
@@ -2438,7 +2438,7 @@ const ShopifyScenariosPage = () => {
                 onClick={async () => {
                   try {
                     const res = await fetch(
-                      `http://localhost:5000/template/update/${editingTemplate._id}`,
+                      `https://email-syncing-backend.vercel.app/template/update/${editingTemplate._id}`,
                       {
                         method: "PUT",
                         headers: { "Content-Type": "application/json" },

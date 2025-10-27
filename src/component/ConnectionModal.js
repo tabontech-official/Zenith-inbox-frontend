@@ -10,7 +10,7 @@
 
 // //   const handleGoogleSignIn = () => {
 // //     const userId = localStorage.getItem("userid");
-// //     const url = `http://localhost:5000/auth/google?userId=${userId}`;
+// //     const url = `https://email-syncing-backend.vercel.app/auth/google?userId=${userId}`;
 
 // //     const popup = window.open(
 // //       url,
@@ -145,7 +145,7 @@
 //     }
 
 //     const popup = window.open(
-//       `http://localhost:5000/auth/google?userId=${userId}`,
+//       `https://email-syncing-backend.vercel.app/auth/google?userId=${userId}`,
 //       "googleAuth",
 //       "width=600,height=600,left=300,top=150"
 //     );
@@ -282,7 +282,7 @@ const ConnectionModal = ({ isOpen, onClose, onSuccess }) => {
 
     // 🟢 Open the Google OAuth popup
     const popup = window.open(
-      `http://localhost:5000/auth/google?userId=${userId}`,
+      `https://email-syncing-backend.vercel.app/auth/google?userId=${userId}`,
       "googleAuth",
       "width=600,height=600,left=300,top=150"
     );
