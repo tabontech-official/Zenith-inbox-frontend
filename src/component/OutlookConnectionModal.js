@@ -1,14 +1,14 @@
-
 import React, { useState } from "react";
+import toast from "react-hot-toast";
 import { FaMicrosoft } from "react-icons/fa";
 import { FiEye, FiEyeOff, FiX } from "react-icons/fi";
 
 const OutlookConnectionModal = ({ isOpen, onClose, onSuccess }) => {
-  const [connectionType, setConnectionType] = useState("other"); // "other" | "microsoft"
+  const [connectionType, setConnectionType] = useState("other");
   const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({
     name: "My Outlook Connection",
-    provider: "smtp", // ✅ Always default to smtp for 'other'
+    provider: "smtp",
     email: "",
     fullName: "",
     username: "",
@@ -23,7 +23,6 @@ const OutlookConnectionModal = ({ isOpen, onClose, onSuccess }) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // ✅ Manual SMTP connection (provider = "smtp")
   const handleManualSubmit = async () => {
     try {
       const userId = localStorage.getItem("userid");
@@ -32,10 +31,9 @@ const OutlookConnectionModal = ({ isOpen, onClose, onSuccess }) => {
         return;
       }
 
-      // 🔥 Force provider to smtp
       const payload = { ...form, provider: "smtp", userId };
 
-      const res = await fetch("https://email-syncing-backend.vercel.app/auth/saveSmtpConnection", {
+      const res = await fetch("http://localhost:5000/auth/saveSmtpConnection", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -44,16 +42,14 @@ const OutlookConnectionModal = ({ isOpen, onClose, onSuccess }) => {
       if (!res.ok) throw new Error("Failed to save connection");
       const data = await res.json();
 
-      console.log("✅ SMTP Outlook connection saved:", data);
+      console.log("SMTP Outlook connection saved:", data);
       onSuccess?.(data);
       onClose();
     } catch (err) {
       console.error("Error saving connection:", err);
-      alert("❌ Failed to save connection");
+      toast.error("Failed to save connection");
     }
   };
-
-  // ✅ Microsoft OAuth (popup-based)
   const handleMicrosoftOAuth = () => {
     const userId = localStorage.getItem("userid");
     if (!userId) {
@@ -61,39 +57,34 @@ const OutlookConnectionModal = ({ isOpen, onClose, onSuccess }) => {
       return;
     }
 
-    // 🟣 Close modal immediately after click
+    const activeModule =
+      localStorage.getItem("activeShopifyModule") || "Initial Email";
+    localStorage.setItem("activeShopifyModule", activeModule);
+
+    try {
+      const routerBranches = JSON.parse(
+        localStorage.getItem("routerBranchesState") || "[]"
+      );
+      localStorage.setItem(
+        "shopifyScenarioState",
+        JSON.stringify({ routerBranches })
+      );
+      console.log(
+        " Saved routerBranches before Microsoft OAuth:",
+        routerBranches
+      );
+    } catch (err) {
+      console.error(" Error saving routerBranches before redirect:", err);
+    }
+
     onClose();
 
-    // 🟢 Open OAuth popup
-    const popup = window.open(
-      `https://email-syncing-backend.vercel.app/auth/outlook?userId=${userId}`,
-      "microsoftConnect",
-      "width=600,height=600,left=400,top=150"
-    );
-
-    const handleMessage = (event) => {
-      if (event.data?.type === "microsoft-auth-success") {
-        console.log("✅ Microsoft OAuth connected successfully!");
-        onSuccess?.(event.data);
-        window.removeEventListener("message", handleMessage);
-        popup.close();
-      }
-    };
-
-    window.addEventListener("message", handleMessage);
-
-    // Cleanup listener on window unload
-    const cleanup = () => {
-      window.removeEventListener("message", handleMessage);
-      if (popup && !popup.closed) popup.close();
-    };
-    window.addEventListener("beforeunload", cleanup);
+    window.location.href = `http://localhost:5000/auth/outlook?userId=${userId}`;
   };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-xl w-[440px] overflow-hidden">
-        {/* Header */}
         <div className="flex items-center justify-between px-5 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
           <div className="flex items-center space-x-2">
             <FaMicrosoft className="text-white text-xl" />
@@ -104,9 +95,7 @@ const OutlookConnectionModal = ({ isOpen, onClose, onSuccess }) => {
           </button>
         </div>
 
-        {/* Body */}
         <div className="p-6 space-y-5">
-          {/* Connection Type */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Connection Type
@@ -121,7 +110,6 @@ const OutlookConnectionModal = ({ isOpen, onClose, onSuccess }) => {
             </select>
           </div>
 
-          {/* 🟩 Manual SMTP Form */}
           {connectionType === "other" && (
             <>
               <div>
@@ -234,11 +222,11 @@ const OutlookConnectionModal = ({ isOpen, onClose, onSuccess }) => {
             </>
           )}
 
-          {/* 🟦 Microsoft OAuth Section */}
           {connectionType === "microsoft" && (
             <div className="flex flex-col items-center justify-center py-6">
               <p className="text-sm text-gray-600 mb-3 text-center">
-                Connect your Outlook (Microsoft 365) account securely using OAuth.
+                Connect your Outlook (Microsoft 365) account securely using
+                OAuth.
               </p>
               <button
                 onClick={handleMicrosoftOAuth}

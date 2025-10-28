@@ -63,7 +63,7 @@ const SetupFlow = () => {
     const userId = user?._id;
 
     const popup = window.open(
-      `https://email-syncing-backend.vercel.app/auth/google?userId=${userId}`,
+      `http://localhost:5000/auth/google?userId=${userId}`,
       "gmailConnect",
       "width=600,height=600"
     );
@@ -71,14 +71,13 @@ const SetupFlow = () => {
     const checkPopup = setInterval(() => {
       if (popup.closed) {
         clearInterval(checkPopup);
-        // When popup closes, check the URL query for success
         const params = new URLSearchParams(window.location.search);
         const status = params.get("status");
         if (status === "success") {
-          console.log("✅ Gmail connected successfully!");
+          console.log("Gmail connected successfully!");
           setStep(5);
         } else if (status === "error") {
-          alert("❌ Failed to connect Gmail. Please try again.");
+          alert("Failed to connect Gmail. Please try again.");
         }
       }
     }, 1000);
@@ -87,7 +86,7 @@ const SetupFlow = () => {
   const handleMicrosoftConnect = () => {
     const userId = user?._id;
     const popup = window.open(
-      `https://email-syncing-backend.vercel.app/auth/outlook?userId=${userId}`,
+      `http://localhost:5000/auth/outlook?userId=${userId}`,
       "microsoftConnect",
       "width=600,height=600"
     );
@@ -106,7 +105,7 @@ const SetupFlow = () => {
 
   const saveSetupProgress = async (data = {}) => {
     try {
-      const res = await fetch(`https://email-syncing-backend.vercel.app/auth/setup/${user._id}`, {
+      const res = await fetch(`http://localhost:5000/auth/setup/${user._id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -141,7 +140,7 @@ const SetupFlow = () => {
     const stepToUpdate = isSkipped ? step : nextStep;
 
     try {
-      const res = await fetch(`https://email-syncing-backend.vercel.app/auth/setup/${user._id}`, {
+      const res = await fetch(`http://localhost:5000/auth/setup/${user._id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -190,7 +189,7 @@ const SetupFlow = () => {
       const userId = localStorage.getItem("userid");
       const payload = { ...smtpForm, userId, provider: "outlook" };
 
-      const res = await fetch("https://email-syncing-backend.vercel.app/auth/saveSmtpConnection", {
+      const res = await fetch("http://localhost:5000/auth/saveSmtpConnection", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -208,101 +207,7 @@ const SetupFlow = () => {
   const [verificationEmail, setVerificationEmail] = useState(null);
   const [retryKey, setRetryKey] = useState(0);
 
-  // useEffect(() => {
-  //   if (step !== 3 || !user?._id) return;
-
-  //   // reset all states
-  //   setValidated(false);
-  //   setValidating(false);
-  //   setShowValidateButton(false);
-  //   setValidationPhase(true);
-  //   setVerificationEmail(null);
-
-  //   let attempts = 0;
-  //   const maxAttempts = 5;
-
-  //   const fetchVerification = async () => {
-  //     attempts++;
-  //     console.log(
-  //       `🔁 Checking verification attempt ${attempts}/${maxAttempts}`
-  //     );
-
-  //     try {
-  //       const res = await fetch(
-  //         `https://email-syncing-backend.vercel.app/mailhook/verification/${user._id}`
-  //       );
-  //       const data = await res.json();
-
-  //       if (data.success && data.data) {
-  //         const email = data.data;
-  //         let autoEmail = "";
-  //         let isGmailVerification = false;
-  //         let cleanedBody = email.textBody || "";
-
-  //         // Gmail forwarding confirmation detection
-  //         if (
-  //           email.sender
-  //             ?.toLowerCase()
-  //             .includes("forwarding-noreply@google.com") &&
-  //           email.subject
-  //             ?.toLowerCase()
-  //             .includes("has requested to automatically forward")
-  //         ) {
-  //           isGmailVerification = true;
-  //           const match =
-  //             email.subject.match(/([\w._%+-]+@gmail\.com)/i) ||
-  //             email.textBody.match(/([\w._%+-]+@gmail\.com)/i);
-  //           if (match) autoEmail = match[1];
-
-  //           cleanedBody =
-  //             "📩 Gmail forwarding request detected.<br/><br/>Please open Gmail and click the verification link in your inbox to confirm forwarding.<br/><br/>Once confirmed, return here to validate.";
-  //         }
-
-  //         cleanedBody = cleanedBody.replace(/\n/g, "<br/>");
-
-  //         // ✅ Verification email found — stop loader and still show input
-  //         setVerificationEmail({
-  //           ...email,
-  //           toEmail: autoEmail || email.toEmail || "",
-  //           isGmailVerification,
-  //           formattedBody: cleanedBody,
-  //         });
-
-  //         setValidationPhase(false); // stop loader
-  //         setShowValidateButton(true); // 👈 always show input, even when success
-  //         clearInterval(intervalId);
-  //         return;
-  //       }
-
-  //       // ❌ No email yet
-  //       if (attempts >= maxAttempts) {
-  //         clearInterval(intervalId);
-  //         setValidationPhase(false); // stop loader
-  //         setShowValidateButton(true); // show input
-  //         setVerificationEmail({
-  //           toEmail: "",
-  //           formattedBody: "",
-  //           isGmailVerification: false,
-  //           sender: "",
-  //           subject: "",
-  //           date: "",
-  //         });
-  //       }
-  //     } catch (err) {
-  //       console.error("Error fetching verification email:", err);
-  //       if (attempts >= maxAttempts) {
-  //         clearInterval(intervalId);
-  //         setValidationPhase(false);
-  //         setShowValidateButton(true);
-  //       }
-  //     }
-  //   };
-
-  //   const intervalId = setInterval(fetchVerification, 10000);
-  //   fetchVerification(); // run immediately
-
-  //   return () => clearInterval(intervalId);
-  // }, [step, user, retryKey]);
+ 
   useEffect(() => {
     if (step !== 3 || !user?._id) return;
 
@@ -315,7 +220,7 @@ const SetupFlow = () => {
 
     let attempts = 0;
     const maxAttempts = 5;
-    const loaderMinDuration = 10000; // 10 seconds minimum loader time
+    const loaderMinDuration = 10000; 
     const loaderStartTime = Date.now();
 
     const fetchVerification = async () => {
@@ -326,7 +231,7 @@ const SetupFlow = () => {
 
       try {
         const res = await fetch(
-          `https://email-syncing-backend.vercel.app/mailhook/verification/${user._id}`
+          `http://localhost:5000/mailhook/verification/${user._id}`
         );
         const data = await res.json();
 
@@ -336,7 +241,6 @@ const SetupFlow = () => {
           let isGmailVerification = false;
           let cleanedBody = email.textBody || "";
 
-          // Gmail forwarding confirmation detection
           if (
             email.sender
               ?.toLowerCase()
@@ -355,7 +259,6 @@ const SetupFlow = () => {
               "📩 Gmail forwarding request detected.<br/><br/>Please open Gmail and click the verification link in your inbox to confirm forwarding.<br/><br/>Once confirmed, return here to validate.";
           }
 
-          // Convert URLs into clickable links
           cleanedBody = cleanedBody
             .replace(
               /(https?:\/\/[^\s<]+)/g,
@@ -363,7 +266,6 @@ const SetupFlow = () => {
             )
             .replace(/\n/g, "<br/>");
 
-          // ✅ Save verification data
           setVerificationEmail({
             ...email,
             toEmail: autoEmail || email.toEmail || "",
@@ -373,21 +275,19 @@ const SetupFlow = () => {
 
           clearInterval(intervalId);
 
-          // 🔥 Maintain loader for at least 10s total
           const elapsed = Date.now() - loaderStartTime;
           const remaining = Math.max(loaderMinDuration - elapsed, 0);
 
           console.log(`⏱ Waiting ${remaining}ms before showing results...`);
 
           setTimeout(() => {
-            setValidationPhase(false); // stop loader
-            setShowValidateButton(true); // show input / message
+            setValidationPhase(false); 
+            setShowValidateButton(true);
           }, remaining);
 
           return;
         }
 
-        // ❌ No email yet
         if (attempts >= maxAttempts) {
           clearInterval(intervalId);
           setValidationPhase(false);
@@ -412,7 +312,7 @@ const SetupFlow = () => {
     };
 
     const intervalId = setInterval(fetchVerification, 10000);
-    fetchVerification(); // run immediately
+    fetchVerification();
 
     return () => clearInterval(intervalId);
   }, [step, user, retryKey]);
@@ -420,7 +320,7 @@ const SetupFlow = () => {
   const fetchValidateEmail = async () => {
     try {
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/mailhook/validateTest/${user._id}`
+        `http://localhost:5000/mailhook/validateTest/${user._id}`
       );
       const data = await res.json();
 
@@ -436,53 +336,8 @@ const SetupFlow = () => {
       console.error("Error fetching validation email:", err);
     }
   };
-  // const handleValidateForwarding = async () => {
-  //   try {
-  //     if (!verificationEmail?.toEmail?.trim()) {
-  //       toast.error("Please enter a valid email address.");
-  //       return;
-  //     }
 
-  //     // Reset states
-  //     setValidating(true);
-  //     setValidated(false);
-  //     setValidationFailed(false);
-  //     setValidationPhase(true); // 🔹 Immediately show loader (MailhookWaitingTimer)
-
-  //     // Send request to trigger test email
-  //     const res = await fetch(
-  //       `https://email-syncing-backend.vercel.app/mailhook/validate-forwarding/${user._id}`,
-  //       {
-  //         method: "POST",
-  //         headers: { "Content-Type": "application/json" },
-  //         body: JSON.stringify({ toEmail: verificationEmail.toEmail }),
-  //       }
-  //     );
-
-  //     const data = await res.json();
-
-  //     if (data.success) {
-  //       toast.success(
-  //         "Validation started. Please wait while we confirm your forwarding setup."
-  //       );
-
-  //       // 🔁 Start checking every 10s for the test email
-  //       startValidationLoop(); // (your updated function with max 5 attempts)
-  //     } else {
-  //       toast.error(
-  //         data.message ||
-  //           "Failed to start validation. Please make sure your forwarding setup is correct."
-  //       );
-  //       setValidating(false);
-  //       setValidationPhase(false);
-  //     }
-  //   } catch (err) {
-  //     console.error("Error during validation process:", err);
-  //     toast.error("Something went wrong while validating connection.");
-  //     setValidating(false);
-  //     setValidationPhase(false);
-  //   }
-  // };
+ 
   const handleValidateForwarding = async () => {
     try {
       if (!verificationEmail?.toEmail?.trim()) {
@@ -490,15 +345,13 @@ const SetupFlow = () => {
         return;
       }
 
-      // Reset states before starting
       setValidating(true);
       setValidated(false);
       setValidationFailed(false);
-      setValidationPhase(true); // show loader
+      setValidationPhase(true);
 
-      // 1️⃣ Trigger the backend to send a test email
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/mailhook/validate-forwarding/${user._id}`,
+        `http://localhost:5000/mailhook/validate-forwarding/${user._id}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -511,7 +364,6 @@ const SetupFlow = () => {
       if (data.success) {
         toast.success("Validation started. Checking for forwarded email...");
 
-        // 2️⃣ Try up to 5 times to confirm forwarded email
         let attempts = 0;
         const maxAttempts = 5;
 
@@ -521,7 +373,6 @@ const SetupFlow = () => {
 
           const found = await fetchValidateEmail();
           if (found) {
-            // ✅ success handled inside fetchValidateEmail
             return;
           }
 
@@ -536,7 +387,7 @@ const SetupFlow = () => {
           }
         };
 
-        checkLoop(); // start checking
+        checkLoop(); 
       } else {
         toast.error(
           data.message ||
@@ -573,7 +424,7 @@ const SetupFlow = () => {
     const fetchSetupProgress = async () => {
       try {
         if (!user?._id) return;
-        const res = await fetch(`https://email-syncing-backend.vercel.app/auth/setup/${user._id}`);
+        const res = await fetch(`http://localhost:5000/auth/setup/${user._id}`);
         const data = await res.json();
         if (data.success) setSetupProgress(data.data);
       } catch (err) {
@@ -719,69 +570,7 @@ const SetupFlow = () => {
   };
   const [validationPhase, setValidationPhase] = useState(false);
   const [validationFailed, setValidationFailed] = useState(false);
-  // const startValidationLoop = async () => {
-  //   let attempts = 0;
-  //   const maxAttempts = 5;
-  //   let stopped = false;
-  //   let timeoutId = null;
-
-  //   setValidationFailed(false);
-  //   setValidationPhase(true);
-  //   setValidated(false);
-
-  //   const checkValidation = async () => {
-  //     if (stopped) return;
-  //     attempts++;
-  //     console.log(`Validation check #${attempts}`);
-
-  //     try {
-  //       const res = await fetch(
-  //         `https://email-syncing-backend.vercel.app/mailhook/validateTest/${user._id}`
-  //       );
-  //       const data = await res.json();
-
-  //       if (data.success) {
-  //         console.log("✅ Test email found:", data.data);
-  //         stopped = true;
-  //         clearTimeout(timeoutId);
-  //         setValidated(true);
-  //         setValidating(false);
-  //         setValidationPhase(false);
-  //         toast.success("Forwarding verified successfully!");
-  //         return;
-  //       }
-
-  //       if (attempts < maxAttempts && !stopped) {
-  //         console.log("⏳ Not received yet — checking again in 10s...");
-  //         timeoutId = setTimeout(checkValidation, 10000);
-  //       } else if (!stopped) {
-  //         console.log("❌ Validation failed after 5 attempts.");
-  //         stopped = true;
-  //         clearTimeout(timeoutId);
-  //         setValidating(false);
-  //         setValidationPhase(false);
-  //         setValidationFailed(true);
-  //         toast.error(
-  //           "Test email not received. Please confirm your forwarding setup."
-  //         );
-  //       }
-  //     } catch (err) {
-  //       console.error("Error checking validation:", err);
-  //       if (attempts < maxAttempts && !stopped) {
-  //         timeoutId = setTimeout(checkValidation, 10000);
-  //       } else if (!stopped) {
-  //         stopped = true;
-  //         clearTimeout(timeoutId);
-  //         setValidating(false);
-  //         setValidationPhase(false);
-  //         setValidationFailed(true);
-  //       }
-  //     }
-  //   };
-
-  //   checkValidation();
-  // };
-
+ 
   const startValidationLoop = async () => {
     let attempts = 0;
     const maxAttempts = 5;
@@ -791,7 +580,7 @@ const SetupFlow = () => {
     setValidationFailed(false);
     setValidationPhase(true);
     setValidated(false);
-    setShowValidateButton(false); // hide input while checking
+    setShowValidateButton(false); 
 
     const checkValidation = async () => {
       if (stopped) return;
@@ -800,12 +589,12 @@ const SetupFlow = () => {
 
       try {
         const res = await fetch(
-          `https://email-syncing-backend.vercel.app/mailhook/validateTest/${user._id}`
+          `http://localhost:5000/mailhook/validateTest/${user._id}`
         );
         const data = await res.json();
 
         if (data.success) {
-          console.log("✅ Test email found:", data.data);
+          console.log(" Test email found:", data.data);
           stopped = true;
           clearTimeout(timeoutId);
           setValidated(true);
@@ -816,7 +605,6 @@ const SetupFlow = () => {
           return;
         }
 
-        // ❌ Not verified yet
         if (attempts < maxAttempts && !stopped) {
           console.log("⏳ Not received yet — checking again in 10s...");
           timeoutId = setTimeout(checkValidation, 10000);
@@ -853,7 +641,6 @@ const SetupFlow = () => {
   const handleRetryValidation = () => {
     console.log("🔁 Retrying mailhook validation check...");
 
-    // Reset states
     setValidationFailed(false);
     setValidated(false);
     setValidating(false);
@@ -884,7 +671,6 @@ const SetupFlow = () => {
 
       {step === 1 && (
         <div className="bg-white shadow-md rounded-xl p-8 sm:p-10 max-w-lg w-[90%] text-center relative">
-          {/* Skip Button (bottom-left corner) */}
           <span
             onClick={async () => {
               await saveSetupProgress({ skipped: true, stepCompleted: 1 });

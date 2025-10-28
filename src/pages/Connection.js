@@ -37,7 +37,7 @@ const ConnectionsPage = () => {
       if (!userId) return setLoading(false);
       setLoading(true);
       const res = await axios.get(
-        `https://email-syncing-backend.vercel.app/auth/getConnection/${userId}`
+        `http://localhost:5000/auth/getConnection/${userId}`
       );
       setConnections(res.data || []);
     } catch (err) {
@@ -62,7 +62,7 @@ const ConnectionsPage = () => {
     setDeleting(true);
     try {
       await axios.delete(
-        `https://email-syncing-backend.vercel.app/auth/deleteConnection/${connectionToDelete._id}`
+        `http://localhost:5000/auth/deleteConnection/${connectionToDelete._id}`
       );
       toast.success("Connection deleted successfully!");
       setConnections((prev) =>
@@ -199,7 +199,7 @@ const ConnectionsPage = () => {
                             );
 
                             const res = await fetch(
-                              `https://email-syncing-backend.vercel.app/mailhook/verify`,
+                              `http://localhost:5000/mailhook/verify`,
                               {
                                 method: "POST",
                                 headers: { "Content-Type": "application/json" },

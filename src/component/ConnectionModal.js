@@ -7,6 +7,31 @@ const ConnectionModal = ({ isOpen, onClose, onSuccess }) => {
     "My Google Restricted Connection"
   );
 
+  // const handleGoogleSignIn = () => {
+  //   const userId = localStorage.getItem("userid");
+  //   if (!userId) {
+  //     alert("User not found. Please log in again.");
+  //     return;
+  //   }
+
+  //   // ✅ Save currently open module (so we can reopen it after redirect)
+  //   const activeModule =
+  //     localStorage.getItem("activeShopifyModule") || "Initial Email";
+  //   localStorage.setItem("activeShopifyModule", activeModule);
+
+  //   // ✅ Save scenario builder state (to restore after redirect)
+  //   const routerBranches = JSON.parse(
+  //     localStorage.getItem("routerBranchesState") || "[]"
+  //   );
+  //   localStorage.setItem(
+  //     "shopifyScenarioState",
+  //     JSON.stringify({ routerBranches })
+  //   );
+
+  //   // ✅ Redirect the current tab (no popup)
+  //   window.location.href = `http://localhost:5000/auth/google?userId=${userId}`;
+  // };
+
   const handleGoogleSignIn = () => {
     const userId = localStorage.getItem("userid");
     if (!userId) {
@@ -14,15 +39,30 @@ const ConnectionModal = ({ isOpen, onClose, onSuccess }) => {
       return;
     }
 
-    const popup = window.open(
-      `https://email-syncing-backend.vercel.app/auth/google?userId=${userId}`,
-      "googleAuth",
-      "width=600,height=600,left=300,top=150"
-    );
+    // ✅ Save currently open module name
+    const activeModule =
+      localStorage.getItem("activeShopifyModule") || "Initial Email";
+    localStorage.setItem("activeShopifyModule", activeModule);
 
-    window.googlePopup = popup;
+    // ✅ Save current routerBranches before redirect
+    try {
+      const routerBranches = JSON.parse(
+        localStorage.getItem("routerBranchesState") || "[]"
+      );
+      localStorage.setItem(
+        "shopifyScenarioState",
+        JSON.stringify({ routerBranches })
+      );
+      console.log(
+        "💾 Saved routerBranches before Google OAuth:",
+        routerBranches
+      );
+    } catch (err) {
+      console.error("❌ Error saving routerBranches before redirect:", err);
+    }
 
-    onClose();
+    // ✅ Redirect the current tab
+    window.location.href = `http://localhost:5000/auth/google?userId=${userId}`;
   };
 
   useEffect(() => {

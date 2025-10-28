@@ -113,6 +113,25 @@ const ShopifyScenariosPage = () => {
   const [editingTemplate, setEditingTemplate] = useState(null);
   const [editContent, setEditContent] = useState("");
 
+
+const savedShopifyState = localStorage.getItem("shopifyScenarioState");
+if (savedShopifyState && routerBranches.length === 0) {
+  try {
+    const parsed = JSON.parse(savedShopifyState);
+    if (parsed.routerBranches?.length > 0) {
+      console.log(
+        "Pre-restoring routerBranches before React mounts:",
+        parsed.routerBranches
+      );
+
+      routerBranches.push(...parsed.routerBranches);
+      localStorage.setItem("skipScenarioFetch", "true");
+    }
+  } catch (err) {
+    console.error(" Failed pre-restore routerBranches:", err);
+  }
+}
+
   useEffect(() => {
     if (user) {
       setLoading(false);
@@ -148,7 +167,7 @@ const ShopifyScenariosPage = () => {
   const fetchConnections = async () => {
     try {
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/auth/getConnection/${localStorage.getItem(
+        `http://localhost:5000/auth/getConnection/${localStorage.getItem(
           "userid"
         )}`
       );
@@ -201,7 +220,7 @@ const ShopifyScenariosPage = () => {
 
       if (scenarioId) {
         res = await fetch(
-          `https://email-syncing-backend.vercel.app/scenario/detail/${scenarioId}`,
+          `http://localhost:5000/scenario/detail/${scenarioId}`,
           {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
@@ -214,7 +233,7 @@ const ShopifyScenariosPage = () => {
         console.warn(
           "Scenario not found or update failed — creating new one..."
         );
-        res = await fetch(`https://email-syncing-backend.vercel.app/scenario`, {
+        res = await fetch(`http://localhost:5000/scenario`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
@@ -253,7 +272,7 @@ const ShopifyScenariosPage = () => {
       setCompletedSteps([]);
       setIsScenarioUpdated(true);
 
-      const refresh = await fetch("https://email-syncing-backend.vercel.app/scenario/details", {
+      const refresh = await fetch("http://localhost:5000/scenario/details", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: localStorage.getItem("userid") }),
@@ -286,7 +305,7 @@ const ShopifyScenariosPage = () => {
   const handleToggleTemplate = async (templateId, newStatus) => {
     try {
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/template/status/${templateId}`,
+        `http://localhost:5000/template/status/${templateId}`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -309,7 +328,7 @@ const ShopifyScenariosPage = () => {
   const handleToggleAllTemplates = async (newStatus) => {
     try {
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/template/templatestatus/all`,
+        `http://localhost:5000/template/templatestatus/all`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -366,58 +385,44 @@ const ShopifyScenariosPage = () => {
     );
   }, []);
 
+ 
   useEffect(() => {
-    const fetchScenario = async () => {
-      try {
-        const userId = localStorage.getItem("userid");
-        if (!userId) {
-          console.error("No userId found in localStorage");
-          return;
-        }
+  if (localStorage.getItem("skipScenarioFetch") === "true") {
+    console.log("🛑 Skipping fetchScenario — local restore already done");
+    localStorage.removeItem("skipScenarioFetch");
+    return;
+  }
 
-        const res = await fetch("https://email-syncing-backend.vercel.app/scenario/details", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId }),
-        });
+  const fetchScenario = async () => {
+    try {
+      const userId = localStorage.getItem("userid");
+      if (!userId) return;
 
-        const data = await res.json();
+      const res = await fetch("http://localhost:5000/scenario/details", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      });
 
-        if (data) {
-          setScenarioId(data._id);
-          setScenarioName(data.name || "");
-          setScenarioDescription(data.description || "");
-
-          setRouterBranches(
-            data.routerBranches?.length > 0
-              ? data.routerBranches
-              : [
-                  {
-                    id: Date.now(),
-                    hasModule: false,
-                    condition: null,
-                    modules: [],
-                  },
-                ]
-          );
-
-          if (data.scenarioActive === true) {
-            setAutomationOn(true);
-            localStorage.setItem("scenarioActive", "true");
-          } else {
-            setAutomationOn(false);
-            localStorage.removeItem("scenarioActive");
-          }
-
-          console.log("📊 Scenario Active:", data.scenarioActive);
-        }
-      } catch (err) {
-        console.error("Error fetching scenario:", err);
+      const data = await res.json();
+      if (data && !localStorage.getItem("shopifyScenarioState")) {
+        setScenarioId(data._id);
+        setScenarioName(data.name || "");
+        setScenarioDescription(data.description || "");
+        setRouterBranches(
+          data.routerBranches?.length > 0
+            ? data.routerBranches
+            : [{ id: Date.now(), hasModule: false, condition: null, modules: [] }]
+        );
+        console.log("Loaded scenario from backend:", data.routerBranches);
       }
-    };
+    } catch (err) {
+      console.error("Error fetching scenario:", err);
+    }
+  };
 
-    fetchScenario();
-  }, []);
+  fetchScenario();
+}, []);
 
   const [allActive, setAllActive] = useState(false);
 
@@ -465,8 +470,8 @@ const ShopifyScenariosPage = () => {
         bcc: bccList,
         emailType: selectedAppType || selectedApp?.name || "",
         ...(isDelay
-          ? { delayValue: delayValue || "", delayUnit: delayUnit || "" } // ✅ include only if Delay
-          : {}), // ✅ remove delay fields from non-delay modules
+          ? { delayValue: delayValue || "", delayUnit: delayUnit || "" } 
+          : {}), 
       };
 
       if (editingModuleId) {
@@ -544,6 +549,59 @@ const ShopifyScenariosPage = () => {
   };
 
   const [completedSteps, setCompletedSteps] = useState([]);
+useEffect(() => {
+  const params = new URLSearchParams(window.location.search);
+  const googleSuccess = params.get("google-auth-success");
+  const microsoftSuccess = params.get("microsoft-auth-success");
+
+  if (googleSuccess === "true" || microsoftSuccess === "true") {
+    const provider = googleSuccess === "true" ? "Gmail" : "Outlook";
+    toast.success(`${provider} connected successfully!`);
+
+    const savedState = localStorage.getItem("shopifyScenarioState");
+    if (savedState) {
+      try {
+        const parsed = JSON.parse(savedState);
+        if (parsed.routerBranches?.length > 0) {
+          setRouterBranches(parsed.routerBranches);
+          localStorage.setItem("skipScenarioFetch", "true");
+        } else {
+        }
+      } catch (err) {
+      }
+      localStorage.removeItem("shopifyScenarioState");
+    }
+
+    const lastModule = localStorage.getItem("activeShopifyModule");
+
+    fetchConnections().then(() => {
+      setOpen(true);
+
+      if (lastModule) {
+        const modules = {
+          "Initial Email": "Initial Email",
+          "First Follow-up": "First Follow-up",
+          "Second Follow-up": "Second Follow-up",
+        };
+        const name = modules[lastModule];
+        if (name) {
+          setSelectedApp({
+            name: "Gmail",
+            displayName: name,
+            color: "bg-red-500",
+            icon: "Gmail",
+            defaultTemplate: name,
+          });
+          setSelectedTemplate(name);
+        }
+      }
+    });
+
+    localStorage.removeItem("activeShopifyModule");
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }
+}, []);
+
 
   const FlowNode = ({
     icon: Icon,
@@ -763,12 +821,11 @@ const ShopifyScenariosPage = () => {
         if (!userId || !showRunTestModal) return;
 
         const res = await fetch(
-          `https://email-syncing-backend.vercel.app/mailhook/get-test-data/${userId}`
+          `http://localhost:5000/mailhook/get-test-data/${userId}`
         );
         const data = await res.json();
 
         if (data.success && data.data) {
-          console.log("✅ Test data loaded:", data.data);
 
           setFormData({
             fullName: data.data.fullName || "Dummy Customer",
@@ -777,7 +834,7 @@ const ShopifyScenariosPage = () => {
             country: data.data.country || "",
             service: data.data.service || "",
             budget: data.data.budget || "",
-            description: data.data.helpDescription || "", // 🟢 show in description box
+            description: data.data.helpDescription || "", 
           });
         } else {
           console.log("ℹ️ No previous test data found for this user.");
@@ -792,203 +849,11 @@ const ShopifyScenariosPage = () => {
     }
   }, [showRunTestModal]);
 
-  // const handleRunTest = async () => {
-  //   const { businessEmail, service, description } = formData;
-
-  //   if (!businessEmail?.trim() || !service?.trim() || !description?.trim()) {
-  //     toast.error("Please fill all required fields before running the test.", {
-  //       duration: 4000,
-  //       style: {
-  //         background: "#fff0f0",
-  //         color: "#b91c1c",
-  //         border: "1px solid #fca5a5",
-  //       },
-  //     });
-  //     return;
-  //   }
-  //   try {
-  //     const userId = localStorage.getItem("userid");
-
-  //     const res = await fetch(
-  //       `https://email-syncing-backend.vercel.app/template/alltemplates/query?userId=${userId}&service=${encodeURIComponent(
-  //         service
-  //       )}`
-  //     );
-  //     const data = await res.json();
-
-  //     if (!data.success) {
-  //       toast.error("Failed to fetch templates for this service.");
-  //       return;
-  //     }
-
-  //     const allTemplates = data.data || [];
-
-  //     const hasInactiveTemplates = allTemplates.some((t) => !t.active);
-
-  //     if (hasInactiveTemplates) {
-  //       setTemplateList(allTemplates);
-  //       setShowTemplateModal(true);
-
-  //       toast.error(
-  //         "Please activate these templates before running the test.",
-  //         {
-  //           duration: 5000,
-  //           style: {
-  //             background: "#fff0f0",
-  //             color: "#b91c1c",
-  //             border: "1px solid #fca5a5",
-  //           },
-  //         }
-  //       );
-
-  //       return;
-  //     }
-  //   } catch (err) {
-  //     console.error("Error checking template status:", err);
-  //     toast.error("Error checking template status.");
-  //   }
-
-  //   if (!isScenarioUpdated) {
-  //     toast.error("Please update the scenario before running the test.", {
-  //       duration: 5000,
-  //       style: {
-  //         background: "#fff0f0",
-  //         color: "#b91c1c",
-  //         border: "1px solid #fca5a5",
-  //       },
-  //     });
-  //     return;
-  //   }
-
-  //   toast.loading("Generating test email...", { id: "test" });
-
-  //   try {
-  //     const res = await fetch("https://email-syncing-backend.vercel.app/mailhook/Run-test-mode", {
-  //       method: "POST",
-  //       headers: { "Content-Type": "application/json" },
-  //       body: JSON.stringify({
-  //         userId: localStorage.getItem("userid"),
-  //         fullName: formData.fullName,
-  //         businessEmail: formData.businessEmail,
-  //         storeName: formData.storeName,
-  //         country: formData.country,
-  //         service: formData.service,
-  //         budget: formData.budget,
-  //         helpDescription: formData.description,
-  //       }),
-  //     });
-
-  //     const data = await res.json();
-  //     toast.dismiss("test");
-
-  //     if (data.success) {
-  //       toast.success("Test completed successfully!");
-  //       setShowValidation(true);
-  //       setSelectedServiceForTemplates(formData.service);
-
-  //       const userId = localStorage.getItem("userid");
-  //       const res = await fetch(
-  //         `https://email-syncing-backend.vercel.app/template/alltemplates?userId=${userId}&service=${encodeURIComponent(
-  //           formData.service
-  //         )}`
-  //       );
-  //       const templates = await res.json();
-  //       setTemplateList(Array.isArray(templates.data) ? templates.data : []);
-
-  //       const updatedValidation = [];
-  //       let previousPassed = true;
-
-  //       updatedValidation.push({ id: "webhook", passed: true });
-  //       updatedValidation.push({ id: "router", passed: true });
-  //       updatedValidation.push({ id: "template", passed: true });
-
-  //       for (
-  //         let branchIndex = 0;
-  //         branchIndex < routerBranches.length;
-  //         branchIndex++
-  //       ) {
-  //         const branch = routerBranches[branchIndex];
-
-  //         for (
-  //           let moduleIndex = 0;
-  //           moduleIndex < branch.modules.length;
-  //           moduleIndex++
-  //         ) {
-  //           const m = branch.modules[moduleIndex];
-  //           let passed = true;
-
-  //           const appName = (m.app?.name || "").toLowerCase();
-  //           const conn = m.connectionId ? m.connectionId.toString().trim() : "";
-
-  //           if (appName.includes("webhook") || appName.includes("router")) {
-  //             passed = true;
-  //           } else if (appName.includes("delay")) {
-  //             passed = previousPassed;
-  //           } else if (
-  //             appName.includes("gmail") ||
-  //             appName.includes("email") ||
-  //             appName.includes("follow") ||
-  //             appName.includes("initial")
-  //           ) {
-  //             const hasValidConnection =
-  //               conn !== "" &&
-  //               conn !== "(empty)" &&
-  //               conn !== "null" &&
-  //               conn !== "undefined";
-
-  //             passed = hasValidConnection && previousPassed;
-
-  //             if (!hasValidConnection) {
-  //               console.warn(
-  //                 ` Module "${m.app.name}" in Branch ${
-  //                   branchIndex + 1
-  //                 } is missing connectionId`
-  //               );
-  //             }
-  //           }
-
-  //           updatedValidation.push({ id: m.id, passed });
-  //           previousPassed = passed;
-  //         }
-  //       }
-
-  //       const failedModules = updatedValidation.filter((v) => !v.passed);
-  //       if (failedModules.length > 0) {
-  //         toast.error(
-  //           "Some modules have missing connections. Please select connections in those modules and then run the test again.",
-  //           {
-  //             duration: 5000,
-  //             style: {
-  //               background: "#fff0f0",
-  //               color: "#b91c1c",
-  //               border: "1px solid #fca5a5",
-  //             },
-  //           }
-  //         );
-
-  //         console.warn(
-  //           " Test failed — Missing module connections detected:",
-  //           failedModules
-  //         );
-  //       } else {
-  //         console.log(" All modules passed validation.");
-  //       }
-
-  //       setCompletedSteps(updatedValidation);
-  //     } else {
-  //       toast.error(data.message || "Test failed.");
-  //     }
-  //   } catch (err) {
-  //     toast.dismiss("test");
-  //     console.error("Run Test Error:", err);
-  //     toast.error("Run Test failed.");
-  //   }
-  // };
   useEffect(() => {
     const handleGoogleAuthSuccess = (event) => {
       if (event.data?.type === "google-auth-success") {
         console.log(
-          "✅ Gmail connection success detected in ShopifyScenariosPage!"
+          " Gmail connection success detected in ShopifyScenariosPage!"
         );
 
         fetchConnections();
@@ -1022,7 +887,7 @@ const ShopifyScenariosPage = () => {
     try {
       const userId = localStorage.getItem("userid");
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/template/alltemplates/query?userId=${userId}&service=${encodeURIComponent(
+        `http://localhost:5000/template/alltemplates/query?userId=${userId}&service=${encodeURIComponent(
           service
         )}`
       );
@@ -1069,7 +934,6 @@ const ShopifyScenariosPage = () => {
       return;
     }
 
-    console.log("🔍 Validating connections before running test...");
     const missingModules = [];
     const unverifiedConnections = [];
 
@@ -1129,13 +993,13 @@ const ShopifyScenariosPage = () => {
           },
         }
       );
-      console.warn("❌ Missing module connections:", missingModules);
+      console.warn(" Missing module connections:", missingModules);
       return;
     }
 
     if (unverifiedConnections.length > 0) {
       console.warn(
-        "⚠️ Unverified connections detected:",
+        " Unverified connections detected:",
         unverifiedConnections
       );
       setShowVerifyModal(true);
@@ -1158,7 +1022,7 @@ const ShopifyScenariosPage = () => {
     toast.loading("Generating test email...", { id: "test" });
 
     try {
-      const res = await fetch("https://email-syncing-backend.vercel.app/mailhook/Run-test-mode", {
+      const res = await fetch("http://localhost:5000/mailhook/Run-test-mode", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -1183,7 +1047,7 @@ const ShopifyScenariosPage = () => {
 
         const userId = localStorage.getItem("userid");
         const res = await fetch(
-          `https://email-syncing-backend.vercel.app/template/alltemplates?userId=${userId}&service=${encodeURIComponent(
+          `http://localhost:5000/template/alltemplates?userId=${userId}&service=${encodeURIComponent(
             formData.service
           )}`
         );
@@ -1275,7 +1139,7 @@ const ShopifyScenariosPage = () => {
       toast.loading("Fetching test email...", { id: "email" });
 
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/mailhook/get-test-email/${userId}`
+        `http://localhost:5000/mailhook/get-test-email/${userId}`
       );
       const data = await res.json();
 
@@ -1304,7 +1168,7 @@ const ShopifyScenariosPage = () => {
       const userId = localStorage.getItem("userid");
       try {
         const res = await fetch(
-          `https://email-syncing-backend.vercel.app/template/all?userId=${userId}`
+          `http://localhost:5000/template/all?userId=${userId}`
         );
         const data = await res.json();
 
@@ -1342,7 +1206,7 @@ const ShopifyScenariosPage = () => {
         const userId = localStorage.getItem("userid");
         try {
           const { data } = await axios.get(
-            `https://email-syncing-backend.vercel.app/template/all?userId=${userId}`
+            `http://localhost:5000/template/all?userId=${userId}`
           );
 
           const grouped = data.reduce((acc, item) => {
@@ -1360,13 +1224,22 @@ const ShopifyScenariosPage = () => {
 
           setServiceGroups(result);
         } catch (err) {
-          console.error("❌ Failed to fetch templates:", err);
+          console.error(" Failed to fetch templates:", err);
         }
       })();
     }
   }, [showServiceModal]);
   const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [unverifiedConnections, setUnverifiedConnections] = useState([]);
+  useEffect(() => {
+    if (routerBranches.length > 0) {
+      localStorage.setItem(
+        "routerBranchesState",
+        JSON.stringify(routerBranches)
+      );
+    }
+  }, [routerBranches]);
+
   return (
     <div className="flex h-screen bg-gray-50">
       <div className="w-64">
@@ -1389,10 +1262,7 @@ const ShopifyScenariosPage = () => {
               </p>
             </div>
             <div className="flex items-center flex-wrap gap-3">
-              {/* <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center text-sm">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back
-              </button> */}
+             
 
               <button
                 onClick={handleSaveScenario}
@@ -1408,7 +1278,7 @@ const ShopifyScenariosPage = () => {
                 <Zap className="w-4 h-4 mr-2" />
                 Run Test
               </button>
-              {/* 
+            
               <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-full shadow-sm border ml-2">
                 <span className="text-sm font-medium text-gray-700">
                   Activate Scenario
@@ -1421,7 +1291,6 @@ const ShopifyScenariosPage = () => {
                     onChange={async () => {
                       const newState = !automationOn;
                       console.clear();
-                     
 
                       console.log("🧠 Current State:", {
                         automationOn,
@@ -1429,19 +1298,7 @@ const ShopifyScenariosPage = () => {
                         routerBranchesCount: routerBranches?.length,
                       });
 
-                      routerBranches.forEach((branch, i) => {
-                        console.groupCollapsed(`📦 Branch ${i + 1}`);
-                        branch.modules.forEach((m, j) => {
-                          console.log(`   ↳ Module ${j + 1}:`, {
-                            moduleName: m.app?.name,
-                            connectionId: m.connectionId || "(empty)",
-                            emailType: m.emailType || "(none)",
-                            description: m.description || "",
-                          });
-                        });
-                        console.groupEnd();
-                      });
-
+                    
                       if (newState) {
                         const missingModules = [];
 
@@ -1480,254 +1337,7 @@ const ShopifyScenariosPage = () => {
                         });
 
                         if (missingModules.length > 0) {
-                          console.warn(
-                            "❌ Activation Blocked — Missing Connections:",
-                            missingModules
-                          );
-                          toast.error(
-                            `Scenario cannot be activated.\n\nMissing connections in:\n${missingModules
-                              .map((m) => `• ${m.moduleName} (no connection)`)
-                              .join("\n")}`,
-                            {
-                              duration: 7000,
-                              style: {
-                                background: "#fff0f0",
-                                color: "#b91c1c",
-                                border: "1px solid #fca5a5",
-                                whiteSpace: "pre-line",
-                              },
-                            }
-                          );
-                          setAutomationOn(false);
-                          console.groupEnd();
-                          return;
-                        }
-
-                        console.log(
-                          "All modules have connections — checking verification..."
-                        );
-
-                        const unverifiedConnections = [];
-
-                        routerBranches.forEach((branch) => {
-                          branch.modules.forEach((m) => {
-                            const appName = (m.app?.name || "").toLowerCase();
-                            const isEmailModule =
-                              appName.includes("gmail") ||
-                              appName.includes("email") ||
-                              appName.includes("follow") ||
-                              appName.includes("initial");
-
-                            if (isEmailModule && m.connectionId) {
-                              const data = connections.find(
-                                (c) => c._id === m.connectionId
-                              );
-                              console.log("📩 Checking connection:", {
-                                id: m.connectionId,
-                                found: !!data,
-                                verified: data?.verified,
-                                email: data?.email,
-                                provider: data?.provider,
-                              });
-
-                              if (!data) {
-                                console.warn(
-                                  ` Connection ${m.connectionId} not found`
-                                );
-                                unverifiedConnections.push({
-                                  _id: m.connectionId,
-                                  email: "(Unknown)",
-                                  provider: "(Unknown)",
-                                  verified: false,
-                                });
-                                return;
-                              }
-
-                              if (data.verified === false) {
-                                console.warn(
-                                  `⚠️ Connection ${data.email} (${data.provider}) is NOT verified`
-                                );
-                                unverifiedConnections.push(data);
-                              } else if (data.verified === true) {
-                                console.log(
-                                  `✅ Connection ${data.email} is verified`
-                                );
-                              } else {
-                                console.log(
-                                  `❓ Connection ${data.email} has unknown verification state:`,
-                                  data.verified
-                                );
-                                unverifiedConnections.push(data);
-                              }
-                            }
-                          });
-                        });
-
-                        console.log(
-                          "📊 Final Unverified List:",
-                          unverifiedConnections
-                        );
-
-                        if (unverifiedConnections.length > 0) {
-                          console.warn(
-                            "🚫 Scenario activation blocked — unverified connections found!"
-                          );
-
-                          setShowVerifyModal(true);
-                          setUnverifiedConnections(unverifiedConnections);
-                          setAutomationOn(false);
-
-                          toast.error(
-                            "Some connections are not verified. Please verify them before activating.",
-                            {
-                              duration: 6000,
-                              style: {
-                                background: "#fff0f0",
-                                color: "#b91c1c",
-                                border: "1px solid #fca5a5",
-                              },
-                            }
-                          );
-
-                          console.groupEnd();
-                          return;
-                        }
-
-                        console.log("All connections verified successfully.");
-                      }
-
-                      setAutomationOn(newState);
-                      if (newState) {
-                        localStorage.setItem("scenarioActive", "true");
-                      } else {
-                        localStorage.removeItem("scenarioActive");
-                      }
-
-                      try {
-                        const userId = localStorage.getItem("userid");
-                        const scenarioIdValue =
-                          scenarioId || localStorage.getItem("scenarioId");
-
-                        console.log(
-                          "🛰️ Updating backend scenario automation:",
-                          {
-                            scenarioIdValue,
-                            userId,
-                            automationActive: newState,
-                          }
-                        );
-
-                        const res = await fetch(
-                          `https://email-syncing-backend.vercel.app/scenario/updateAutomation/${scenarioIdValue}`,
-                          {
-                            method: "PUT",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({
-                              userId,
-                              automationActive: newState,
-                            }),
-                          }
-                        );
-
-                        const data = await res.json();
-                        console.log("📬 UpdateAutomation Response:", data);
-
-                        if (data.success) {
-                          toast.success(
-                            `Automation ${
-                              newState ? "activated" : "deactivated"
-                            } successfully!`
-                          );
-                        } else {
-                          toast.error(
-                            "Failed to update scenario automation state."
-                          );
-                        }
-                      } catch (err) {
-                        console.error("Error updating automation state:", err);
-                      }
-
-                      console.groupEnd();
-                    }}
-                    className="sr-only peer"
-                  />
-
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:ring-2 peer-focus:ring-indigo-300 rounded-full peer-checked:bg-indigo-600 transition-all"></div>
-                  <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm peer-checked:translate-x-5 transition-transform"></div>
-                </label>
-
-                <span
-                  className={`text-xs font-semibold ${
-                    automationOn ? "text-green-600" : "text-gray-400"
-                  }`}
-                >
-                  {automationOn ? "ON" : "OFF"}
-                </span>
-              </div> */}
-              <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-full shadow-sm border ml-2">
-                <span className="text-sm font-medium text-gray-700">
-                  Activate Scenario
-                </span>
-
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={automationOn}
-                    onChange={async () => {
-                      const newState = !automationOn;
-                      console.clear();
-
-                      console.log("🧠 Current State:", {
-                        automationOn,
-                        newState,
-                        routerBranchesCount: routerBranches?.length,
-                      });
-
-                      // ===========================
-                      // ✅ VALIDATION SECTION (same)
-                      // ===========================
-                      if (newState) {
-                        const missingModules = [];
-
-                        routerBranches.forEach((branch, i) => {
-                          branch.modules.forEach((m, j) => {
-                            const rawName = m.app?.name || "";
-                            const appName = rawName.toLowerCase();
-                            const isEmailModule =
-                              appName.includes("gmail") ||
-                              appName.includes("email") ||
-                              appName.includes("follow") ||
-                              appName.includes("initial");
-
-                            const connection =
-                              m.connectionId &&
-                              typeof m.connectionId === "string"
-                                ? m.connectionId.trim()
-                                : (m.connectionId ?? "").toString().trim();
-
-                            const missing =
-                              isEmailModule &&
-                              (connection === "" ||
-                                connection === "(empty)" ||
-                                connection === "undefined" ||
-                                connection === "null");
-
-                            if (missing) {
-                              missingModules.push({
-                                branchIndex: i + 1,
-                                moduleIndex: j + 1,
-                                moduleName: rawName,
-                                connectionId: connection || "(empty)",
-                              });
-                            }
-                          });
-                        });
-
-                        if (missingModules.length > 0) {
-                          console.warn(
-                            "❌ Activation Blocked — Missing Connections:",
-                            missingModules
-                          );
+                          
                           toast.error(
                             `Scenario cannot be activated.\n\nMissing connections in:\n${missingModules
                               .map((m) => `• ${m.moduleName} (no connection)`)
@@ -1746,9 +1356,7 @@ const ShopifyScenariosPage = () => {
                           return;
                         }
 
-                        console.log(
-                          "✅ All modules have connections — checking verification..."
-                        );
+                       
 
                         const unverifiedConnections = [];
 
@@ -1779,9 +1387,7 @@ const ShopifyScenariosPage = () => {
                         });
 
                         if (unverifiedConnections.length > 0) {
-                          console.warn(
-                            "🚫 Scenario activation blocked — unverified connections found!"
-                          );
+                        
 
                           setShowVerifyModal(true);
                           setUnverifiedConnections(unverifiedConnections);
@@ -1802,14 +1408,10 @@ const ShopifyScenariosPage = () => {
                           return;
                         }
 
-                        console.log(
-                          "✅ All connections verified successfully."
-                        );
+                      
                       }
 
-                      // ===========================
-                      // ✅ TOGGLE & LOCAL STATE UPDATE
-                      // ===========================
+                    
                       setAutomationOn(newState);
                       if (newState) {
                         localStorage.setItem("scenarioActive", "true");
@@ -1819,8 +1421,7 @@ const ShopifyScenariosPage = () => {
                         toast.error("Automation deactivated!");
                       }
 
-                      // 🟢 NO API CALL — no fetch, no reset
-                      // scenario + modules remain intact
+                    
                     }}
                     className="sr-only peer"
                   />
@@ -2047,6 +1648,10 @@ const ShopifyScenariosPage = () => {
                               templateName = "First Follow-up";
                             else if (item.name === "Second Follow-up")
                               templateName = "Second Follow-up";
+                            localStorage.setItem(
+                              "activeShopifyModule",
+                              templateName
+                            );
 
                             setSelectedApp({
                               name: item.base,
@@ -2343,15 +1948,17 @@ const ShopifyScenariosPage = () => {
             setShowGmailModal(false);
             setShowOutlookModal(false);
           }}
-          onSuccess={(data) => {
+          onSuccess={async () => {
             setShowGmailModal(false);
             setShowOutlookModal(false);
 
-            fetchConnections().then(() => {
-              setOpen(true);
+            await fetchConnections();
 
-              toast.success("Gmail connection added successfully!");
-            });
+            toast.success(" Gmail connection added successfully!");
+
+            if (selectedAppType === "Gmail") {
+              setSelectedConnection(""); 
+            }
           }}
         />
       </div>
@@ -2365,7 +1972,6 @@ const ShopifyScenariosPage = () => {
       {showRunTestModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
-            {/* Header */}
             <div className="flex justify-between items-start border-b px-6 py-4">
               <div>
                 <h2 className="text-lg font-semibold text-gray-800">
@@ -2588,7 +2194,7 @@ const ShopifyScenariosPage = () => {
 
                                 const updates = templateList.map((t) =>
                                   fetch(
-                                    `https://email-syncing-backend.vercel.app/template/status/${t._id}`,
+                                    `http://localhost:5000/template/status/${t._id}`,
                                     {
                                       method: "PATCH",
                                       headers: {
@@ -2832,7 +2438,6 @@ const ShopifyScenariosPage = () => {
                           }}
                         />
 
-                        {/* Insert Fields */}
                         <div className="border rounded-lg bg-white p-3 mt-4">
                           <p className="text-sm font-semibold text-gray-700 mb-2">
                             Insert Fields
@@ -2887,7 +2492,7 @@ const ShopifyScenariosPage = () => {
                           onClick={async () => {
                             try {
                               const res = await fetch(
-                                `https://email-syncing-backend.vercel.app/template/update/${editingTemplate._id}`,
+                                `http://localhost:5000/template/update/${editingTemplate._id}`,
                                 {
                                   method: "PUT",
                                   headers: {
@@ -2969,7 +2574,7 @@ const ShopifyScenariosPage = () => {
                               const updates = serviceGroups.flatMap((grp) =>
                                 grp.templates.map((t) =>
                                   fetch(
-                                    `https://email-syncing-backend.vercel.app/template/status/${t._id}`,
+                                    `http://localhost:5000/template/status/${t._id}`,
                                     {
                                       method: "PATCH",
                                       headers: {
@@ -3109,7 +2714,7 @@ const ShopifyScenariosPage = () => {
                                           );
 
                                           await fetch(
-                                            `https://email-syncing-backend.vercel.app/template/status/${t._id}`,
+                                            `http://localhost:5000/template/status/${t._id}`,
                                             {
                                               method: "PATCH",
                                               headers: {
@@ -3273,7 +2878,7 @@ const ShopifyScenariosPage = () => {
                         onClick={async () => {
                           try {
                             const res = await fetch(
-                              `https://email-syncing-backend.vercel.app/template/update/${editingTemplate._id}`,
+                              `http://localhost:5000/template/update/${editingTemplate._id}`,
                               {
                                 method: "PUT",
                                 headers: {
@@ -3382,7 +2987,7 @@ const ShopifyScenariosPage = () => {
 
                               try {
                                 const res = await fetch(
-                                  `https://email-syncing-backend.vercel.app/mailhook/verify`,
+                                  `http://localhost:5000/mailhook/verify`,
                                   {
                                     method: "POST",
                                     headers: {
