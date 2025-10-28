@@ -56,25 +56,6 @@ const ConnectionsPage = () => {
     await fetchConnections();
   };
 
-  // 🗑️ Delete handler
-  const handleDeleteConfirm = async () => {
-    if (!connectionToDelete) return;
-    setDeleting(true);
-    try {
-      await axios.delete(
-        `https://email-syncing-backend.vercel.app/auth/deleteConnection/${connectionToDelete._id}`
-      );
-      toast.success("Connection deleted successfully!");
-      setConnections((prev) =>
-        prev.filter((c) => c._id !== connectionToDelete._id)
-      );
-      setDeleteModalOpen(false);
-    } catch (err) {
-      toast.error("Failed to delete connection");
-    } finally {
-      setDeleting(false);
-    }
-  };
 
   const providerIcon = (provider) => {
     if (!provider) return <FaEnvelope className="text-gray-500 h-6 w-6" />;
@@ -316,3 +297,4 @@ const ConnectionsPage = () => {
 };
 
 export default ConnectionsPage;
+

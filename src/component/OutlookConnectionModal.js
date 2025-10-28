@@ -33,11 +33,14 @@ const OutlookConnectionModal = ({ isOpen, onClose, onSuccess }) => {
 
       const payload = { ...form, provider: "smtp", userId };
 
-      const res = await fetch("https://email-syncing-backend.vercel.app/auth/saveSmtpConnection", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const res = await fetch(
+        "https://email-syncing-backend.vercel.app/auth/saveSmtpConnection",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
 
       if (!res.ok) throw new Error("Failed to save connection");
       const data = await res.json();
@@ -56,8 +59,8 @@ const OutlookConnectionModal = ({ isOpen, onClose, onSuccess }) => {
       alert("User not found. Please login again.");
       return;
     }
-const scenarioId = localStorage.getItem("scenarioId");
-  localStorage.setItem("shopifyEditingMode", scenarioId ? "update" : "add");
+    const scenarioId = localStorage.getItem("scenarioId");
+    localStorage.setItem("shopifyEditingMode", scenarioId ? "update" : "add");
     const activeModule =
       localStorage.getItem("activeShopifyModule") || "Initial Email";
     localStorage.setItem("activeShopifyModule", activeModule);
