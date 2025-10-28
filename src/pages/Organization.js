@@ -73,7 +73,7 @@ const Organization = () => {
   }, [page]);
 
   const fetchEmailById = async (id) => {
-    navigate(`/organization/email/${id}`);
+    navigate(`/inbox`);
   };
 
   const getEmailStatus = (statuses) => {
