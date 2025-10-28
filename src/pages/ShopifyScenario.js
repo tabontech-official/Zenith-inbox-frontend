@@ -61,6 +61,8 @@ import OutlookConnectionModal from "../component/OutlookConnectionModal";
 import EmailInspector from "./EmailInspector";
 
 const ShopifyScenariosPage = () => {
+  const quillRef = useRef(null);
+
   const { id } = useParams();
   const navigate = useNavigate();
   const [showTemplateModal, setShowTemplateModal] = useState(false);
@@ -2321,7 +2323,6 @@ const ShopifyScenariosPage = () => {
       {(showTemplateModal || showEditTemplateModal) && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="flex gap-4 w-full max-w-6xl max-h-[90vh] p-4">
-            {/* 🟢 Left: Templates Overview */}
             {showTemplateModal && (
               <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 transition-all duration-300">
                 <div
@@ -2585,24 +2586,25 @@ const ShopifyScenariosPage = () => {
                         </label>
 
                         <ReactQuill
-                          theme="snow"
-                          value={editContent}
-                          onChange={setEditContent}
-                          className="rounded-lg shadow-sm"
-                          style={{
-                            border: "1px solid #e5e7eb",
-                            borderRadius: "0.5rem",
-                          }}
-                          modules={{
-                            toolbar: [
-                              [{ header: [1, 2, false] }],
-                              ["bold", "italic", "underline", "strike"],
-                              [{ list: "ordered" }, { list: "bullet" }],
-                              ["link"],
-                              ["clean"],
-                            ],
-                          }}
-                        />
+  ref={quillRef}
+  theme="snow"
+  value={editContent}
+  onChange={setEditContent}
+  className="rounded-lg shadow-sm"
+  style={{
+    border: "1px solid #e5e7eb",
+    borderRadius: "0.5rem",
+  }}
+  modules={{
+    toolbar: [
+      [{ header: [1, 2, false] }],
+      ["bold", "italic", "underline", "strike"],
+      [{ list: "ordered" }, { list: "bullet" }],
+      ["link"],
+      ["clean"],
+    ],
+  }}
+/>
 
                         <div className="border rounded-lg bg-white p-3 mt-4">
                           <p className="text-sm font-semibold text-gray-700 mb-2">
@@ -2619,28 +2621,28 @@ const ShopifyScenariosPage = () => {
                               "Budget",
                               "Problem & Goal",
                             ].map((field) => (
-                              <button
-                                key={field}
-                                onClick={() => {
-                                  const placeholder = `{{${field}}}`;
-                                  const quill =
-                                    document.querySelector(".ql-editor");
-                                  if (quill) {
-                                    const sel = window.getSelection();
-                                    const range = sel.getRangeAt(0);
-                                    const textNode =
-                                      document.createTextNode(placeholder);
-                                    range.insertNode(textNode);
-                                    range.setStartAfter(textNode);
-                                    range.setEndAfter(textNode);
-                                    sel.removeAllRanges();
-                                    sel.addRange(range);
-                                  }
-                                }}
-                                className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium hover:bg-purple-200 transition"
-                              >
-                                {field}
-                              </button>
+                   <button
+  key={field}
+  onClick={() => {
+    const editor = quillRef.current?.getEditor();
+    if (editor) {
+      const placeholder = `{{${field}}}`;
+      const range = editor.getSelection(true);
+      if (range) {
+        editor.insertText(range.index, placeholder);
+        editor.setSelection(range.index + placeholder.length);
+      } else {
+        // If cursor not in focus, add at the end
+        editor.insertText(editor.getLength(), placeholder);
+      }
+    }
+  }}
+  className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium hover:bg-purple-200 transition"
+>
+  {field}
+</button>
+
+
                             ))}
                           </div>
                         </div>
@@ -2971,25 +2973,26 @@ const ShopifyScenariosPage = () => {
                         Template Content
                       </label>
 
-                      <ReactQuill
-                        theme="snow"
-                        value={editContent}
-                        onChange={setEditContent}
-                        className="rounded-lg shadow-sm"
-                        style={{
-                          border: "1px solid #e5e7eb",
-                          borderRadius: "0.5rem",
-                        }}
-                        modules={{
-                          toolbar: [
-                            [{ header: [1, 2, false] }],
-                            ["bold", "italic", "underline", "strike"],
-                            [{ list: "ordered" }, { list: "bullet" }],
-                            ["link"],
-                            ["clean"],
-                          ],
-                        }}
-                      />
+                   <ReactQuill
+  ref={quillRef}
+  theme="snow"
+  value={editContent}
+  onChange={setEditContent}
+  className="rounded-lg shadow-sm"
+  style={{
+    border: "1px solid #e5e7eb",
+    borderRadius: "0.5rem",
+  }}
+  modules={{
+    toolbar: [
+      [{ header: [1, 2, false] }],
+      ["bold", "italic", "underline", "strike"],
+      [{ list: "ordered" }, { list: "bullet" }],
+      ["link"],
+      ["clean"],
+    ],
+  }}
+/>
 
                       <div className="border rounded-lg bg-white p-3 mt-4">
                         <p className="text-sm font-semibold text-gray-700 mb-2">
@@ -3006,28 +3009,28 @@ const ShopifyScenariosPage = () => {
                             "Budget",
                             "Problem & Goal",
                           ].map((field) => (
-                            <button
-                              key={field}
-                              onClick={() => {
-                                const placeholder = `{{${field}}}`;
-                                const quill =
-                                  document.querySelector(".ql-editor");
-                                if (quill) {
-                                  const sel = window.getSelection();
-                                  const range = sel.getRangeAt(0);
-                                  const textNode =
-                                    document.createTextNode(placeholder);
-                                  range.insertNode(textNode);
-                                  range.setStartAfter(textNode);
-                                  range.setEndAfter(textNode);
-                                  sel.removeAllRanges();
-                                  sel.addRange(range);
-                                }
-                              }}
-                              className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium hover:bg-purple-200 transition"
-                            >
-                              {field}
-                            </button>
+          <button
+  key={field}
+  onClick={() => {
+    const editor = quillRef.current?.getEditor();
+    if (editor) {
+      const placeholder = `{{${field}}}`;
+      const range = editor.getSelection(true);
+      if (range) {
+        editor.insertText(range.index, placeholder);
+        editor.setSelection(range.index + placeholder.length);
+      } else {
+        // If cursor not in focus, add at the end
+        editor.insertText(editor.getLength(), placeholder);
+      }
+    }
+  }}
+  className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium hover:bg-purple-200 transition"
+>
+  {field}
+</button>
+
+
                           ))}
                         </div>
                       </div>
