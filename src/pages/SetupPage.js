@@ -128,7 +128,6 @@ const SetupFlow = () => {
   };
 
   const updateStep = async (nextStep, extra = {}) => {
-    // Wait until user is loaded
     if (!user?._id) {
       console.warn("⚠️ User not loaded yet, retrying...");
       setTimeout(() => updateStep(nextStep, extra), 500);
@@ -138,13 +137,15 @@ const SetupFlow = () => {
     const isSkipped = extra?.skipped === true;
     const status = isSkipped ? "skipped" : "completed";
 
+    // 🔹 If skipped, mark the *current step* as skipped, not the next one
+    const stepToUpdate = isSkipped ? step : nextStep;
+
     try {
-      // ✅ Trigger API to save progress
       const res = await fetch(`https://email-syncing-backend.vercel.app/auth/setup/${user._id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          stepCompleted: nextStep,
+          stepCompleted: stepToUpdate,
           stepStatus: status,
           ...extra,
         }),
@@ -152,8 +153,10 @@ const SetupFlow = () => {
 
       const result = await res.json();
       if (result.success) {
-        console.log(`✅ Step ${nextStep} saved (${status})`);
-        setStep(nextStep); // move only after successful save
+        console.log(`✅ Step ${stepToUpdate} saved (${status})`);
+
+        // If skipped, still move to the next one visually
+        setStep(nextStep);
       } else {
         console.error("❌ Failed to save step:", result.message);
       }
@@ -205,6 +208,101 @@ const SetupFlow = () => {
   const [verificationEmail, setVerificationEmail] = useState(null);
   const [retryKey, setRetryKey] = useState(0);
 
+  // useEffect(() => {
+  //   if (step !== 3 || !user?._id) return;
+
+  //   // reset all states
+  //   setValidated(false);
+  //   setValidating(false);
+  //   setShowValidateButton(false);
+  //   setValidationPhase(true);
+  //   setVerificationEmail(null);
+
+  //   let attempts = 0;
+  //   const maxAttempts = 5;
+
+  //   const fetchVerification = async () => {
+  //     attempts++;
+  //     console.log(
+  //       `🔁 Checking verification attempt ${attempts}/${maxAttempts}`
+  //     );
+
+  //     try {
+  //       const res = await fetch(
+  //         `https://email-syncing-backend.vercel.app/mailhook/verification/${user._id}`
+  //       );
+  //       const data = await res.json();
+
+  //       if (data.success && data.data) {
+  //         const email = data.data;
+  //         let autoEmail = "";
+  //         let isGmailVerification = false;
+  //         let cleanedBody = email.textBody || "";
+
+  //         // Gmail forwarding confirmation detection
+  //         if (
+  //           email.sender
+  //             ?.toLowerCase()
+  //             .includes("forwarding-noreply@google.com") &&
+  //           email.subject
+  //             ?.toLowerCase()
+  //             .includes("has requested to automatically forward")
+  //         ) {
+  //           isGmailVerification = true;
+  //           const match =
+  //             email.subject.match(/([\w._%+-]+@gmail\.com)/i) ||
+  //             email.textBody.match(/([\w._%+-]+@gmail\.com)/i);
+  //           if (match) autoEmail = match[1];
+
+  //           cleanedBody =
+  //             "📩 Gmail forwarding request detected.<br/><br/>Please open Gmail and click the verification link in your inbox to confirm forwarding.<br/><br/>Once confirmed, return here to validate.";
+  //         }
+
+  //         cleanedBody = cleanedBody.replace(/\n/g, "<br/>");
+
+  //         // ✅ Verification email found — stop loader and still show input
+  //         setVerificationEmail({
+  //           ...email,
+  //           toEmail: autoEmail || email.toEmail || "",
+  //           isGmailVerification,
+  //           formattedBody: cleanedBody,
+  //         });
+
+  //         setValidationPhase(false); // stop loader
+  //         setShowValidateButton(true); // 👈 always show input, even when success
+  //         clearInterval(intervalId);
+  //         return;
+  //       }
+
+  //       // ❌ No email yet
+  //       if (attempts >= maxAttempts) {
+  //         clearInterval(intervalId);
+  //         setValidationPhase(false); // stop loader
+  //         setShowValidateButton(true); // show input
+  //         setVerificationEmail({
+  //           toEmail: "",
+  //           formattedBody: "",
+  //           isGmailVerification: false,
+  //           sender: "",
+  //           subject: "",
+  //           date: "",
+  //         });
+  //       }
+  //     } catch (err) {
+  //       console.error("Error fetching verification email:", err);
+  //       if (attempts >= maxAttempts) {
+  //         clearInterval(intervalId);
+  //         setValidationPhase(false);
+  //         setShowValidateButton(true);
+  //       }
+  //     }
+  //   };
+
+  //   const intervalId = setInterval(fetchVerification, 10000);
+  //   fetchVerification(); // run immediately
+
+  //   return () => clearInterval(intervalId);
+  // }, [step, user, retryKey]);
   useEffect(() => {
     if (step !== 3 || !user?._id) return;
 
@@ -217,6 +315,8 @@ const SetupFlow = () => {
 
     let attempts = 0;
     const maxAttempts = 5;
+    const loaderMinDuration = 10000; // 10 seconds minimum loader time
+    const loaderStartTime = Date.now();
 
     const fetchVerification = async () => {
       attempts++;
@@ -255,9 +355,15 @@ const SetupFlow = () => {
               "📩 Gmail forwarding request detected.<br/><br/>Please open Gmail and click the verification link in your inbox to confirm forwarding.<br/><br/>Once confirmed, return here to validate.";
           }
 
-          cleanedBody = cleanedBody.replace(/\n/g, "<br/>");
+          // Convert URLs into clickable links
+          cleanedBody = cleanedBody
+            .replace(
+              /(https?:\/\/[^\s<]+)/g,
+              '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:#2563eb;text-decoration:underline;">$1</a>'
+            )
+            .replace(/\n/g, "<br/>");
 
-          // ✅ Verification email found — stop loader and still show input
+          // ✅ Save verification data
           setVerificationEmail({
             ...email,
             toEmail: autoEmail || email.toEmail || "",
@@ -265,17 +371,27 @@ const SetupFlow = () => {
             formattedBody: cleanedBody,
           });
 
-          setValidationPhase(false); // stop loader
-          setShowValidateButton(true); // 👈 always show input, even when success
           clearInterval(intervalId);
+
+          // 🔥 Maintain loader for at least 10s total
+          const elapsed = Date.now() - loaderStartTime;
+          const remaining = Math.max(loaderMinDuration - elapsed, 0);
+
+          console.log(`⏱ Waiting ${remaining}ms before showing results...`);
+
+          setTimeout(() => {
+            setValidationPhase(false); // stop loader
+            setShowValidateButton(true); // show input / message
+          }, remaining);
+
           return;
         }
 
         // ❌ No email yet
         if (attempts >= maxAttempts) {
           clearInterval(intervalId);
-          setValidationPhase(false); // stop loader
-          setShowValidateButton(true); // show input
+          setValidationPhase(false);
+          setShowValidateButton(true);
           setVerificationEmail({
             toEmail: "",
             formattedBody: "",
@@ -300,7 +416,6 @@ const SetupFlow = () => {
 
     return () => clearInterval(intervalId);
   }, [step, user, retryKey]);
-  // 👈 added retryKey
 
   const fetchValidateEmail = async () => {
     try {
@@ -418,7 +533,6 @@ const SetupFlow = () => {
             setValidating(false);
             setValidationPhase(false);
             setValidationFailed(true);
-            toast.error("Access Denied. Please recheck your forwarding setup.");
           }
         };
 
@@ -713,9 +827,9 @@ const SetupFlow = () => {
           setValidating(false);
           setValidationPhase(false);
           setValidationFailed(true);
-          setShowValidateButton(true); // 👈 show input again
+          setShowValidateButton(true);
           toast.error(
-            "Test email not received. Please check your forwarding setup or enter your email manually."
+            "Access Denied. Please check your forwarding setup or enter your email manually."
           );
         }
       } catch (err) {
@@ -728,7 +842,7 @@ const SetupFlow = () => {
           setValidating(false);
           setValidationPhase(false);
           setValidationFailed(true);
-          setShowValidateButton(true); // 👈 also show input on API error
+          setShowValidateButton(true);
         }
       }
     };
@@ -1094,7 +1208,13 @@ const SetupFlow = () => {
               </button>
             ) : (
               <button
-                onClick={() => updateStep(4)}
+                onClick={async () => {
+                  await saveSetupProgress({
+                    stepCompleted: 3,
+                    stepStatus: "completed",
+                  });
+                  setStep(4); // move visually to Step 4
+                }}
                 className="flex items-center space-x-2 px-6 py-2 rounded-lg text-sm font-semibold bg-green-600 text-white hover:bg-green-700 transition"
               >
                 <span>Next</span> <FiArrowRight />
@@ -1284,8 +1404,12 @@ const SetupFlow = () => {
           <div className="flex justify-between mt-8">
             <span
               onClick={async () => {
-                const nextStep = step + 1;
-                await updateStep(nextStep, { skipped: true });
+                await saveSetupProgress({
+                  stepCompleted: 4,
+                  stepStatus: "skipped",
+                  skipped: true, 
+                });
+                setStep(5);
               }}
               className="text-[#4F46E5] text-sm font-semibold cursor-pointer hover:underline"
             >
@@ -1293,7 +1417,13 @@ const SetupFlow = () => {
             </span>
 
             <button
-              onClick={() => updateStep(5)}
+              onClick={async () => {
+                await saveSetupProgress({
+                  stepCompleted: 4,
+                  stepStatus: "completed",
+                });
+                setStep(5);
+              }}
               className="flex items-center space-x-2 px-6 py-2 rounded-lg text-sm font-semibold bg-[#4F46E5] text-white hover:bg-[#4338CA]"
             >
               <span>Next</span> <FiArrowRight />

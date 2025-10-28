@@ -984,11 +984,29 @@ const ShopifyScenariosPage = () => {
   //     toast.error("Run Test failed.");
   //   }
   // };
+  useEffect(() => {
+    const handleGoogleAuthSuccess = (event) => {
+      if (event.data?.type === "google-auth-success") {
+        console.log(
+          "✅ Gmail connection success detected in ShopifyScenariosPage!"
+        );
+
+        fetchConnections();
+
+        setOpen(true);
+
+        toast.success("Gmail connected successfully!");
+      }
+    };
+
+    window.addEventListener("message", handleGoogleAuthSuccess);
+
+    return () => window.removeEventListener("message", handleGoogleAuthSuccess);
+  }, []);
 
   const handleRunTest = async () => {
     const { businessEmail, service, description } = formData;
 
-    // ================== 🧩 Basic Form Validation ==================
     if (!businessEmail?.trim() || !service?.trim() || !description?.trim()) {
       toast.error("Please fill all required fields before running the test.", {
         duration: 4000,
@@ -1001,7 +1019,6 @@ const ShopifyScenariosPage = () => {
       return;
     }
 
-    // ================== 🧩 Templates Check ==================
     try {
       const userId = localStorage.getItem("userid");
       const res = await fetch(
@@ -1040,7 +1057,6 @@ const ShopifyScenariosPage = () => {
       toast.error("Error checking template status.");
     }
 
-    // ================== 🧩 Scenario Update Check ==================
     if (!isScenarioUpdated) {
       toast.error("Please update the scenario before running the test.", {
         duration: 5000,
@@ -1053,7 +1069,6 @@ const ShopifyScenariosPage = () => {
       return;
     }
 
-    // ================== 🧩 Connection Validation ==================
     console.log("🔍 Validating connections before running test...");
     const missingModules = [];
     const unverifiedConnections = [];
@@ -1074,7 +1089,6 @@ const ShopifyScenariosPage = () => {
             ? m.connectionId.trim()
             : (m.connectionId ?? "").toString().trim();
 
-        // Missing connection check
         if (
           isEmailModule &&
           (connectionId === "" ||
@@ -1089,7 +1103,6 @@ const ShopifyScenariosPage = () => {
           });
         }
 
-        // Unverified connection check
         if (isEmailModule && connectionId) {
           const connectionData = connections.find(
             (c) => c._id === connectionId
@@ -1101,7 +1114,6 @@ const ShopifyScenariosPage = () => {
       });
     });
 
-    // 🛑 If missing connections
     if (missingModules.length > 0) {
       toast.error(
         `Cannot run test.\n\nMissing connections in:\n${missingModules
@@ -1121,7 +1133,6 @@ const ShopifyScenariosPage = () => {
       return;
     }
 
-    // 🛑 If unverified connections
     if (unverifiedConnections.length > 0) {
       console.warn(
         "⚠️ Unverified connections detected:",
@@ -1144,7 +1155,6 @@ const ShopifyScenariosPage = () => {
       return;
     }
 
-    // ================== 🧩 Everything Validated — Run Test ==================
     toast.loading("Generating test email...", { id: "test" });
 
     try {
@@ -1180,7 +1190,6 @@ const ShopifyScenariosPage = () => {
         const templates = await res.json();
         setTemplateList(Array.isArray(templates.data) ? templates.data : []);
 
-        // ================== 🧩 Validation Steps ==================
         const updatedValidation = [];
         let previousPassed = true;
 
@@ -1299,20 +1308,17 @@ const ShopifyScenariosPage = () => {
         );
         const data = await res.json();
 
-        // Group templates by service
         const grouped = data.reduce((acc, item) => {
           if (!acc[item.service]) acc[item.service] = [];
           acc[item.service].push(item);
           return acc;
         }, {});
 
-        // Take top 2 services
         const top2 = Object.keys(grouped).slice(0, 2);
 
-        // Prepare structure
         const formatted = top2.map((srv) => ({
           service: srv,
-          templates: grouped[srv].slice(0, 3), // ensure only 3 per service
+          templates: grouped[srv].slice(0, 3),
         }));
 
         setServiceGroups(formatted);
@@ -1339,17 +1345,14 @@ const ShopifyScenariosPage = () => {
             `https://email-syncing-backend.vercel.app/template/all?userId=${userId}`
           );
 
-          // Group by service
           const grouped = data.reduce((acc, item) => {
             if (!acc[item.service]) acc[item.service] = [];
             acc[item.service].push(item);
             return acc;
           }, {});
 
-          // Get first 2 unique services
           const top2Services = Object.keys(grouped).slice(0, 2);
 
-          // Extract their templates
           const result = top2Services.map((service) => ({
             service,
             templates: grouped[service],
@@ -1405,170 +1408,7 @@ const ShopifyScenariosPage = () => {
                 <Zap className="w-4 h-4 mr-2" />
                 Run Test
               </button>
-
-              {/* <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-full shadow-sm border ml-2">
-                <span className="text-sm font-medium text-gray-700">
-                  Activate Scenario
-                </span>
-
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={automationOn}
-                    onChange={async () => {
-                      const newState = !automationOn;
-                      console.clear();
-                      console.groupCollapsed(
-                        `🟣 SCENARIO TOGGLE → ${
-                          newState ? "Activating" : "Deactivating"
-                        }`
-                      );
-
-                      routerBranches.forEach((branch, i) => {
-                        branch.modules.forEach((m, j) => {
-                          console.log(`   ↳ Module ${j + 1}:`, {
-                            moduleName: m.app?.name,
-                            connectionId: m.connectionId || "(empty)",
-                            emailType: m.emailType || "(none)",
-                            description: m.description || "",
-                          });
-                        });
-                        console.groupEnd();
-                      });
-
-                      if (newState) {
-                        const missingModules = [];
-
-                        routerBranches.forEach((branch, i) => {
-                          branch.modules.forEach((m, j) => {
-                            const rawName = m.app?.name || "";
-                            const appName = rawName.toLowerCase();
-
-                            const isEmailModule =
-                              appName.includes("gmail") ||
-                              appName.includes("email") ||
-                              appName.includes("follow") ||
-                              appName.includes("initial");
-
-                            const connection =
-                              m.connectionId &&
-                              typeof m.connectionId === "string"
-                                ? m.connectionId.trim()
-                                : (m.connectionId ?? "").toString().trim();
-
-                            const missing =
-                              isEmailModule &&
-                              (connection === "" ||
-                                connection === "(empty)" ||
-                                connection === "undefined" ||
-                                connection === "null");
-
-                            if (missing) {
-                              missingModules.push({
-                                branchIndex: i + 1,
-                                moduleIndex: j + 1,
-                                moduleName: rawName,
-                                connectionId: connection || "(empty)",
-                              });
-                            }
-                          });
-                        });
-
-                        if (missingModules.length > 0) {
-                          console.warn(
-                            "Activation Blocked — Missing Connections:"
-                          );
-                          missingModules.forEach((m) =>
-                            console.warn(
-                              `   → Branch ${m.branchIndex}, Module ${m.moduleIndex}: ${m.moduleName} (no connection)`
-                            )
-                          );
-
-                          toast.error(
-                            `Scenario cannot be activated.\n\nMissing connections in:\n${missingModules
-                              .map((m) => `• ${m.moduleName} (no connection)`)
-                              .join("\n")}`,
-                            {
-                              duration: 7000,
-                              style: {
-                                background: "#fff0f0",
-                                color: "#b91c1c",
-                                border: "1px solid #fca5a5",
-                                whiteSpace: "pre-line",
-                              },
-                            }
-                          );
-
-                          setAutomationOn(false);
-                          console.log(
-                            "Automation blocked — missing Email/Gmail connections"
-                          );
-                          console.groupEnd();
-                          console.groupEnd();
-                          return;
-                        }
-
-                        console.log(
-                          "Validation passed — all modules connected."
-                        );
-                        console.groupEnd();
-                      }
-
-                      setAutomationOn(newState);
-                      if (newState) {
-                        localStorage.setItem("scenarioActive", "true");
-                      } else {
-                        localStorage.removeItem("scenarioActive");
-                      }
-                      console.groupEnd();
-
-                      try {
-                        const userId = localStorage.getItem("userid");
-                        const scenarioIdValue =
-                          scenarioId || localStorage.getItem("scenarioId");
-
-                        const res = await fetch(
-                          `https://email-syncing-backend.vercel.app/scenario/updateAutomation/${scenarioIdValue}`,
-                          {
-                            method: "PUT",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({
-                              userId,
-                              automationActive: newState,
-                            }),
-                          }
-                        );
-
-                        const data = await res.json();
-                        if (data.success) {
-                        } else {
-                        }
-                      } catch (err) {}
-                      console.groupEnd();
-
-                      toast.success(
-                        `Automation ${
-                          newState ? "activated" : "deactivated"
-                        } successfully!`
-                      );
-
-                      console.groupEnd();
-                    }}
-                    className="sr-only peer"
-                  />
-
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:ring-2 peer-focus:ring-indigo-300 rounded-full peer-checked:bg-indigo-600 transition-all"></div>
-                  <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm peer-checked:translate-x-5 transition-transform"></div>
-                </label>
-
-                <span
-                  className={`text-xs font-semibold ${
-                    automationOn ? "text-green-600" : "text-gray-400"
-                  }`}
-                >
-                  {automationOn ? "ON" : "OFF"}
-                </span>
-              </div> */}
+              {/* 
               <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-full shadow-sm border ml-2">
                 <span className="text-sm font-medium text-gray-700">
                   Activate Scenario
@@ -1581,11 +1421,7 @@ const ShopifyScenariosPage = () => {
                     onChange={async () => {
                       const newState = !automationOn;
                       console.clear();
-                      console.groupCollapsed(
-                        `🟣 SCENARIO TOGGLE → ${
-                          newState ? "Activating" : "Deactivating"
-                        }`
-                      );
+                     
 
                       console.log("🧠 Current State:", {
                         automationOn,
@@ -1593,7 +1429,6 @@ const ShopifyScenariosPage = () => {
                         routerBranchesCount: routerBranches?.length,
                       });
 
-                      // 🧩 Log all modules for debug
                       routerBranches.forEach((branch, i) => {
                         console.groupCollapsed(`📦 Branch ${i + 1}`);
                         branch.modules.forEach((m, j) => {
@@ -1607,9 +1442,6 @@ const ShopifyScenariosPage = () => {
                         console.groupEnd();
                       });
 
-                      // =====================================================================
-                      // 🔹 STEP 1: VALIDATION — check missing connections
-                      // =====================================================================
                       if (newState) {
                         const missingModules = [];
 
@@ -1668,16 +1500,13 @@ const ShopifyScenariosPage = () => {
                           );
                           setAutomationOn(false);
                           console.groupEnd();
-                          return; // 🚫 stop activation
+                          return;
                         }
 
                         console.log(
-                          "✅ All modules have connections — checking verification..."
+                          "All modules have connections — checking verification..."
                         );
 
-                        // =====================================================================
-                        // 🔹 STEP 2: VERIFICATION CHECK
-                        // =====================================================================
                         const unverifiedConnections = [];
 
                         routerBranches.forEach((branch) => {
@@ -1703,7 +1532,7 @@ const ShopifyScenariosPage = () => {
 
                               if (!data) {
                                 console.warn(
-                                  `⚠️ Connection ${m.connectionId} not found`
+                                  ` Connection ${m.connectionId} not found`
                                 );
                                 unverifiedConnections.push({
                                   _id: m.connectionId,
@@ -1761,17 +1590,12 @@ const ShopifyScenariosPage = () => {
                           );
 
                           console.groupEnd();
-                          return; // 🚫 stop activation
+                          return;
                         }
 
-                        console.log(
-                          "✅ All connections verified successfully."
-                        );
+                        console.log("All connections verified successfully.");
                       }
 
-                      // =====================================================================
-                      // 🔸 STEP 3: UPDATE SCENARIO STATE
-                      // =====================================================================
                       setAutomationOn(newState);
                       if (newState) {
                         localStorage.setItem("scenarioActive", "true");
@@ -1820,10 +1644,7 @@ const ShopifyScenariosPage = () => {
                           );
                         }
                       } catch (err) {
-                        console.error(
-                          "🔥 Error updating automation state:",
-                          err
-                        );
+                        console.error("Error updating automation state:", err);
                       }
 
                       console.groupEnd();
@@ -1842,123 +1663,180 @@ const ShopifyScenariosPage = () => {
                 >
                   {automationOn ? "ON" : "OFF"}
                 </span>
-              </div>
+              </div> */}
+              <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-full shadow-sm border ml-2">
+                <span className="text-sm font-medium text-gray-700">
+                  Activate Scenario
+                </span>
 
-              {/* 🔹 Verification Modal */}
-              {showVerifyModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                  <div className="bg-white rounded-2xl shadow-2xl w-[600px] max-h-[80vh] overflow-y-auto p-6">
-                    <div className="flex justify-between items-center border-b pb-3 mb-4">
-                      <h2 className="text-lg font-semibold text-gray-800">
-                        Verify Email Connections
-                      </h2>
-                      <button
-                        onClick={() => setShowVerifyModal(false)}
-                        className="text-gray-500 hover:text-gray-700"
-                      >
-                        ✕
-                      </button>
-                    </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={automationOn}
+                    onChange={async () => {
+                      const newState = !automationOn;
+                      console.clear();
 
-                    {unverifiedConnections.length > 0 ? (
-                      <ul className="space-y-3">
-                        {unverifiedConnections.map((conn) => (
-                          <li
-                            key={conn._id}
-                            className="flex justify-between items-center p-3 border rounded-lg bg-gray-50 hover:bg-gray-100 transition"
-                          >
-                            <div>
-                              <p className="text-sm font-semibold text-gray-800">
-                                {conn.email}
-                              </p>
-                              <p className="text-xs text-gray-500 capitalize">
-                                {conn.provider}
-                              </p>
-                            </div>
+                      console.log("🧠 Current State:", {
+                        automationOn,
+                        newState,
+                        routerBranchesCount: routerBranches?.length,
+                      });
 
-                            {conn.verified ? (
-                              <span className="text-green-600 text-sm font-semibold">
-                                ✅ Verified
-                              </span>
-                            ) : (
-                              <button
-                                onClick={async () => {
-                                  try {
-                                    const res = await fetch(
-                                      `https://email-syncing-backend.vercel.app/connection/verify`,
-                                      {
-                                        method: "POST",
-                                        headers: {
-                                          "Content-Type": "application/json",
-                                        },
-                                        body: JSON.stringify({
-                                          connectionId: conn._id,
-                                        }),
-                                      }
-                                    );
-                                    const data = await res.json();
-                                    if (data.success) {
-                                      toast.success(
-                                        `${conn.email} verified successfully!`
-                                      );
-                                      setUnverifiedConnections((prev) =>
-                                        prev.map((c) =>
-                                          c._id === conn._id
-                                            ? { ...c, verified: true }
-                                            : c
-                                        )
-                                      );
-                                    } else {
-                                      toast.error(
-                                        data.message ||
-                                          `Failed to verify ${conn.email}`
-                                      );
-                                    }
-                                  } catch (err) {
-                                    toast.error(
-                                      "Verification error, please try again."
-                                    );
-                                  }
-                                }}
-                                className="px-4 py-1.5 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
-                              >
-                                Verify
-                              </button>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="text-gray-500 text-center">
-                        All connections are already verified ✅
-                      </p>
-                    )}
+                      // ===========================
+                      // ✅ VALIDATION SECTION (same)
+                      // ===========================
+                      if (newState) {
+                        const missingModules = [];
 
-                    <div className="mt-6 text-right">
-                      <button
-                        onClick={() => {
-                          const remaining = unverifiedConnections.filter(
-                            (c) => !c.verified
+                        routerBranches.forEach((branch, i) => {
+                          branch.modules.forEach((m, j) => {
+                            const rawName = m.app?.name || "";
+                            const appName = rawName.toLowerCase();
+                            const isEmailModule =
+                              appName.includes("gmail") ||
+                              appName.includes("email") ||
+                              appName.includes("follow") ||
+                              appName.includes("initial");
+
+                            const connection =
+                              m.connectionId &&
+                              typeof m.connectionId === "string"
+                                ? m.connectionId.trim()
+                                : (m.connectionId ?? "").toString().trim();
+
+                            const missing =
+                              isEmailModule &&
+                              (connection === "" ||
+                                connection === "(empty)" ||
+                                connection === "undefined" ||
+                                connection === "null");
+
+                            if (missing) {
+                              missingModules.push({
+                                branchIndex: i + 1,
+                                moduleIndex: j + 1,
+                                moduleName: rawName,
+                                connectionId: connection || "(empty)",
+                              });
+                            }
+                          });
+                        });
+
+                        if (missingModules.length > 0) {
+                          console.warn(
+                            "❌ Activation Blocked — Missing Connections:",
+                            missingModules
                           );
-                          if (remaining.length === 0) {
-                            toast.success(
-                              "All connections verified — you can now activate the scenario!"
-                            );
-                            setShowVerifyModal(false);
-                          } else {
-                            toast.error(
-                              "Please verify all connections before proceeding."
-                            );
-                          }
-                        }}
-                        className="px-5 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition"
-                      >
-                        Continue
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
+                          toast.error(
+                            `Scenario cannot be activated.\n\nMissing connections in:\n${missingModules
+                              .map((m) => `• ${m.moduleName} (no connection)`)
+                              .join("\n")}`,
+                            {
+                              duration: 7000,
+                              style: {
+                                background: "#fff0f0",
+                                color: "#b91c1c",
+                                border: "1px solid #fca5a5",
+                                whiteSpace: "pre-line",
+                              },
+                            }
+                          );
+                          setAutomationOn(false);
+                          return;
+                        }
+
+                        console.log(
+                          "✅ All modules have connections — checking verification..."
+                        );
+
+                        const unverifiedConnections = [];
+
+                        routerBranches.forEach((branch) => {
+                          branch.modules.forEach((m) => {
+                            const appName = (m.app?.name || "").toLowerCase();
+                            const isEmailModule =
+                              appName.includes("gmail") ||
+                              appName.includes("email") ||
+                              appName.includes("follow") ||
+                              appName.includes("initial");
+
+                            if (isEmailModule && m.connectionId) {
+                              const data = connections.find(
+                                (c) => c._id === m.connectionId
+                              );
+
+                              if (!data || data.verified === false) {
+                                unverifiedConnections.push({
+                                  _id: m.connectionId,
+                                  email: data?.email || "(Unknown)",
+                                  provider: data?.provider || "(Unknown)",
+                                  verified: false,
+                                });
+                              }
+                            }
+                          });
+                        });
+
+                        if (unverifiedConnections.length > 0) {
+                          console.warn(
+                            "🚫 Scenario activation blocked — unverified connections found!"
+                          );
+
+                          setShowVerifyModal(true);
+                          setUnverifiedConnections(unverifiedConnections);
+                          setAutomationOn(false);
+
+                          toast.error(
+                            "Some connections are not verified. Please verify them before activating.",
+                            {
+                              duration: 6000,
+                              style: {
+                                background: "#fff0f0",
+                                color: "#b91c1c",
+                                border: "1px solid #fca5a5",
+                              },
+                            }
+                          );
+
+                          return;
+                        }
+
+                        console.log(
+                          "✅ All connections verified successfully."
+                        );
+                      }
+
+                      // ===========================
+                      // ✅ TOGGLE & LOCAL STATE UPDATE
+                      // ===========================
+                      setAutomationOn(newState);
+                      if (newState) {
+                        localStorage.setItem("scenarioActive", "true");
+                        toast.success("Automation activated!");
+                      } else {
+                        localStorage.removeItem("scenarioActive");
+                        toast.error("Automation deactivated!");
+                      }
+
+                      // 🟢 NO API CALL — no fetch, no reset
+                      // scenario + modules remain intact
+                    }}
+                    className="sr-only peer"
+                  />
+
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:ring-2 peer-focus:ring-indigo-300 rounded-full peer-checked:bg-indigo-600 transition-all"></div>
+                  <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm peer-checked:translate-x-5 transition-transform"></div>
+                </label>
+
+                <span
+                  className={`text-xs font-semibold ${
+                    automationOn ? "text-green-600" : "text-gray-400"
+                  }`}
+                >
+                  {automationOn ? "ON" : "OFF"}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -2162,7 +2040,6 @@ const ShopifyScenariosPage = () => {
                         <div
                           key={idx}
                           onClick={() => {
-                            // Map friendly names to consistent internal names
                             let templateName = "";
                             if (item.name === "Initial Email")
                               templateName = "Initial Email";
@@ -2173,7 +2050,7 @@ const ShopifyScenariosPage = () => {
 
                             setSelectedApp({
                               name: item.base,
-                              displayName: item.name, // show Follow-up names in modal + FlowNode
+                              displayName: item.name,
                               color: item.color,
                               icon: item.icon,
                               defaultTemplate: templateName,
@@ -2246,15 +2123,7 @@ const ShopifyScenariosPage = () => {
                             Select Application{" "}
                             <span className="text-red-500">*</span>
                           </label>
-                          {/* <select
-                            value={selectedAppType}
-                            onChange={(e) => setSelectedAppType(e.target.value)}
-                            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                          >
-                            <option value="">-- Choose App Type --</option>
-                            <option value="Gmail">Gmail</option>
-                            <option value="Email">Email (SMTP/Outlook)</option>
-                          </select> */}
+
                           <select
                             value={selectedAppType}
                             onChange={(e) => {
@@ -2474,11 +2343,15 @@ const ShopifyScenariosPage = () => {
             setShowGmailModal(false);
             setShowOutlookModal(false);
           }}
-          onSuccess={() => {
+          onSuccess={(data) => {
             setShowGmailModal(false);
             setShowOutlookModal(false);
-            fetchConnections();
-            resetFormFields();
+
+            fetchConnections().then(() => {
+              setOpen(true);
+
+              toast.success("Gmail connection added successfully!");
+            });
           }}
         />
       </div>
@@ -3181,7 +3054,7 @@ const ShopifyScenariosPage = () => {
                           </div>
 
                           <table className="w-full border-collapse text-sm">
-                            <thead className="bg-gray-100 text-gray-700 uppercase text-xs">
+                            <thead className="bg-gray-100 text-gray-600 uppercase text-xs">
                               <tr>
                                 <th className="p-3 text-left w-[40%]">
                                   Template
@@ -3190,7 +3063,7 @@ const ShopifyScenariosPage = () => {
                                   Status
                                 </th>
                                 <th className="p-3 text-center w-[25%]">
-                                  Last Updated
+                                  Created_At
                                 </th>
                                 <th className="p-3 text-center w-[15%]">
                                   Action
@@ -3257,7 +3130,17 @@ const ShopifyScenariosPage = () => {
                                   </td>
 
                                   <td className="p-3 text-center text-gray-500">
-                                    {new Date(t.updatedAt).toLocaleString()}
+                                    {new Date(t.updatedAt).toLocaleString(
+                                      "en-US",
+                                      {
+                                        year: "numeric",
+                                        month: "short",
+                                        day: "2-digit",
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                        hour12: true,
+                                      }
+                                    )}{" "}
                                   </td>
 
                                   <td className="p-3 text-center">
@@ -3443,7 +3326,8 @@ const ShopifyScenariosPage = () => {
                     Verify Email Connections
                   </h2>
                   <p className="text-xs text-indigo-100">
-                    Ensure all connections are active before enabling automation
+                    Ensure all connections are verified before enabling
+                    automation
                   </p>
                 </div>
 
@@ -3483,7 +3367,7 @@ const ShopifyScenariosPage = () => {
                           </div>
                         ) : conn.verified ? (
                           <span className="text-green-600 text-sm font-semibold flex items-center gap-1">
-                             Verified
+                            Verified
                           </span>
                         ) : (
                           <button
@@ -3515,6 +3399,7 @@ const ShopifyScenariosPage = () => {
                                   toast.success(
                                     `${conn.email} verified successfully!`
                                   );
+
                                   setUnverifiedConnections((prev) =>
                                     prev.map((c) =>
                                       c._id === conn._id
@@ -3526,6 +3411,19 @@ const ShopifyScenariosPage = () => {
                                         : c
                                     )
                                   );
+
+                                  await fetchConnections();
+
+                                  const allVerified =
+                                    unverifiedConnections.every(
+                                      (c) =>
+                                        c._id === conn._id ||
+                                        c.verified === true
+                                    );
+
+                                  if (allVerified) {
+                                    setShowVerifyModal(false);
+                                  }
                                 } else {
                                   toast.error(
                                     data.message ||

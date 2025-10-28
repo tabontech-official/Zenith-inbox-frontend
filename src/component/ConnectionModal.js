@@ -14,7 +14,6 @@ const ConnectionModal = ({ isOpen, onClose, onSuccess }) => {
       return;
     }
 
-    // 🟢 Open the Google OAuth popup
     const popup = window.open(
       `https://email-syncing-backend.vercel.app/auth/google?userId=${userId}`,
       "googleAuth",
@@ -23,22 +22,21 @@ const ConnectionModal = ({ isOpen, onClose, onSuccess }) => {
 
     window.googlePopup = popup;
 
-    // 🟣 Close this modal immediately after click
     onClose();
   };
 
   useEffect(() => {
     const listener = (event) => {
       if (event.data?.type === "google-auth-success") {
-        console.log("✅ Gmail connected successfully!");
-
-        // Close popup if open
+        console.log("Gmail connected successfully!");
         if (window.googlePopup && !window.googlePopup.closed) {
           window.googlePopup.close();
         }
 
-        // 🔥 Trigger parent refresh
-        onSuccess?.(event.data);
+        onSuccess?.({
+          ...event.data,
+          triggerRefresh: true,
+        });
       }
     };
 
@@ -51,7 +49,6 @@ const ConnectionModal = ({ isOpen, onClose, onSuccess }) => {
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 z-50">
       <div className="bg-white rounded-lg shadow-2xl w-full max-w-lg overflow-hidden animate-fadeIn">
-        {/* Header */}
         <div className="bg-gradient-to-r from-[#e45341] to-[#f46654] text-white flex justify-between items-center px-5 py-3">
           <h2 className="text-sm font-semibold tracking-wide flex items-center gap-2">
             Create a Gmail Connection
@@ -61,7 +58,6 @@ const ConnectionModal = ({ isOpen, onClose, onSuccess }) => {
           </button>
         </div>
 
-        {/* Body */}
         <div className="p-6 space-y-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -107,7 +103,6 @@ const ConnectionModal = ({ isOpen, onClose, onSuccess }) => {
           </p>
         </div>
 
-        {/* Footer */}
         <div className="flex justify-end gap-3 px-6 py-4 bg-gray-50 border-t">
           <button
             onClick={onClose}

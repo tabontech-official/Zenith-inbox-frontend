@@ -2,7 +2,15 @@ import React, { useState, useEffect } from "react";
 import Sidebar from "../component/Sidebar";
 import ConnectionModal from "../component/ConnectionModal";
 import OutlookConnectionModal from "../component/OutlookConnectionModal";
-import { FaGoogle, FaMicrosoft, FaEnvelope, FaTrashAlt } from "react-icons/fa";
+import {
+  FaGoogle,
+  FaMicrosoft,
+  FaEnvelope,
+  FaTrashAlt,
+  FaCheckCircle,
+  FaShieldAlt,
+  FaSpinner,
+} from "react-icons/fa";
 import axios from "axios";
 import toast from "react-hot-toast";
 import ConfirmDeleteModal from "../component/ConformationModel";
@@ -146,15 +154,20 @@ const ConnectionsPage = () => {
               {connections.map((conn) => (
                 <div
                   key={conn._id}
-                  className="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition p-5 relative"
+                  className="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-lg transition p-5 relative"
                 >
                   <div className="flex items-center space-x-3">
                     <div className="flex-shrink-0">
                       {providerIcon(conn.provider)}
                     </div>
                     <div>
-                      <h3 className="text-base font-semibold text-gray-800 truncate">
+                      <h3 className="text-base font-semibold text-gray-800 truncate flex items-center gap-2">
                         {conn.email}
+                        {conn.verified ? (
+                          <FaCheckCircle className="text-green-500 text-sm" />
+                        ) : (
+                          <FaShieldAlt className="text-gray-400 text-sm" />
+                        )}
                       </h3>
                       <p className="text-xs text-gray-500 capitalize">
                         {conn.provider} connection
@@ -162,6 +175,87 @@ const ConnectionsPage = () => {
                     </div>
                   </div>
 
+                  <div className="mt-4 flex justify-between items-center">
+                    {conn.verifying ? (
+                      <div className="flex items-center gap-2 text-blue-600 font-medium text-sm">
+                        <FaSpinner className="animate-spin text-blue-600" />
+                        Verifying...
+                      </div>
+                    ) : conn.verified ? (
+                      <div className="flex items-center gap-2 text-green-600 font-semibold text-sm">
+                        <FaCheckCircle className="text-green-600" />
+                        Verified
+                      </div>
+                    ) : (
+                      <button
+                        onClick={async () => {
+                          try {
+                            setConnections((prev) =>
+                              prev.map((c) =>
+                                c._id === conn._id
+                                  ? { ...c, verifying: true }
+                                  : c
+                              )
+                            );
+
+                            const res = await fetch(
+                              `https://email-syncing-backend.vercel.app/mailhook/verify`,
+                              {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                  connectionId: conn._id,
+                                }),
+                              }
+                            );
+
+                            const data = await res.json();
+
+                            if (data.success) {
+                              toast.success(
+                                `${conn.email} verified successfully!`
+                              );
+                              setConnections((prev) =>
+                                prev.map((c) =>
+                                  c._id === conn._id
+                                    ? { ...c, verified: true, verifying: false }
+                                    : c
+                                )
+                              );
+                            } else {
+                              toast.error(
+                                data.message || "Failed to verify connection"
+                              );
+                              setConnections((prev) =>
+                                prev.map((c) =>
+                                  c._id === conn._id
+                                    ? { ...c, verifying: false }
+                                    : c
+                                )
+                              );
+                            }
+                          } catch (err) {
+                            toast.error(
+                              "Verification error. Please try again."
+                            );
+                            setConnections((prev) =>
+                              prev.map((c) =>
+                                c._id === conn._id
+                                  ? { ...c, verifying: false }
+                                  : c
+                              )
+                            );
+                          }
+                        }}
+                        className="flex items-center gap-2 px-4 py-1.5 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 rounded-md hover:from-blue-700 hover:to-indigo-700 shadow-sm transition"
+                      >
+                        <FaShieldAlt className="text-white text-sm" />
+                        Verify
+                      </button>
+                    )}
+                  </div>
+
+                  {/* 🔻 Footer */}
                   <div className="mt-4 border-t pt-3 flex justify-between items-center text-sm text-gray-600">
                     <span>
                       Added on{" "}
