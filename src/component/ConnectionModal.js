@@ -29,7 +29,7 @@ const ConnectionModal = ({ isOpen, onClose, onSuccess }) => {
   //   );
 
   //   // ✅ Redirect the current tab (no popup)
-  //   window.location.href = `http://localhost:5000/auth/google?userId=${userId}`;
+  //   window.location.href = `https://email-syncing-backend.vercel.app/auth/google?userId=${userId}`;
   // };
 
   const handleGoogleSignIn = () => {
@@ -62,7 +62,7 @@ const ConnectionModal = ({ isOpen, onClose, onSuccess }) => {
     }
 
     // ✅ Redirect the current tab
-    window.location.href = `http://localhost:5000/auth/google?userId=${userId}`;
+    window.location.href = `https://email-syncing-backend.vercel.app/auth/google?userId=${userId}`;
   };
 
   useEffect(() => {
