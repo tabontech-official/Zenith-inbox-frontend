@@ -3436,9 +3436,7 @@ const ShopifyScenariosPage = () => {
       {showVerifyModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="flex w-full max-w-[60rem] max-h-[85vh] p-4">
-            {/* 🔹 Main Verify Modal */}
             <div className="bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden w-full transition-all duration-500">
-              {/* Header */}
               <div className="flex justify-between items-center p-5 border-b bg-gradient-to-r from-indigo-600 to-blue-600 text-white">
                 <div>
                   <h2 className="text-lg font-semibold">
@@ -3457,8 +3455,6 @@ const ShopifyScenariosPage = () => {
                 </button>
               </div>
 
-              {/* Body */}
-              {/* Body */}
               <div className="p-6 overflow-y-auto flex-1 bg-gray-50">
                 {unverifiedConnections.length > 0 ? (
                   <div className="space-y-4">
@@ -3471,7 +3467,6 @@ const ShopifyScenariosPage = () => {
                         key={conn._id}
                         className="flex justify-between items-center p-4 border rounded-lg bg-white hover:bg-gray-50 shadow-sm transition"
                       >
-                        {/* Left: Info */}
                         <div>
                           <p className="text-sm font-semibold text-gray-800">
                             {conn.email}
@@ -3481,7 +3476,6 @@ const ShopifyScenariosPage = () => {
                           </p>
                         </div>
 
-                        {/* Right: Status */}
                         {conn.verifying ? (
                           <div className="flex items-center gap-2 text-blue-600 font-medium text-sm">
                             <span className="animate-spin h-4 w-4 border-t-2 border-blue-600 rounded-full"></span>
@@ -3489,7 +3483,7 @@ const ShopifyScenariosPage = () => {
                           </div>
                         ) : conn.verified ? (
                           <span className="text-green-600 text-sm font-semibold flex items-center gap-1">
-                            ✅ Verified
+                             Verified
                           </span>
                         ) : (
                           <button
@@ -3576,7 +3570,6 @@ const ShopifyScenariosPage = () => {
                 )}
               </div>
 
-              {/* Footer */}
               <div className="border-t bg-gray-50 p-4 flex justify-center items-center">
                 <button
                   onClick={() => window.open("/connection", "_blank")}
