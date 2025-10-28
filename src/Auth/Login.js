@@ -12,7 +12,6 @@ const LoginPage = () => {
   const [error, setError] = useState("");
   const navigate = useNavigate();
   const { setUser } = useContext(UserContext);
-
   const handleClick = () => {
     navigate("/register");
   };
@@ -176,7 +175,9 @@ const LoginPage = () => {
             transition={{ delay: 0.8 }}
             className="mt-6 text-sm text-gray-500 text-center space-y-1"
           >
-            <p className="hover:underline cursor-pointer">Forgot password?</p>
+            <p  onClick={()=>{
+              navigate('/forgot-password')
+            }} className="hover:underline cursor-pointer">Forgot password?</p>
             <p className="hover:underline cursor-pointer">
               Resend verification email
             </p>

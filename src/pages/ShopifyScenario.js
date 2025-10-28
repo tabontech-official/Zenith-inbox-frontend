@@ -113,24 +113,34 @@ const ShopifyScenariosPage = () => {
   const [editingTemplate, setEditingTemplate] = useState(null);
   const [editContent, setEditContent] = useState("");
 
+  const savedShopifyState = localStorage.getItem("shopifyScenarioState");
+  const existingScenarioId = localStorage.getItem("scenarioId");
+  let initialEditingMode = "add";
 
-const savedShopifyState = localStorage.getItem("shopifyScenarioState");
-if (savedShopifyState && routerBranches.length === 0) {
-  try {
-    const parsed = JSON.parse(savedShopifyState);
-    if (parsed.routerBranches?.length > 0) {
-      console.log(
-        "Pre-restoring routerBranches before React mounts:",
-        parsed.routerBranches
-      );
-
-      routerBranches.push(...parsed.routerBranches);
-      localStorage.setItem("skipScenarioFetch", "true");
-    }
-  } catch (err) {
-    console.error(" Failed pre-restore routerBranches:", err);
+  if (existingScenarioId) {
+    initialEditingMode = "update";
+    console.log("🟢 Editing existing scenario:", existingScenarioId);
+  } else {
+    console.log("🆕 No scenario found — Add mode");
   }
-}
+
+  if (savedShopifyState && routerBranches.length === 0) {
+    try {
+      const parsed = JSON.parse(savedShopifyState);
+      if (parsed.routerBranches?.length > 0) {
+        console.log(
+          "♻️ Pre-restoring routerBranches before React mounts:",
+          parsed.routerBranches
+        );
+
+        routerBranches.push(...parsed.routerBranches);
+        localStorage.setItem("skipScenarioFetch", "true");
+      }
+    } catch (err) {
+      console.error("❌ Failed pre-restore routerBranches:", err);
+    }
+  }
+  const [editingMode, setEditingMode] = useState(initialEditingMode);
 
   useEffect(() => {
     if (user) {
@@ -205,6 +215,120 @@ if (savedShopifyState && routerBranches.length === 0) {
     };
   }, [showOutlookModal, showGmailModal]);
 
+  // const handleSaveScenario = async () => {
+  //   const payload = {
+  //     userId: localStorage.getItem("userid"),
+  //     name: scenarioName || "Untitled Scenario",
+  //     description: scenarioDescription || "",
+  //     type: "shopify",
+  //     routerBranches,
+  //     scenarioActive: localStorage.getItem("scenarioActive") === "true",
+  //   };
+
+  //   try {
+  //     let res;
+
+  //     if (scenarioId) {
+  //       res = await fetch(
+  //         `https://email-syncing-backend.vercel.app/scenario/detail/${scenarioId}`,
+  //         {
+  //           method: "PUT",
+  //           headers: { "Content-Type": "application/json" },
+  //           body: JSON.stringify(payload),
+  //         }
+  //       );
+  //     }
+
+  //     if (!res || !res.ok) {
+  //       console.warn(
+  //         "Scenario not found or update failed — creating new one..."
+  //       );
+  //       res = await fetch(`https://email-syncing-backend.vercel.app/scenario`, {
+  //         method: "POST",
+  //         headers: { "Content-Type": "application/json" },
+  //         body: JSON.stringify(payload),
+  //       });
+  //     }
+
+  //     const data = await res.json();
+
+  //     if (!res.ok) throw new Error(data.message || "Failed to save scenario");
+
+  //     setScenarioId(data._id);
+  //     localStorage.setItem("scenarioId", data._id);
+  //     setScenarioName(data.name || scenarioName);
+  //     setScenarioDescription(data.description || scenarioDescription);
+
+  //     setRouterBranches(
+  //       data.routerBranches?.length > 0
+  //         ? data.routerBranches
+  //         : [{ id: Date.now(), hasModule: false, condition: null, modules: [] }]
+  //     );
+
+  //     if (data.scenarioActive) {
+  //       setAutomationOn(true);
+  //       localStorage.setItem("scenarioActive", "true");
+  //     } else {
+  //       setAutomationOn(false);
+  //       localStorage.removeItem("scenarioActive");
+  //     }
+
+  //     toast.success(
+  //       scenarioId
+  //         ? "Shopify scenario updated successfully!"
+  //         : "Shopify scenario created successfully!"
+  //     );
+  //     setShowValidation(false);
+  //     setCompletedSteps([]);
+  //     setIsScenarioUpdated(true);
+
+  //     const refresh = await fetch(
+  //       "https://email-syncing-backend.vercel.app/scenario/details",
+  //       {
+  //         method: "POST",
+  //         headers: { "Content-Type": "application/json" },
+  //         body: JSON.stringify({ userId: localStorage.getItem("userid") }),
+  //       }
+  //     );
+  //     const freshData = await refresh.json();
+
+  //     if (freshData) {
+  //       setScenarioId(freshData._id);
+  //       setRouterBranches(
+  //         freshData.routerBranches?.length > 0
+  //           ? freshData.routerBranches
+  //           : [
+  //               {
+  //                 id: Date.now(),
+  //                 hasModule: false,
+  //                 condition: null,
+  //                 modules: [],
+  //               },
+  //             ]
+  //       );
+  //       setScenarioName(freshData.name || scenarioName);
+  //       setScenarioDescription(freshData.description || scenarioDescription);
+  //     }
+  //   } catch (err) {
+  //     console.error("Error saving scenario:", err);
+  //     toast.error("Failed to save scenario.");
+  //   }
+  // };
+
+  // 🧠 Ensure editingMode and scenarioId are restored at startup
+  useEffect(() => {
+    const savedScenarioId = localStorage.getItem("scenarioId");
+
+    if (savedScenarioId) {
+      console.log("🟢 Restoring scenario ID:", savedScenarioId);
+      setScenarioId(savedScenarioId);
+      setEditingMode("update");
+    } else {
+      console.log("🆕 No saved scenario — Add mode");
+      setEditingMode("add");
+    }
+  }, []);
+
   const handleSaveScenario = async () => {
     const payload = {
       userId: localStorage.getItem("userid"),
@@ -217,38 +341,56 @@ if (savedShopifyState && routerBranches.length === 0) {
 
     try {
       let res;
+      let data;
 
-      if (scenarioId) {
+      console.log("🧠 Current Editing Mode:", editingMode);
+      console.log("🧠 Current Scenario ID:", scenarioId);
+      let activeScenarioId = scenarioId || localStorage.getItem("scenarioId");
+      if (activeScenarioId && editingMode !== "update") {
+        console.log("🔁 Restoring update mode inside handleSaveScenario");
+        setScenarioId(activeScenarioId);
+        setEditingMode("update");
+      }
+      if (editingMode === "update" && activeScenarioId) {
+        console.log("✏️ Updating existing scenario...");
         res = await fetch(
-          `https://email-syncing-backend.vercel.app/scenario/detail/${scenarioId}`,
+          `https://email-syncing-backend.vercel.app/scenario/detail/${activeScenarioId}`,
           {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
           }
         );
-      }
+        data = await res.json();
 
-      if (!res || !res.ok) {
-        console.warn(
-          "Scenario not found or update failed — creating new one..."
-        );
+        if (!res.ok)
+          throw new Error(data.message || "Failed to update scenario");
+
+        toast.success("✅ Scenario updated successfully!");
+      } else {
+        // ✅ Otherwise, create a new one (POST)
+        console.log("🆕 Creating a new scenario...");
         res = await fetch(`https://email-syncing-backend.vercel.app/scenario`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
+        data = await res.json();
+
+        if (!res.ok)
+          throw new Error(data.message || "Failed to create scenario");
+
+        toast.success("🎉 New scenario created successfully!");
+
+        // Store scenario ID and switch to update mode
+        setScenarioId(data._id);
+        localStorage.setItem("scenarioId", data._id);
+        setEditingMode("update");
       }
 
-      const data = await res.json();
-
-      if (!res.ok) throw new Error(data.message || "Failed to save scenario");
-
-      setScenarioId(data._id);
-      localStorage.setItem("scenarioId", data._id);
+      // ✅ Common state updates after success
       setScenarioName(data.name || scenarioName);
       setScenarioDescription(data.description || scenarioDescription);
-
       setRouterBranches(
         data.routerBranches?.length > 0
           ? data.routerBranches
@@ -263,20 +405,15 @@ if (savedShopifyState && routerBranches.length === 0) {
         localStorage.removeItem("scenarioActive");
       }
 
-      toast.success(
-        scenarioId
-          ? "Shopify scenario updated successfully!"
-          : "Shopify scenario created successfully!"
+      // Refresh updated list
+      const refresh = await fetch(
+        "https://email-syncing-backend.vercel.app/scenario/details",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: localStorage.getItem("userid") }),
+        }
       );
-      setShowValidation(false);
-      setCompletedSteps([]);
-      setIsScenarioUpdated(true);
-
-      const refresh = await fetch("https://email-syncing-backend.vercel.app/scenario/details", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: localStorage.getItem("userid") }),
-      });
       const freshData = await refresh.json();
 
       if (freshData) {
@@ -296,8 +433,12 @@ if (savedShopifyState && routerBranches.length === 0) {
         setScenarioName(freshData.name || scenarioName);
         setScenarioDescription(freshData.description || scenarioDescription);
       }
+
+      setShowValidation(false);
+      setCompletedSteps([]);
+      setIsScenarioUpdated(true);
     } catch (err) {
-      console.error("Error saving scenario:", err);
+      console.error("❌ Error saving scenario:", err);
       toast.error("Failed to save scenario.");
     }
   };
@@ -385,44 +526,77 @@ if (savedShopifyState && routerBranches.length === 0) {
     );
   }, []);
 
- 
   useEffect(() => {
-  if (localStorage.getItem("skipScenarioFetch") === "true") {
-    console.log("🛑 Skipping fetchScenario — local restore already done");
-    localStorage.removeItem("skipScenarioFetch");
-    return;
-  }
-
-  const fetchScenario = async () => {
-    try {
-      const userId = localStorage.getItem("userid");
-      if (!userId) return;
-
-      const res = await fetch("https://email-syncing-backend.vercel.app/scenario/details", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId }),
-      });
-
-      const data = await res.json();
-      if (data && !localStorage.getItem("shopifyScenarioState")) {
-        setScenarioId(data._id);
-        setScenarioName(data.name || "");
-        setScenarioDescription(data.description || "");
-        setRouterBranches(
-          data.routerBranches?.length > 0
-            ? data.routerBranches
-            : [{ id: Date.now(), hasModule: false, condition: null, modules: [] }]
-        );
-        console.log("Loaded scenario from backend:", data.routerBranches);
-      }
-    } catch (err) {
-      console.error("Error fetching scenario:", err);
+    if (localStorage.getItem("skipScenarioFetch") === "true") {
+      console.log("🛑 Skipping fetchScenario — local restore already done");
+      localStorage.removeItem("skipScenarioFetch");
+      return;
     }
-  };
 
-  fetchScenario();
-}, []);
+    const fetchScenario = async () => {
+      try {
+        const userId = localStorage.getItem("userid");
+        if (!userId) {
+          console.warn(
+            "⚠️ No userId found in localStorage — cannot fetch scenario."
+          );
+          return;
+        }
+
+        console.log("🔄 Fetching existing Shopify scenario for user:", userId);
+
+        const res = await fetch(
+          "https://email-syncing-backend.vercel.app/scenario/details",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId }),
+          }
+        );
+
+        const data = await res.json();
+
+        if (data && !localStorage.getItem("shopifyScenarioState")) {
+          console.log("✅ Scenario fetched successfully:", data);
+
+          // 🧠 Save scenario ID locally for update mode
+          if (data._id) {
+            localStorage.setItem("scenarioId", data._id);
+            console.log("💾 Scenario ID saved to localStorage:", data._id);
+          }
+
+          // ✅ Update React state
+          setScenarioId(data._id);
+          setEditingMode("update");
+          setScenarioName(data.name || "");
+          setScenarioDescription(data.description || "");
+          setRouterBranches(
+            data.routerBranches?.length > 0
+              ? data.routerBranches
+              : [
+                  {
+                    id: Date.now(),
+                    hasModule: false,
+                    condition: null,
+                    modules: [],
+                  },
+                ]
+          );
+
+          console.log("Loaded scenario from backend:", data.routerBranches);
+        } else {
+          console.log(
+            "ℹ️ No existing scenario found for this user — Add mode."
+          );
+          setEditingMode("add");
+        }
+      } catch (err) {
+        console.error("❌ Error fetching scenario:", err);
+      }
+    };
+
+    fetchScenario();
+  }, []);
 
   const [allActive, setAllActive] = useState(false);
 
@@ -470,8 +644,8 @@ if (savedShopifyState && routerBranches.length === 0) {
         bcc: bccList,
         emailType: selectedAppType || selectedApp?.name || "",
         ...(isDelay
-          ? { delayValue: delayValue || "", delayUnit: delayUnit || "" } 
-          : {}), 
+          ? { delayValue: delayValue || "", delayUnit: delayUnit || "" }
+          : {}),
       };
 
       if (editingModuleId) {
@@ -549,59 +723,57 @@ if (savedShopifyState && routerBranches.length === 0) {
   };
 
   const [completedSteps, setCompletedSteps] = useState([]);
-useEffect(() => {
-  const params = new URLSearchParams(window.location.search);
-  const googleSuccess = params.get("google-auth-success");
-  const microsoftSuccess = params.get("microsoft-auth-success");
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const googleSuccess = params.get("google-auth-success");
+    const microsoftSuccess = params.get("microsoft-auth-success");
 
-  if (googleSuccess === "true" || microsoftSuccess === "true") {
-    const provider = googleSuccess === "true" ? "Gmail" : "Outlook";
-    toast.success(`${provider} connected successfully!`);
+    if (googleSuccess === "true" || microsoftSuccess === "true") {
+      const provider = googleSuccess === "true" ? "Gmail" : "Outlook";
+      toast.success(`${provider} connected successfully!`);
 
-    const savedState = localStorage.getItem("shopifyScenarioState");
-    if (savedState) {
-      try {
-        const parsed = JSON.parse(savedState);
-        if (parsed.routerBranches?.length > 0) {
-          setRouterBranches(parsed.routerBranches);
-          localStorage.setItem("skipScenarioFetch", "true");
-        } else {
-        }
-      } catch (err) {
+      const savedState = localStorage.getItem("shopifyScenarioState");
+      if (savedState) {
+        try {
+          const parsed = JSON.parse(savedState);
+          if (parsed.routerBranches?.length > 0) {
+            setRouterBranches(parsed.routerBranches);
+            localStorage.setItem("skipScenarioFetch", "true");
+          } else {
+          }
+        } catch (err) {}
+        localStorage.removeItem("shopifyScenarioState");
       }
-      localStorage.removeItem("shopifyScenarioState");
+
+      const lastModule = localStorage.getItem("activeShopifyModule");
+
+      fetchConnections().then(() => {
+        setOpen(true);
+
+        if (lastModule) {
+          const modules = {
+            "Initial Email": "Initial Email",
+            "First Follow-up": "First Follow-up",
+            "Second Follow-up": "Second Follow-up",
+          };
+          const name = modules[lastModule];
+          if (name) {
+            setSelectedApp({
+              name: "Gmail",
+              displayName: name,
+              color: "bg-red-500",
+              icon: "Gmail",
+              defaultTemplate: name,
+            });
+            setSelectedTemplate(name);
+          }
+        }
+      });
+
+      localStorage.removeItem("activeShopifyModule");
+      window.history.replaceState({}, document.title, window.location.pathname);
     }
-
-    const lastModule = localStorage.getItem("activeShopifyModule");
-
-    fetchConnections().then(() => {
-      setOpen(true);
-
-      if (lastModule) {
-        const modules = {
-          "Initial Email": "Initial Email",
-          "First Follow-up": "First Follow-up",
-          "Second Follow-up": "Second Follow-up",
-        };
-        const name = modules[lastModule];
-        if (name) {
-          setSelectedApp({
-            name: "Gmail",
-            displayName: name,
-            color: "bg-red-500",
-            icon: "Gmail",
-            defaultTemplate: name,
-          });
-          setSelectedTemplate(name);
-        }
-      }
-    });
-
-    localStorage.removeItem("activeShopifyModule");
-    window.history.replaceState({}, document.title, window.location.pathname);
-  }
-}, []);
-
+  }, []);
 
   const FlowNode = ({
     icon: Icon,
@@ -826,7 +998,6 @@ useEffect(() => {
         const data = await res.json();
 
         if (data.success && data.data) {
-
           setFormData({
             fullName: data.data.fullName || "Dummy Customer",
             businessEmail: data.data.businessEmail || "",
@@ -834,7 +1005,7 @@ useEffect(() => {
             country: data.data.country || "",
             service: data.data.service || "",
             budget: data.data.budget || "",
-            description: data.data.helpDescription || "", 
+            description: data.data.helpDescription || "",
           });
         } else {
           console.log("ℹ️ No previous test data found for this user.");
@@ -998,10 +1169,7 @@ useEffect(() => {
     }
 
     if (unverifiedConnections.length > 0) {
-      console.warn(
-        " Unverified connections detected:",
-        unverifiedConnections
-      );
+      console.warn(" Unverified connections detected:", unverifiedConnections);
       setShowVerifyModal(true);
       setUnverifiedConnections(unverifiedConnections);
 
@@ -1022,20 +1190,23 @@ useEffect(() => {
     toast.loading("Generating test email...", { id: "test" });
 
     try {
-      const res = await fetch("https://email-syncing-backend.vercel.app/mailhook/Run-test-mode", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: localStorage.getItem("userid"),
-          fullName: formData.fullName,
-          businessEmail: formData.businessEmail,
-          storeName: formData.storeName,
-          country: formData.country,
-          service: formData.service,
-          budget: formData.budget,
-          helpDescription: formData.description,
-        }),
-      });
+      const res = await fetch(
+        "https://email-syncing-backend.vercel.app/mailhook/Run-test-mode",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: localStorage.getItem("userid"),
+            fullName: formData.fullName,
+            businessEmail: formData.businessEmail,
+            storeName: formData.storeName,
+            country: formData.country,
+            service: formData.service,
+            budget: formData.budget,
+            helpDescription: formData.description,
+          }),
+        }
+      );
 
       const data = await res.json();
       toast.dismiss("test");
@@ -1262,13 +1433,19 @@ useEffect(() => {
               </p>
             </div>
             <div className="flex items-center flex-wrap gap-3">
-             
-
-              <button
+              {/* <button
                 onClick={handleSaveScenario}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center text-sm"
               >
                 {scenarioId ? "Update Scenario" : "Add Scenario"}
+              </button> */}
+              <button
+                onClick={handleSaveScenario}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center text-sm"
+              >
+                {editingMode === "update" || scenarioId
+                  ? "Update Scenario"
+                  : "Add Scenario"}
               </button>
 
               <button
@@ -1278,7 +1455,7 @@ useEffect(() => {
                 <Zap className="w-4 h-4 mr-2" />
                 Run Test
               </button>
-            
+
               <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-full shadow-sm border ml-2">
                 <span className="text-sm font-medium text-gray-700">
                   Activate Scenario
@@ -1298,7 +1475,6 @@ useEffect(() => {
                         routerBranchesCount: routerBranches?.length,
                       });
 
-                    
                       if (newState) {
                         const missingModules = [];
 
@@ -1337,7 +1513,6 @@ useEffect(() => {
                         });
 
                         if (missingModules.length > 0) {
-                          
                           toast.error(
                             `Scenario cannot be activated.\n\nMissing connections in:\n${missingModules
                               .map((m) => `• ${m.moduleName} (no connection)`)
@@ -1355,8 +1530,6 @@ useEffect(() => {
                           setAutomationOn(false);
                           return;
                         }
-
-                       
 
                         const unverifiedConnections = [];
 
@@ -1387,8 +1560,6 @@ useEffect(() => {
                         });
 
                         if (unverifiedConnections.length > 0) {
-                        
-
                           setShowVerifyModal(true);
                           setUnverifiedConnections(unverifiedConnections);
                           setAutomationOn(false);
@@ -1407,11 +1578,8 @@ useEffect(() => {
 
                           return;
                         }
-
-                      
                       }
 
-                    
                       setAutomationOn(newState);
                       if (newState) {
                         localStorage.setItem("scenarioActive", "true");
@@ -1420,8 +1588,6 @@ useEffect(() => {
                         localStorage.removeItem("scenarioActive");
                         toast.error("Automation deactivated!");
                       }
-
-                    
                     }}
                     className="sr-only peer"
                   />
@@ -1957,7 +2123,7 @@ useEffect(() => {
             toast.success(" Gmail connection added successfully!");
 
             if (selectedAppType === "Gmail") {
-              setSelectedConnection(""); 
+              setSelectedConnection("");
             }
           }}
         />

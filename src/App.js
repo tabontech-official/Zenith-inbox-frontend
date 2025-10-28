@@ -65,6 +65,9 @@ import SetupFlow from "./pages/SetupPage";
 import Inbox from "./pages/Inbox";
 import MailhookSetupGuide from "./pages/MailhookSetupGuide";
 import Profile from "./pages/Profile";
+import ResetPassword from "./Auth/ResetPassword";
+import ForgotPassword from "./Auth/ForgotPassword";
+import LoginVerify from "./Auth/LoginVerify";
 
 function App() {
   return (
@@ -117,6 +120,10 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password/:token" element={<ResetPassword />} />
+<Route path="/login-verify/:token" element={<LoginVerify />} />
+
           <Route
             path="/scenarios/others/:id"
             element={
@@ -181,7 +188,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-           <Route
+          <Route
             path="/profile"
             element={
               <ProtectedRoute>

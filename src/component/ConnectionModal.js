@@ -7,31 +7,6 @@ const ConnectionModal = ({ isOpen, onClose, onSuccess }) => {
     "My Google Restricted Connection"
   );
 
-  // const handleGoogleSignIn = () => {
-  //   const userId = localStorage.getItem("userid");
-  //   if (!userId) {
-  //     alert("User not found. Please log in again.");
-  //     return;
-  //   }
-
-  //   // ✅ Save currently open module (so we can reopen it after redirect)
-  //   const activeModule =
-  //     localStorage.getItem("activeShopifyModule") || "Initial Email";
-  //   localStorage.setItem("activeShopifyModule", activeModule);
-
-  //   // ✅ Save scenario builder state (to restore after redirect)
-  //   const routerBranches = JSON.parse(
-  //     localStorage.getItem("routerBranchesState") || "[]"
-  //   );
-  //   localStorage.setItem(
-  //     "shopifyScenarioState",
-  //     JSON.stringify({ routerBranches })
-  //   );
-
-  //   // ✅ Redirect the current tab (no popup)
-  //   window.location.href = `https://email-syncing-backend.vercel.app/auth/google?userId=${userId}`;
-  // };
-
   const handleGoogleSignIn = () => {
     const userId = localStorage.getItem("userid");
     if (!userId) {
@@ -39,12 +14,13 @@ const ConnectionModal = ({ isOpen, onClose, onSuccess }) => {
       return;
     }
 
-    // ✅ Save currently open module name
+    const scenarioId = localStorage.getItem("scenarioId");
+    localStorage.setItem("scenarioId", scenarioId);
+
     const activeModule =
       localStorage.getItem("activeShopifyModule") || "Initial Email";
     localStorage.setItem("activeShopifyModule", activeModule);
 
-    // ✅ Save current routerBranches before redirect
     try {
       const routerBranches = JSON.parse(
         localStorage.getItem("routerBranchesState") || "[]"

@@ -56,7 +56,8 @@ const OutlookConnectionModal = ({ isOpen, onClose, onSuccess }) => {
       alert("User not found. Please login again.");
       return;
     }
-
+const scenarioId = localStorage.getItem("scenarioId");
+  localStorage.setItem("shopifyEditingMode", scenarioId ? "update" : "add");
     const activeModule =
       localStorage.getItem("activeShopifyModule") || "Initial Email";
     localStorage.setItem("activeShopifyModule", activeModule);
