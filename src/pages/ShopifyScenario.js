@@ -253,11 +253,14 @@ const ShopifyScenariosPage = () => {
       setCompletedSteps([]);
       setIsScenarioUpdated(true);
 
-      const refresh = await fetch("https://email-syncing-backend.vercel.app/scenario/details", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: localStorage.getItem("userid") }),
-      });
+      const refresh = await fetch(
+        "https://email-syncing-backend.vercel.app/scenario/details",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: localStorage.getItem("userid") }),
+        }
+      );
       const freshData = await refresh.json();
 
       if (freshData) {
@@ -375,11 +378,14 @@ const ShopifyScenariosPage = () => {
           return;
         }
 
-        const res = await fetch("https://email-syncing-backend.vercel.app/scenario/details", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId }),
-        });
+        const res = await fetch(
+          "https://email-syncing-backend.vercel.app/scenario/details",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId }),
+          }
+        );
 
         const data = await res.json();
 
@@ -863,20 +869,23 @@ const ShopifyScenariosPage = () => {
     toast.loading("Generating test email...", { id: "test" });
 
     try {
-      const res = await fetch("https://email-syncing-backend.vercel.app/mailhook/Run-test-mode", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: localStorage.getItem("userid"),
-          fullName: formData.fullName,
-          businessEmail: formData.businessEmail,
-          storeName: formData.storeName,
-          country: formData.country,
-          service: formData.service,
-          budget: formData.budget,
-          helpDescription: formData.description,
-        }),
-      });
+      const res = await fetch(
+        "https://email-syncing-backend.vercel.app/mailhook/Run-test-mode",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: localStorage.getItem("userid"),
+            fullName: formData.fullName,
+            businessEmail: formData.businessEmail,
+            storeName: formData.storeName,
+            country: formData.country,
+            service: formData.service,
+            budget: formData.budget,
+            helpDescription: formData.description,
+          }),
+        }
+      );
 
       const data = await res.json();
       toast.dismiss("test");
@@ -1015,7 +1024,83 @@ const ShopifyScenariosPage = () => {
     }
   };
   const [selectedAppType, setSelectedAppType] = useState("");
+  const [showServiceModal, setShowServiceModal] = useState(false);
+  const [loadingServices, setLoadingServices] = useState(false);
 
+  const handleEdit = async () => {
+    if (!showValidation) {
+      setShowServiceModal(true);
+      setLoadingServices(true);
+      const userId = localStorage.getItem("userid");
+      try {
+        const res = await fetch(
+          `https://email-syncing-backend.vercel.app/template/all?userId=${userId}`
+        );
+        const data = await res.json();
+
+        // Group templates by service
+        const grouped = data.reduce((acc, item) => {
+          if (!acc[item.service]) acc[item.service] = [];
+          acc[item.service].push(item);
+          return acc;
+        }, {});
+
+        // Take top 2 services
+        const top2 = Object.keys(grouped).slice(0, 2);
+
+        // Prepare structure
+        const formatted = top2.map((srv) => ({
+          service: srv,
+          templates: grouped[srv].slice(0, 3), // ensure only 3 per service
+        }));
+
+        setServiceGroups(formatted);
+      } catch (err) {
+        console.error("Error fetching services:", err);
+      } finally {
+        setLoadingServices(false);
+      }
+
+      return;
+    }
+
+    if (showTemplateModal) return;
+    setShowTemplateModal(true);
+  };
+  const [serviceGroups, setServiceGroups] = useState([]);
+
+  useEffect(() => {
+    if (showServiceModal) {
+      (async () => {
+        const userId = localStorage.getItem("userid");
+        try {
+          const { data } = await axios.get(
+            `https://email-syncing-backend.vercel.app/template/all?userId=${userId}`
+          );
+
+          // Group by service
+          const grouped = data.reduce((acc, item) => {
+            if (!acc[item.service]) acc[item.service] = [];
+            acc[item.service].push(item);
+            return acc;
+          }, {});
+
+          // Get first 2 unique services
+          const top2Services = Object.keys(grouped).slice(0, 2);
+
+          // Extract their templates
+          const result = top2Services.map((service) => ({
+            service,
+            templates: grouped[service],
+          }));
+
+          setServiceGroups(result);
+        } catch (err) {
+          console.error("❌ Failed to fetch templates:", err);
+        }
+      })();
+    }
+  }, [showServiceModal]);
   return (
     <div className="flex h-screen bg-gray-50">
       <div className="w-64">
@@ -1282,26 +1367,7 @@ const ShopifyScenariosPage = () => {
                     : null
                 }
                 module={{ app: { name: "Template" } }}
-                onEdit={() => {
-                  if (!showValidation) {
-                    toast.error(
-                      "You need to run the test before viewing templates.",
-                      {
-                        duration: 4000,
-                        style: {
-                          background: "#fff0f0",
-                          color: "#b91c1c",
-                          border: "1px solid #fca5a5",
-                        },
-                      }
-                    );
-                    return;
-                  }
-
-                  if (showTemplateModal) return;
-
-                  setShowTemplateModal(true);
-                }}
+                onEdit={handleEdit}
               />
 
               <div className="w-0.5 h-12 bg-gray-300"></div>
@@ -2194,7 +2260,6 @@ const ShopifyScenariosPage = () => {
                     </div>
                   </div>
 
-                  {/* 🟠 Edit Template (slides in from right) */}
                   {showEditTemplateModal && (
                     <div
                       className="bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden max-w-[45%] transition-all duration-500 transform translate-x-0 animate-slideIn"
@@ -2335,6 +2400,381 @@ const ShopifyScenariosPage = () => {
                     </div>
                   )}
                 </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      {(showServiceModal || showEditTemplateModal) && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="flex gap-4 w-full max-w-6xl max-h-[90vh] p-4">
+            {showServiceModal && (
+             <div
+  className={`flex w-full max-w-[90rem] max-h-[90vh] p-6 transition-all duration-500 ${
+    showEditTemplateModal ? "justify-between" : "justify-center"
+  }`}
+>
+  <div
+    className={`bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden transition-all duration-500 ${
+      showEditTemplateModal ? "max-w-[60%]" : "max-w-[70rem]"
+    }`}
+  >
+                  <div className="flex justify-between items-center p-5 border-b bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
+                    <div>
+                      <h2 className="text-lg font-semibold">
+                        Top 2 Services Overview
+                      </h2>
+                      <p className="text-xs text-blue-100">
+                        Showing 3 templates per service
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2">
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={serviceGroups.every((grp) =>
+                              grp.templates.every((t) => t.active)
+                            )}
+                            onChange={async (e) => {
+                              const newStatus = e.target.checked;
+
+                              const updates = serviceGroups.flatMap((grp) =>
+                                grp.templates.map((t) =>
+                                  fetch(
+                                    `https://email-syncing-backend.vercel.app/template/status/${t._id}`,
+                                    {
+                                      method: "PATCH",
+                                      headers: {
+                                        "Content-Type": "application/json",
+                                      },
+                                      body: JSON.stringify({
+                                        active: newStatus,
+                                      }),
+                                    }
+                                  )
+                                )
+                              );
+
+                              await Promise.all(updates);
+                              toast.success(
+                                `All templates ${
+                                  newStatus ? "activated" : "deactivated"
+                                } successfully!`
+                              );
+
+                              setServiceGroups((prev) =>
+                                prev.map((grp) => ({
+                                  ...grp,
+                                  templates: grp.templates.map((tpl) => ({
+                                    ...tpl,
+                                    active: newStatus,
+                                  })),
+                                }))
+                              );
+                            }}
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:bg-green-500 transition-colors"></div>
+                          <div className="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full shadow-md transition-transform peer-checked:translate-x-5"></div>
+                        </label>
+
+                        <span
+                          className={`text-xs font-semibold ${
+                            serviceGroups.every((grp) =>
+                              grp.templates.every((t) => t.active)
+                            )
+                              ? "text-green-300"
+                              : "text-gray-300"
+                          }`}
+                        >
+                          {serviceGroups.every((grp) =>
+                            grp.templates.every((t) => t.active)
+                          )
+                            ? "ON"
+                            : "OFF"}
+                        </span>
+                      </div>
+
+                      <button
+                        onClick={() => setShowServiceModal(false)}
+                        className="text-white hover:text-gray-100 hover:bg-white/10 rounded-full p-1 transition"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="p-6 overflow-y-auto flex-1 bg-gray-50">
+                    {loadingServices ? (
+                      <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-blue-500 mb-3"></div>
+                        <p>Loading top services...</p>
+                      </div>
+                    ) : (
+                      serviceGroups.map((group, i) => (
+                        <div
+                          key={i}
+                          className="mb-6 bg-white rounded-lg shadow border"
+                        >
+                          <div className="p-4 bg-blue-50 border-b flex justify-between items-center">
+                            <h3 className="text-blue-700 font-bold text-lg">
+                              {group.service}
+                            </h3>
+                            <p className="text-xs text-gray-500">
+                              Showing {group.templates.length} templates
+                            </p>
+                          </div>
+
+                          <table className="w-full border-collapse text-sm">
+                            <thead className="bg-gray-100 text-gray-700 uppercase text-xs">
+                              <tr>
+                                <th className="p-3 text-left w-[40%]">
+                                  Template
+                                </th>
+                                <th className="p-3 text-center w-[20%]">
+                                  Status
+                                </th>
+                                <th className="p-3 text-center w-[25%]">
+                                  Last Updated
+                                </th>
+                                <th className="p-3 text-center w-[15%]">
+                                  Action
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {group.templates.map((t, idx) => (
+                                <tr
+                                  key={t._id}
+                                  className={`border-b transition-colors ${
+                                    t.active ? "hover:bg-blue-50" : "bg-red-50"
+                                  }`}
+                                >
+                                  <td className="p-3 font-medium text-gray-800">
+                                    {t.name.includes("Initial")
+                                      ? "Initial Email"
+                                      : t.name.includes("First")
+                                      ? "First Follow-up"
+                                      : "Second Follow-up"}
+                                  </td>
+
+                                  <td className="p-3 text-center">
+                                    <label className="relative inline-flex items-center cursor-pointer">
+                                      <input
+                                        type="checkbox"
+                                        checked={t.active}
+                                        onChange={async () => {
+                                          const newStatus = !t.active;
+                                          setServiceGroups((prev) =>
+                                            prev.map((grp) => ({
+                                              ...grp,
+                                              templates: grp.templates.map(
+                                                (tpl) =>
+                                                  tpl._id === t._id
+                                                    ? {
+                                                        ...tpl,
+                                                        active: newStatus,
+                                                      }
+                                                    : tpl
+                                              ),
+                                            }))
+                                          );
+
+                                          await fetch(
+                                            `https://email-syncing-backend.vercel.app/template/status/${t._id}`,
+                                            {
+                                              method: "PATCH",
+                                              headers: {
+                                                "Content-Type":
+                                                  "application/json",
+                                              },
+                                              body: JSON.stringify({
+                                                active: newStatus,
+                                              }),
+                                            }
+                                          );
+                                        }}
+                                        className="sr-only peer"
+                                      />
+                                      <div className="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:bg-green-500 transition-colors"></div>
+                                      <div className="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full shadow-md transition-transform peer-checked:translate-x-5"></div>
+                                    </label>
+                                  </td>
+
+                                  <td className="p-3 text-center text-gray-500">
+                                    {new Date(t.updatedAt).toLocaleString()}
+                                  </td>
+
+                                  <td className="p-3 text-center">
+                                    <button
+                                      onClick={() => {
+                                        setEditingTemplate(t);
+                                        setEditContent(t.content || "");
+                                        setShowEditTemplateModal(true);
+                                      }}
+                                      className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs rounded-md font-medium transition-colors"
+                                    >
+                                      Edit
+                                    </button>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  <div className="border-t bg-gray-50 p-3 text-center">
+                    <button
+                      onClick={() => {
+                        window.open(`/templates`, "_blank");
+                      }}
+                      className="text-sm text-indigo-600 hover:underline transition"
+                    >
+                      View More Services Templates
+                    </button>
+                  </div>
+                </div>
+
+                {showEditTemplateModal && (
+                  <div
+                    className="bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden max-w-[45%] transition-all duration-500 transform translate-x-0 animate-slideIn"
+                    style={{
+                      animation: "slideIn 0.4s ease-out forwards",
+                    }}
+                  >
+                    <div className="flex justify-between items-center p-5 border-b bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
+                      <h2 className="text-lg font-semibold">
+                        Edit Template — {editingTemplate?.name}
+                      </h2>
+                      <button
+                        onClick={() => setShowEditTemplateModal(false)}
+                        className="text-white hover:text-gray-200 hover:bg-white/10 p-1 rounded-full transition"
+                      >
+                        ✕
+                      </button>
+                    </div>
+
+                    <div className="p-5 overflow-y-auto flex-1 space-y-4 bg-gray-50">
+                      <label className="block text-sm font-semibold text-gray-700">
+                        Template Content
+                      </label>
+
+                      <ReactQuill
+                        theme="snow"
+                        value={editContent}
+                        onChange={setEditContent}
+                        className="rounded-lg shadow-sm"
+                        style={{
+                          border: "1px solid #e5e7eb",
+                          borderRadius: "0.5rem",
+                        }}
+                        modules={{
+                          toolbar: [
+                            [{ header: [1, 2, false] }],
+                            ["bold", "italic", "underline", "strike"],
+                            [{ list: "ordered" }, { list: "bullet" }],
+                            ["link"],
+                            ["clean"],
+                          ],
+                        }}
+                      />
+
+                      <div className="border rounded-lg bg-white p-3 mt-4">
+                        <p className="text-sm font-semibold text-gray-700 mb-2">
+                          Insert Fields
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {[
+                            "Full name",
+                            "Business email",
+                            "Store name",
+                            "Store URL",
+                            "Country",
+                            "Service",
+                            "Budget",
+                            "Problem & Goal",
+                          ].map((field) => (
+                            <button
+                              key={field}
+                              onClick={() => {
+                                const placeholder = `{{${field}}}`;
+                                const quill =
+                                  document.querySelector(".ql-editor");
+                                if (quill) {
+                                  const sel = window.getSelection();
+                                  const range = sel.getRangeAt(0);
+                                  const textNode =
+                                    document.createTextNode(placeholder);
+                                  range.insertNode(textNode);
+                                  range.setStartAfter(textNode);
+                                  range.setEndAfter(textNode);
+                                  sel.removeAllRanges();
+                                  sel.addRange(range);
+                                }
+                              }}
+                              className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium hover:bg-purple-200 transition"
+                            >
+                              {field}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="border-t p-4 bg-white flex justify-end space-x-3">
+                      <button
+                        onClick={() => setShowEditTemplateModal(false)}
+                        className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-100 transition"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={async () => {
+                          try {
+                            const res = await fetch(
+                              `https://email-syncing-backend.vercel.app/template/update/${editingTemplate._id}`,
+                              {
+                                method: "PUT",
+                                headers: {
+                                  "Content-Type": "application/json",
+                                },
+                                body: JSON.stringify({
+                                  content: editContent,
+                                }),
+                              }
+                            );
+                            const data = await res.json();
+                            if (data.success) {
+                              toast.success("Template updated successfully!");
+                              setTemplateList((prev) =>
+                                prev.map((tpl) =>
+                                  tpl._id === editingTemplate._id
+                                    ? { ...tpl, content: editContent }
+                                    : tpl
+                                )
+                              );
+                            } else {
+                              toast.error(
+                                data.message || "Failed to update template."
+                              );
+                            }
+                          } catch (err) {
+                            console.error("Error updating template:", err);
+                            toast.error("Error updating template.");
+                          }
+                        }}
+                        className="px-5 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition"
+                      >
+                        Save Changes
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
