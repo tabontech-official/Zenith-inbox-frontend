@@ -366,7 +366,7 @@ const ShopifyScenariosPage = () => {
         if (!res.ok)
           throw new Error(data.message || "Failed to update scenario");
 
-        toast.success("✅ Scenario updated successfully!");
+        toast.success("Scenario updated successfully!");
       } else {
         // ✅ Otherwise, create a new one (POST)
         console.log("🆕 Creating a new scenario...");
