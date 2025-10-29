@@ -83,7 +83,11 @@ const OutlookConnectionModal = ({ isOpen, onClose, onSuccess }) => {
 
     onClose();
 
-    window.location.href = `https://email-syncing-backend.vercel.app/auth/outlook?userId=${userId}`;
+    const currentPath = window.location.pathname.replace(/^\//, "");
+
+    window.location.href = `https://email-syncing-backend.vercel.app/auth/outlook?userId=${userId}&redirect=${encodeURIComponent(
+      currentPath
+    )}`;
   };
 
   return (

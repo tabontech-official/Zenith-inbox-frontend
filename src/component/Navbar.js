@@ -169,19 +169,42 @@ const handleSkipSetup = async () => {
   return (
     <header className="w-full bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-end sticky top-0 z-30 shadow-sm">
       <div className="flex items-center gap-3">
-        {!loading && user && (
-          <button
-            onClick={handleWizardClick}
-            className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition
-              ${
-                setupCompleted
-                  ? "bg-green-100 text-green-700 hover:bg-green-200 border border-green-300"
-                  : "bg-purple-600 text-white hover:bg-purple-700"
-              }`}
-          >
-            {setupCompleted ? "Wizard Completed" : "Complete Wizard"}
-          </button>
-        )}
+       {!loading && user && (
+  <button
+    onClick={handleWizardClick}
+    className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition
+      ${
+        setupCompleted
+          ? "bg-green-100 text-green-700 hover:bg-green-200 border border-green-300"
+          : "bg-purple-600 text-white hover:bg-purple-700"
+      }`}
+  >
+    {(() => {
+      const totalSteps = user?.setup?.steps?.length || 0;
+      const completedSteps = user?.setup?.steps?.filter(
+        (s) => s.status === "completed"
+      ).length;
+
+      if (setupCompleted) {
+        return (
+          <>
+            Wizard Completed <span className="text-xs">({completedSteps}/{totalSteps})</span>
+          </>
+        );
+      } else {
+        return (
+          <>
+            Complete Wizard{" "}
+            <span className="text-xs font-normal">
+              ({completedSteps}/{totalSteps})
+            </span>
+          </>
+        );
+      }
+    })()}
+  </button>
+)}
+
 
         <button
           onClick={() => setOpen(true)}

@@ -217,6 +217,19 @@ const ShopifyScenariosPage = () => {
     };
   }, [showOutlookModal, showGmailModal]);
 
+  useEffect(() => {
+    const savedScenarioId = localStorage.getItem("scenarioId");
+
+    if (savedScenarioId) {
+      console.log("🟢 Restoring scenario ID:", savedScenarioId);
+      setScenarioId(savedScenarioId);
+      setEditingMode("update");
+    } else {
+      console.log("🆕 No saved scenario — Add mode");
+      setEditingMode("add");
+    }
+  }, []);
+
   // const handleSaveScenario = async () => {
   //   const payload = {
   //     userId: localStorage.getItem("userid"),
@@ -229,38 +242,56 @@ const ShopifyScenariosPage = () => {
 
   //   try {
   //     let res;
+  //     let data;
 
-  //     if (scenarioId) {
+  //     console.log("🧠 Current Editing Mode:", editingMode);
+  //     console.log("🧠 Current Scenario ID:", scenarioId);
+  //     let activeScenarioId = scenarioId || localStorage.getItem("scenarioId");
+  //     if (activeScenarioId && editingMode !== "update") {
+  //       console.log("🔁 Restoring update mode inside handleSaveScenario");
+  //       setScenarioId(activeScenarioId);
+  //       setEditingMode("update");
+  //     }
+  //     if (editingMode === "update" && activeScenarioId) {
+  //       console.log("✏️ Updating existing scenario...");
   //       res = await fetch(
-  //         `https://email-syncing-backend.vercel.app/scenario/detail/${scenarioId}`,
+  //         `https://email-syncing-backend.vercel.app/scenario/detail/${activeScenarioId}`,
   //         {
   //           method: "PUT",
   //           headers: { "Content-Type": "application/json" },
   //           body: JSON.stringify(payload),
   //         }
   //       );
-  //     }
+  //       data = await res.json();
 
-  //     if (!res || !res.ok) {
-  //       console.warn(
-  //         "Scenario not found or update failed — creating new one..."
-  //       );
+  //       if (!res.ok)
+  //         throw new Error(data.message || "Failed to update scenario");
+
+  //       toast.success("Scenario updated successfully!");
+  //     } else {
+  //       // ✅ Otherwise, create a new one (POST)
+  //       console.log("🆕 Creating a new scenario...");
   //       res = await fetch(`https://email-syncing-backend.vercel.app/scenario`, {
   //         method: "POST",
   //         headers: { "Content-Type": "application/json" },
   //         body: JSON.stringify(payload),
   //       });
+  //       data = await res.json();
+
+  //       if (!res.ok)
+  //         throw new Error(data.message || "Failed to create scenario");
+
+  //       toast.success("🎉 New scenario created successfully!");
+
+  //       // Store scenario ID and switch to update mode
+  //       setScenarioId(data._id);
+  //       localStorage.setItem("scenarioId", data._id);
+  //       setEditingMode("update");
   //     }
 
-  //     const data = await res.json();
-
-  //     if (!res.ok) throw new Error(data.message || "Failed to save scenario");
-
-  //     setScenarioId(data._id);
-  //     localStorage.setItem("scenarioId", data._id);
+  //     // ✅ Common state updates after success
   //     setScenarioName(data.name || scenarioName);
   //     setScenarioDescription(data.description || scenarioDescription);
-
   //     setRouterBranches(
   //       data.routerBranches?.length > 0
   //         ? data.routerBranches
@@ -275,15 +306,7 @@ const ShopifyScenariosPage = () => {
   //       localStorage.removeItem("scenarioActive");
   //     }
 
-  //     toast.success(
-  //       scenarioId
-  //         ? "Shopify scenario updated successfully!"
-  //         : "Shopify scenario created successfully!"
-  //     );
-  //     setShowValidation(false);
-  //     setCompletedSteps([]);
-  //     setIsScenarioUpdated(true);
-
+  //     // Refresh updated list
   //     const refresh = await fetch(
   //       "https://email-syncing-backend.vercel.app/scenario/details",
   //       {
@@ -311,26 +334,15 @@ const ShopifyScenariosPage = () => {
   //       setScenarioName(freshData.name || scenarioName);
   //       setScenarioDescription(freshData.description || scenarioDescription);
   //     }
+
+  //     setShowValidation(false);
+  //     setCompletedSteps([]);
+  //     setIsScenarioUpdated(true);
   //   } catch (err) {
-  //     console.error("Error saving scenario:", err);
+  //     console.error("❌ Error saving scenario:", err);
   //     toast.error("Failed to save scenario.");
   //   }
   // };
-
-  // 🧠 Ensure editingMode and scenarioId are restored at startup
-  useEffect(() => {
-    const savedScenarioId = localStorage.getItem("scenarioId");
-
-    if (savedScenarioId) {
-      console.log("🟢 Restoring scenario ID:", savedScenarioId);
-      setScenarioId(savedScenarioId);
-      setEditingMode("update");
-    } else {
-      console.log("🆕 No saved scenario — Add mode");
-      setEditingMode("add");
-    }
-  }, []);
-
   const handleSaveScenario = async () => {
     const payload = {
       userId: localStorage.getItem("userid"),
@@ -338,23 +350,64 @@ const ShopifyScenariosPage = () => {
       description: scenarioDescription || "",
       type: "shopify",
       routerBranches,
-      scenarioActive: localStorage.getItem("scenarioActive") === "true",
+      scenarioActive: automationOn,
     };
 
     try {
       let res;
       let data;
 
-      console.log("🧠 Current Editing Mode:", editingMode);
-      console.log("🧠 Current Scenario ID:", scenarioId);
-      let activeScenarioId = scenarioId || localStorage.getItem("scenarioId");
+      let activeScenarioId = scenarioId || null;
+
+      const storedId = localStorage.getItem("scenarioId");
+      if (storedId && storedId !== activeScenarioId) {
+        console.warn("⚠️ Mismatch detected between localStorage and state ID");
+        console.log("🧩 Fixing ID:", storedId, "→", activeScenarioId);
+        if (activeScenarioId) {
+          localStorage.setItem("scenarioId", activeScenarioId);
+        } else {
+          localStorage.removeItem("scenarioId");
+        }
+      }
+
+      if (!activeScenarioId) {
+        const userId = localStorage.getItem("userid");
+        const checkRes = await fetch(
+          "https://email-syncing-backend.vercel.app/scenario/details",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId }),
+          }
+        );
+
+        const existing = await checkRes.json();
+
+        if (
+          existing &&
+          existing._id &&
+          existing.userId &&
+          existing.userId.toString() === userId.toString()
+        ) {
+          activeScenarioId = existing._id;
+
+          setScenarioId(existing._id);
+          setEditingMode("update");
+          localStorage.setItem("scenarioId", existing._id);
+        } else {
+          localStorage.removeItem("scenarioId");
+          activeScenarioId = null;
+        }
+      }
+
       if (activeScenarioId && editingMode !== "update") {
-        console.log("🔁 Restoring update mode inside handleSaveScenario");
+        console.log("🔁 Switching to update mode...");
         setScenarioId(activeScenarioId);
         setEditingMode("update");
       }
-      if (editingMode === "update" && activeScenarioId) {
-        console.log("✏️ Updating existing scenario...");
+
+      if (activeScenarioId) {
+        console.log("✏️ Updating existing scenario:", activeScenarioId);
         res = await fetch(
           `https://email-syncing-backend.vercel.app/scenario/detail/${activeScenarioId}`,
           {
@@ -370,7 +423,6 @@ const ShopifyScenariosPage = () => {
 
         toast.success("Scenario updated successfully!");
       } else {
-        // ✅ Otherwise, create a new one (POST)
         console.log("🆕 Creating a new scenario...");
         res = await fetch(`https://email-syncing-backend.vercel.app/scenario`, {
           method: "POST",
@@ -383,14 +435,11 @@ const ShopifyScenariosPage = () => {
           throw new Error(data.message || "Failed to create scenario");
 
         toast.success("🎉 New scenario created successfully!");
-
-        // Store scenario ID and switch to update mode
         setScenarioId(data._id);
         localStorage.setItem("scenarioId", data._id);
         setEditingMode("update");
       }
 
-      // ✅ Common state updates after success
       setScenarioName(data.name || scenarioName);
       setScenarioDescription(data.description || scenarioDescription);
       setRouterBranches(
@@ -399,15 +448,25 @@ const ShopifyScenariosPage = () => {
           : [{ id: Date.now(), hasModule: false, condition: null, modules: [] }]
       );
 
-      if (data.scenarioActive) {
-        setAutomationOn(true);
-        localStorage.setItem("scenarioActive", "true");
+      if (typeof data.scenarioActive === "boolean") {
+        setAutomationOn(data.scenarioActive);
+        if (data.scenarioActive) {
+          localStorage.setItem("scenarioActive", "true");
+        } else {
+          localStorage.removeItem("scenarioActive");
+        }
       } else {
-        setAutomationOn(false);
-        localStorage.removeItem("scenarioActive");
+        console.log(
+          "ℹ️ Backend didn't return scenarioActive — keeping current state:",
+          automationOn
+        );
+        if (automationOn) {
+          localStorage.setItem("scenarioActive", "true");
+        } else {
+          localStorage.removeItem("scenarioActive");
+        }
       }
 
-      // Refresh updated list
       const refresh = await fetch(
         "https://email-syncing-backend.vercel.app/scenario/details",
         {
@@ -440,7 +499,6 @@ const ShopifyScenariosPage = () => {
       setCompletedSteps([]);
       setIsScenarioUpdated(true);
     } catch (err) {
-      console.error("❌ Error saving scenario:", err);
       toast.error("Failed to save scenario.");
     }
   };
@@ -528,6 +586,77 @@ const ShopifyScenariosPage = () => {
     );
   }, []);
 
+  // useEffect(() => {
+  //   if (localStorage.getItem("skipScenarioFetch") === "true") {
+  //     console.log("🛑 Skipping fetchScenario — local restore already done");
+  //     localStorage.removeItem("skipScenarioFetch");
+  //     return;
+  //   }
+
+  //   const fetchScenario = async () => {
+  //     try {
+  //       const userId = localStorage.getItem("userid");
+  //       if (!userId) {
+  //         console.warn(
+  //           "⚠️ No userId found in localStorage — cannot fetch scenario."
+  //         );
+  //         return;
+  //       }
+
+  //       console.log("🔄 Fetching existing Shopify scenario for user:", userId);
+
+  //       const res = await fetch(
+  //         "https://email-syncing-backend.vercel.app/scenario/details",
+  //         {
+  //           method: "POST",
+  //           headers: { "Content-Type": "application/json" },
+  //           body: JSON.stringify({ userId }),
+  //         }
+  //       );
+
+  //       const data = await res.json();
+
+  //       if (data && !localStorage.getItem("shopifyScenarioState")) {
+  //         console.log("✅ Scenario fetched successfully:", data);
+
+  //         // 🧠 Save scenario ID locally for update mode
+  //         if (data._id) {
+  //           localStorage.setItem("scenarioId", data._id);
+  //           console.log("💾 Scenario ID saved to localStorage:", data._id);
+  //         }
+
+  //         // ✅ Update React state
+  //         setScenarioId(data._id);
+  //         setEditingMode("update");
+  //         setScenarioName(data.name || "");
+  //         setScenarioDescription(data.description || "");
+  //         setRouterBranches(
+  //           data.routerBranches?.length > 0
+  //             ? data.routerBranches
+  //             : [
+  //                 {
+  //                   id: Date.now(),
+  //                   hasModule: false,
+  //                   condition: null,
+  //                   modules: [],
+  //                 },
+  //               ]
+  //         );
+
+  //         console.log("Loaded scenario from backend:", data.routerBranches);
+  //       } else {
+  //         console.log(
+  //           "ℹ️ No existing scenario found for this user — Add mode."
+  //         );
+  //         setEditingMode("add");
+  //       }
+  //     } catch (err) {
+  //       console.error("❌ Error fetching scenario:", err);
+  //     }
+  //   };
+
+  //   fetchScenario();
+  // }, []);
   useEffect(() => {
     if (localStorage.getItem("skipScenarioFetch") === "true") {
       console.log("🛑 Skipping fetchScenario — local restore already done");
@@ -539,9 +668,6 @@ const ShopifyScenariosPage = () => {
       try {
         const userId = localStorage.getItem("userid");
         if (!userId) {
-          console.warn(
-            "⚠️ No userId found in localStorage — cannot fetch scenario."
-          );
           return;
         }
 
@@ -558,22 +684,18 @@ const ShopifyScenariosPage = () => {
 
         const data = await res.json();
 
-        if (data && !localStorage.getItem("shopifyScenarioState")) {
+        if (data && data._id) {
           console.log("✅ Scenario fetched successfully:", data);
 
-          // 🧠 Save scenario ID locally for update mode
-          if (data._id) {
-            localStorage.setItem("scenarioId", data._id);
-            console.log("💾 Scenario ID saved to localStorage:", data._id);
-          }
+          localStorage.setItem("scenarioId", data._id);
+          console.log("💾 Scenario ID saved to localStorage:", data._id);
 
-          // ✅ Update React state
           setScenarioId(data._id);
           setEditingMode("update");
           setScenarioName(data.name || "");
           setScenarioDescription(data.description || "");
           setRouterBranches(
-            data.routerBranches?.length > 0
+            Array.isArray(data.routerBranches) && data.routerBranches.length > 0
               ? data.routerBranches
               : [
                   {
@@ -585,16 +707,26 @@ const ShopifyScenariosPage = () => {
                 ]
           );
 
+          if (data.scenarioActive === true) {
+            setAutomationOn(true);
+            localStorage.setItem("scenarioActive", "true");
+            console.log("⚡ Scenario is active — toggle set to ON");
+          } else {
+            setAutomationOn(false);
+            localStorage.removeItem("scenarioActive");
+          }
+
           console.log("Loaded scenario from backend:", data.routerBranches);
         } else {
           console.log(
             "ℹ️ No existing scenario found for this user — Add mode."
           );
           setEditingMode("add");
+          setAutomationOn(false);
+          localStorage.removeItem("scenarioId");
+          localStorage.removeItem("scenarioActive");
         }
-      } catch (err) {
-        console.error("❌ Error fetching scenario:", err);
-      }
+      } catch (err) {}
     };
 
     fetchScenario();
@@ -1010,11 +1142,8 @@ const ShopifyScenariosPage = () => {
             description: data.data.helpDescription || "",
           });
         } else {
-          console.log("ℹ️ No previous test data found for this user.");
         }
-      } catch (err) {
-        console.error("❌ Error fetching test data:", err);
-      }
+      } catch (err) {}
     };
 
     if (showRunTestModal) {
@@ -1189,7 +1318,7 @@ const ShopifyScenariosPage = () => {
       return;
     }
 
-    toast.loading("Generating test email...", { id: "test" });
+    toast.loading("Validating scenario...", { id: "test" });
 
     try {
       const res = await fetch(
@@ -1395,13 +1524,18 @@ const ShopifyScenariosPage = () => {
             templates: grouped[service],
           }));
 
+          const allActive = data.every((t) => t.active === true);
+          setAllTemplatesActive(allActive);
+
           setServiceGroups(result);
         } catch (err) {
-          console.error(" Failed to fetch templates:", err);
+          console.error("Failed to fetch templates:", err);
         }
       })();
     }
   }, [showServiceModal]);
+  const [allTemplatesActive, setAllTemplatesActive] = useState(true);
+
   const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [unverifiedConnections, setUnverifiedConnections] = useState([]);
   useEffect(() => {
@@ -1552,8 +1686,8 @@ const ShopifyScenariosPage = () => {
                               if (!data || data.verified === false) {
                                 unverifiedConnections.push({
                                   _id: m.connectionId,
-                                  email: data?.email || "(Unknown)",
-                                  provider: data?.provider || "(Unknown)",
+                                  email: data?.email,
+                                  provider: data?.provider,
                                   verified: false,
                                 });
                               }
@@ -1891,26 +2025,57 @@ const ShopifyScenariosPage = () => {
                       </div>
                     ) : (
                       <>
-                        <div>
+                        <div className="relative">
                           <label className="block text-sm font-medium text-gray-700 mb-2">
                             Select Application{" "}
                             <span className="text-red-500">*</span>
                           </label>
 
-                          <select
-                            value={selectedAppType}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              setSelectedAppType(value);
+                          <div className="relative">
+                            <select
+                              value={selectedAppType}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                setSelectedAppType(value);
+                                fetchConnections();
+                              }}
+                              className="w-full border border-gray-300 rounded-lg px-4 py-2 pr-20 focus:ring-2 focus:ring-purple-500 focus:border-transparent appearance-none"
+                            >
+                              <option value="">-- Choose App Type --</option>
+                              <option value="Gmail">Gmail</option>
+                              <option value="Email">
+                                Email (SMTP/Outlook)
+                              </option>
+                            </select>
 
-                              fetchConnections();
-                            }}
-                            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                          >
-                            <option value="">-- Choose App Type --</option>
-                            <option value="Gmail">Gmail</option>
-                            <option value="Email">Email (SMTP/Outlook)</option>
-                          </select>
+                            {/* Add button INSIDE the select box (to the right) */}
+                            <button
+                              disabled={!selectedAppType}
+                              onClick={() => {
+                                if (selectedAppType === "Email") {
+                                  setShowOutlookModal(true);
+                                } else if (selectedAppType === "Gmail") {
+                                  setShowGmailModal(true);
+                                } else {
+                                  toast.error(
+                                    "Please select an application type first."
+                                  );
+                                }
+                              }}
+                              className={`absolute right-0 top-0 bottom-0 px-4 text-sm font-medium rounded-r-lg border-l transition-all duration-200 ${
+                                selectedAppType
+                                  ? "bg-purple-600 text-white border-l-gray-300 hover:bg-purple-700"
+                                  : "bg-gray-200 text-gray-400 border-l-gray-300 cursor-not-allowed"
+                              }`}
+                            >
+                              Add
+                            </button>
+                          </div>
+
+                          <p className="text-xs text-gray-500 mt-2">
+                            Choose the application type and click <b>Add</b> to
+                            connect a new account.
+                          </p>
                         </div>
 
                         {selectedAppType && (
@@ -1949,7 +2114,7 @@ const ShopifyScenariosPage = () => {
                                   ))}
                               </select>
 
-                              <button
+                              {/* <button
                                 onClick={() => {
                                   if (selectedAppType === "Email") {
                                     setShowOutlookModal(true);
@@ -1960,7 +2125,7 @@ const ShopifyScenariosPage = () => {
                                 className="ml-2 border border-purple-500 text-purple-600 hover:bg-purple-50 rounded-md px-3 py-1 text-sm font-medium"
                               >
                                 Add
-                              </button>
+                              </button> */}
                             </div>
                           </div>
                         )}
@@ -1970,16 +2135,58 @@ const ShopifyScenariosPage = () => {
                             <label className="block text-sm font-medium text-gray-700 mb-2">
                               Template
                             </label>
-                            <input
-                              type="text"
-                              value={
-                                selectedApp?.defaultTemplate ||
-                                selectedTemplate ||
-                                "N/A"
-                              }
-                              readOnly
-                              className="w-full border border-gray-300 rounded-lg px-4 py-2 bg-gray-100 text-gray-700"
-                            />
+
+                            <div className="relative">
+                              {/* Read-only Input */}
+                              <input
+                                type="text"
+                                value={
+                                  selectedApp?.defaultTemplate ||
+                                  selectedTemplate ||
+                                  "No template selected"
+                                }
+                                readOnly
+                                className="w-full border border-gray-300 rounded-lg px-4 py-2 pr-20 bg-gray-100 text-gray-700 focus:outline-none cursor-not-allowed"
+                              />
+
+                              {/* View Button inside the input box */}
+                              <button
+                                onClick={() => {
+                                  const templateName =
+                                    selectedTemplate ||
+                                    selectedApp?.defaultTemplate;
+
+                                  if (templateName) {
+                                    const encodedName =
+                                      encodeURIComponent(templateName);
+                                    window.open(
+                                      `/templates?view=${encodedName}`,
+                                      "_blank"
+                                    );
+                                  } else {
+                                    toast.info("No template selected to view.");
+                                  }
+                                }}
+                                disabled={
+                                  !selectedTemplate &&
+                                  !selectedApp?.defaultTemplate
+                                }
+                                className={`absolute right-0 top-0 bottom-0 px-4 text-sm font-medium rounded-r-lg border-l transition-all duration-200 ${
+                                  selectedTemplate ||
+                                  selectedApp?.defaultTemplate
+                                    ? "bg-indigo-600 text-white border-l-gray-300 hover:bg-indigo-700"
+                                    : "bg-gray-200 text-gray-400 border-l-gray-300 cursor-not-allowed"
+                                }`}
+                              >
+                                View
+                              </button>
+                            </div>
+
+                            {/* Hint Text */}
+                            <p className="text-xs text-gray-500 mt-2">
+                              Click <b>View</b> to open and review the full
+                              email template.
+                            </p>
                           </div>
                         </div>
 
@@ -2586,25 +2793,25 @@ const ShopifyScenariosPage = () => {
                         </label>
 
                         <ReactQuill
-  ref={quillRef}
-  theme="snow"
-  value={editContent}
-  onChange={setEditContent}
-  className="rounded-lg shadow-sm"
-  style={{
-    border: "1px solid #e5e7eb",
-    borderRadius: "0.5rem",
-  }}
-  modules={{
-    toolbar: [
-      [{ header: [1, 2, false] }],
-      ["bold", "italic", "underline", "strike"],
-      [{ list: "ordered" }, { list: "bullet" }],
-      ["link"],
-      ["clean"],
-    ],
-  }}
-/>
+                          ref={quillRef}
+                          theme="snow"
+                          value={editContent}
+                          onChange={setEditContent}
+                          className="rounded-lg shadow-sm"
+                          style={{
+                            border: "1px solid #e5e7eb",
+                            borderRadius: "0.5rem",
+                          }}
+                          modules={{
+                            toolbar: [
+                              [{ header: [1, 2, false] }],
+                              ["bold", "italic", "underline", "strike"],
+                              [{ list: "ordered" }, { list: "bullet" }],
+                              ["link"],
+                              ["clean"],
+                            ],
+                          }}
+                        />
 
                         <div className="border rounded-lg bg-white p-3 mt-4">
                           <p className="text-sm font-semibold text-gray-700 mb-2">
@@ -2621,28 +2828,34 @@ const ShopifyScenariosPage = () => {
                               "Budget",
                               "Problem & Goal",
                             ].map((field) => (
-                   <button
-  key={field}
-  onClick={() => {
-    const editor = quillRef.current?.getEditor();
-    if (editor) {
-      const placeholder = `{{${field}}}`;
-      const range = editor.getSelection(true);
-      if (range) {
-        editor.insertText(range.index, placeholder);
-        editor.setSelection(range.index + placeholder.length);
-      } else {
-        // If cursor not in focus, add at the end
-        editor.insertText(editor.getLength(), placeholder);
-      }
-    }
-  }}
-  className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium hover:bg-purple-200 transition"
->
-  {field}
-</button>
-
-
+                              <button
+                                key={field}
+                                onClick={() => {
+                                  const editor = quillRef.current?.getEditor();
+                                  if (editor) {
+                                    const placeholder = `{{${field}}}`;
+                                    const range = editor.getSelection(true);
+                                    if (range) {
+                                      editor.insertText(
+                                        range.index,
+                                        placeholder
+                                      );
+                                      editor.setSelection(
+                                        range.index + placeholder.length
+                                      );
+                                    } else {
+                                      // If cursor not in focus, add at the end
+                                      editor.insertText(
+                                        editor.getLength(),
+                                        placeholder
+                                      );
+                                    }
+                                  }
+                                }}
+                                className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium hover:bg-purple-200 transition"
+                              >
+                                {field}
+                              </button>
                             ))}
                           </div>
                         </div>
@@ -2733,48 +2946,69 @@ const ShopifyScenariosPage = () => {
                         <label className="relative inline-flex items-center cursor-pointer">
                           <input
                             type="checkbox"
-                            checked={serviceGroups.every((grp) =>
-                              grp.templates.every((t) => t.active)
-                            )}
+                            checked={allTemplatesActive}
                             onChange={async (e) => {
+                              const userId = localStorage.getItem("userid");
                               const newStatus = e.target.checked;
 
-                              const updates = serviceGroups.flatMap((grp) =>
-                                grp.templates.map((t) =>
-                                  fetch(
-                                    `https://email-syncing-backend.vercel.app/template/status/${t._id}`,
-                                    {
-                                      method: "PATCH",
-                                      headers: {
-                                        "Content-Type": "application/json",
-                                      },
-                                      body: JSON.stringify({
-                                        active: newStatus,
-                                      }),
-                                    }
-                                  )
-                                )
-                              );
+                              const actionText = newStatus
+                                ? "Please wait, templates are being activated..."
+                                : "Please wait, templates are being deactivated...";
 
-                              await Promise.all(updates);
-                              toast.success(
-                                `All templates ${
-                                  newStatus ? "activated" : "deactivated"
-                                } successfully!`
-                              );
+                              const toastId = toast.loading(actionText);
 
-                              setServiceGroups((prev) =>
-                                prev.map((grp) => ({
-                                  ...grp,
-                                  templates: grp.templates.map((tpl) => ({
-                                    ...tpl,
-                                    active: newStatus,
-                                  })),
-                                }))
-                              );
+                              try {
+                                const res = await fetch(
+                                  `https://email-syncing-backend.vercel.app/template/templatestatus/all`,
+                                  {
+                                    method: "PATCH",
+                                    headers: {
+                                      "Content-Type": "application/json",
+                                    },
+                                    body: JSON.stringify({ userId }),
+                                  }
+                                );
+
+                                const data = await res.json();
+
+                                if (data.success) {
+                                  setServiceGroups((prev) =>
+                                    prev.map((grp) => ({
+                                      ...grp,
+                                      templates: grp.templates.map((tpl) =>
+                                        tpl.service.toLowerCase() === "general"
+                                          ? { ...tpl, active: true }
+                                          : { ...tpl, active: data.toggledTo }
+                                      ),
+                                    }))
+                                  );
+
+                                  setAllTemplatesActive(data.toggledTo);
+
+                                  toast.success(
+                                    data.toggledTo
+                                      ? " All templates have been activated successfully!"
+                                      : "All templates have been deactivated successfully!",
+                                    { id: toastId }
+                                  );
+                                } else {
+                                  toast.error(
+                                    data.message ||
+                                      "Failed to update templates.",
+                                    { id: toastId }
+                                  );
+                                }
+                              } catch (err) {
+                                console.error("Error toggling templates:", err);
+                                toast.error(
+                                  "Something went wrong while updating templates.",
+                                  { id: toastId }
+                                );
+                              }
                             }}
                             className="sr-only peer"
                           />
+
                           <div className="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:bg-green-500 transition-colors"></div>
                           <div className="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full shadow-md transition-transform peer-checked:translate-x-5"></div>
                         </label>
@@ -2809,131 +3043,169 @@ const ShopifyScenariosPage = () => {
                     {loadingServices ? (
                       <div className="flex flex-col items-center justify-center h-full text-gray-500">
                         <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-blue-500 mb-3"></div>
-                        <p>Loading top services...</p>
+                        <p>Loading templates...</p>
                       </div>
                     ) : (
-                      serviceGroups.map((group, i) => (
-                        <div
-                          key={i}
-                          className="mb-6 bg-white rounded-lg shadow border"
-                        >
-                          <div className="p-4 bg-blue-50 border-b flex justify-between items-center">
-                            <h3 className="text-blue-700 font-bold text-lg">
-                              {group.service}
-                            </h3>
-                            <p className="text-xs text-gray-500">
-                              Showing {group.templates.length} templates
-                            </p>
-                          </div>
+                      serviceGroups
+                        .filter(
+                          (group) => group.service.toLowerCase() === "general"
+                        ) // ✅ Only show "General"
+                        .map((group, i) => {
+                          const shownTemplates = group.templates.slice(0, 3); // Only 3 templates
+                          return (
+                            <div
+                              key={i}
+                              className="mb-6 bg-white rounded-lg shadow border"
+                            >
+                              {/* Header */}
+                              <div className="p-4 bg-blue-50 border-b flex justify-between items-center">
+                                <h3 className="text-blue-700 font-bold text-lg">
+                                  {group.service} Templates
+                                </h3>
+                                <p className="text-xs text-gray-500">
+                                  Showing {shownTemplates.length} templates
+                                </p>
+                              </div>
 
-                          <table className="w-full border-collapse text-sm">
-                            <thead className="bg-gray-100 text-gray-600 uppercase text-xs">
-                              <tr>
-                                <th className="p-3 text-left w-[40%]">
-                                  Template
-                                </th>
-                                <th className="p-3 text-center w-[20%]">
-                                  Status
-                                </th>
-                                <th className="p-3 text-center w-[25%]">
-                                  Created_At
-                                </th>
-                                <th className="p-3 text-center w-[15%]">
-                                  Action
-                                </th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {group.templates.map((t, idx) => (
-                                <tr
-                                  key={t._id}
-                                  className={`border-b transition-colors ${
-                                    t.active ? "hover:bg-blue-50" : "bg-red-50"
-                                  }`}
-                                >
-                                  <td className="p-3 font-medium text-gray-800">
-                                    {t.name.includes("Initial")
-                                      ? "Initial Email"
-                                      : t.name.includes("First")
-                                      ? "First Follow-up"
-                                      : "Second Follow-up"}
-                                  </td>
+                              {!allTemplatesActive && (
+                                <div className="p-4 bg-yellow-50 border-b border-yellow-200 text-sm text-gray-700 leading-relaxed">
+                                  <b>Note:</b> Activate your service-specific
+                                  templates (e.g., SEO, Theme customization,
+                                  etc.) to send personalized emails for that
+                                  service.
+                                  <br />
+                                  If you don’t activate any service templates,
+                                  the system will automatically use
+                                  <b> General templates</b> for all
+                                  communications.
+                                  <br />
+                                  <a
+                                    href="/templates"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-600 hover:underline font-medium inline-block mt-2"
+                                  >
+                                    Click here to view all your services
+                                    templates
+                                  </a>
+                                </div>
+                              )}
 
-                                  <td className="p-3 text-center">
-                                    <label className="relative inline-flex items-center cursor-pointer">
-                                      <input
-                                        type="checkbox"
-                                        checked={t.active}
-                                        onChange={async () => {
-                                          const newStatus = !t.active;
-                                          setServiceGroups((prev) =>
-                                            prev.map((grp) => ({
-                                              ...grp,
-                                              templates: grp.templates.map(
-                                                (tpl) =>
-                                                  tpl._id === t._id
-                                                    ? {
-                                                        ...tpl,
-                                                        active: newStatus,
-                                                      }
-                                                    : tpl
-                                              ),
-                                            }))
-                                          );
-
-                                          await fetch(
-                                            `https://email-syncing-backend.vercel.app/template/status/${t._id}`,
-                                            {
-                                              method: "PATCH",
-                                              headers: {
-                                                "Content-Type":
-                                                  "application/json",
-                                              },
-                                              body: JSON.stringify({
-                                                active: newStatus,
-                                              }),
-                                            }
-                                          );
-                                        }}
-                                        className="sr-only peer"
-                                      />
-                                      <div className="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:bg-green-500 transition-colors"></div>
-                                      <div className="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full shadow-md transition-transform peer-checked:translate-x-5"></div>
-                                    </label>
-                                  </td>
-
-                                  <td className="p-3 text-center text-gray-500">
-                                    {new Date(t.updatedAt).toLocaleString(
-                                      "en-US",
-                                      {
-                                        year: "numeric",
-                                        month: "short",
-                                        day: "2-digit",
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                        hour12: true,
-                                      }
-                                    )}{" "}
-                                  </td>
-
-                                  <td className="p-3 text-center">
-                                    <button
-                                      onClick={() => {
-                                        setEditingTemplate(t);
-                                        setEditContent(t.content || "");
-                                        setShowEditTemplateModal(true);
-                                      }}
-                                      className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs rounded-md font-medium transition-colors"
+                              {/* Templates Table */}
+                              <table className="w-full border-collapse text-sm">
+                                <thead className="bg-gray-100 text-gray-600 uppercase text-xs">
+                                  <tr>
+                                    <th className="p-3 text-left w-[40%]">
+                                      Template
+                                    </th>
+                                    <th className="p-3 text-center w-[20%]">
+                                      Status
+                                    </th>
+                                    <th className="p-3 text-center w-[25%]">
+                                      Updated At
+                                    </th>
+                                    <th className="p-3 text-center w-[15%]">
+                                      Action
+                                    </th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {shownTemplates.map((t) => (
+                                    <tr
+                                      key={t._id}
+                                      className={`border-b transition-colors ${
+                                        t.active
+                                          ? "hover:bg-blue-50"
+                                          : "bg-red-50"
+                                      }`}
                                     >
-                                      Edit
-                                    </button>
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      ))
+                                      <td className="p-3 font-medium text-gray-800">
+                                        {t.name.includes("Initial")
+                                          ? "Initial Email"
+                                          : t.name.includes("First")
+                                          ? "First Follow-up"
+                                          : "Second Follow-up"}
+                                      </td>
+
+                                      {/* Toggle */}
+                                      <td className="p-3 text-center">
+                                        <label className="relative inline-flex items-center cursor-pointer">
+                                          <input
+                                            type="checkbox"
+                                            checked={t.active}
+                                            onChange={async () => {
+                                              const newStatus = !t.active;
+                                              setServiceGroups((prev) =>
+                                                prev.map((grp) => ({
+                                                  ...grp,
+                                                  templates: grp.templates.map(
+                                                    (tpl) =>
+                                                      tpl._id === t._id
+                                                        ? {
+                                                            ...tpl,
+                                                            active: newStatus,
+                                                          }
+                                                        : tpl
+                                                  ),
+                                                }))
+                                              );
+
+                                              await fetch(
+                                                `https://email-syncing-backend.vercel.app/template/status/${t._id}`,
+                                                {
+                                                  method: "PATCH",
+                                                  headers: {
+                                                    "Content-Type":
+                                                      "application/json",
+                                                  },
+                                                  body: JSON.stringify({
+                                                    active: newStatus,
+                                                  }),
+                                                }
+                                              );
+                                            }}
+                                            className="sr-only peer"
+                                          />
+                                          <div className="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:bg-green-500 transition-colors"></div>
+                                          <div className="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full shadow-md transition-transform peer-checked:translate-x-5"></div>
+                                        </label>
+                                      </td>
+
+                                      {/* Updated Date */}
+                                      <td className="p-3 text-center text-gray-500">
+                                        {new Date(t.updatedAt).toLocaleString(
+                                          "en-US",
+                                          {
+                                            year: "numeric",
+                                            month: "short",
+                                            day: "2-digit",
+                                            hour: "2-digit",
+                                            minute: "2-digit",
+                                            hour12: true,
+                                          }
+                                        )}
+                                      </td>
+
+                                      {/* Edit Button */}
+                                      <td className="p-3 text-center">
+                                        <button
+                                          onClick={() => {
+                                            setEditingTemplate(t);
+                                            setEditContent(t.content || "");
+                                            setShowEditTemplateModal(true);
+                                          }}
+                                          className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs rounded-md font-medium transition-colors"
+                                        >
+                                          Edit
+                                        </button>
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          );
+                        })
                     )}
                   </div>
 
@@ -2973,26 +3245,26 @@ const ShopifyScenariosPage = () => {
                         Template Content
                       </label>
 
-                   <ReactQuill
-  ref={quillRef}
-  theme="snow"
-  value={editContent}
-  onChange={setEditContent}
-  className="rounded-lg shadow-sm"
-  style={{
-    border: "1px solid #e5e7eb",
-    borderRadius: "0.5rem",
-  }}
-  modules={{
-    toolbar: [
-      [{ header: [1, 2, false] }],
-      ["bold", "italic", "underline", "strike"],
-      [{ list: "ordered" }, { list: "bullet" }],
-      ["link"],
-      ["clean"],
-    ],
-  }}
-/>
+                      <ReactQuill
+                        ref={quillRef}
+                        theme="snow"
+                        value={editContent}
+                        onChange={setEditContent}
+                        className="rounded-lg shadow-sm"
+                        style={{
+                          border: "1px solid #e5e7eb",
+                          borderRadius: "0.5rem",
+                        }}
+                        modules={{
+                          toolbar: [
+                            [{ header: [1, 2, false] }],
+                            ["bold", "italic", "underline", "strike"],
+                            [{ list: "ordered" }, { list: "bullet" }],
+                            ["link"],
+                            ["clean"],
+                          ],
+                        }}
+                      />
 
                       <div className="border rounded-lg bg-white p-3 mt-4">
                         <p className="text-sm font-semibold text-gray-700 mb-2">
@@ -3009,28 +3281,31 @@ const ShopifyScenariosPage = () => {
                             "Budget",
                             "Problem & Goal",
                           ].map((field) => (
-          <button
-  key={field}
-  onClick={() => {
-    const editor = quillRef.current?.getEditor();
-    if (editor) {
-      const placeholder = `{{${field}}}`;
-      const range = editor.getSelection(true);
-      if (range) {
-        editor.insertText(range.index, placeholder);
-        editor.setSelection(range.index + placeholder.length);
-      } else {
-        // If cursor not in focus, add at the end
-        editor.insertText(editor.getLength(), placeholder);
-      }
-    }
-  }}
-  className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium hover:bg-purple-200 transition"
->
-  {field}
-</button>
-
-
+                            <button
+                              key={field}
+                              onClick={() => {
+                                const editor = quillRef.current?.getEditor();
+                                if (editor) {
+                                  const placeholder = `{{${field}}}`;
+                                  const range = editor.getSelection(true);
+                                  if (range) {
+                                    editor.insertText(range.index, placeholder);
+                                    editor.setSelection(
+                                      range.index + placeholder.length
+                                    );
+                                  } else {
+                                    // If cursor not in focus, add at the end
+                                    editor.insertText(
+                                      editor.getLength(),
+                                      placeholder
+                                    );
+                                  }
+                                }
+                              }}
+                              className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium hover:bg-purple-200 transition"
+                            >
+                              {field}
+                            </button>
                           ))}
                         </div>
                       </div>

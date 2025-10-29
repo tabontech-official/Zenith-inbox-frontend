@@ -38,7 +38,11 @@ const ConnectionModal = ({ isOpen, onClose, onSuccess }) => {
     }
 
     // ✅ Redirect the current tab
-    window.location.href = `https://email-syncing-backend.vercel.app/auth/google?userId=${userId}`;
+    const currentPath = window.location.pathname.replace(/^\//, ""); // remove leading "/"
+    console.log(currentPath);
+    window.location.href = `https://email-syncing-backend.vercel.app/auth/google?userId=${userId}&redirect=${encodeURIComponent(
+      currentPath
+    )}`;
   };
 
   useEffect(() => {
