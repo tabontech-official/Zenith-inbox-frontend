@@ -151,7 +151,7 @@ const handleWizardClick = () => {
     const userId = localStorage.getItem("userid");
     try {
       await fetch(
-        `https://email-syncing-backend.vercel.app/auth/logout/${userId}`,
+        `http://localhost:5000/auth/logout/${userId}`,
         { method: "POST" }
       );
       localStorage.clear();
@@ -162,7 +162,7 @@ const handleWizardClick = () => {
   };
 const handleSkipSetup = async () => {
   const userId = localStorage.getItem("userid");
-  await axios.post(`https://email-syncing-backend.vercel.app/auth/skip-all/${userId}`);
+  await axios.post(`http://localhost:5000/auth/skip-all/${userId}`);
   alert("All setup steps skipped successfully!");
 };
 
