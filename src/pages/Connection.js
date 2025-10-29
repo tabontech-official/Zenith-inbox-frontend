@@ -37,7 +37,7 @@ const ConnectionsPage = () => {
       if (!userId) return setLoading(false);
       setLoading(true);
       const res = await axios.get(
-        `http://localhost:5000/auth/getConnection/${userId}`
+        `https://email-syncing-backend.vercel.app/auth/getConnection/${userId}`
       );
       setConnections(res.data || []);
     } catch (err) {
@@ -180,7 +180,7 @@ const ConnectionsPage = () => {
                             );
 
                             const res = await fetch(
-                              `http://localhost:5000/mailhook/verify`,
+                              `https://email-syncing-backend.vercel.app/mailhook/verify`,
                               {
                                 method: "POST",
                                 headers: { "Content-Type": "application/json" },

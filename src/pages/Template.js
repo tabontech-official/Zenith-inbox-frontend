@@ -41,7 +41,7 @@ export default function Template() {
       setLoading(true);
       const userId = localStorage.getItem("userid");
       const res = await axios.get(
-        "http://localhost:5000/template/all",
+        "https://email-syncing-backend.vercel.app/template/all",
         {
           params: { userId },
         }
@@ -156,13 +156,13 @@ useEffect(() => {
 
       if (editingId) {
         await axios.put(
-          `http://localhost:5000/template/update/${editingId}`,
+          `https://email-syncing-backend.vercel.app/template/update/${editingId}`,
           payload
         );
         toast.success("Template updated successfully!");
       } else {
         await axios.post(
-          "http://localhost:5000/template/create",
+          "https://email-syncing-backend.vercel.app/template/create",
           payload
         );
         toast.success("Template created successfully!");
@@ -195,7 +195,7 @@ useEffect(() => {
 
     try {
       await axios.put(
-        `http://localhost:5000/template/update/${id}`,
+        `https://email-syncing-backend.vercel.app/template/update/${id}`,
         {
           active: !currentStatus,
         }
@@ -217,7 +217,7 @@ useEffect(() => {
     try {
       const userId = localStorage.getItem("userid");
       const res = await axios.patch(
-        "http://localhost:5000/template/templatestatus/all",
+        "https://email-syncing-backend.vercel.app/template/templatestatus/all",
         { userId }
       );
       if (res.data.success) {

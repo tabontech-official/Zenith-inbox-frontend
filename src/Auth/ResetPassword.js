@@ -17,7 +17,7 @@ const ResetPassword = () => {
 
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/auth/set-password", {
+      const res = await fetch("https://email-syncing-backend.vercel.app/auth/set-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, password }),

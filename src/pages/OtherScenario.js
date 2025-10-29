@@ -165,7 +165,7 @@ const OthersScenariosPage = () => {
       const fetchScenario = async () => {
         try {
           const res = await fetch(
-            `http://localhost:5000/scenario/detail/${id}`
+            `https://email-syncing-backend.vercel.app/scenario/detail/${id}`
           );
           const data = await res.json();
 
@@ -275,7 +275,7 @@ const OthersScenariosPage = () => {
     const fetchConnections = async () => {
       try {
         const res = await fetch(
-          `http://localhost:5000/auth/getConnection/${userId}`
+          `https://email-syncing-backend.vercel.app/auth/getConnection/${userId}`
         );
         const data = await res.json();
         setConnections(data);
@@ -628,8 +628,8 @@ const OthersScenariosPage = () => {
                   };
 
                   const url = scenarioId
-                    ? `http://localhost:5000/scenario/detail/${scenarioId}`
-                    : `http://localhost:5000/scenario`;
+                    ? `https://email-syncing-backend.vercel.app/scenario/detail/${scenarioId}`
+                    : `https://email-syncing-backend.vercel.app/scenario`;
 
                   await fetch(url, {
                     method: scenarioId ? "PUT" : "POST",
