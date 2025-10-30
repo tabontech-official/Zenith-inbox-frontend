@@ -657,7 +657,6 @@ const SetupFlow = () => {
           console.log("⏳ Not received yet — checking again in 10s...");
           timeoutId = setTimeout(checkValidation, 10000);
         } else if (!stopped) {
-          console.log("❌ Validation failed after 5 attempts.");
           stopped = true;
           clearTimeout(timeoutId);
           setValidating(false);
@@ -714,7 +713,6 @@ const SetupFlow = () => {
           </span>
         </div>
 
-        {/* Multi-Step Progress Bar */}
         <div className="flex items-center justify-center gap-2 sm:gap-4 mt-6 mb-2">
           {[1, 2, 3, 4, 5].map((num) => (
             <React.Fragment key={num}>
@@ -1511,12 +1509,11 @@ const InstructionPanel = ({ step, isExpanded, setIsExpanded }) => {
     >
       {" "}
       <button
-  onClick={() => setIsExpanded((prev) => !prev)}
-  className="absolute left-0 top-1/2 transform -translate-y-1/2 translate-x-1/2 bg-[#4F46E5] text-white rounded-full p-2 shadow-md hover:bg-[#4338CA] transition-all z-30"
->
-  {isExpanded ? <FiArrowRight /> : <FiArrowLeft />}
-</button>
-
+        onClick={() => setIsExpanded((prev) => !prev)}
+        className="absolute left-0 top-1/2 transform -translate-y-1/2 translate-x-1/2 bg-[#4F46E5] text-white rounded-full p-2 shadow-md hover:bg-[#4338CA] transition-all z-30"
+      >
+        {isExpanded ? <FiArrowRight /> : <FiArrowLeft />}
+      </button>
       <div className="flex items-center gap-2 mb-4">
         <div className="p-2 bg-[#EEF2FF] rounded-lg">
           <FiInfo className="text-[#4F46E5] text-xl" />

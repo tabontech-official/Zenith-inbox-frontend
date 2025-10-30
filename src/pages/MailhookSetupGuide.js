@@ -48,7 +48,7 @@ const MailhookSetupGuide = () => {
       <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-lg border border-gray-100 p-8 sm:p-10">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
-            <FiInfo className="text-indigo-600" /> Setup Coach
+            <FiInfo className="text-indigo-600" /> Setup Guidance
           </h1>
           <button
             onClick={() => navigate(-1)}
@@ -64,7 +64,6 @@ const MailhookSetupGuide = () => {
         </p>
 
         <div className="space-y-12">
-          {/* STEP 1 */}
           <section id="step1" className="bg-white border border-gray-100 rounded-xl p-6 shadow-sm">
             <div className="flex items-center justify-between mb-3">
               <h4 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
@@ -95,7 +94,6 @@ const MailhookSetupGuide = () => {
             </div>
           </section>
 
-          {/* STEP 2 */}
           <section id="step2" className="bg-white border border-gray-100 rounded-xl p-6 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <h4 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
@@ -132,7 +130,6 @@ const MailhookSetupGuide = () => {
               ))}
             </div>
 
-            {/* Gmail Instructions */}
             {activeTab === "gmail" && (
               <div className="space-y-4 text-sm text-gray-700 leading-relaxed">
                 <p><strong>Gmail setup:</strong></p>
@@ -151,7 +148,6 @@ const MailhookSetupGuide = () => {
               </div>
             )}
 
-            {/* Outlook Instructions */}
             {activeTab === "outlook" && (
               <div className="space-y-3 text-sm text-gray-700 leading-relaxed">
                 <p><strong>Outlook setup:</strong></p>
@@ -170,7 +166,6 @@ const MailhookSetupGuide = () => {
               </div>
             )}
 
-            {/* SMTP Instructions */}
             {activeTab === "smtp" && (
               <div className="space-y-3 text-sm text-gray-700 leading-relaxed">
                 <p><strong>Custom SMTP setup:</strong></p>
@@ -187,7 +182,6 @@ const MailhookSetupGuide = () => {
             )}
           </section>
 
-          {/* STEP 3 */}
           <section id="step3" className="bg-white border border-gray-100 rounded-xl p-6 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <h4 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
@@ -220,7 +214,6 @@ const MailhookSetupGuide = () => {
             </div>
           </section>
 
-          {/* STEP 4 */}
           <section id="step4" className="bg-white border border-gray-100 rounded-xl p-6 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <h4 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
@@ -246,7 +239,6 @@ const MailhookSetupGuide = () => {
             </div>
           </section>
 
-          {/* STEP 5 */}
           <section id="step5" className="bg-white border border-gray-100 rounded-xl p-6 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <h4 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
