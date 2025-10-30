@@ -701,20 +701,56 @@ const SetupFlow = () => {
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-[#F9FAFB]">
-      <div className="flex-1 flex flex-col items-center justify-center py-10 px-6">
-        <div className="flex items-center space-x-2 mb-3">
+      <div className="lg:fixed lg:top-0 lg:left-0 lg:h-screen lg:w-[calc(100%-450px)] flex flex-col items-center justify-center py-10 px-6 bg-[#F9FAFB] overflow-hidden">
+        <div className="w-full flex justify-center">
           <FiMail className="text-[#4F46E5] text-2xl" />
           <span className="font-semibold text-lg text-[#111827]">
             Zenith Inbox
           </span>
         </div>
 
-        <div className="w-72 sm:w-[28rem] h-[6px] bg-[#E0E7FF] rounded-full overflow-hidden">
-          <div
-            className="h-full bg-[#4F46E5] rounded-full transition-all duration-500"
-            style={{ width: progressWidth }}
-          ></div>
+        {/* Multi-Step Progress Bar */}
+<div className="flex items-center justify-center gap-2 sm:gap-4 mt-6 mb-2">
+  {[1, 2, 3, 4, 5].map((num) => (
+    <React.Fragment key={num}>
+      {/* Step Circle */}
+      <div className="flex flex-col items-center">
+        <div
+          className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold transition-all duration-300 
+            ${
+              step > num
+                ? "bg-green-500 text-white" // completed
+                : step === num
+                ? "bg-[#4F46E5] text-white shadow-md" // active
+                : "bg-gray-200 text-gray-500" // pending
+            }`}
+        >
+          {step > num ? <FiCheck className="text-white" /> : num}
         </div>
+        <span
+          className={`text-[11px] mt-1 ${
+            step >= num ? "text-[#4F46E5]" : "text-gray-400"
+          }`}
+        >
+          Step {num}
+        </span>
+      </div>
+
+      {/* Connector Line (except after last step) */}
+      {num < 5 && (
+        <div
+          className={`w-10 sm:w-16 h-1 transition-all duration-300 rounded-full 
+            ${
+              step > num
+                ? "bg-[#4F46E5]"
+                : "bg-gray-300"
+            }`}
+        />
+      )}
+    </React.Fragment>
+  ))}
+</div>
+
         <div className="w-full flex justify-center mt-10">
           {step === 1 && (
             <div className="bg-white shadow-md rounded-xl p-8 sm:p-10 max-w-lg w-[90%] text-center relative">
@@ -1445,7 +1481,9 @@ const SetupFlow = () => {
           )}
         </div>
       </div>
-      <InstructionPanel step={step} />
+      <div className="lg:ml-[calc(100%-450px)] w-full lg:w-[450px]">
+        <InstructionPanel step={step} />
+      </div>
     </div>
   );
 };
@@ -1462,7 +1500,7 @@ const InstructionPanel = ({ step }) => {
         <div className="p-2 bg-[#EEF2FF] rounded-lg">
           <FiInfo className="text-[#4F46E5] text-xl" />
         </div>
-        <h3 className="text-xl font-bold text-[#111827]">Setup Coach</h3>
+        <h3 className="text-xl font-bold text-[#111827]">Setup Guidance </h3>
       </div>
       <p className="text-sm text-gray-500 mb-6">
         Follow these quick instructions carefully — each step will guide you
