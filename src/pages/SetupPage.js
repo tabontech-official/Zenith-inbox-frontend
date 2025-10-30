@@ -79,9 +79,9 @@ const SetupFlow = () => {
     );
   };
   // useEffect(() => {
-  //   // 🟣 If redirected after successful OAuth (Google/Microsoft)
+  //   //  If redirected after successful OAuth (Google/Microsoft)
   //   if (stepFromURL === 5 && user?._id) {
-  //     console.log("🔁 Detected OAuth redirect → marking Step 4 as completed.");
+  //     console.log(" Detected OAuth redirect → marking Step 4 as completed.");
 
   //     // Mark step 4 as completed if not already
   //     saveSetupProgress({
@@ -105,7 +105,6 @@ const SetupFlow = () => {
       decoded.includes("microsoft-auth-success=true");
 
     if (isStep5 && isOAuthSuccess) {
-      console.log("✅ OAuth success detected — marking Step 4 as completed.");
 
       saveSetupProgress({
         stepCompleted: 4,
@@ -206,11 +205,9 @@ const SetupFlow = () => {
 
       const result = await res.json();
       if (result.success) {
-        console.log(`Step ${stepToUpdate} saved (${status})`);
 
         setStep(nextStep);
       } else {
-        console.error("❌ Failed to save step:", result.message);
       }
     } catch (err) {
       console.error("Error saving setup progress:", err);
@@ -253,10 +250,10 @@ const SetupFlow = () => {
 
       if (!res.ok) throw new Error("Failed to save SMTP connection");
       alert("SMTP connection saved successfully!");
-      setStep(5); // Move to next step
+      setStep(5); 
     } catch (err) {
       console.error(err);
-      alert("❌ Failed to save SMTP connection");
+      alert(" Failed to save SMTP connection");
     }
   };
 
@@ -281,7 +278,7 @@ const SetupFlow = () => {
     const fetchVerification = async () => {
       attempts++;
       console.log(
-        `🔁 Checking verification attempt ${attempts}/${maxAttempts}`
+        `Checking verification attempt ${attempts}/${maxAttempts}`
       );
 
       try {
@@ -311,7 +308,7 @@ const SetupFlow = () => {
             if (match) autoEmail = match[1];
 
             cleanedBody =
-              "📩 Gmail forwarding request detected.<br/><br/>Please open Gmail and click the verification link in your inbox to confirm forwarding.<br/><br/>Once confirmed, return here to validate.";
+              " Gmail forwarding request detected.<br/><br/>Please open Gmail and click the verification link in your inbox to confirm forwarding.<br/><br/>Once confirmed, return here to validate.";
           }
 
           cleanedBody = cleanedBody
@@ -607,7 +604,6 @@ const SetupFlow = () => {
             : "Keep this tab open while we check your mailhook."}
         </p>
 
-        {/* Progress Bar */}
         <div className="h-2 bg-gray-200 rounded-full overflow-hidden mt-2">
           <div
             className={`h-full transition-all duration-1000 ${
@@ -769,7 +765,6 @@ const SetupFlow = () => {
 
           {step === 2 && (
             <div className="bg-white shadow-md rounded-xl p-8 sm:p-10 max-w-2xl w-[90%] text-left relative">
-              {/* 🔹 Back button (top-left) */}
               <span
                 onClick={async () => {
                   await updateStep(1, { skipped: true });
@@ -779,7 +774,6 @@ const SetupFlow = () => {
                 ← Back
               </span>
 
-              {/* Need help (top-right) */}
               <span
                 onClick={() =>
                   window.open("/pages/mailhook/instruction", "_blank")
@@ -789,7 +783,6 @@ const SetupFlow = () => {
                 Need help?
               </span>
 
-              {/* Heading */}
               <h2 className="text-2xl font-bold text-[#111827] text-center mb-2 mt-8">
                 Your Mailhook is Ready
               </h2>
@@ -797,7 +790,6 @@ const SetupFlow = () => {
                 This is a private, unique address just for your leads.
               </p>
 
-              {/* Mailhook Card */}
               <div className="border border-[#E5E7EB] rounded-xl p-6 space-y-6">
                 <div>
                   <div className="flex justify-between items-center mb-2">
@@ -823,18 +815,16 @@ const SetupFlow = () => {
                   </div>
                 </div>
 
-                {/* Pro Tip */}
                 <div className="bg-indigo-50 border-l-4 border-indigo-500 rounded p-3 text-indigo-800 text-sm mt-4 flex items-start gap-2">
                   <FiInfo className="text-[#4F46E5] text-lg mt-0.5" />
                   <p>
-                    💡 <strong>Tip:</strong> Copy this address and add it as a
+                     <strong>Tip:</strong> Copy this address and add it as a
                     forwarding destination in your email provider’s settings
                     (Gmail or Outlook).
                   </p>
                 </div>
               </div>
 
-              {/* Footer Buttons */}
               <div className="flex justify-between items-center mt-8">
                 <span
                   onClick={async () => {
@@ -1394,7 +1384,6 @@ const InstructionPanel = ({ step }) => {
 
   return (
     <div className="hidden lg:flex flex-col justify-start bg-gradient-to-b from-white to-[#F9FAFB] shadow-xl border-l border-gray-200 w-[450px] p-7 overflow-y-auto max-h-screen transition-all duration-300 ease-in-out">
-      {/* Header */}
       <div className="flex items-center gap-2 mb-4">
         <div className="p-2 bg-[#EEF2FF] rounded-lg">
           <FiInfo className="text-[#4F46E5] text-xl" />
@@ -1406,7 +1395,6 @@ const InstructionPanel = ({ step }) => {
         toward completing your setup successfully.
       </p>
 
-      {/* Step Section */}
       <div className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm">
         {step === 1 && (
           <>
@@ -1431,7 +1419,7 @@ const InstructionPanel = ({ step }) => {
             </ul>
 
             <div className="bg-indigo-50 border-l-4 border-indigo-500 rounded p-3 text-indigo-800 text-sm">
-              💡 <strong>Tip:</strong> Click{" "}
+               <strong>Tip:</strong> Click{" "}
               <span className="font-semibold text-indigo-700">
                 “Start 60-sec Setup”
               </span>{" "}
@@ -1442,7 +1430,6 @@ const InstructionPanel = ({ step }) => {
 
         {step === 2 && (
           <>
-            {/* Header */}
             <div className="flex items-center justify-between mb-4">
               <h4 className="text-lg font-semibold text-[#111827] flex items-center gap-2">
                 <FiCopy className="text-[#4F46E5]" /> Step 2 – Connect Your
@@ -1458,7 +1445,6 @@ const InstructionPanel = ({ step }) => {
               your emails to your unique <strong>Mailhook address</strong>.
             </p>
 
-            {/* Tabs */}
             <div className="bg-gray-100 rounded-lg p-1 flex space-x-1 mb-5">
               <button
                 onClick={() => setActiveTab("gmail")}
@@ -1500,7 +1486,6 @@ const InstructionPanel = ({ step }) => {
               </button>
             </div>
 
-            {/* ================= Gmail Instructions ================= */}
             {activeTab === "gmail" && (
               <div className="text-sm text-gray-700 leading-relaxed space-y-4 animate-fadeIn">
                 <div className="flex items-start gap-3">
@@ -1553,7 +1538,6 @@ const InstructionPanel = ({ step }) => {
               </div>
             )}
 
-            {/* ================= Outlook Instructions ================= */}
             {activeTab === "outlook" && (
               <div className="text-sm text-gray-700 leading-relaxed space-y-4 animate-fadeIn">
                 <div className="flex items-start gap-3">
@@ -1605,7 +1589,6 @@ const InstructionPanel = ({ step }) => {
               </div>
             )}
 
-            {/* ================= SMTP Instructions ================= */}
             {activeTab === "smtp" && (
               <div className="text-sm text-gray-700 leading-relaxed space-y-4 animate-fadeIn">
                 <div className="flex items-start gap-3">
@@ -1669,7 +1652,6 @@ const InstructionPanel = ({ step }) => {
 
         {step === 3 && (
           <>
-            {/* Header */}
             <div className="flex items-center justify-between mb-3">
               <h4 className="text-lg font-semibold text-[#111827] flex items-center gap-2">
                 <FiAlertCircle className="text-[#4F46E5]" /> Step 3 – Verify
@@ -1680,13 +1662,11 @@ const InstructionPanel = ({ step }) => {
               </span>
             </div>
 
-            {/* Description */}
             <p className="text-sm text-gray-600 leading-relaxed mb-4">
               Great job — your Mailhook is now connected! Let’s verify that
               Gmail is forwarding messages correctly to your Mailhook address.
             </p>
 
-            {/* Step List with Icons */}
             <div className="space-y-4 text-sm text-gray-700 leading-relaxed">
               <div className="flex items-start gap-3">
                 <FiMail className="text-[#4F46E5] text-lg mt-0.5" />
@@ -1749,7 +1729,6 @@ const InstructionPanel = ({ step }) => {
               </div>
             </div>
 
-            {/* Info Box */}
             <div className="mt-6 bg-yellow-50 border-l-4 border-yellow-400 rounded p-3 text-yellow-700 text-sm flex items-start gap-2">
               <FiInfo className="text-yellow-600 text-lg mt-0.5" />
               <p>
@@ -1759,11 +1738,10 @@ const InstructionPanel = ({ step }) => {
               </p>
             </div>
 
-            {/* Pro Tip */}
             <div className="mt-4 bg-indigo-50 border-l-4 border-indigo-500 rounded p-3 text-indigo-800 text-xs flex items-start gap-2">
               <FaRegLightbulb className="text-[#4F46E5] text-lg mt-0.5" />
               <p>
-                💡 <strong>Pro Tip:</strong> Keep Gmail open in another tab
+                <strong>Pro Tip:</strong> Keep Gmail open in another tab
                 while verifying — the process completes faster and ensures you
                 don’t miss the prompt.
               </p>
@@ -1868,7 +1846,6 @@ const InstructionPanel = ({ step }) => {
               automation.
             </p>
 
-            {/* ✅ Dynamic summary using setup data */}
             {user?.setup?.steps ? (
               <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-5 shadow-inner">
                 <h5 className="font-semibold text-[#111827] mb-2 flex items-center gap-2">
@@ -1902,7 +1879,6 @@ const InstructionPanel = ({ step }) => {
                   ))}
                 </ul>
 
-                {/* Summary count */}
                 <div className="mt-4 text-xs text-gray-600 flex items-center justify-between">
                   <div className="flex items-center gap-1">
                     <FiCheckCircle className="text-green-600" />
@@ -1969,7 +1945,6 @@ const InstructionPanel = ({ step }) => {
         )}
       </div>
 
-      {/* Bottom Section */}
       <div className="mt-8 text-center text-sm text-gray-500 border-t pt-4">
         Need help?{" "}
         <a
