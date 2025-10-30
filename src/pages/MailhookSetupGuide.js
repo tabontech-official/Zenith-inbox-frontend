@@ -47,7 +47,6 @@ const MailhookSetupGuide = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 py-10 px-6 sm:px-10 font-inter">
       <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-lg border border-gray-100 p-8 sm:p-10">
-        {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
             <FiInfo className="text-indigo-600" /> Setup Coach
@@ -82,9 +81,7 @@ const MailhookSetupGuide = () => {
           ))}
         </div>
 
-        {/* Step content container */}
         <div className="bg-white border border-gray-100 rounded-xl p-6 shadow-sm">
-          {/* STEP 1 */}
           {step === 1 && (
             <>
               <div className="flex items-center justify-between mb-3">
@@ -118,7 +115,6 @@ const MailhookSetupGuide = () => {
             </>
           )}
 
-          {/* STEP 2 */}
           {step === 2 && (
             <>
               <div className="flex items-center justify-between mb-4">
@@ -136,7 +132,6 @@ const MailhookSetupGuide = () => {
                 your emails to your unique <strong>Mailhook address</strong>.
               </p>
 
-              {/* Inner tabs: Gmail / Outlook / SMTP */}
               <div className="bg-gray-100 rounded-lg p-1 flex space-x-1 mb-5">
                 {["gmail", "outlook", "smtp"].map((t) => (
                   <button
@@ -160,7 +155,6 @@ const MailhookSetupGuide = () => {
                 ))}
               </div>
 
-              {/* Gmail instructions */}
               {activeTab === "gmail" && (
                 <div className="text-sm text-gray-700 leading-relaxed space-y-4 animate-fadeIn">
                   <div className="flex items-start gap-3">
@@ -213,7 +207,6 @@ const MailhookSetupGuide = () => {
                 </div>
               )}
 
-              {/* Outlook instructions */}
               {activeTab === "outlook" && (
                 <div className="text-sm text-gray-700 leading-relaxed space-y-4 animate-fadeIn">
                   <div className="flex items-start gap-3">
@@ -265,7 +258,6 @@ const MailhookSetupGuide = () => {
                 </div>
               )}
 
-              {/* SMTP instructions */}
               {activeTab === "smtp" && (
                 <div className="text-sm text-gray-700 leading-relaxed space-y-4 animate-fadeIn">
                   <div className="flex items-start gap-3">
@@ -450,7 +442,6 @@ const MailhookSetupGuide = () => {
             </>
           )}
 
-          {/* STEP 4 */}
           {step === 4 && (
             <>
               <div className="flex items-center justify-between mb-4">
@@ -629,7 +620,6 @@ const MailhookSetupGuide = () => {
           )}
         </div>
 
-        {/* Footer */}
         <div className="mt-8 text-center text-sm text-gray-500 border-t pt-4">
           Need help?{" "}
           <a
