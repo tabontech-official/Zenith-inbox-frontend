@@ -15,10 +15,22 @@ import {
   FiX,
   FiSend,
   FiInfo,
+  FiServer,
+  FiSettings,
+  FiFolder,
+  FiPlusCircle,
+  FiArrowRightCircle,
+  FiToggleRight,
+  FiSave,
+  FiKey,
+  FiGlobe,
+  FiLock,
+  FiSearch,
+  FiUser,
 } from "react-icons/fi";
 import { useLocation, useNavigate } from "react-router-dom";
 import { UserContext } from "../component/UserContext";
-import { FaMicrosoft } from "react-icons/fa";
+import { FaMicrosoft, FaRegLightbulb } from "react-icons/fa";
 import toast from "react-hot-toast";
 
 const SetupFlow = () => {
@@ -35,8 +47,8 @@ const SetupFlow = () => {
   const [safetyNet, setSafetyNet] = useState(true);
   const [followUp1Unit, setFollowUp1Unit] = useState("days");
   const [followUp2Unit, setFollowUp2Unit] = useState("days");
-const [showHelpModal, setShowHelpModal] = useState(false);
-const [helpTab, setHelpTab] = useState("gmail");
+  const [showHelpModal, setShowHelpModal] = useState(false);
+  const [helpTab, setHelpTab] = useState("gmail");
   const progressWidth =
     step === 1
       ? "14%"
@@ -54,7 +66,7 @@ const [helpTab, setHelpTab] = useState("gmail");
 
   const [selectedTone, setSelectedTone] = useState("Friendly");
   const [selectedServices, setSelectedServices] = useState(["Store Setup"]);
-const [activeTab, setActiveTab] = useState("gmail");
+  const [activeTab, setActiveTab] = useState("gmail");
 
   const toggleService = (service) => {
     setSelectedServices((prev) =>
@@ -63,61 +75,76 @@ const [activeTab, setActiveTab] = useState("gmail");
         : [...prev, service]
     );
   };
+useEffect(() => {
+  // 🟣 If redirected after successful OAuth (Google/Microsoft)
+  if (stepFromURL === 5 && user?._id) {
+    console.log("🔁 Detected OAuth redirect → marking Step 4 as completed.");
 
-  const handleGmailConnect = () => {
-    const userId = user?._id;
+    // Mark step 4 as completed if not already
+    saveSetupProgress({
+      stepCompleted: 4,
+      stepStatus: "completed",
+    });
+  }
+}, [stepFromURL, user]);
 
-    const popup = window.open(
-      `https://email-syncing-backend.vercel.app/auth/google?userId=${userId}`,
-      "gmailConnect",
-      "width=600,height=600"
-    );
+ const handleGmailConnect = () => {
+  const userId = localStorage.getItem("userid");
 
-    const checkPopup = setInterval(() => {
-      if (popup.closed) {
-        clearInterval(checkPopup);
-        const params = new URLSearchParams(window.location.search);
-        const status = params.get("status");
-        if (status === "success") {
-          console.log("Gmail connected successfully!");
-          setStep(5);
-        } else if (status === "error") {
-          alert("Failed to connect Gmail. Please try again.");
-        }
-      }
-    }, 1000);
-  };
+  if (!userId) {
+    alert("User not found. Please log in again.");
+    return;
+  }
+
+  const redirectURL = `/setup?step=5`;
+
+  const authURL = `https://email-syncing-backend.vercel.app/auth/google?userId=${userId}&redirect=${encodeURIComponent(
+    redirectURL
+  )}`;
+
+  console.log("🔗 Redirecting to Gmail Auth:", authURL);
+
+  window.location.href = authURL;
+};
+
 
   const handleMicrosoftConnect = () => {
-    const userId = user?._id;
-    const popup = window.open(
-      `https://email-syncing-backend.vercel.app/auth/outlook?userId=${userId}`,
-      "microsoftConnect",
-      "width=600,height=600"
-    );
+  const userId = user?._id;
 
-    const handleMessage = (event) => {
-      if (event.data?.type === "microsoft-auth-success") {
-        console.log(" Microsoft account connected successfully!");
-        setStep(5);
-        window.removeEventListener("message", handleMessage);
-        popup.close();
-      }
-    };
+  if (!userId) {
+    alert("User not found. Please log in again.");
+    return;
+  }
 
-    window.addEventListener("message", handleMessage);
-  };
+  // Always redirect back to setup?step=5
+  const redirectURL = `setup?step=5`;
+
+  // Construct OAuth URL
+  const authURL = `https://email-syncing-backend.vercel.app/auth/outlook?userId=${userId}&redirect=${encodeURIComponent(
+    redirectURL
+  )}`;
+
+  // Log for debugging (optional)
+  console.log("🔗 Redirecting to Microsoft Auth:", authURL);
+
+  // Redirect user in the same tab (same as Gmail)
+  window.location.href = authURL;
+};
+
 
   const saveSetupProgress = async (data = {}) => {
     try {
-      const res = await fetch(`https://email-syncing-backend.vercel.app/auth/setup/${user._id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...data,
-          updatedAt: new Date(),
-        }),
-      });
+      const res = await fetch(
+        `https://email-syncing-backend.vercel.app/auth/setup/${user._id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...data,
+            updatedAt: new Date(),
+          }),
+        }
+      );
 
       const result = await res.json();
 
@@ -145,15 +172,18 @@ const [activeTab, setActiveTab] = useState("gmail");
     const stepToUpdate = isSkipped ? step : nextStep;
 
     try {
-      const res = await fetch(`https://email-syncing-backend.vercel.app/auth/setup/${user._id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          stepCompleted: stepToUpdate,
-          stepStatus: status,
-          ...extra,
-        }),
-      });
+      const res = await fetch(
+        `https://email-syncing-backend.vercel.app/auth/setup/${user._id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            stepCompleted: stepToUpdate,
+            stepStatus: status,
+            ...extra,
+          }),
+        }
+      );
 
       const result = await res.json();
       if (result.success) {
@@ -194,11 +224,14 @@ const [activeTab, setActiveTab] = useState("gmail");
       const userId = localStorage.getItem("userid");
       const payload = { ...smtpForm, userId, provider: "outlook" };
 
-      const res = await fetch("https://email-syncing-backend.vercel.app/auth/saveSmtpConnection", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const res = await fetch(
+        "https://email-syncing-backend.vercel.app/auth/saveSmtpConnection",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
 
       if (!res.ok) throw new Error("Failed to save SMTP connection");
       alert("SMTP connection saved successfully!");
@@ -212,7 +245,6 @@ const [activeTab, setActiveTab] = useState("gmail");
   const [verificationEmail, setVerificationEmail] = useState(null);
   const [retryKey, setRetryKey] = useState(0);
 
- 
   useEffect(() => {
     if (step !== 3 || !user?._id) return;
 
@@ -225,7 +257,7 @@ const [activeTab, setActiveTab] = useState("gmail");
 
     let attempts = 0;
     const maxAttempts = 5;
-    const loaderMinDuration = 10000; 
+    const loaderMinDuration = 10000;
     const loaderStartTime = Date.now();
 
     const fetchVerification = async () => {
@@ -286,7 +318,7 @@ const [activeTab, setActiveTab] = useState("gmail");
           console.log(`⏱ Waiting ${remaining}ms before showing results...`);
 
           setTimeout(() => {
-            setValidationPhase(false); 
+            setValidationPhase(false);
             setShowValidateButton(true);
           }, remaining);
 
@@ -342,7 +374,6 @@ const [activeTab, setActiveTab] = useState("gmail");
     }
   };
 
- 
   const handleValidateForwarding = async () => {
     try {
       if (!verificationEmail?.toEmail?.trim()) {
@@ -392,7 +423,7 @@ const [activeTab, setActiveTab] = useState("gmail");
           }
         };
 
-        checkLoop(); 
+        checkLoop();
       } else {
         toast.error(
           data.message ||
@@ -429,7 +460,9 @@ const [activeTab, setActiveTab] = useState("gmail");
     const fetchSetupProgress = async () => {
       try {
         if (!user?._id) return;
-        const res = await fetch(`https://email-syncing-backend.vercel.app/auth/setup/${user._id}`);
+        const res = await fetch(
+          `https://email-syncing-backend.vercel.app/auth/setup/${user._id}`
+        );
         const data = await res.json();
         if (data.success) setSetupProgress(data.data);
       } catch (err) {
@@ -575,7 +608,7 @@ const [activeTab, setActiveTab] = useState("gmail");
   };
   const [validationPhase, setValidationPhase] = useState(false);
   const [validationFailed, setValidationFailed] = useState(false);
- 
+
   const startValidationLoop = async () => {
     let attempts = 0;
     const maxAttempts = 5;
@@ -585,7 +618,7 @@ const [activeTab, setActiveTab] = useState("gmail");
     setValidationFailed(false);
     setValidationPhase(true);
     setValidated(false);
-    setShowValidateButton(false); 
+    setShowValidateButton(false);
 
     const checkValidation = async () => {
       if (stopped) return;
@@ -657,8 +690,8 @@ const [activeTab, setActiveTab] = useState("gmail");
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[#F9FAFB] text-center">
-      <div className="flex flex-col items-center mb-10">
+    <div className="min-h-screen flex flex-col lg:flex-row bg-[#F9FAFB]">
+      <div className="flex-1 flex flex-col items-center justify-center py-10 px-6">
         <div className="flex items-center space-x-2 mb-3">
           <FiMail className="text-[#4F46E5] text-2xl" />
           <span className="font-semibold text-lg text-[#111827]">
@@ -672,694 +705,718 @@ const [activeTab, setActiveTab] = useState("gmail");
             style={{ width: progressWidth }}
           ></div>
         </div>
-      </div>
+        <div className="w-full flex justify-center mt-10">
+          {step === 1 && (
+            <div className="bg-white shadow-md rounded-xl p-8 sm:p-10 max-w-lg w-[90%] text-center relative">
+              <span
+                onClick={async () => {
+                  await saveSetupProgress({ skipped: true, stepCompleted: 1 });
+                  navigate("/organization");
+                }}
+                className="absolute bottom-4 left-4 text-[#4F46E5] text-xs sm:text-sm font-semibold cursor-pointer hover:underline hover:text-[#3730A3] transition-colors"
+              >
+                Skip
+              </span>
 
-      {step === 1 && (
-        <div className="bg-white shadow-md rounded-xl p-8 sm:p-10 max-w-lg w-[90%] text-center relative">
-          <span
-            onClick={async () => {
-              await saveSetupProgress({ skipped: true, stepCompleted: 1 });
-              navigate("/organization");
-            }}
-            className="absolute bottom-4 left-4 text-[#4F46E5] text-xs sm:text-sm font-semibold cursor-pointer hover:underline hover:text-[#3730A3] transition-colors"
-          >
-            Skip
-          </span>
+              <h1 className="text-2xl sm:text-3xl font-bold text-[#111827] mb-4 mt-4">
+                Never miss a lead again.
+              </h1>
 
-          <h1 className="text-2xl sm:text-3xl font-bold text-[#111827] mb-4 mt-4">
-            Never miss a lead again.
-          </h1>
+              <p className="text-[#4B5563] text-base mb-8 leading-relaxed">
+                We’ll create your mailhook and help you forward new leads to it.
+                Then we’ll set up how your replies are sent (SMTP).
+              </p>
 
-          <p className="text-[#4B5563] text-base mb-8 leading-relaxed">
-            We’ll create your mailhook and help you forward new leads to it.
-            Then we’ll set up how your replies are sent (SMTP).
-          </p>
+              <div className="flex items-center justify-center mt-6">
+                <button
+                  onClick={async () => {
+                    await saveSetupProgress({
+                      stepCompleted: 1,
+                      stepStatus: "completed",
+                    });
+                    setStep(2);
+                  }}
+                  className="bg-[#4F46E5] hover:bg-[#4338CA] text-white px-8 py-3 rounded-lg text-sm font-semibold flex items-center justify-center space-x-2 shadow-md transition"
+                >
+                  <span>Start 60-sec Setup</span>
+                  <FiArrowRight />
+                </button>
+              </div>
 
-          <div className="flex items-center justify-center mt-6">
-            <button
-              onClick={async () => {
-                await saveSetupProgress({
-                  stepCompleted: 1,
-                  stepStatus: "completed",
-                });
-                setStep(2);
-              }}
-              className="bg-[#4F46E5] hover:bg-[#4338CA] text-white px-8 py-3 rounded-lg text-sm font-semibold flex items-center justify-center space-x-2 shadow-md transition"
-            >
-              <span>Start 60-sec Setup</span>
-              <FiArrowRight />
-            </button>
-          </div>
-
-          <p className="text-xs text-gray-400 mt-6">
-            You can complete setup later from your Organization Settings.
-          </p>
-        </div>
-      )}
-
-      {step === 2 && (
-  <div className="bg-white shadow-md rounded-xl p-8 sm:p-10 max-w-2xl w-[90%] text-left relative">
-    {/* 🔹 Back button (top-left) */}
-    <span
-      onClick={async () => {
-        await updateStep(1, { skipped: true });
-      }}
-      className="absolute left-4 top-4 text-[#4F46E5] text-xs sm:text-sm font-semibold cursor-pointer hover:underline hover:text-[#3730A3] transition-colors"
-    >
-      ← Back
-    </span>
-
-    {/* Need help (top-right) */}
-    <span
-      onClick={() => {
-        window.open("/pages/mailhook/instruction", "_blank");
-      }}
-      className="absolute right-4 top-4 text-[#4F46E5] text-xs sm:text-sm font-semibold cursor-pointer hover:underline hover:text-[#3730A3] transition-colors"
-    >
-      Need help?
-    </span>
-
-    <h2 className="text-2xl font-bold text-[#111827] text-center mb-2 mt-8">
-      Your Mailhook is Ready
-    </h2>
-    <p className="text-[#4B5563] text-center mb-8">
-      This is a private, unique address just for your leads.
-    </p>
-
-    <div className="border border-[#E5E7EB] rounded-xl p-6 space-y-6">
-      <div>
-        <div className="flex justify-between items-center mb-2">
-          <h3 className="font-semibold text-[#111827]">
-            Your Unique Mailhook
-          </h3>
-          <span className="text-green-700 bg-green-100 text-xs px-3 py-1 rounded-full">
-            Private & Unique
-          </span>
-        </div>
-
-        <div className="bg-[#F3F4F6] text-[#4F46E5] px-4 py-3 rounded-lg flex justify-between items-center font-mono text-sm">
-          {user?.mailhook || "loading-mailhook@zenith-inbox.com"}
-          <FiCopy
-            className="text-gray-500 cursor-pointer"
-            onClick={() => {
-              if (user?.mailhook) {
-                navigator.clipboard.writeText(user.mailhook);
-                toast.success("Mailhook copied!");
-              }
-            }}
-          />
-        </div>
-      </div>
-
-      <div className="mt-6">
-        <h4 className="text-lg font-semibold text-[#111827] mb-2">
-          Setup Instructions:
-        </h4>
-        <p className="text-[#4B5563] text-sm leading-relaxed mb-4">
-          Forward your business emails to this mailhook address.{" "}
-          <span className="font-semibold text-[#111827]">
-            Choose your email provider below
-          </span>{" "}
-          to see step-by-step forwarding setup instructions.
-        </p>
-
-        {/* 🔹 Tabs for Gmail & Outlook */}
-        <div className="mt-4">
-          <div className="flex space-x-4 border-b border-gray-200 mb-4">
-            <button
-              onClick={() => setActiveTab("gmail")}
-              className={`pb-2 text-sm font-semibold ${
-                activeTab === "gmail"
-                  ? "text-[#4F46E5] border-b-2 border-[#4F46E5]"
-                  : "text-gray-500"
-              }`}
-            >
-              Gmail
-            </button>
-            <button
-              onClick={() => setActiveTab("outlook")}
-              className={`pb-2 text-sm font-semibold ${
-                activeTab === "outlook"
-                  ? "text-[#4F46E5] border-b-2 border-[#4F46E5]"
-                  : "text-gray-500"
-              }`}
-            >
-              Outlook
-            </button>
-          </div>
-
-          {/* Gmail Guide */}
-        {activeTab === "gmail" && (
-  <div className="text-sm text-[#4B5563] space-y-2">
-    <ol className="list-decimal list-inside space-y-2">
-      <li>Open Gmail Settings → “See all settings”.</li>
-      <li>Go to the <strong>Forwarding and POP/IMAP</strong> tab.</li>
-      <li>Click <strong>“Add a forwarding address”</strong>.</li>
-      <li>
-        Enter your Mailhook address:{" "}
-        <code className="bg-gray-100 px-1 py-0.5 rounded text-[#4F46E5]">
-          {user?.mailhook || "your-mailhook@zenith-inbox.com"}
-        </code>
-      </li>
-      <li>
-        Gmail will send a <strong>confirmation email</strong> to this Mailhook address.
-      </li>
-      <li>
-        After you click <strong>Next</strong> below, your Mailhook will start receiving that
-        confirmation email automatically — you’ll see it appear in your inbox shortly.
-      </li>
-      <li>
-        Once verified, go back to Gmail and select
-        <strong> “Forward a copy of incoming mail to”</strong> your Mailhook,
-        then click <strong>Save Changes</strong>.
-      </li>
-    </ol>
-  </div>
-)}
-
-
-          {/* Outlook Guide */}
-          {activeTab === "outlook" && (
-            <div className="text-sm text-[#4B5563] space-y-2">
-              <ol className="list-decimal list-inside space-y-2">
-                <li>Go to <strong>Outlook Settings → View all Outlook settings</strong>.</li>
-                <li>Navigate to <strong>Mail → Forwarding</strong>.</li>
-                <li>Enable <strong>Start forwarding</strong>.</li>
-                <li>
-                  Enter your Mailhook address:{" "}
-                  <code className="bg-gray-100 px-1 py-0.5 rounded text-[#4F46E5]">
-                    {user?.mailhook || "your-mailhook@zenith-inbox.com"}
-                  </code>
-                </li>
-                <li>Click <strong>Save</strong> to apply changes.</li>
-              </ol>
+              <p className="text-xs text-gray-400 mt-6">
+                You can complete setup later from your Organization Settings.
+              </p>
             </div>
           )}
-        </div>
-      </div>
-    </div>
 
-    {/* 🔹 Footer Buttons */}
-    <div className="flex justify-between items-center mt-8">
-      <span
-        onClick={async () => {
-          await updateStep(3, { skipped: true });
-        }}
-        className="text-[#4F46E5] text-sm font-semibold cursor-pointer hover:underline"
-      >
-        Skip
-      </span>
+          {step === 2 && (
+            <div className="bg-white shadow-md rounded-xl p-8 sm:p-10 max-w-2xl w-[90%] text-left relative">
+              {/* 🔹 Back button (top-left) */}
+              <span
+                onClick={async () => {
+                  await updateStep(1, { skipped: true });
+                }}
+                className="absolute left-4 top-4 text-[#4F46E5] text-xs sm:text-sm font-semibold cursor-pointer hover:underline hover:text-[#3730A3] transition-colors"
+              >
+                ← Back
+              </span>
 
-      <button
-        onClick={async () => {
-          await saveSetupProgress({
-            stepCompleted: 2,
-            stepStatus: "completed",
-          });
-          setStep(3);
-        }}
-        className="flex items-center space-x-2 px-6 py-2 rounded-lg text-sm font-semibold bg-[#4F46E5] text-white hover:bg-[#4338CA]"
-      >
-        <span>Next</span> <FiArrowRight />
-      </button>
-    </div>
-  </div>
-)}
+              {/* Need help (top-right) */}
+              <span
+                onClick={() => {
+                  window.open("/pages/mailhook/instruction", "_blank");
+                }}
+                className="absolute right-4 top-4 text-[#4F46E5] text-xs sm:text-sm font-semibold cursor-pointer hover:underline hover:text-[#3730A3] transition-colors"
+              >
+                Need help?
+              </span>
 
+              <h2 className="text-2xl font-bold text-[#111827] text-center mb-2 mt-8">
+                Your Mailhook is Ready
+              </h2>
+              <p className="text-[#4B5563] text-center mb-8">
+                This is a private, unique address just for your leads.
+              </p>
 
-      {step === 3 && (
-        <div className="bg-white shadow-md rounded-xl p-8 sm:p-10 max-w-2xl w-[90%] text-left relative">
-          <span
-            onClick={() => window.open("/pages/mailhook/instruction", "_blank")}
-            className="absolute right-4 top-4 text-[#4F46E5] text-xs sm:text-sm font-semibold cursor-pointer hover:underline hover:text-[#3730A3] transition-colors"
-          >
-            Need help?
-          </span>
-          <h2 className="text-2xl font-bold text-[#111827] text-center mb-2">
-            Set up Forwarding
-          </h2>
-          <p className="text-[#4B5563] text-center mb-8">
-            Automatically send your leads to Zenith Inbox.
-          </p>
-
-          <div className="bg-[#F3F4F6] text-[#4F46E5] px-4 py-3 rounded-lg flex justify-between items-center font-mono text-sm mb-6">
-            Forward emails to: <span>{user?.mailhook || "loading..."}</span>
-            <FiCopy
-              className="text-gray-500 cursor-pointer"
-              onClick={() =>
-                user?.mailhook && navigator.clipboard.writeText(user.mailhook)
-              }
-            />
-          </div>
-
-          <div className="border border-[#E5E7EB] rounded-2xl shadow-sm p-6 w-full max-w-md mx-auto text-center">
-            <h3 className="text-lg font-semibold text-[#111827] mb-4">
-              Email Receiving
-            </h3>
-            <div className="bg-[#F9FAFB] border border-gray-200 rounded-lg p-4 text-left text-sm text-gray-700 mb-6 shadow-inner">
-              {validationFailed ? (
-                <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4 text-center">
-                  <p className="font-semibold mb-2">
-                    Your mailhook forwarding may not be set up correctly.
-                  </p>
-                  <p className="text-sm mb-3">
-                    Please check your Email forwarding settings.
-                  </p>
-                  <p
-  onClick={() => setShowHelpModal(true)}
-  className="text-[#4F46E5] text-sm font-semibold cursor-pointer hover:underline"
->
-  Need help setting up Email forwarding? Click here to view instructions.
-</p>
-
-                </div>
-              ) : validationPhase ? (
-                showValidateButton ? (
-                  <div className="text-center py-6 text-gray-500 text-sm">
-                    <p>No email received after several checks.</p>
-                    <p>Please enter your email below to continue.</p>
+              <div className="border border-[#E5E7EB] rounded-xl p-6 space-y-6">
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <h3 className="font-semibold text-[#111827]">
+                      Your Unique Mailhook
+                    </h3>
+                    <span className="text-green-700 bg-green-100 text-xs px-3 py-1 rounded-full">
+                      Private & Unique
+                    </span>
                   </div>
-                ) : (
-                  <MailhookWaitingTimer message="Waiting for validation email..." />
-                )
-              ) : validated ? (
-                <div className="text-center py-6">
-                  <div className="flex flex-col items-center justify-center space-y-2">
-                    <FiCheck className="text-green-600 text-3xl" />
-                    <h4 className="text-lg font-semibold text-green-700">
-                      Mailhook connected successfully!
-                    </h4>
-                    <p className="text-sm text-gray-600">
-                      Your Gmail forwarding setup is verified.
-                    </p>
+
+                  <div className="bg-[#F3F4F6] text-[#4F46E5] px-4 py-3 rounded-lg flex justify-between items-center font-mono text-sm">
+                    {user?.mailhook || "loading-mailhook@zenith-inbox.com"}
+                    <FiCopy
+                      className="text-gray-500 cursor-pointer"
+                      onClick={() => {
+                        if (user?.mailhook) {
+                          navigator.clipboard.writeText(user.mailhook);
+                          toast.success("Mailhook copied!");
+                        }
+                      }}
+                    />
                   </div>
                 </div>
-              ) : verificationEmail && verificationEmail.sender ? (
-                <>
-                  <p className="mb-2">
-                    <strong>From:</strong>{" "}
-                    <span className="text-[#4F46E5]">
-                      {verificationEmail.sender}
-                    </span>
-                  </p>
-                  <p className="mb-2">
-                    <strong>Subject:</strong>{" "}
-                    <span className="font-medium">
-                      {verificationEmail.subject}
-                    </span>
-                  </p>
-                  <p className="mb-2 text-gray-600">
-                    <strong>Date:</strong>{" "}
-                    {new Date(verificationEmail.date).toLocaleString()}
+
+                <div className="mt-6">
+                  <h4 className="text-lg font-semibold text-[#111827] mb-2">
+                    Setup Instructions:
+                  </h4>
+                  <p className="text-[#4B5563] text-sm leading-relaxed mb-4">
+                    Forward your business emails to this mailhook address.{" "}
+                    <span className="font-semibold text-[#111827]">
+                      Choose your email provider below
+                    </span>{" "}
+                    to see step-by-step forwarding setup instructions.
                   </p>
 
-                  <div
-                    className="border-t border-gray-200 mt-3 pt-3 max-h-48 overflow-y-auto text-sm leading-relaxed text-gray-700"
-                    dangerouslySetInnerHTML={{
-                      __html:
-                        verificationEmail.formattedBody ||
-                        verificationEmail.textBody,
-                    }}
-                  />
+                  {/* 🔹 Tabs for Gmail & Outlook */}
+                  <div className="mt-4">
+                    <div className="flex space-x-4 border-b border-gray-200 mb-4">
+                      <button
+                        onClick={() => setActiveTab("gmail")}
+                        className={`pb-2 text-sm font-semibold ${
+                          activeTab === "gmail"
+                            ? "text-[#4F46E5] border-b-2 border-[#4F46E5]"
+                            : "text-gray-500"
+                        }`}
+                      >
+                        Gmail
+                      </button>
+                      <button
+                        onClick={() => setActiveTab("outlook")}
+                        className={`pb-2 text-sm font-semibold ${
+                          activeTab === "outlook"
+                            ? "text-[#4F46E5] border-b-2 border-[#4F46E5]"
+                            : "text-gray-500"
+                        }`}
+                      >
+                        Outlook
+                      </button>
+                    </div>
 
-                  {verificationEmail.isGmailVerification && (
-                    <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 rounded-lg p-4 mt-4 text-center text-sm">
-                      <p className="font-semibold mb-1">
-                        Gmail forwarding confirmation detected!
+                    {/* Gmail Guide */}
+                    {activeTab === "gmail" && (
+                      <div className="text-sm text-[#4B5563] space-y-2">
+                        <ol className="list-decimal list-inside space-y-2">
+                          <li>Open Gmail Settings → “See all settings”.</li>
+                          <li>
+                            Go to the <strong>Forwarding and POP/IMAP</strong>{" "}
+                            tab.
+                          </li>
+                          <li>
+                            Click <strong>“Add a forwarding address”</strong>.
+                          </li>
+                          <li>
+                            Enter your Mailhook address:{" "}
+                            <code className="bg-gray-100 px-1 py-0.5 rounded text-[#4F46E5]">
+                              {user?.mailhook ||
+                                "your-mailhook@zenith-inbox.com"}
+                            </code>
+                          </li>
+                          <li>
+                            Gmail will send a{" "}
+                            <strong>confirmation email</strong> to this Mailhook
+                            address.
+                          </li>
+                        </ol>
+                      </div>
+                    )}
+
+                    {/* Outlook Guide */}
+                    {activeTab === "outlook" && (
+                      <div className="text-sm text-[#4B5563] space-y-2">
+                        <ol className="list-decimal list-inside space-y-2">
+                          <li>
+                            Go to{" "}
+                            <strong>
+                              Outlook Settings → View all Outlook settings
+                            </strong>
+                            .
+                          </li>
+                          <li>
+                            Navigate to <strong>Mail → Forwarding</strong>.
+                          </li>
+                          <li>
+                            Enable <strong>Start forwarding</strong>.
+                          </li>
+                          <li>
+                            Enter your Mailhook address:{" "}
+                            <code className="bg-gray-100 px-1 py-0.5 rounded text-[#4F46E5]">
+                              {user?.mailhook ||
+                                "your-mailhook@zenith-inbox.com"}
+                            </code>
+                          </li>
+                          <li>
+                            Click <strong>Save</strong> to apply changes.
+                          </li>
+                        </ol>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* 🔹 Footer Buttons */}
+              <div className="flex justify-between items-center mt-8">
+                <span
+                  onClick={async () => {
+                    await updateStep(3, { skipped: true });
+                  }}
+                  className="text-[#4F46E5] text-sm font-semibold cursor-pointer hover:underline"
+                >
+                  Skip
+                </span>
+
+                <button
+                  onClick={async () => {
+                    await saveSetupProgress({
+                      stepCompleted: 2,
+                      stepStatus: "completed",
+                    });
+                    setStep(3);
+                  }}
+                  className="flex items-center space-x-2 px-6 py-2 rounded-lg text-sm font-semibold bg-[#4F46E5] text-white hover:bg-[#4338CA]"
+                >
+                  <span>Next</span> <FiArrowRight />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div className="bg-white shadow-md rounded-xl p-8 sm:p-10 max-w-2xl w-[90%] text-left relative">
+              <span
+                onClick={() =>
+                  window.open("/pages/mailhook/instruction", "_blank")
+                }
+                className="absolute right-4 top-4 text-[#4F46E5] text-xs sm:text-sm font-semibold cursor-pointer hover:underline hover:text-[#3730A3] transition-colors"
+              >
+                Need help?
+              </span>
+              <h2 className="text-2xl font-bold text-[#111827] text-center mb-2">
+                Set up Forwarding
+              </h2>
+              <p className="text-[#4B5563] text-center mb-8">
+                Automatically send your leads to Zenith Inbox.
+              </p>
+
+              <div className="bg-[#F3F4F6] text-[#4F46E5] px-4 py-3 rounded-lg flex justify-between items-center font-mono text-sm mb-6">
+                Forward emails to: <span>{user?.mailhook || "loading..."}</span>
+                <FiCopy
+                  className="text-gray-500 cursor-pointer"
+                  onClick={() =>
+                    user?.mailhook &&
+                    navigator.clipboard.writeText(user.mailhook)
+                  }
+                />
+              </div>
+
+              <div className="relative border border-[#E5E7EB] rounded-2xl shadow-sm p-6 w-full max-w-md mx-auto text-center">
+                {!validationPhase && !validated && showValidateButton && (
+                  <button
+                    onClick={handleRetryValidation}
+                    className="absolute top-4 right-4 flex items-center gap-1 text-xs font-semibold text-[#4F46E5] hover:text-[#3730A3] transition-colors"
+                  >
+                    <FiRefreshCcw className="text-sm" />
+                    Retry
+                  </button>
+                )}
+                <h3 className="text-lg font-semibold text-[#111827] mb-4">
+                  Email Receiving
+                </h3>
+                <div className="bg-[#F9FAFB] border border-gray-200 rounded-lg p-4 text-left text-sm text-gray-700 mb-6 shadow-inner">
+                  {validationFailed ? (
+                    <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4 text-center">
+                      <p className="font-semibold mb-2">
+                        Your mailhook forwarding may not be set up correctly.
                       </p>
-                      <p>
-                        Please open Gmail and click the verification link in
-                        your inbox to approve forwarding.
+                      <p className="text-sm mb-3">
+                        Please read instructions again and check your Email
+                        forwarding settings.
                       </p>
+                      {/* <p
+                        onClick={() => setShowHelpModal(true)}
+                        className="text-[#4F46E5] text-sm font-semibold cursor-pointer hover:underline"
+                      >
+                        Need help setting up Email forwarding? Click here to
+                        view instructions.
+                      </p> */}
+                    </div>
+                  ) : validationPhase ? (
+                    showValidateButton ? (
+                      <div className="text-center py-6 text-gray-500 text-sm">
+                        <p>No email received after several checks.</p>
+                        <p>Please enter your email below to continue.</p>
+                      </div>
+                    ) : (
+                      <MailhookWaitingTimer message="Waiting for validation email..." />
+                    )
+                  ) : validated ? (
+                    <div className="text-center py-6">
+                      <div className="flex flex-col items-center justify-center space-y-2">
+                        <FiCheck className="text-green-600 text-3xl" />
+                        <h4 className="text-lg font-semibold text-green-700">
+                          Mailhook connected successfully!
+                        </h4>
+                        <p className="text-sm text-gray-600">
+                          Your Gmail forwarding setup is verified.
+                        </p>
+                      </div>
+                    </div>
+                  ) : verificationEmail && verificationEmail.sender ? (
+                    <>
+                      <p className="mb-2">
+                        <strong>From:</strong>{" "}
+                        <span className="text-[#4F46E5]">
+                          {verificationEmail.sender}
+                        </span>
+                      </p>
+                      <p className="mb-2">
+                        <strong>Subject:</strong>{" "}
+                        <span className="font-medium">
+                          {verificationEmail.subject}
+                        </span>
+                      </p>
+                      <p className="mb-2 text-gray-600">
+                        <strong>Date:</strong>{" "}
+                        {new Date(verificationEmail.date).toLocaleString()}
+                      </p>
+
+                      <div
+                        className="border-t border-gray-200 mt-3 pt-3 max-h-48 overflow-y-auto text-sm leading-relaxed text-gray-700"
+                        dangerouslySetInnerHTML={{
+                          __html:
+                            verificationEmail.formattedBody ||
+                            verificationEmail.textBody,
+                        }}
+                      />
+
+                      {verificationEmail.isGmailVerification && (
+                        <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 rounded-lg p-4 mt-4 text-center text-sm">
+                          <p className="font-semibold mb-1">
+                            Gmail forwarding confirmation detected!
+                          </p>
+                          <p>
+                            Please open Gmail and click the verification link in
+                            your inbox to approve forwarding.
+                          </p>
+                        </div>
+                      )}
+                    </>
+                  ) : showValidateButton ? (
+                    <div className="text-center text-sm text-gray-600">
+                      <p>No email received.</p>
+                      <p className="text-xs text-gray-500">
+                        Please enter your email address below to validate
+                        manually.
+                      </p>
+                    </div>
+                  ) : (
+                    <MailhookWaitingTimer />
+                  )}
+                </div>
+                {/* {!validationPhase && !validated && showValidateButton && (
+                  <button
+                    onClick={handleRetryValidation}
+                    className="mt-4 flex items-center justify-center mx-auto space-x-2 px-5 py-2 border border-[#4F46E5] text-[#4F46E5] rounded-lg text-sm font-semibold hover:bg-[#EEF2FF] transition"
+                  >
+                    <FiRefreshCcw className="text-[#4F46E5]" />
+                    <span>Retry Checking</span>
+                  </button>
+                )} */}
+                {!validationPhase &&
+                  !validated &&
+                  (showValidateButton ||
+                    verificationEmail?.isGmailVerification) && (
+                    <div className="space-y-3 mt-6">
+                      <p className="text-sm text-gray-600">
+                        Enter the email address where you’ve set up forwarding
+                        to verify your setup.
+                      </p>
+                      <input
+                        type="email"
+                        placeholder="Enter your email address"
+                        className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:ring-2 focus:ring-[#4F46E5] outline-none"
+                        value={verificationEmail?.toEmail || ""}
+                        onChange={(e) =>
+                          setVerificationEmail({
+                            ...verificationEmail,
+                            toEmail: e.target.value,
+                          })
+                        }
+                      />
                     </div>
                   )}
-                </>
-              ) : showValidateButton ? (
-                <div className="text-center text-sm text-gray-600">
-                  <p>No email received.</p>
-                  <p className="text-xs text-gray-500">
-                    Please enter your email address below to validate manually.
-                  </p>
-                </div>
-              ) : (
-                <MailhookWaitingTimer />
-              )}
-            </div>
-            {!validationPhase && !validated && showValidateButton && (
-              <button
-                onClick={handleRetryValidation}
-                className="mt-4 flex items-center justify-center mx-auto space-x-2 px-5 py-2 border border-[#4F46E5] text-[#4F46E5] rounded-lg text-sm font-semibold hover:bg-[#EEF2FF] transition"
-              >
-                <FiRefreshCcw className="text-[#4F46E5]" />
-                <span>Retry Checking</span>
-              </button>
-            )}
-            {!validationPhase &&
-              !validated &&
-              (showValidateButton ||
-                verificationEmail?.isGmailVerification) && (
-                <div className="space-y-3 mt-6">
-                  <p className="text-sm text-gray-600">
-                    Enter the email address where you’ve set up forwarding to
-                    verify your setup.
-                  </p>
-                  <input
-                    type="email"
-                    placeholder="Enter your email address"
-                    className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:ring-2 focus:ring-[#4F46E5] outline-none"
-                    value={verificationEmail?.toEmail || ""}
-                    onChange={(e) =>
-                      setVerificationEmail({
-                        ...verificationEmail,
-                        toEmail: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-              )}
-          </div>
-
-       <div className="mt-10 border-t border-gray-200 pt-6 flex justify-between items-center">
-      <span
-          onClick={() => setStep(2)}
-
-        className="text-[#4F46E5] text-sm font-semibold cursor-pointer hover:underline"
-      >
-        Back
-      </span>
-            {!validated ? (
-              <button
-                disabled={
-                  validating ||
-                  !verificationEmail ||
-                  !verificationEmail?.toEmail?.trim()
-                }
-                onClick={async () => {
-                  setValidating(true);
-                  setValidationFailed(false);
-                  setShowValidateButton(false);
-                  setValidationPhase(true);
-                  await handleValidateForwarding();
-                  startValidationLoop();
-                }}
-                className={`flex items-center space-x-2 px-6 py-2 rounded-lg text-sm font-semibold text-white transition ${
-                  validating
-                    ? "bg-gray-400 cursor-not-allowed"
-                    : verificationEmail?.toEmail?.trim()
-                    ? "bg-[#4F46E5] hover:bg-[#4338CA]"
-                    : "bg-gray-300 cursor-not-allowed"
-                }`}
-              >
-                {validating ? "Validating..." : "Validate Forwarding"}
-                <FiArrowRight />
-              </button>
-            ) : (
-              <button
-                onClick={async () => {
-                  await saveSetupProgress({
-                    stepCompleted: 3,
-                    stepStatus: "completed",
-                  });
-                  setStep(4); 
-                }}
-                className="flex items-center space-x-2 px-6 py-2 rounded-lg text-sm font-semibold bg-green-600 text-white hover:bg-green-700 transition"
-              >
-                <span>Next</span> <FiArrowRight />
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-
-      {step === 4 && (
-        <div className="bg-white shadow-md rounded-xl p-8 sm:p-10 max-w-2xl w-[90%] text-left mx-auto">
-          <h2 className="text-2xl font-bold text-[#111827] text-center mb-2">
-            Set up Sending (SMTP)
-          </h2>
-          <p className="text-[#4B5563] text-center mb-8">
-            Configure how Zenith Inbox will send replies from your own email
-            address.
-          </p>
-
-          <div className="flex border border-gray-300 rounded-lg overflow-hidden mb-6 w-full sm:w-[26rem] mx-auto">
-            {["Gmail", "Microsoft", "Other"].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setSelectedTab(tab)}
-                className={`w-1/3 px-4 py-2 text-sm font-medium text-center transition-colors ${
-                  selectedTab === tab
-                    ? "border-b-2 border-[#4F46E5] text-[#4F46E5] bg-[#EEF2FF]"
-                    : "text-gray-500 hover:text-[#4F46E5] bg-white"
-                }`}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
-
-          {selectedTab === "Gmail" && (
-            <div className="border border-[#E5E7EB] rounded-lg p-8 text-center space-y-4">
-              <p className="text-[#4B5563]">
-                Connect your Gmail account securely using OAuth 2.0.
-              </p>
-              <button
-                onClick={handleGmailConnect}
-                className="bg-[#EA4335] hover:bg-[#C33D2D] text-white px-6 py-3 rounded-lg text-sm font-semibold shadow-md"
-              >
-                Connect with Gmail
-              </button>
-            </div>
-          )}
-
-          {selectedTab === "Microsoft" && (
-            <div className="border border-[#E5E7EB] rounded-lg p-8 text-center space-y-4">
-              <p className="text-[#4B5563]">
-                Connect your Outlook or Microsoft 365 account securely using
-                OAuth 2.0.
-              </p>
-              <button
-                onClick={handleMicrosoftConnect}
-                className="bg-[#0078D4] hover:bg-[#0063B1] text-white px-6 py-3 rounded-lg text-sm font-semibold shadow-md flex items-center justify-center gap-2 mx-auto"
-              >
-                <FaMicrosoft className="text-lg" />
-                Connect with Outlook
-              </button>
-            </div>
-          )}
-
-          {selectedTab === "Other" && (
-            <div className="border border-[#E5E7EB] rounded-lg p-6 space-y-5">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-[#111827] mb-1">
-                    Connection Name
-                  </label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={smtpForm.name}
-                    onChange={handleSmtpChange}
-                    className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-[#4F46E5] outline-none"
-                    placeholder="My SMTP Connection"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-[#111827] mb-1">
-                    Email Address
-                  </label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={smtpForm.email}
-                    onChange={handleSmtpChange}
-                    className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-[#4F46E5] outline-none"
-                    placeholder="yourname@outlook.com"
-                  />
-                </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-[#111827] mb-1">
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  name="fullName"
-                  value={smtpForm.fullName}
-                  onChange={handleSmtpChange}
-                  className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-[#4F46E5] outline-none"
-                  placeholder="Your full name"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-[#111827] mb-1">
-                  Username
-                </label>
-                <input
-                  type="text"
-                  name="username"
-                  value={smtpForm.username}
-                  onChange={handleSmtpChange}
-                  className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-[#4F46E5] outline-none"
-                  placeholder="Usually same as email"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-[#111827] mb-1">
-                  Password / App Password
-                </label>
-                <div className="relative">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    name="password"
-                    value={smtpForm.password}
-                    onChange={handleSmtpChange}
-                    className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-[#4F46E5] outline-none pr-10"
-                    placeholder="Enter password"
-                  />
+              <div className="mt-10 border-t border-gray-200 pt-6 flex justify-between items-center">
+                <span
+                  onClick={() => setStep(2)}
+                  className="text-[#4F46E5] text-sm font-semibold cursor-pointer hover:underline"
+                >
+                  Back
+                </span>
+                {!validated ? (
                   <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-2.5 text-gray-500 hover:text-gray-700"
+                    disabled={
+                      validating ||
+                      !verificationEmail ||
+                      !verificationEmail?.toEmail?.trim()
+                    }
+                    onClick={async () => {
+                      setValidating(true);
+                      setValidationFailed(false);
+                      setShowValidateButton(false);
+                      setValidationPhase(true);
+                      await handleValidateForwarding();
+                      startValidationLoop();
+                    }}
+                    className={`flex items-center space-x-2 px-6 py-2 rounded-lg text-sm font-semibold text-white transition ${
+                      validating
+                        ? "bg-gray-400 cursor-not-allowed"
+                        : verificationEmail?.toEmail?.trim()
+                        ? "bg-[#4F46E5] hover:bg-[#4338CA]"
+                        : "bg-gray-300 cursor-not-allowed"
+                    }`}
                   >
-                    {showPassword ? <FiEyeOff /> : <FiEye />}
+                    {validating ? "Validating..." : "Validate Forwarding"}
+                    <FiArrowRight />
+                  </button>
+                ) : (
+                  <button
+                    onClick={async () => {
+                      await saveSetupProgress({
+                        stepCompleted: 3,
+                        stepStatus: "completed",
+                      });
+                      setStep(4);
+                    }}
+                    className="flex items-center space-x-2 px-6 py-2 rounded-lg text-sm font-semibold bg-green-600 text-white hover:bg-green-700 transition"
+                  >
+                    <span>Next</span> <FiArrowRight />
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {step === 4 && (
+            <div className="bg-white shadow-md rounded-xl p-8 sm:p-10 max-w-2xl w-[90%] text-left mx-auto">
+              <h2 className="text-2xl font-bold text-[#111827] text-center mb-2">
+                Set up Sending (SMTP)
+              </h2>
+              <p className="text-[#4B5563] text-center mb-8">
+                Configure how Zenith Inbox will send replies from your own email
+                address.
+              </p>
+
+              <div className="flex border border-gray-300 rounded-lg overflow-hidden mb-6 w-full sm:w-[26rem] mx-auto">
+                {["Gmail", "Microsoft", "Other"].map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setSelectedTab(tab)}
+                    className={`w-1/3 px-4 py-2 text-sm font-medium text-center transition-colors ${
+                      selectedTab === tab
+                        ? "border-b-2 border-[#4F46E5] text-[#4F46E5] bg-[#EEF2FF]"
+                        : "text-gray-500 hover:text-[#4F46E5] bg-white"
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </div>
+
+              {selectedTab === "Gmail" && (
+                <div className="border border-[#E5E7EB] rounded-lg p-8 text-center space-y-4">
+                  <p className="text-[#4B5563]">
+                    Connect your Gmail account securely using OAuth 2.0.
+                  </p>
+                  <button
+                    onClick={handleGmailConnect}
+                    className="bg-[#EA4335] hover:bg-[#C33D2D] text-white px-6 py-3 rounded-lg text-sm font-semibold shadow-md"
+                  >
+                    Connect with Gmail
                   </button>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  If MFA is enabled, use an Outlook App Password.
-                </p>
-              </div>
+              )}
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-[#111827] mb-1">
-                    SMTP Host
-                  </label>
-                  <input
-                    type="text"
-                    name="host"
-                    value={smtpForm.host}
-                    onChange={handleSmtpChange}
-                    className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-[#4F46E5] outline-none"
-                  />
+              {selectedTab === "Microsoft" && (
+                <div className="border border-[#E5E7EB] rounded-lg p-8 text-center space-y-4">
+                  <p className="text-[#4B5563]">
+                    Connect your Outlook or Microsoft 365 account securely using
+                    OAuth 2.0.
+                  </p>
+                  <button
+                    onClick={handleMicrosoftConnect}
+                    className="bg-[#0078D4] hover:bg-[#0063B1] text-white px-6 py-3 rounded-lg text-sm font-semibold shadow-md flex items-center justify-center gap-2 mx-auto"
+                  >
+                    <FaMicrosoft className="text-lg" />
+                    Connect with Outlook
+                  </button>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-[#111827] mb-1">
-                    Port
-                  </label>
-                  <input
-                    type="number"
-                    name="port"
-                    value={smtpForm.port}
-                    onChange={handleSmtpChange}
-                    className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-[#4F46E5] outline-none"
-                  />
-                </div>
-              </div>
+              )}
 
-              <button
-                onClick={handleSmtpSave}
-                className="w-full bg-[#4F46E5] hover:bg-[#4338CA] text-white py-2 rounded-md text-sm font-semibold transition"
-              >
-                Save Connection
-              </button>
+              {selectedTab === "Other" && (
+                <div className="border border-[#E5E7EB] rounded-lg p-6 space-y-5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-[#111827] mb-1">
+                        Connection Name
+                      </label>
+                      <input
+                        type="text"
+                        name="name"
+                        value={smtpForm.name}
+                        onChange={handleSmtpChange}
+                        className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-[#4F46E5] outline-none"
+                        placeholder="My SMTP Connection"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-[#111827] mb-1">
+                        Email Address
+                      </label>
+                      <input
+                        type="email"
+                        name="email"
+                        value={smtpForm.email}
+                        onChange={handleSmtpChange}
+                        className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-[#4F46E5] outline-none"
+                        placeholder="yourname@outlook.com"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-[#111827] mb-1">
+                      Full Name
+                    </label>
+                    <input
+                      type="text"
+                      name="fullName"
+                      value={smtpForm.fullName}
+                      onChange={handleSmtpChange}
+                      className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-[#4F46E5] outline-none"
+                      placeholder="Your full name"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-[#111827] mb-1">
+                      Username
+                    </label>
+                    <input
+                      type="text"
+                      name="username"
+                      value={smtpForm.username}
+                      onChange={handleSmtpChange}
+                      className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-[#4F46E5] outline-none"
+                      placeholder="Usually same as email"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-[#111827] mb-1">
+                      Password / App Password
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        name="password"
+                        value={smtpForm.password}
+                        onChange={handleSmtpChange}
+                        className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-[#4F46E5] outline-none pr-10"
+                        placeholder="Enter password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-2.5 text-gray-500 hover:text-gray-700"
+                      >
+                        {showPassword ? <FiEyeOff /> : <FiEye />}
+                      </button>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      If MFA is enabled, use an Outlook App Password.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-[#111827] mb-1">
+                        SMTP Host
+                      </label>
+                      <input
+                        type="text"
+                        name="host"
+                        value={smtpForm.host}
+                        onChange={handleSmtpChange}
+                        className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-[#4F46E5] outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-[#111827] mb-1">
+                        Port
+                      </label>
+                      <input
+                        type="number"
+                        name="port"
+                        value={smtpForm.port}
+                        onChange={handleSmtpChange}
+                        className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-[#4F46E5] outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={handleSmtpSave}
+                    className="w-full bg-[#4F46E5] hover:bg-[#4338CA] text-white py-2 rounded-md text-sm font-semibold transition"
+                  >
+                    Save Connection
+                  </button>
+                </div>
+              )}
+
+              <div className="flex justify-between mt-8">
+                <span
+                  onClick={async () => {
+                    await saveSetupProgress({
+                      stepCompleted: 4,
+                      stepStatus: "skipped",
+                      skipped: true,
+                    });
+                    setStep(5);
+                  }}
+                  className="text-[#4F46E5] text-sm font-semibold cursor-pointer hover:underline"
+                >
+                  <span>Skip</span>
+                </span>
+
+                <button
+                  onClick={async () => {
+                    await saveSetupProgress({
+                      stepCompleted: 4,
+                      stepStatus: "completed",
+                    });
+                    setStep(5);
+                  }}
+                  className="flex items-center space-x-2 px-6 py-2 rounded-lg text-sm font-semibold bg-[#4F46E5] text-white hover:bg-[#4338CA]"
+                >
+                  <span>Next</span> <FiArrowRight />
+                </button>
+              </div>
             </div>
           )}
 
-          <div className="flex justify-between mt-8">
-            <span
-              onClick={async () => {
-                await saveSetupProgress({
-                  stepCompleted: 4,
-                  stepStatus: "skipped",
-                  skipped: true, 
-                });
-                setStep(5);
-              }}
-              className="text-[#4F46E5] text-sm font-semibold cursor-pointer hover:underline"
-            >
-              <span>Skip</span>
-            </span>
-
-            <button
-              onClick={async () => {
-                await saveSetupProgress({
-                  stepCompleted: 4,
-                  stepStatus: "completed",
-                });
-                setStep(5);
-              }}
-              className="flex items-center space-x-2 px-6 py-2 rounded-lg text-sm font-semibold bg-[#4F46E5] text-white hover:bg-[#4338CA]"
-            >
-              <span>Next</span> <FiArrowRight />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {step === 5 && (
-        <div className="bg-white shadow-md rounded-xl p-8 sm:p-10 max-w-2xl w-[90%] text-left mx-auto">
-          <h2 className="text-2xl font-bold text-[#111827] text-center mb-2">
-            Review &amp; Go Live
-          </h2>
-          <p className="text-[#4B5563] text-center mb-8">
-            Confirm your setup and enable automation.
-          </p>
-
-          <div className="border border-[#E5E7EB] rounded-lg p-6 space-y-4 mb-8">
-            <div>
-              <h3 className="font-semibold text-[#111827] mb-1">
-                Setup Checklist
-              </h3>
-              <p className="text-sm text-[#6B7280]">
-                Here’s a summary of your setup progress:
+          {step === 5 && (
+            <div className="bg-white shadow-md rounded-xl p-8 sm:p-10 max-w-2xl w-[90%] text-left mx-auto">
+              <h2 className="text-2xl font-bold text-[#111827] text-center mb-2">
+                Review &amp; Go Live
+              </h2>
+              <p className="text-[#4B5563] text-center mb-8">
+                Confirm your setup and enable automation.
               </p>
-            </div>
 
-            {!setupProgress ? (
-              <p className="text-gray-500 text-center py-6">
-                Loading progress...
-              </p>
-            ) : (
-              <ul className="space-y-3 text-sm text-[#111827]">
-                {setupProgress.steps?.map((step) => (
-                  <li
-                    key={step.step}
-                    className="flex items-center justify-between border-b border-gray-100 pb-2"
-                  >
-                    <div className="flex items-center space-x-2">
-                      {step.status === "completed" ? (
-                        <FiCheckCircle className="text-green-600 text-lg" />
-                      ) : (
-                        <FiAlertTriangle className="text-yellow-500 text-lg" />
-                      )}
+              <div className="border border-[#E5E7EB] rounded-lg p-6 space-y-4 mb-8">
+                <div>
+                  <h3 className="font-semibold text-[#111827] mb-1">
+                    Setup Checklist
+                  </h3>
+                  <p className="text-sm text-[#6B7280]">
+                    Here’s a summary of your setup progress:
+                  </p>
+                </div>
 
-                      <span>{step.title}</span>
-                    </div>
-                    <span
-                      className={`text-xs px-2 py-1 rounded-full ${
-                        step.status === "completed"
-                          ? "bg-green-100 text-green-700"
-                          : "bg-yellow-100 text-yellow-700"
-                      }`}
-                    >
-                      {step.status === "completed" ? "Completed" : "Skipped"}
+                {!setupProgress ? (
+                  <p className="text-gray-500 text-center py-6">
+                    Loading progress...
+                  </p>
+                ) : (
+                  <ul className="space-y-3 text-sm text-[#111827]">
+                    {setupProgress.steps?.map((step) => (
+                      <li
+                        key={step.step}
+                        className="flex items-center justify-between border-b border-gray-100 pb-2"
+                      >
+                        <div className="flex items-center space-x-2">
+                          {step.status === "completed" ? (
+                            <FiCheckCircle className="text-green-600 text-lg" />
+                          ) : (
+                            <FiAlertTriangle className="text-yellow-500 text-lg" />
+                          )}
+
+                          <span>{step.title}</span>
+                        </div>
+                        <span
+                          className={`text-xs px-2 py-1 rounded-full ${
+                            step.status === "completed"
+                              ? "bg-green-100 text-green-700"
+                              : "bg-yellow-100 text-yellow-700"
+                          }`}
+                        >
+                          {step.status === "completed"
+                            ? "Completed"
+                            : "Skipped"}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                <div className="bg-[#F3F4F6] p-4 rounded-lg mt-4 text-sm text-[#4B5563] space-y-1">
+                  <p>
+                    Your Mailhook:{" "}
+                    <span className="text-[#4F46E5] font-mono">
+                      {user?.mailhook || "loading..."}
                     </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-
-            <div className="bg-[#F3F4F6] p-4 rounded-lg mt-4 text-sm text-[#4B5563] space-y-1">
-              <p>
-                Your Mailhook:{" "}
-                <span className="text-[#4F46E5] font-mono">
-                  {user?.mailhook || "loading..."}
-                </span>
-              </p>
-              {/* <p>
+                  </p>
+                  {/* <p>
                 Automation Mode:{" "}
                 {setupProgress?.completed
                   ? "Enabled"
@@ -1367,220 +1424,749 @@ const [activeTab, setActiveTab] = useState("gmail");
                   ? "Skipped"
                   : "Pending"}
               </p> */}
+                </div>
+              </div>
+
+              <div className="flex justify-between mt-8">
+                <button onClick={() => updateStep(step + 1)}></button>
+
+                <button
+                  onClick={async () => {
+                    await saveSetupProgress({
+                      setupCompleted: true,
+                      stepCompleted: 5,
+                    });
+                    navigate("/organization");
+                  }}
+                  className="flex items-center space-x-2 px-6 py-3 rounded-lg text-sm font-semibold bg-[#4F46E5] text-white hover:bg-[#4338CA] shadow-md"
+                >
+                  <span>Start building scenarios...</span>
+                </button>
+              </div>
             </div>
-          </div>
+          )}
+          {showHelpModal && (
+            <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50 p-4">
+              {/* Modal Container */}
+              <div className="relative bg-white w-full max-w-xl rounded-2xl shadow-2xl overflow-hidden animate-fadeInUp max-h-[90vh] flex flex-col">
+                {/* Close Button */}
+                <button
+                  onClick={() => setShowHelpModal(false)}
+                  className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 transition-colors p-2 rounded-full hover:bg-gray-100"
+                  aria-label="Close setup guide"
+                >
+                  <FiX className="w-5 h-5" />
+                </button>
 
-          <div className="flex justify-between mt-8">
-            <button onClick={() => updateStep(step + 1)}></button>
+                {/* Header */}
+                <div className="px-8 pt-8 pb-4 border-b border-gray-100">
+                  <h3 className="text-2xl sm:text-3xl font-extrabold text-gray-900 flex items-center gap-2">
+                    <FiMail className="text-indigo-600" />
+                    Email Forwarding Setup
+                  </h3>
+                  <p className="text-gray-500 mt-1 text-sm sm:text-base">
+                    Follow these steps to connect your Gmail or Outlook mailbox
+                    to{" "}
+                    <span className="font-semibold text-gray-800">
+                      Zenith Inbox
+                    </span>
+                    .
+                  </p>
+                </div>
 
-            <button
-              onClick={async () => {
-                await saveSetupProgress({
-                  setupCompleted: true,
-                  stepCompleted: 5,
-                });
-                navigate("/organization");
-              }}
-              className="flex items-center space-x-2 px-6 py-3 rounded-lg text-sm font-semibold bg-[#4F46E5] text-white hover:bg-[#4338CA] shadow-md"
-            >
-              <span>Start building scenarios...</span>
-            </button>
-          </div>
+                {/* Body Content (Scrollable) */}
+                <div className="flex-1 overflow-y-auto px-8 pb-8 mt-4 space-y-6">
+                  {/* Tabs */}
+                  <div className="flex bg-gray-100 rounded-lg p-1 space-x-1 sticky top-0 z-10">
+                    <button
+                      onClick={() => setHelpTab("gmail")}
+                      className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all duration-200 ${
+                        helpTab === "gmail"
+                          ? "bg-white text-indigo-700 shadow-md"
+                          : "text-gray-600 hover:text-indigo-700 hover:bg-gray-50"
+                      }`}
+                    >
+                      <div className="flex items-center justify-center gap-2">
+                        <FiMail className="text-indigo-600" />
+                        Gmail
+                      </div>
+                    </button>
+                    <button
+                      onClick={() => setHelpTab("outlook")}
+                      className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all duration-200 ${
+                        helpTab === "outlook"
+                          ? "bg-white text-indigo-700 shadow-md"
+                          : "text-gray-600 hover:text-indigo-700 hover:bg-gray-50"
+                      }`}
+                    >
+                      <div className="flex items-center justify-center gap-2">
+                        <FiSend className="text-indigo-600" />
+                        Outlook
+                      </div>
+                    </button>
+                  </div>
+
+                  {/* Gmail Instructions */}
+                  {helpTab === "gmail" && (
+                    <div className="text-gray-700 text-base leading-relaxed space-y-5">
+                      <ol className="list-none space-y-4">
+                        <li className="flex items-start">
+                          <span className="font-bold text-indigo-600 mr-3 mt-0.5">
+                            1.
+                          </span>
+                          <p>
+                            Open <strong>Gmail Settings</strong> → click the
+                            gear icon → <strong>“See all settings”</strong>.
+                          </p>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="font-bold text-indigo-600 mr-3 mt-0.5">
+                            2.
+                          </span>
+                          <p>
+                            Go to the <strong>Forwarding and POP/IMAP</strong>{" "}
+                            tab.
+                          </p>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="font-bold text-indigo-600 mr-3 mt-0.5">
+                            3.
+                          </span>
+                          <p>
+                            Click <strong>“Add a forwarding address”</strong>{" "}
+                            and enter your Mailhook:
+                          </p>
+                        </li>
+                        <li className="ml-4">
+                          <code className="block bg-gray-50 border border-indigo-200 text-indigo-700 px-4 py-3 rounded-lg text-sm font-mono break-all select-all">
+                            {user?.mailhook || "your-mailhook@zenith-inbox.com"}
+                          </code>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="font-bold text-indigo-600 mr-3 mt-0.5">
+                            4.
+                          </span>
+                          <p>
+                            Gmail will send a{" "}
+                            <strong>confirmation email</strong> to your Mailhook
+                            address, which will automatically appear inside
+                            Zenith Inbox.
+                          </p>
+                        </li>
+
+                        {/* 🆕 Step 6 - Retry Checking & Validation */}
+                        <li className="flex items-start">
+                          <span className="font-bold text-indigo-600 mr-3 mt-0.5">
+                            5.
+                          </span>
+                          <p>
+                            Once you’ve added forwarding, return to this setup
+                            screen and click <strong>“Retry Checking”</strong>.
+                            Wait a few moments while Zenith Inbox detects the
+                            Gmail confirmation email.
+                          </p>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="font-bold text-indigo-600 mr-3 mt-0.5">
+                            6.
+                          </span>
+                          <p>
+                            When the email appears below, open it and click the
+                            Gmail verification link to approve forwarding. Then
+                            click <strong>“Validate Forwarding”</strong> to
+                            complete the setup. You’ll see a green success
+                            message once your Mailhook is connected!
+                          </p>
+                        </li>
+
+                        <li className="flex items-start">
+                          <span className="font-bold text-indigo-600 mr-3 mt-0.5">
+                            7.
+                          </span>
+                          <p>
+                            Finally, go back to Gmail and ensure{" "}
+                            <strong>
+                              “Forward a copy of incoming mail to”
+                            </strong>{" "}
+                            is set to your Mailhook, then click{" "}
+                            <strong>Save Changes</strong>.
+                          </p>
+                        </li>
+                      </ol>
+
+                      {/* Tip Box */}
+                      <div className="mt-6 flex items-start p-4 bg-indigo-50 border-l-4 border-indigo-400 rounded-lg text-indigo-800 text-sm">
+                        <FiInfo className="w-5 h-5 flex-shrink-0 mr-3 mt-0.5" />
+                        <p>
+                          <strong>Pro Tip:</strong> Keep Gmail open during this
+                          process so you can quickly confirm the forwarding
+                          prompt when it arrives.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Outlook Instructions */}
+                  {helpTab === "outlook" && (
+                    <div className="text-gray-700 text-base leading-relaxed space-y-5">
+                      <ol className="list-none space-y-4">
+                        <li className="flex items-start">
+                          <span className="font-bold text-indigo-600 mr-3 mt-0.5">
+                            1.
+                          </span>
+                          <p>
+                            Open <strong>Outlook Settings</strong> → click{" "}
+                            <strong>“View all Outlook settings”</strong>.
+                          </p>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="font-bold text-indigo-600 mr-3 mt-0.5">
+                            2.
+                          </span>
+                          <p>
+                            Navigate to <strong>Mail → Forwarding</strong>.
+                          </p>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="font-bold text-indigo-600 mr-3 mt-0.5">
+                            3.
+                          </span>
+                          <p>
+                            Enable <strong>Start forwarding</strong>.
+                          </p>
+                        </li>
+                        <li className="ml-4">
+                          <code className="block bg-gray-50 border border-indigo-200 text-indigo-700 px-4 py-3 rounded-lg text-sm font-mono break-all select-all">
+                            {user?.mailhook || "your-mailhook@zenith-inbox.com"}
+                          </code>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="font-bold text-indigo-600 mr-3 mt-0.5">
+                            4.
+                          </span>
+                          <p>
+                            (Optional) Check{" "}
+                            <strong>Keep a copy of forwarded messages</strong>.
+                          </p>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="font-bold text-indigo-600 mr-3 mt-0.5">
+                            5.
+                          </span>
+                          <p>
+                            Click <strong>Save</strong> to apply your changes.
+                          </p>
+                        </li>
+                      </ol>
+
+                      <div className="mt-6 flex items-start p-4 bg-green-50 border-l-4 border-green-400 rounded-lg text-green-800 text-sm">
+                        <FiCheckCircle className="w-5 h-5 flex-shrink-0 mr-3 mt-0.5" />
+                        <p>
+                          <strong>Verification:</strong> After saving, send a
+                          test email to confirm messages are forwarding to
+                          Zenith Inbox.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Footer */}
+                <div className="p-6 border-t border-gray-100 text-center bg-gray-50">
+                  <button
+                    onClick={() => setShowHelpModal(false)}
+                    className="w-full sm:w-auto px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-base font-bold shadow-md transition-transform hover:scale-[1.02]"
+                  >
+                    <FiCheck className="inline-block mr-2 -mt-0.5" />
+                    I'm Ready to Forward
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
-      )}
-{showHelpModal && (
-  <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50 p-4">
-    {/* Modal Container */}
-    <div className="relative bg-white w-full max-w-xl rounded-2xl shadow-2xl overflow-hidden animate-fadeInUp max-h-[90vh] flex flex-col">
-      
-      {/* Close Button */}
-      <button
-        onClick={() => setShowHelpModal(false)}
-        className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 transition-colors p-2 rounded-full hover:bg-gray-100"
-        aria-label="Close setup guide"
-      >
-        <FiX className="w-5 h-5" />
-      </button>
-
-      {/* Header */}
-      <div className="px-8 pt-8 pb-4 border-b border-gray-100">
-        <h3 className="text-2xl sm:text-3xl font-extrabold text-gray-900 flex items-center gap-2">
-          <FiMail className="text-indigo-600" />
-          Email Forwarding Setup
-        </h3>
-        <p className="text-gray-500 mt-1 text-sm sm:text-base">
-          Follow these steps to connect your Gmail or Outlook mailbox to{" "}
-          <span className="font-semibold text-gray-800">Zenith Inbox</span>.
-        </p>
       </div>
-
-      {/* Body Content (Scrollable) */}
-      <div className="flex-1 overflow-y-auto px-8 pb-8 mt-4 space-y-6">
-        {/* Tabs */}
-        <div className="flex bg-gray-100 rounded-lg p-1 space-x-1 sticky top-0 z-10">
-          <button
-            onClick={() => setHelpTab("gmail")}
-            className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all duration-200 ${
-              helpTab === "gmail"
-                ? "bg-white text-indigo-700 shadow-md"
-                : "text-gray-600 hover:text-indigo-700 hover:bg-gray-50"
-            }`}
-          >
-            <div className="flex items-center justify-center gap-2">
-              <FiMail className="text-indigo-600" />
-              Gmail
-            </div>
-          </button>
-          <button
-            onClick={() => setHelpTab("outlook")}
-            className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all duration-200 ${
-              helpTab === "outlook"
-                ? "bg-white text-indigo-700 shadow-md"
-                : "text-gray-600 hover:text-indigo-700 hover:bg-gray-50"
-            }`}
-          >
-            <div className="flex items-center justify-center gap-2">
-              <FiSend className="text-indigo-600" />
-              Outlook
-            </div>
-          </button>
-        </div>
-
-        {/* Gmail Instructions */}
-       {helpTab === "gmail" && (
-  <div className="text-gray-700 text-base leading-relaxed space-y-5">
-    <ol className="list-none space-y-4">
-      <li className="flex items-start">
-        <span className="font-bold text-indigo-600 mr-3 mt-0.5">1.</span>
-        <p>
-          Open <strong>Gmail Settings</strong> → click the gear icon →{" "}
-          <strong>“See all settings”</strong>.
-        </p>
-      </li>
-      <li className="flex items-start">
-        <span className="font-bold text-indigo-600 mr-3 mt-0.5">2.</span>
-        <p>
-          Go to the <strong>Forwarding and POP/IMAP</strong> tab.
-        </p>
-      </li>
-      <li className="flex items-start">
-        <span className="font-bold text-indigo-600 mr-3 mt-0.5">3.</span>
-        <p>
-          Click <strong>“Add a forwarding address”</strong> and enter your Mailhook:
-        </p>
-      </li>
-      <li className="ml-4">
-        <code className="block bg-gray-50 border border-indigo-200 text-indigo-700 px-4 py-3 rounded-lg text-sm font-mono break-all select-all">
-          {user?.mailhook || "your-mailhook@zenith-inbox.com"}
-        </code>
-      </li>
-      <li className="flex items-start">
-        <span className="font-bold text-indigo-600 mr-3 mt-0.5">4.</span>
-        <p>
-          Gmail will send a <strong>confirmation email</strong> to your Mailhook address,
-          which will automatically appear inside Zenith Inbox.
-        </p>
-      </li>
-
-      {/* 🆕 Step 6 - Retry Checking & Validation */}
-      <li className="flex items-start">
-        <span className="font-bold text-indigo-600 mr-3 mt-0.5">5.</span>
-        <p>
-          Once you’ve added forwarding, return to this setup screen and click{" "}
-          <strong>“Retry Checking”</strong>. Wait a few moments while Zenith Inbox
-          detects the Gmail confirmation email.
-        </p>
-      </li>
-      <li className="flex items-start">
-        <span className="font-bold text-indigo-600 mr-3 mt-0.5">6.</span>
-        <p>
-          When the email appears below, open it and click the Gmail verification link to approve forwarding.
-          Then click <strong>“Validate Forwarding”</strong> to complete the setup.
-          You’ll see a green success message once your Mailhook is connected!
-        </p>
-      </li>
-
-      <li className="flex items-start">
-        <span className="font-bold text-indigo-600 mr-3 mt-0.5">7.</span>
-        <p>
-          Finally, go back to Gmail and ensure{" "}
-          <strong>“Forward a copy of incoming mail to”</strong> is set to your Mailhook,
-          then click <strong>Save Changes</strong>.
-        </p>
-      </li>
-    </ol>
-
-    {/* Tip Box */}
-    <div className="mt-6 flex items-start p-4 bg-indigo-50 border-l-4 border-indigo-400 rounded-lg text-indigo-800 text-sm">
-      <FiInfo className="w-5 h-5 flex-shrink-0 mr-3 mt-0.5" />
-      <p>
-        <strong>Pro Tip:</strong> Keep Gmail open during this process so you can
-        quickly confirm the forwarding prompt when it arrives.
-      </p>
-    </div>
-  </div>
-)}
-
-
-        {/* Outlook Instructions */}
-        {helpTab === "outlook" && (
-          <div className="text-gray-700 text-base leading-relaxed space-y-5">
-            <ol className="list-none space-y-4">
-              <li className="flex items-start">
-                <span className="font-bold text-indigo-600 mr-3 mt-0.5">1.</span>
-                <p>Open <strong>Outlook Settings</strong> → click <strong>“View all Outlook settings”</strong>.</p>
-              </li>
-              <li className="flex items-start">
-                <span className="font-bold text-indigo-600 mr-3 mt-0.5">2.</span>
-                <p>Navigate to <strong>Mail → Forwarding</strong>.</p>
-              </li>
-              <li className="flex items-start">
-                <span className="font-bold text-indigo-600 mr-3 mt-0.5">3.</span>
-                <p>Enable <strong>Start forwarding</strong>.</p>
-              </li>
-              <li className="ml-4">
-                <code className="block bg-gray-50 border border-indigo-200 text-indigo-700 px-4 py-3 rounded-lg text-sm font-mono break-all select-all">
-                  {user?.mailhook || "your-mailhook@zenith-inbox.com"}
-                </code>
-              </li>
-              <li className="flex items-start">
-                <span className="font-bold text-indigo-600 mr-3 mt-0.5">4.</span>
-                <p>(Optional) Check <strong>Keep a copy of forwarded messages</strong>.</p>
-              </li>
-              <li className="flex items-start">
-                <span className="font-bold text-indigo-600 mr-3 mt-0.5">5.</span>
-                <p>Click <strong>Save</strong> to apply your changes.</p>
-              </li>
-            </ol>
-
-            <div className="mt-6 flex items-start p-4 bg-green-50 border-l-4 border-green-400 rounded-lg text-green-800 text-sm">
-              <FiCheckCircle className="w-5 h-5 flex-shrink-0 mr-3 mt-0.5" />
-              <p>
-                <strong>Verification:</strong> After saving, send a test email to confirm messages are forwarding to Zenith Inbox.
-              </p>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Footer */}
-      <div className="p-6 border-t border-gray-100 text-center bg-gray-50">
-        <button
-          onClick={() => setShowHelpModal(false)}
-          className="w-full sm:w-auto px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-base font-bold shadow-md transition-transform hover:scale-[1.02]"
-        >
-          <FiCheck className="inline-block mr-2 -mt-0.5" />
-          I'm Ready to Forward
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-
-
-
+      <InstructionPanel step={step} />
     </div>
   );
 };
 
 export default SetupFlow;
+const InstructionPanel = ({ step }) => {
+  const [activeTab, setActiveTab] = useState("gmail");
+  const { user, loading } = useContext(UserContext);
+
+  return (
+    <div className="hidden lg:flex flex-col justify-start bg-gradient-to-b from-white to-[#F9FAFB] shadow-xl border-l border-gray-200 w-[450px] p-7 overflow-y-auto max-h-screen transition-all duration-300 ease-in-out">
+      {/* Header */}
+      <div className="flex items-center gap-2 mb-4">
+        <div className="p-2 bg-[#EEF2FF] rounded-lg">
+          <FiInfo className="text-[#4F46E5] text-xl" />
+        </div>
+        <h3 className="text-xl font-bold text-[#111827]">Setup Coach</h3>
+      </div>
+      <p className="text-sm text-gray-500 mb-6">
+        Follow these quick instructions carefully — each step will guide you
+        toward completing your setup successfully.
+      </p>
+
+      {/* Step Section */}
+      <div className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm">
+        {step === 1 && (
+          <>
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-lg font-semibold text-[#111827] flex items-center gap-2">
+                <FiMail className="text-[#4F46E5]" /> Step 1: Get Started
+              </h4>
+              <span className="text-xs bg-[#E0E7FF] text-[#3730A3] px-2.5 py-0.5 rounded-full font-medium">
+                1 / 5
+              </span>
+            </div>
+
+            <p className="text-gray-600 text-sm leading-relaxed mb-3">
+              Welcome! You’re about to set up your <strong>Zenith Inbox</strong>
+              . This process takes less than a minute.
+            </p>
+
+            <ul className="list-disc list-inside text-sm text-gray-700 space-y-1 mb-4">
+              <li>We’ll create your private mailhook.</li>
+              <li>Then connect your email forwarding.</li>
+              <li>Finally, configure how your replies are sent.</li>
+            </ul>
+
+            <div className="bg-indigo-50 border-l-4 border-indigo-500 rounded p-3 text-indigo-800 text-sm">
+              💡 <strong>Tip:</strong> Click{" "}
+              <span className="font-semibold text-indigo-700">
+                “Start 60-sec Setup”
+              </span>{" "}
+              to begin the process.
+            </div>
+          </>
+        )}
+
+        {step === 2 && (
+          <>
+            {/* Header */}
+            <div className="flex items-center justify-between mb-4">
+              <h4 className="text-lg font-semibold text-[#111827] flex items-center gap-2">
+                <FiCopy className="text-[#4F46E5]" /> Step 2 – Connect Your
+                Email
+              </h4>
+              <span className="text-xs bg-[#E0E7FF] text-[#3730A3] px-2.5 py-0.5 rounded-full font-medium">
+                2 / 5
+              </span>
+            </div>
+
+            <p className="text-sm text-gray-600 leading-relaxed mb-4">
+              Choose your email provider below and follow the steps to forward
+              your emails to your unique <strong>Mailhook address</strong>.
+            </p>
+
+            {/* Tabs */}
+            <div className="bg-gray-100 rounded-lg p-1 flex space-x-1 mb-5">
+              <button
+                onClick={() => setActiveTab("gmail")}
+                className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${
+                  activeTab === "gmail"
+                    ? "bg-white text-indigo-700 shadow-md"
+                    : "text-gray-600 hover:bg-gray-50"
+                }`}
+              >
+                <div className="flex items-center justify-center gap-2">
+                  <FiMail className="text-indigo-600" /> Gmail
+                </div>
+              </button>
+
+              <button
+                onClick={() => setActiveTab("outlook")}
+                className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${
+                  activeTab === "outlook"
+                    ? "bg-white text-indigo-700 shadow-md"
+                    : "text-gray-600 hover:bg-gray-50"
+                }`}
+              >
+                <div className="flex items-center justify-center gap-2">
+                  <FiSend className="text-indigo-600" /> Outlook
+                </div>
+              </button>
+
+              <button
+                onClick={() => setActiveTab("smtp")}
+                className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${
+                  activeTab === "smtp"
+                    ? "bg-white text-indigo-700 shadow-md"
+                    : "text-gray-600 hover:bg-gray-50"
+                }`}
+              >
+                <div className="flex items-center justify-center gap-2">
+                  <FiServer className="text-indigo-600" /> SMTP
+                </div>
+              </button>
+            </div>
+
+            {/* ================= Gmail Instructions ================= */}
+            {activeTab === "gmail" && (
+              <div className="text-sm text-gray-700 leading-relaxed space-y-4 animate-fadeIn">
+                <div className="flex items-start gap-3">
+                  <FiSettings className="text-[#4F46E5] text-lg mt-0.5" />
+                  <p>
+                    Open <strong>Gmail Settings</strong> → click the gear icon →{" "}
+                    <strong>“See all settings”</strong>.
+                  </p>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <FiFolder className="text-[#4F46E5] text-lg mt-0.5" />
+                  <p>
+                    Go to the <strong>Forwarding and POP/IMAP</strong> tab.
+                  </p>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <FiPlusCircle className="text-[#4F46E5] text-lg mt-0.5" />
+                  <p>
+                    Click <strong>“Add a forwarding address”</strong>.
+                  </p>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <FiMail className="text-[#4F46E5] text-lg mt-0.5" />
+                  <p>
+                    Enter your Mailhook address:
+                    <code className="block bg-gray-50 border border-indigo-200 text-indigo-700 px-3 py-2 rounded-lg text-xs font-mono mt-1 break-all select-all">
+                      {user?.mailhook || "your-mailhook@zenith-inbox.com"}
+                    </code>
+                  </p>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <FiCheckCircle className="text-green-600 text-lg mt-0.5" />
+                  <p>
+                    Gmail will send a <strong>confirmation email</strong> to
+                    this Mailhook address.
+                  </p>
+                </div>
+
+                <div className="mt-5 p-3 bg-indigo-50 border-l-4 border-indigo-500 rounded text-indigo-800 text-xs flex items-center gap-2">
+                  <FiArrowRightCircle className="text-[#4F46E5]" />
+                  <p>
+                    Click <strong>Next</strong> below to proceed and verify your
+                    forwarding setup.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* ================= Outlook Instructions ================= */}
+            {activeTab === "outlook" && (
+              <div className="text-sm text-gray-700 leading-relaxed space-y-4 animate-fadeIn">
+                <div className="flex items-start gap-3">
+                  <FiSettings className="text-[#4F46E5] text-lg mt-0.5" />
+                  <p>
+                    Open <strong>Outlook Settings</strong> → click{" "}
+                    <strong>“View all Outlook settings”</strong>.
+                  </p>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <FiSend className="text-[#4F46E5] text-lg mt-0.5" />
+                  <p>
+                    Navigate to <strong>Mail → Forwarding</strong>.
+                  </p>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <FiToggleRight className="text-[#4F46E5] text-lg mt-0.5" />
+                  <p>
+                    Enable <strong>Start forwarding</strong>.
+                  </p>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <FiMail className="text-[#4F46E5] text-lg mt-0.5" />
+                  <p>
+                    Enter your Mailhook address:
+                    <code className="block bg-gray-50 border border-indigo-200 text-indigo-700 px-3 py-2 rounded-lg text-xs font-mono mt-1 break-all select-all">
+                      {user?.mailhook || "your-mailhook@zenith-inbox.com"}
+                    </code>
+                  </p>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <FiSave className="text-green-600 text-lg mt-0.5" />
+                  <p>
+                    Click <strong>Save</strong> to apply your changes.
+                  </p>
+                </div>
+
+                <div className="mt-5 p-3 bg-blue-50 border-l-4 border-blue-400 rounded text-blue-800 text-xs flex items-center gap-2">
+                  <FiArrowRightCircle className="text-[#4F46E5]" />
+                  <p>
+                    Click <strong>Next</strong> below to verify your Outlook
+                    forwarding connection.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* ================= SMTP Instructions ================= */}
+            {activeTab === "smtp" && (
+              <div className="text-sm text-gray-700 leading-relaxed space-y-4 animate-fadeIn">
+                <div className="flex items-start gap-3">
+                  <FiServer className="text-[#4F46E5] text-lg mt-0.5" />
+                  <p>
+                    Open your email provider or hosting control panel’s{" "}
+                    <strong>SMTP / Email Settings</strong>.
+                  </p>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <FiKey className="text-[#4F46E5] text-lg mt-0.5" />
+                  <p>
+                    Enter your <strong>username</strong> and{" "}
+                    <strong>app password</strong> (if 2FA is enabled).
+                  </p>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <FiGlobe className="text-[#4F46E5] text-lg mt-0.5" />
+                  <p>
+                    Use your SMTP Host and Port settings (e.g.,{" "}
+                    <code className="bg-gray-100 text-indigo-700 rounded px-1 py-0.5 text-xs">
+                      smtp.yourdomain.com
+                    </code>{" "}
+                    , Port{" "}
+                    <code className="bg-gray-100 text-indigo-700 rounded px-1 py-0.5 text-xs">
+                      587
+                    </code>
+                    ).
+                  </p>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <FiLock className="text-green-600 text-lg mt-0.5" />
+                  <p>
+                    Enable <strong>STARTTLS</strong> or <strong>SSL</strong> for
+                    secure connections.
+                  </p>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <FiCheckCircle className="text-green-600 text-lg mt-0.5" />
+                  <p>
+                    Test your configuration to confirm successful SMTP
+                    connection.
+                  </p>
+                </div>
+
+                <div className="mt-5 p-3 bg-indigo-50 border-l-4 border-indigo-500 rounded text-indigo-800 text-xs flex items-center gap-2">
+                  <FiArrowRightCircle className="text-[#4F46E5]" />
+                  <p>
+                    After entering your SMTP credentials in the app, click{" "}
+                    <strong>Next</strong> to continue setup.
+                  </p>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {step === 3 && (
+          <>
+            {/* Header */}
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-lg font-semibold text-[#111827] flex items-center gap-2">
+                <FiAlertCircle className="text-[#4F46E5]" /> Step 3 – Verify
+                Forwarding
+              </h4>
+              <span className="text-xs bg-[#E0E7FF] text-[#3730A3] px-2.5 py-0.5 rounded-full font-medium">
+                3 / 5
+              </span>
+            </div>
+
+            {/* Description */}
+            <p className="text-sm text-gray-600 leading-relaxed mb-4">
+              Great job — your Mailhook is now connected! Let’s verify that
+              Gmail is forwarding messages correctly to your Mailhook address.
+            </p>
+
+            {/* Step List with Icons */}
+            <div className="space-y-4 text-sm text-gray-700 leading-relaxed">
+              <div className="flex items-start gap-3">
+                <FiMail className="text-[#4F46E5] text-lg mt-0.5" />
+                <p>
+                  Go back to your <strong>Gmail Settings</strong> → open the{" "}
+                  <strong>Forwarding and POP/IMAP</strong> tab again.
+                </p>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <FiRefreshCcw className="text-[#4F46E5] text-lg mt-0.5" />
+                <p>
+                  Refresh that page — you’ll now see your{" "}
+                  <strong>Mailhook address</strong> in the forwarding dropdown.
+                </p>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <FiToggleRight className="text-[#4F46E5] text-lg mt-0.5" />
+                <p>
+                  Select your Mailhook under{" "}
+                  <strong>“Forward a copy of incoming mail to”</strong> and
+                  choose what happens to the original email (e.g., “Keep Gmail’s
+                  copy in Inbox”).
+                </p>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <FiSave className="text-green-600 text-lg mt-0.5" />
+                <p>
+                  Scroll down and click <strong>Save Changes</strong> to enable
+                  forwarding.
+                </p>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <FiMail className="text-[#4F46E5] text-lg mt-0.5" />
+                <p>
+                  Now return to this screen. Zenith Inbox will automatically
+                  check for Gmail’s confirmation email.
+                </p>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <FiSearch className="text-[#4F46E5] text-lg mt-0.5" />
+                <p>
+                  If the confirmation email hasn’t appeared yet, click{" "}
+                  <strong>Retry Checking</strong> below. Once it arrives, you’ll
+                  see the Gmail verification message appear here.
+                </p>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <FiCheckCircle className="text-green-600 text-lg mt-0.5" />
+                <p>
+                  Open that email, click the <strong>verification link</strong>,
+                  and your Gmail forwarding will be fully active. Then click{" "}
+                  <strong>Validate Forwarding</strong> to complete the process.
+                </p>
+              </div>
+            </div>
+
+            {/* Info Box */}
+            <div className="mt-6 bg-yellow-50 border-l-4 border-yellow-400 rounded p-3 text-yellow-700 text-sm flex items-start gap-2">
+              <FiInfo className="text-yellow-600 text-lg mt-0.5" />
+              <p>
+                <strong>Note:</strong> If you don’t see the confirmation email
+                after a few minutes, double-check that forwarding is enabled and
+                that your Mailhook address is selected in Gmail.
+              </p>
+            </div>
+
+            {/* Pro Tip */}
+            <div className="mt-4 bg-indigo-50 border-l-4 border-indigo-500 rounded p-3 text-indigo-800 text-xs flex items-start gap-2">
+              <FaRegLightbulb className="text-[#4F46E5] text-lg mt-0.5" />
+              <p>
+                💡 <strong>Pro Tip:</strong> Keep Gmail open in another tab
+                while verifying — the process completes faster and ensures you
+                don’t miss the prompt.
+              </p>
+            </div>
+
+            <div className="mt-6 border border-gray-200 rounded-lg p-4 bg-white shadow-sm">
+              <h5 className="text-sm font-semibold text-[#111827] mb-2 flex items-center gap-2">
+                <FiUser className="text-[#4F46E5]" /> Add Your Email for
+                Verification
+              </h5>
+              <p className="text-xs text-gray-600 mb-3">
+                Enter the email address where you enabled forwarding. We’ll use
+                it to confirm your Mailhook connection and validate your setup.
+              </p>
+
+              <div className="mt-3 text-xs text-gray-500 flex items-center gap-2">
+                <FiArrowRight className="text-[#4F46E5]" />
+                <p>
+                  Once your email is validated successfully, click{" "}
+                  <strong>Next</strong> below to continue to SMTP setup.
+                </p>
+              </div>
+            </div>
+          </>
+        )}
+
+        {step === 4 && (
+          <>
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-lg font-semibold text-[#111827] flex items-center gap-2">
+                <FiSend className="text-[#4F46E5]" /> Step 4: Set Up SMTP
+                Sending
+              </h4>
+              <span className="text-xs bg-[#E0E7FF] text-[#3730A3] px-2.5 py-0.5 rounded-full font-medium">
+                4 / 5
+              </span>
+            </div>
+
+            <p className="text-sm text-gray-600 leading-relaxed mb-3">
+              Choose how Zenith Inbox will send emails on your behalf:
+            </p>
+
+            <ul className="list-disc list-inside text-sm text-gray-700 space-y-1 mb-4">
+              <li>Select Gmail, Microsoft, or Other (custom SMTP).</li>
+              <li>Connect your account securely using OAuth or credentials.</li>
+            </ul>
+
+            <div className="bg-indigo-50 border-l-4 border-indigo-500 rounded p-3 text-indigo-800 text-sm">
+              ✉️ <strong>Recommendation:</strong> Use your verified business
+              email for better deliverability.
+            </div>
+          </>
+        )}
+
+        {step === 5 && (
+          <>
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-lg font-semibold text-[#111827] flex items-center gap-2">
+                <FiCheckCircle className="text-green-600" /> Step 5: Review & Go
+                Live
+              </h4>
+              <span className="text-xs bg-green-100 text-green-700 px-2.5 py-0.5 rounded-full font-medium">
+                5 / 5
+              </span>
+            </div>
+
+            <p className="text-sm text-gray-600 leading-relaxed mb-3">
+              You’re almost done! Review your configuration before going live.
+            </p>
+
+            <ul className="list-disc list-inside text-sm text-gray-700 space-y-1 mb-4">
+              <li>
+                Ensure all steps show as <strong>Completed</strong>.
+              </li>
+              <li>Confirm your mailhook and SMTP connections.</li>
+              <li>
+                Click <strong>Start Building Scenarios</strong> to activate.
+              </li>
+            </ul>
+
+            <div className="bg-green-50 border-l-4 border-green-400 rounded p-3 text-green-800 text-sm">
+              🎉 <strong>Success Tip:</strong> You’re all set! Once activated,
+              your leads will automatically flow into Zenith Inbox.
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Bottom Section */}
+      <div className="mt-8 text-center text-sm text-gray-500 border-t pt-4">
+        Need help?{" "}
+        <a
+          href="/pages/mailhook/instruction"
+          target="_blank"
+          className="text-[#4F46E5] font-semibold hover:underline"
+        >
+          View detailed guide
+        </a>
+      </div>
+    </div>
+  );
+};
