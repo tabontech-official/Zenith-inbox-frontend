@@ -68,7 +68,7 @@ const LoginPage = () => {
 
       if (response.status === 200) {
         toast.dismiss(loadingToast);
-        toast.success("Login successful! Redirecting..."); // 🟢 success toast
+        toast.success("Login successful! Redirecting...");
 
         const { token, data } = response.data;
         localStorage.setItem("usertoken", token);

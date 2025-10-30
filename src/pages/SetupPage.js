@@ -105,7 +105,6 @@ const SetupFlow = () => {
       decoded.includes("microsoft-auth-success=true");
 
     if (isStep5 && isOAuthSuccess) {
-
       saveSetupProgress({
         stepCompleted: 4,
         stepStatus: "completed",
@@ -205,7 +204,6 @@ const SetupFlow = () => {
 
       const result = await res.json();
       if (result.success) {
-
         setStep(nextStep);
       } else {
       }
@@ -250,7 +248,7 @@ const SetupFlow = () => {
 
       if (!res.ok) throw new Error("Failed to save SMTP connection");
       alert("SMTP connection saved successfully!");
-      setStep(5); 
+      setStep(5);
     } catch (err) {
       console.error(err);
       alert(" Failed to save SMTP connection");
@@ -277,9 +275,7 @@ const SetupFlow = () => {
 
     const fetchVerification = async () => {
       attempts++;
-      console.log(
-        `Checking verification attempt ${attempts}/${maxAttempts}`
-      );
+      console.log(`Checking verification attempt ${attempts}/${maxAttempts}`);
 
       try {
         const res = await fetch(
@@ -818,7 +814,7 @@ const SetupFlow = () => {
                 <div className="bg-indigo-50 border-l-4 border-indigo-500 rounded p-3 text-indigo-800 text-sm mt-4 flex items-start gap-2">
                   <FiInfo className="text-[#4F46E5] text-lg mt-0.5" />
                   <p>
-                     <strong>Tip:</strong> Copy this address and add it as a
+                    <strong>Tip:</strong> Copy this address and add it as a
                     forwarding destination in your email provider’s settings
                     (Gmail or Outlook).
                   </p>
@@ -999,6 +995,10 @@ const SetupFlow = () => {
                   !validated &&
                   (showValidateButton ||
                     verificationEmail?.isGmailVerification) && (
+                    //                   {!validationPhase &&
+                    // !validated &&
+                    // verificationEmail?.isGmailVerification && (
+
                     <div className="space-y-3 mt-6">
                       <p className="text-sm text-gray-600">
                         Enter the email address where you’ve set up forwarding
@@ -1378,6 +1378,7 @@ const SetupFlow = () => {
 };
 
 export default SetupFlow;
+
 const InstructionPanel = ({ step }) => {
   const [activeTab, setActiveTab] = useState("gmail");
   const { user, loading } = useContext(UserContext);
@@ -1419,7 +1420,7 @@ const InstructionPanel = ({ step }) => {
             </ul>
 
             <div className="bg-indigo-50 border-l-4 border-indigo-500 rounded p-3 text-indigo-800 text-sm">
-               <strong>Tip:</strong> Click{" "}
+              <strong>Tip:</strong> Click{" "}
               <span className="font-semibold text-indigo-700">
                 “Start 60-sec Setup”
               </span>{" "}
@@ -1741,9 +1742,9 @@ const InstructionPanel = ({ step }) => {
             <div className="mt-4 bg-indigo-50 border-l-4 border-indigo-500 rounded p-3 text-indigo-800 text-xs flex items-start gap-2">
               <FaRegLightbulb className="text-[#4F46E5] text-lg mt-0.5" />
               <p>
-                <strong>Pro Tip:</strong> Keep Gmail open in another tab
-                while verifying — the process completes faster and ensures you
-                don’t miss the prompt.
+                <strong>Pro Tip:</strong> Keep Gmail open in another tab while
+                verifying — the process completes faster and ensures you don’t
+                miss the prompt.
               </p>
             </div>
 
@@ -1842,7 +1843,7 @@ const InstructionPanel = ({ step }) => {
             </div>
 
             <p className="text-sm text-gray-600 leading-relaxed mb-4">
-               You’re almost done! Review your setup before activating your
+              You’re almost done! Review your setup before activating your
               automation.
             </p>
 
