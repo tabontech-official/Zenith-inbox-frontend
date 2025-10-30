@@ -878,7 +878,7 @@ const SetupFlow = () => {
                 />
               </div>
 
-              <div className="relative border border-[#E5E7EB] rounded-2xl shadow-sm p-6 w-full max-w-md mx-auto text-center">
+              <div className="relative border border-[#E5E7EB] rounded-2xl shadow-sm p-6   mx-auto text-center">
                 {!validationPhase && !validated && showValidateButton && (
                   <button
                     onClick={handleRetryValidation}
@@ -1027,14 +1027,42 @@ const SetupFlow = () => {
                 >
                   Back
                 </span>
-                {!validated ? (
+                {/* {!validated ? (
+                  // <button
+                  //   disabled={
+                  //     validating ||
+                  //     !verificationEmail ||
+                  //     !verificationEmail?.toEmail?.trim()
+                  //   }
+                  //   onClick={async () => {
+                  //     setValidating(true);
+                  //     setValidationFailed(false);
+                  //     setShowValidateButton(false);
+                  //     setValidationPhase(true);
+                  //     await handleValidateForwarding();
+                  //     startValidationLoop();
+                  //   }}
+                  //   className={`flex items-center space-x-2 px-6 py-2 rounded-lg text-sm font-semibold text-white transition ${
+                  //     validating
+                  //       ? "bg-gray-400 cursor-not-allowed"
+                  //       : verificationEmail?.toEmail?.trim()
+                  //       ? "bg-[#4F46E5] hover:bg-[#4338CA]"
+                  //       : "bg-gray-300 cursor-not-allowed"
+                  //   }`}
+                  // >
+                  //   {validating ? "Validating..." : "Validate Forwarding"}
+                  //   <FiArrowRight />
+                  // </button>
                   <button
-                    disabled={
-                      validating ||
-                      !verificationEmail ||
-                      !verificationEmail?.toEmail?.trim()
-                    }
+                    disabled={validating}
                     onClick={async () => {
+                      if (!verificationEmail?.toEmail?.trim()) {
+                        toast.error(
+                          "Please enter the email where you set up forwarding!"
+                        );
+                        return;
+                      }
+
                       setValidating(true);
                       setValidationFailed(false);
                       setShowValidateButton(false);
@@ -1042,13 +1070,12 @@ const SetupFlow = () => {
                       await handleValidateForwarding();
                       startValidationLoop();
                     }}
-                    className={`flex items-center space-x-2 px-6 py-2 rounded-lg text-sm font-semibold text-white transition ${
-                      validating
-                        ? "bg-gray-400 cursor-not-allowed"
-                        : verificationEmail?.toEmail?.trim()
-                        ? "bg-[#4F46E5] hover:bg-[#4338CA]"
-                        : "bg-gray-300 cursor-not-allowed"
-                    }`}
+                    className={`flex items-center space-x-2 px-6 py-2 rounded-lg text-sm font-semibold text-white transition
+    ${
+      validating
+        ? "bg-gray-400 cursor-not-allowed"
+        : "bg-[#4F46E5] hover:bg-[#4338CA] cursor-pointer"
+    }`}
                   >
                     {validating ? "Validating..." : "Validate Forwarding"}
                     <FiArrowRight />
@@ -1067,6 +1094,52 @@ const SetupFlow = () => {
                     <span>Next</span> <FiArrowRight />
                   </button>
                 )}
+              </div> */}
+                {!validated &&
+                !validationPhase &&
+                (showValidateButton ||
+                  verificationEmail?.isGmailVerification) ? (
+                  <button
+                    disabled={validating}
+                    onClick={async () => {
+                      if (!verificationEmail?.toEmail?.trim()) {
+                        toast.error(
+                          "Please enter the email where you set up forwarding!"
+                        );
+                        return;
+                      }
+
+                      setValidating(true);
+                      setValidationFailed(false);
+                      setShowValidateButton(false);
+                      setValidationPhase(true);
+                      await handleValidateForwarding();
+                      startValidationLoop();
+                    }}
+                    className={`flex items-center space-x-2 px-6 py-2 rounded-lg text-sm font-semibold text-white transition
+        ${
+          validating
+            ? "bg-gray-400 cursor-not-allowed"
+            : "bg-[#4F46E5] hover:bg-[#4338CA] cursor-pointer"
+        }`}
+                  >
+                    {validating ? "Validating..." : "Validate Forwarding"}
+                    <FiArrowRight />
+                  </button>
+                ) : validated ? (
+                  <button
+                    onClick={async () => {
+                      await saveSetupProgress({
+                        stepCompleted: 3,
+                        stepStatus: "completed",
+                      });
+                      setStep(4);
+                    }}
+                    className="flex items-center space-x-2 px-6 py-2 rounded-lg text-sm font-semibold bg-green-600 text-white hover:bg-green-700 transition"
+                  >
+                    <span>Next</span> <FiArrowRight />
+                  </button>
+                ) : null}
               </div>
             </div>
           )}
