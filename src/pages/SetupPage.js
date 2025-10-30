@@ -117,7 +117,7 @@ useEffect(() => {
   }
 
   // Always redirect back to setup?step=5
-  const redirectURL = `setup?step=5`;
+  const redirectURL = `/setup?step=5`;
 
   // Construct OAuth URL
   const authURL = `https://email-syncing-backend.vercel.app/auth/outlook?userId=${userId}&redirect=${encodeURIComponent(
