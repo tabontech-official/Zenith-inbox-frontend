@@ -926,7 +926,7 @@ const SetupFlow = () => {
                 <h3 className="text-lg font-semibold text-[#111827] mb-4">
                   Email Receiving
                 </h3>
-                <div className="bg-[#F9FAFB] border border-gray-200 rounded-lg p-4 text-left text-sm text-gray-700 mb-6 shadow-inner">
+                <div className="bg-[#F9FAFB] border border-gray-200 rounded-lg p-4 text-left text-sm text-gray-700  shadow-inner">
                   {validationFailed ? (
                     <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4 text-center">
                       <p className="font-semibold mb-2">
@@ -967,7 +967,7 @@ const SetupFlow = () => {
                     </div>
                   ) : verificationEmail && verificationEmail.sender ? (
                     <>
-                      <p className="mb-2">
+                      {/* <p className="mb-2">
                         <strong>From:</strong>{" "}
                         <span className="text-[#4F46E5]">
                           {verificationEmail.sender}
@@ -982,10 +982,10 @@ const SetupFlow = () => {
                       <p className="mb-2 text-gray-600">
                         <strong>Date:</strong>{" "}
                         {new Date(verificationEmail.date).toLocaleString()}
-                      </p>
+                      </p> */}
 
                       <div
-                        className="border-t border-gray-200 mt-3 pt-3 max-h-48 overflow-y-auto text-sm leading-relaxed text-gray-700"
+                        className=" border-gray-200  pt-3 max-h-48 overflow-y-auto text-sm leading-relaxed text-gray-700"
                         dangerouslySetInnerHTML={{
                           __html:
                             verificationEmail.formattedBody ||
@@ -1503,7 +1503,7 @@ const InstructionPanel = ({ step, isExpanded, setIsExpanded }) => {
 
   return (
     <div
-      className={`hidden lg:flex flex-col justify-start bg-gradient-to-b from-white to-[#F9FAFB] shadow-xl border-l border-gray-200 transition-all duration-500 ease-in-out overflow-y-auto max-h-screen relative ${
+      className={`hidden lg:flex flex-col h-[100%] justify-start bg-gradient-to-b from-white to-[#F9FAFB] shadow-xl border-l border-gray-200 transition-all duration-500 ease-in-out overflow-y-auto max-h-screen relative ${
         isExpanded ? "w-[700px] p-8" : "w-[450px] p-7"
       }`}
     >
