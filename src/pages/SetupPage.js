@@ -698,10 +698,15 @@ const SetupFlow = () => {
 
     setRetryKey((prev) => prev + 1);
   };
+  const [isExpanded, setIsExpanded] = useState(false);
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-[#F9FAFB]">
-      <div className="lg:fixed lg:top-0 lg:left-0 lg:h-screen lg:w-[calc(100%-450px)] flex flex-col items-center justify-center py-10 px-6 bg-[#F9FAFB] overflow-hidden">
+      <div
+        className={`lg:fixed lg:top-0 lg:left-0 lg:h-screen flex flex-col items-center justify-center py-10 px-6 bg-[#F9FAFB] overflow-hidden transition-all duration-500 ${
+          isExpanded ? "lg:w-[calc(100%-700px)]" : "lg:w-[calc(100%-450px)]"
+        }`}
+      >
         <div className="w-full flex justify-center">
           <FiMail className="text-[#4F46E5] text-2xl" />
           <span className="font-semibold text-lg text-[#111827]">
@@ -710,13 +715,13 @@ const SetupFlow = () => {
         </div>
 
         {/* Multi-Step Progress Bar */}
-<div className="flex items-center justify-center gap-2 sm:gap-4 mt-6 mb-2">
-  {[1, 2, 3, 4, 5].map((num) => (
-    <React.Fragment key={num}>
-      {/* Step Circle */}
-      <div className="flex flex-col items-center">
-        <div
-          className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold transition-all duration-300 
+        <div className="flex items-center justify-center gap-2 sm:gap-4 mt-6 mb-2">
+          {[1, 2, 3, 4, 5].map((num) => (
+            <React.Fragment key={num}>
+              {/* Step Circle */}
+              <div className="flex flex-col items-center">
+                <div
+                  className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold transition-all duration-300 
             ${
               step > num
                 ? "bg-green-500 text-white" // completed
@@ -724,32 +729,28 @@ const SetupFlow = () => {
                 ? "bg-[#4F46E5] text-white shadow-md" // active
                 : "bg-gray-200 text-gray-500" // pending
             }`}
-        >
-          {step > num ? <FiCheck className="text-white" /> : num}
-        </div>
-        <span
-          className={`text-[11px] mt-1 ${
-            step >= num ? "text-[#4F46E5]" : "text-gray-400"
-          }`}
-        >
-          Step {num}
-        </span>
-      </div>
+                >
+                  {step > num ? <FiCheck className="text-white" /> : num}
+                </div>
+                <span
+                  className={`text-[11px] mt-1 ${
+                    step >= num ? "text-[#4F46E5]" : "text-gray-400"
+                  }`}
+                >
+                  Step {num}
+                </span>
+              </div>
 
-      {/* Connector Line (except after last step) */}
-      {num < 5 && (
-        <div
-          className={`w-10 sm:w-16 h-1 transition-all duration-300 rounded-full 
-            ${
-              step > num
-                ? "bg-[#4F46E5]"
-                : "bg-gray-300"
-            }`}
-        />
-      )}
-    </React.Fragment>
-  ))}
-</div>
+              {/* Connector Line (except after last step) */}
+              {num < 5 && (
+                <div
+                  className={`w-10 sm:w-16 h-1 transition-all duration-300 rounded-full 
+            ${step > num ? "bg-[#4F46E5]" : "bg-gray-300"}`}
+                />
+              )}
+            </React.Fragment>
+          ))}
+        </div>
 
         <div className="w-full flex justify-center mt-10">
           {step === 1 && (
@@ -1481,8 +1482,16 @@ const SetupFlow = () => {
           )}
         </div>
       </div>
-      <div className="lg:ml-[calc(100%-450px)] w-full lg:w-[450px]">
-        <InstructionPanel step={step} />
+      <div
+        className={`transition-all duration-500 ${
+          isExpanded ? "lg:ml-[calc(100%-700px)]" : "lg:ml-[calc(100%-450px)]"
+        } w-full`}
+      >
+        <InstructionPanel
+          step={step}
+          isExpanded={isExpanded}
+          setIsExpanded={setIsExpanded}
+        />
       </div>
     </div>
   );
@@ -1490,12 +1499,24 @@ const SetupFlow = () => {
 
 export default SetupFlow;
 
-const InstructionPanel = ({ step }) => {
+const InstructionPanel = ({ step, isExpanded, setIsExpanded }) => {
   const [activeTab, setActiveTab] = useState("gmail");
   const { user, loading } = useContext(UserContext);
 
   return (
-    <div className="hidden lg:flex flex-col justify-start bg-gradient-to-b from-white to-[#F9FAFB] shadow-xl border-l border-gray-200 w-[450px] p-7 overflow-y-auto max-h-screen transition-all duration-300 ease-in-out">
+    <div
+      className={`hidden lg:flex flex-col justify-start bg-gradient-to-b from-white to-[#F9FAFB] shadow-xl border-l border-gray-200 transition-all duration-500 ease-in-out overflow-y-auto max-h-screen relative ${
+        isExpanded ? "w-[700px] p-8" : "w-[450px] p-7"
+      }`}
+    >
+      {" "}
+      <button
+  onClick={() => setIsExpanded((prev) => !prev)}
+  className="absolute left-0 top-1/2 transform -translate-y-1/2 translate-x-1/2 bg-[#4F46E5] text-white rounded-full p-2 shadow-md hover:bg-[#4338CA] transition-all z-30"
+>
+  {isExpanded ? <FiArrowRight /> : <FiArrowLeft />}
+</button>
+
       <div className="flex items-center gap-2 mb-4">
         <div className="p-2 bg-[#EEF2FF] rounded-lg">
           <FiInfo className="text-[#4F46E5] text-xl" />
@@ -1506,7 +1527,6 @@ const InstructionPanel = ({ step }) => {
         Follow these quick instructions carefully — each step will guide you
         toward completing your setup successfully.
       </p>
-
       <div className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm">
         {step === 1 && (
           <>
@@ -2056,7 +2076,6 @@ const InstructionPanel = ({ step }) => {
           </>
         )}
       </div>
-
       <div className="mt-8 text-center text-sm text-gray-500 border-t pt-4">
         Need help?{" "}
         <a
