@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { UserContext } from "../component/UserContext";
 import { motion } from "framer-motion";
+import toast from "react-hot-toast"; // ✅ added
 
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -16,15 +17,59 @@ const LoginPage = () => {
     navigate("/register");
   };
 
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+  //   try {
+  //     const response = await axios.post("https://email-syncing-backend.vercel.app/auth/signIn", {
+  //       email,
+  //       password,
+  //     });
+
+  //     if (response.status === 200) {
+  //       const { token, data } = response.data;
+  //       localStorage.setItem("usertoken", token);
+  //       localStorage.setItem("userid", data._id);
+  //       setUser(data);
+
+  //       const completed = data?.setup?.stepCompleted || 0;
+
+  //       if (completed >= 7) {
+  //         navigate("/organization", { replace: true });
+  //       } else {
+  //         const steps = data?.setup?.steps || [];
+
+  //         const nextSkippedStep = steps.find(
+  //           (s) => s.status === "skipped"
+  //         )?.step;
+
+  //         if (nextSkippedStep) {
+  //           navigate(`/setup?step=${nextSkippedStep}`, { replace: true });
+  //         } else if (completed > 0) {
+  //           navigate(`/setup?step=${completed + 1}`, { replace: true });
+  //         } else {
+  //           navigate("/setup", { replace: true });
+  //         }
+  //       }
+  //     }
+  //   } catch (error) {
+  //     setError(
+  //       error.response?.data?.error || "Login failed. Please try again."
+  //     );
+  //   }
+  // };
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const loadingToast = toast.loading("Logging you in...");
     try {
-      const response = await axios.post("https://email-syncing-backend.vercel.app/auth/signIn", {
-        email,
-        password,
-      });
+      const response = await axios.post(
+        "https://email-syncing-backend.vercel.app/auth/signIn",
+        { email, password }
+      );
 
       if (response.status === 200) {
+        toast.dismiss(loadingToast);
+        toast.success("Login successful! Redirecting..."); // 🟢 success toast
+
         const { token, data } = response.data;
         localStorage.setItem("usertoken", token);
         localStorage.setItem("userid", data._id);
@@ -32,31 +77,31 @@ const LoginPage = () => {
 
         const completed = data?.setup?.stepCompleted || 0;
 
-        if (completed >= 7) {
-          navigate("/organization", { replace: true });
-        } else {
-          const steps = data?.setup?.steps || [];
-
-          const nextSkippedStep = steps.find(
-            (s) => s.status === "skipped"
-          )?.step;
-
-          if (nextSkippedStep) {
-            navigate(`/setup?step=${nextSkippedStep}`, { replace: true });
-          } else if (completed > 0) {
-            navigate(`/setup?step=${completed + 1}`, { replace: true });
+        setTimeout(() => {
+          if (completed >= 7) {
+            navigate("/organization", { replace: true });
           } else {
-            navigate("/setup", { replace: true });
+            const steps = data?.setup?.steps || [];
+            const nextSkippedStep = steps.find((s) => s.status === "skipped")?.step;
+
+            if (nextSkippedStep) {
+              navigate(`/setup?step=${nextSkippedStep}`, { replace: true });
+            } else if (completed > 0) {
+              navigate(`/setup?step=${completed + 1}`, { replace: true });
+            } else {
+              navigate("/setup", { replace: true });
+            }
           }
-        }
+        }, 1500); // small delay to let toast show
       }
     } catch (error) {
-      setError(
-        error.response?.data?.error || "Login failed. Please try again."
-      );
+      toast.dismiss(loadingToast);
+      const errMsg =
+        error.response?.data?.error || "Login failed. Please try again.";
+      setError(errMsg);
+      toast.error(errMsg); // 🔴 error toast
     }
   };
-
   return (
     <div className="min-h-screen flex bg-gradient-to-br from-purple-600 to-fuchsia-600 relative overflow-hidden">
       <motion.div
