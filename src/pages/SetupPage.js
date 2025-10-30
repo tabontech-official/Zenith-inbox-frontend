@@ -752,7 +752,7 @@ const SetupFlow = () => {
 
         <div className="w-full flex justify-center mt-10">
           {step === 1 && (
-            <div className="bg-white shadow-md rounded-xl p-8 sm:p-10 max-w-lg w-[90%] text-center relative">
+            <div className="bg-white shadow-md rounded-xl p-8 sm:p-2 max-w-lg w-[90%] text-center relative">
               <span
                 onClick={async () => {
                   await saveSetupProgress({ skipped: true, stepCompleted: 1 });
@@ -896,21 +896,42 @@ const SetupFlow = () => {
               <h2 className="text-2xl font-bold text-[#111827] text-center mb-2">
                 Set up Forwarding
               </h2>
-              <p className="text-[#4B5563] text-center mb-8">
+              {/* <p className="text-[#4B5563] text-center mb-8">
                 Automatically send your leads to Zenith Inbox.
-              </p>
+              </p> */}
 
-              <div className="bg-[#F3F4F6] text-[#4F46E5] px-4 py-3 rounded-lg flex justify-between items-center font-mono text-sm mb-6">
-                Forward emails to: <span>{user?.mailhook || "loading..."}</span>
-                <FiCopy
-                  className="text-gray-500 cursor-pointer hover:text-[#4F46E5] transition"
+              <div
+                className="
+    bg-[#F3F4F6] text-[#4F46E5] 
+    px-4 py-3 rounded-lg 
+    flex flex-col sm:flex-row sm:items-center sm:justify-between 
+    gap-2 sm:gap-3 
+    font-mono text-sm mb-6 
+    w-full break-all
+  "
+              >
+                <p className="flex flex-col sm:flex-row sm:items-center sm:gap-2 text-center sm:text-left w-full">
+                  <span className="text-[#111827] font-medium whitespace-nowrap">
+                    Forward emails to:
+                  </span>
+                  <span className="text-[#4F46E5] break-all truncate sm:truncate-none">
+                    {user?.mailhook || "loading..."}
+                  </span>
+                </p>
+
+                <button
                   onClick={() => {
                     if (user?.mailhook) {
                       navigator.clipboard.writeText(user.mailhook);
-                      toast.success(" Mailhook copied to clipboard!");
+                      toast.success("Mailhook copied to clipboard!");
                     }
                   }}
-                />
+                  className="self-end sm:self-auto flex items-center gap-1 text-gray-500 hover:text-[#4F46E5] transition text-base"
+                  aria-label="Copy mailhook"
+                >
+                  <FiCopy />
+                  <span className="sr-only">Copy</span>
+                </button>
               </div>
 
               <div className="relative border border-[#E5E7EB] rounded-2xl shadow-sm p-6   mx-auto text-center">
@@ -985,7 +1006,7 @@ const SetupFlow = () => {
                       </p> */}
 
                       <div
-                        className=" border-gray-200  pt-3 max-h-48 overflow-y-auto text-sm leading-relaxed text-gray-700"
+                        className=" border-gray-200  pt-3 max-h-32 overflow-y-auto text-sm leading-relaxed text-gray-700"
                         dangerouslySetInnerHTML={{
                           __html:
                             verificationEmail.formattedBody ||
