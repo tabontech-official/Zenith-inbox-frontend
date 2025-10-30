@@ -88,7 +88,7 @@ const LoginPage = () => {
             Welcome Back
           </h2>
           <p className="text-gray-500 text-center mb-8">
-            Please sign in to continue
+            Please login in to continue
           </p>
 
           {error && (
@@ -155,7 +155,7 @@ const LoginPage = () => {
               type="submit"
               className="w-full bg-gradient-to-r from-pink-500 to-purple-600 text-white py-3 rounded-lg font-semibold shadow-md"
             >
-              Sign in
+              Log in
             </motion.button>
           </form>
 

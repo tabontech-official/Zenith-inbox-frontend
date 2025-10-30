@@ -113,7 +113,7 @@ const RegisterPage = () => {
               onClick={handleClick}
               className="text-purple-600 hover:underline cursor-pointer"
             >
-              Sign in
+              Log in
             </span>
           </p>
         </div>
