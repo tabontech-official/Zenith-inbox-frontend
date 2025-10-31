@@ -698,9 +698,18 @@ const SetupFlow = () => {
     setRetryKey((prev) => prev + 1);
   };
   const [isExpanded, setIsExpanded] = useState(false);
+const [showMobileInstructions, setShowMobileInstructions] = useState(false);
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-[#F9FAFB]">
+     {/* Floating Help Button for Mobile */}
+<button
+  onClick={() => setShowMobileInstructions(true)}
+  className="fixed bottom-6 right-6 z-40 bg-[#4F46E5] text-white p-3 rounded-full shadow-lg hover:bg-[#4338CA] transition lg:hidden"
+>
+  <FiInfo className="text-xl" />
+</button>
+
       <div
         className={`lg:fixed lg:top-0 lg:left-0 lg:h-screen flex flex-col items-center justify-center py-10 px-6 bg-[#F9FAFB] overflow-hidden transition-all duration-500 ${
           isExpanded ? "lg:w-[calc(100%-700px)]" : "lg:w-[calc(100%-450px)]"
@@ -1512,40 +1521,89 @@ const SetupFlow = () => {
           setIsExpanded={setIsExpanded}
         />
       </div>
+      {/* Mobile Drawer for Instructions */}
+{showMobileInstructions && (
+  <div className="fixed inset-0 z-50 flex lg:hidden">
+    {/* Overlay */}
+    <div
+      onClick={() => setShowMobileInstructions(false)}
+      className="absolute inset-0 bg-black bg-opacity-40 transition-opacity"
+    ></div>
+
+    {/* Drawer Panel */}
+    <div className="relative ml-auto w-[90%] sm:w-[400px] h-full bg-white shadow-2xl transform transition-transform duration-300">
+      <div className="flex justify-between items-center p-4 border-b">
+        <h3 className="text-lg font-semibold text-[#111827] flex items-center gap-2">
+          <FiInfo className="text-[#4F46E5]" /> Setup Guidance
+        </h3>
+        <button
+          onClick={() => setShowMobileInstructions(false)}
+          className="text-gray-600 hover:text-gray-800"
+        >
+          <FiX className="text-xl" />
+        </button>
+      </div>
+
+      <div className="overflow-y-auto h-[calc(100%-4rem)] p-4">
+        <InstructionPanel
+  step={step}
+  isExpanded={true}
+  setIsExpanded={() => {}}
+  isMobile={true}
+/>
+
+      </div>
+    </div>
+  </div>
+)}
+
     </div>
   );
 };
 
 export default SetupFlow;
 
-const InstructionPanel = ({ step, isExpanded, setIsExpanded }) => {
+const InstructionPanel = ({ step, isExpanded, setIsExpanded, isMobile = false }) => {
   const [activeTab, setActiveTab] = useState("gmail");
   const { user, loading } = useContext(UserContext);
 
   return (
-    <div
-      className={`hidden lg:flex flex-col h-[100%] justify-start bg-gradient-to-b from-white to-[#F9FAFB] shadow-xl border-l border-gray-200 transition-all duration-500 ease-in-out overflow-y-auto max-h-screen relative ${
-        isExpanded ? "w-[700px] p-8" : "w-[450px] p-7"
-      }`}
+<div
+      className={`${
+        isMobile ? "flex" : "hidden lg:flex"
+      } flex-col justify-start bg-gradient-to-b from-white to-[#F9FAFB] shadow-xl border-l border-gray-200 
+      transition-all duration-500 ease-in-out overflow-y-auto relative 
+      ${isMobile ? "w-full h-full p-4 text-sm" : isExpanded ? "w-[700px] p-8" : "w-[450px] p-7"}
+      `}
     >
-      {" "}
-      <button
-        onClick={() => setIsExpanded((prev) => !prev)}
-        className="absolute left-0 top-1/2 transform -translate-y-1/2 translate-x-1/2 bg-[#4F46E5] text-white rounded-full p-2 shadow-md hover:bg-[#4338CA] transition-all z-30"
-      >
-        {isExpanded ? <FiArrowRight /> : <FiArrowLeft />}
-      </button>
-      <div className="flex items-center gap-2 mb-4">
+      {/* Toggle Button - Hide on Mobile */}
+      {!isMobile && (
+        <button
+          onClick={() => setIsExpanded((prev) => !prev)}
+          className="absolute left-0 top-1/2 transform -translate-y-1/2 translate-x-1/2 
+          bg-[#4F46E5] text-white rounded-full p-2 shadow-md hover:bg-[#4338CA] transition-all z-30"
+        >
+          {isExpanded ? <FiArrowRight /> : <FiArrowLeft />}
+        </button>
+      )}
+
+
+      
+     <div className="flex items-center gap-2 mb-3 sm:mb-4">
         <div className="p-2 bg-[#EEF2FF] rounded-lg">
-          <FiInfo className="text-[#4F46E5] text-xl" />
+          <FiInfo className="text-[#4F46E5] text-lg sm:text-xl" />
         </div>
-        <h3 className="text-xl font-bold text-[#111827]">Setup Guidance </h3>
+        <h3 className="text-lg sm:text-xl font-bold text-[#111827]">
+          Setup Guidance
+        </h3>
       </div>
-      <p className="text-sm text-gray-500 mb-6">
-        Follow these quick instructions carefully — each step will guide you
-        toward completing your setup successfully.
+
+      {/* Intro Text */}
+      <p className="text-gray-500 text-xs sm:text-sm mb-4 sm:mb-6 leading-relaxed">
+        Follow these quick instructions carefully — each step will guide you toward
+        completing your setup successfully.
       </p>
-      <div className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm">
+      <div className="bg-white border border-gray-100 rounded-xl p-4 sm:p-5 shadow-sm">
         {step === 1 && (
           <>
             <div className="flex items-center justify-between mb-3">
@@ -1578,227 +1636,191 @@ const InstructionPanel = ({ step, isExpanded, setIsExpanded }) => {
           </>
         )}
 
-        {step === 2 && (
-          <>
-            <div className="flex items-center justify-between mb-4">
-              <h4 className="text-lg font-semibold text-[#111827] flex items-center gap-2">
-                <FiCopy className="text-[#4F46E5]" /> Step 2 – Connect Your
-                Email
-              </h4>
-              <span className="text-xs bg-[#E0E7FF] text-[#3730A3] px-2.5 py-0.5 rounded-full font-medium">
-                2 / 5
-              </span>
-            </div>
+       {step === 2 && (
+  <>
+    {/* Header */}
+    <div className="flex items-center justify-between mb-3 sm:mb-4">
+      <h4 className="text-base sm:text-lg font-semibold text-[#111827] flex items-center gap-2">
+        <FiCopy className="text-[#4F46E5]" /> Step 2 – Connect Your Email
+      </h4>
+      <span className="text-[11px] sm:text-xs bg-[#E0E7FF] text-[#3730A3] px-2 py-0.5 rounded-full font-medium">
+        2 / 5
+      </span>
+    </div>
 
-            <p className="text-sm text-gray-600 leading-relaxed mb-4">
-              Choose your email provider below and follow the steps to forward
-              your emails to your unique <strong>Mailhook address</strong>.
-            </p>
+    {/* Intro */}
+    <p className="text-xs sm:text-sm text-gray-600 leading-relaxed mb-3 sm:mb-4">
+      Choose your email provider below and follow the steps to forward your
+      emails to your unique <strong>Mailhook address</strong>.
+    </p>
 
-            <div className="bg-gray-100 rounded-lg p-1 flex space-x-1 mb-5">
-              <button
-                onClick={() => setActiveTab("gmail")}
-                className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${
-                  activeTab === "gmail"
-                    ? "bg-white text-indigo-700 shadow-md"
-                    : "text-gray-600 hover:bg-gray-50"
-                }`}
-              >
-                <div className="flex items-center justify-center gap-2">
-                  <FiMail className="text-indigo-600" /> Gmail
-                </div>
-              </button>
+    {/* Provider Tabs */}
+    <div className="bg-gray-100 rounded-lg p-1 flex space-x-1 overflow-x-auto no-scrollbar mb-4 sm:mb-5">
+      {[
+        { id: "gmail", icon: <FiMail className="text-indigo-600" />, label: "Gmail" },
+        { id: "outlook", icon: <FiSend className="text-indigo-600" />, label: "Outlook" },
+        { id: "smtp", icon: <FiServer className="text-indigo-600" />, label: "SMTP" },
+      ].map(({ id, icon, label }) => (
+        <button
+          key={id}
+          onClick={() => setActiveTab(id)}
+          className={`flex-1 min-w-[90px] sm:min-w-0 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all ${
+            activeTab === id
+              ? "bg-white text-indigo-700 shadow-md"
+              : "text-gray-600 hover:bg-gray-50"
+          }`}
+        >
+          <div className="flex items-center justify-center gap-1 sm:gap-2">
+            {icon}
+            {label}
+          </div>
+        </button>
+      ))}
+    </div>
 
-              <button
-                onClick={() => setActiveTab("outlook")}
-                className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${
-                  activeTab === "outlook"
-                    ? "bg-white text-indigo-700 shadow-md"
-                    : "text-gray-600 hover:bg-gray-50"
-                }`}
-              >
-                <div className="flex items-center justify-center gap-2">
-                  <FiSend className="text-indigo-600" /> Outlook
-                </div>
-              </button>
+    {/* Gmail Instructions */}
+    {activeTab === "gmail" && (
+      <div className="text-gray-700 text-xs sm:text-sm leading-relaxed space-y-3 sm:space-y-4 animate-fadeIn">
+        <div className="flex items-start gap-2 sm:gap-3">
+          <FiSettings className="text-[#4F46E5] mt-0.5 text-sm sm:text-lg" />
+          <p>
+            Open <strong>Gmail Settings</strong> → click the gear icon → 
+            <strong>“See all settings”</strong>.
+          </p>
+        </div>
 
-              <button
-                onClick={() => setActiveTab("smtp")}
-                className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${
-                  activeTab === "smtp"
-                    ? "bg-white text-indigo-700 shadow-md"
-                    : "text-gray-600 hover:bg-gray-50"
-                }`}
-              >
-                <div className="flex items-center justify-center gap-2">
-                  <FiServer className="text-indigo-600" /> SMTP
-                </div>
-              </button>
-            </div>
+        <div className="flex items-start gap-2 sm:gap-3">
+          <FiFolder className="text-[#4F46E5] mt-0.5 text-sm sm:text-lg" />
+          <p>
+            Go to the <strong>Forwarding and POP/IMAP</strong> tab.
+          </p>
+        </div>
 
-            {activeTab === "gmail" && (
-              <div className="text-sm text-gray-700 leading-relaxed space-y-4 animate-fadeIn">
-                <div className="flex items-start gap-3">
-                  <FiSettings className="text-[#4F46E5] text-lg mt-0.5" />
-                  <p>
-                    Open <strong>Gmail Settings</strong> → click the gear icon →{" "}
-                    <strong>“See all settings”</strong>.
-                  </p>
-                </div>
+        <div className="flex items-start gap-2 sm:gap-3">
+          <FiPlusCircle className="text-[#4F46E5] mt-0.5 text-sm sm:text-lg" />
+          <p>
+            Click <strong>“Add a forwarding address”</strong>.
+          </p>
+        </div>
 
-                <div className="flex items-start gap-3">
-                  <FiFolder className="text-[#4F46E5] text-lg mt-0.5" />
-                  <p>
-                    Go to the <strong>Forwarding and POP/IMAP</strong> tab.
-                  </p>
-                </div>
+        <div className="flex items-start gap-2 sm:gap-3">
+          <FiMail className="text-[#4F46E5] mt-0.5 text-sm sm:text-lg" />
+          <p>
+            Enter your Mailhook address:
+            <code className="block bg-gray-50 border border-indigo-200 text-indigo-700 px-3 py-1.5 rounded-lg text-[10px] sm:text-xs font-mono mt-1 break-all select-all">
+              {user?.mailhook || "your-mailhook@zenith-inbox.com"}
+            </code>
+          </p>
+        </div>
 
-                <div className="flex items-start gap-3">
-                  <FiPlusCircle className="text-[#4F46E5] text-lg mt-0.5" />
-                  <p>
-                    Click <strong>“Add a forwarding address”</strong>.
-                  </p>
-                </div>
+        <div className="flex items-start gap-2 sm:gap-3">
+          <FiCheckCircle className="text-green-600 mt-0.5 text-sm sm:text-lg" />
+          <p>
+            Gmail will send a <strong>confirmation email</strong> to this
+            Mailhook address.
+          </p>
+        </div>
 
-                <div className="flex items-start gap-3">
-                  <FiMail className="text-[#4F46E5] text-lg mt-0.5" />
-                  <p>
-                    Enter your Mailhook address:
-                    <code className="block bg-gray-50 border border-indigo-200 text-indigo-700 px-3 py-2 rounded-lg text-xs font-mono mt-1 break-all select-all">
-                      {user?.mailhook || "your-mailhook@zenith-inbox.com"}
-                    </code>
-                  </p>
-                </div>
+        <div className="mt-4 sm:mt-5 p-3 bg-indigo-50 border-l-4 border-indigo-500 rounded text-indigo-800 text-[11px] sm:text-xs flex items-center gap-2">
+          <FiArrowRightCircle className="text-[#4F46E5]" />
+          <p>
+            Click <strong>Next</strong> below to proceed and verify your forwarding setup.
+          </p>
+        </div>
+      </div>
+    )}
 
-                <div className="flex items-start gap-3">
-                  <FiCheckCircle className="text-green-600 text-lg mt-0.5" />
-                  <p>
-                    Gmail will send a <strong>confirmation email</strong> to
-                    this Mailhook address.
-                  </p>
-                </div>
+    {/* Outlook Instructions */}
+    {activeTab === "outlook" && (
+      <div className="text-gray-700 text-xs sm:text-sm space-y-3 sm:space-y-4 animate-fadeIn">
+        <div className="flex items-start gap-2 sm:gap-3">
+          <FiSettings className="text-[#4F46E5] mt-0.5 text-sm sm:text-lg" />
+          <p>
+            Open <strong>Outlook Settings</strong> → click 
+            <strong>“View all Outlook settings”</strong>.
+          </p>
+        </div>
 
-                <div className="mt-5 p-3 bg-indigo-50 border-l-4 border-indigo-500 rounded text-indigo-800 text-xs flex items-center gap-2">
-                  <FiArrowRightCircle className="text-[#4F46E5]" />
-                  <p>
-                    Click <strong>Next</strong> below to proceed and verify your
-                    forwarding setup.
-                  </p>
-                </div>
-              </div>
-            )}
+        <div className="flex items-start gap-2 sm:gap-3">
+          <FiSend className="text-[#4F46E5] mt-0.5 text-sm sm:text-lg" />
+          <p>Navigate to <strong>Mail → Forwarding</strong>.</p>
+        </div>
 
-            {activeTab === "outlook" && (
-              <div className="text-sm text-gray-700 leading-relaxed space-y-4 animate-fadeIn">
-                <div className="flex items-start gap-3">
-                  <FiSettings className="text-[#4F46E5] text-lg mt-0.5" />
-                  <p>
-                    Open <strong>Outlook Settings</strong> → click{" "}
-                    <strong>“View all Outlook settings”</strong>.
-                  </p>
-                </div>
+        <div className="flex items-start gap-2 sm:gap-3">
+          <FiToggleRight className="text-[#4F46E5] mt-0.5 text-sm sm:text-lg" />
+          <p>Enable <strong>Start forwarding</strong>.</p>
+        </div>
 
-                <div className="flex items-start gap-3">
-                  <FiSend className="text-[#4F46E5] text-lg mt-0.5" />
-                  <p>
-                    Navigate to <strong>Mail → Forwarding</strong>.
-                  </p>
-                </div>
+        <div className="flex items-start gap-2 sm:gap-3">
+          <FiMail className="text-[#4F46E5] mt-0.5 text-sm sm:text-lg" />
+          <p>
+            Enter your Mailhook address:
+            <code className="block bg-gray-50 border border-indigo-200 text-indigo-700 px-3 py-1.5 rounded-lg text-[10px] sm:text-xs font-mono mt-1 break-all select-all">
+              {user?.mailhook || "your-mailhook@zenith-inbox.com"}
+            </code>
+          </p>
+        </div>
 
-                <div className="flex items-start gap-3">
-                  <FiToggleRight className="text-[#4F46E5] text-lg mt-0.5" />
-                  <p>
-                    Enable <strong>Start forwarding</strong>.
-                  </p>
-                </div>
+        <div className="flex items-start gap-2 sm:gap-3">
+          <FiSave className="text-green-600 mt-0.5 text-sm sm:text-lg" />
+          <p>
+            Click <strong>Save</strong> to apply your changes.
+          </p>
+        </div>
 
-                <div className="flex items-start gap-3">
-                  <FiMail className="text-[#4F46E5] text-lg mt-0.5" />
-                  <p>
-                    Enter your Mailhook address:
-                    <code className="block bg-gray-50 border border-indigo-200 text-indigo-700 px-3 py-2 rounded-lg text-xs font-mono mt-1 break-all select-all">
-                      {user?.mailhook || "your-mailhook@zenith-inbox.com"}
-                    </code>
-                  </p>
-                </div>
+        <div className="mt-4 sm:mt-5 p-3 bg-blue-50 border-l-4 border-blue-400 rounded text-blue-800 text-[11px] sm:text-xs flex items-center gap-2">
+          <FiArrowRightCircle className="text-[#4F46E5]" />
+          <p>
+            Click <strong>Next</strong> below to verify your Outlook forwarding connection.
+          </p>
+        </div>
+      </div>
+    )}
 
-                <div className="flex items-start gap-3">
-                  <FiSave className="text-green-600 text-lg mt-0.5" />
-                  <p>
-                    Click <strong>Save</strong> to apply your changes.
-                  </p>
-                </div>
+    {/* SMTP Instructions */}
+    {activeTab === "smtp" && (
+      <div className="text-gray-700 text-xs sm:text-sm space-y-3 sm:space-y-4 animate-fadeIn">
+        <div className="flex items-start gap-2 sm:gap-3">
+          <FiServer className="text-[#4F46E5] mt-0.5 text-sm sm:text-lg" />
+          <p>
+            Open your email provider’s <strong>SMTP / Email Settings</strong>.
+          </p>
+        </div>
 
-                <div className="mt-5 p-3 bg-blue-50 border-l-4 border-blue-400 rounded text-blue-800 text-xs flex items-center gap-2">
-                  <FiArrowRightCircle className="text-[#4F46E5]" />
-                  <p>
-                    Click <strong>Next</strong> below to verify your Outlook
-                    forwarding connection.
-                  </p>
-                </div>
-              </div>
-            )}
+        <div className="flex items-start gap-2 sm:gap-3">
+          <FiKey className="text-[#4F46E5] mt-0.5 text-sm sm:text-lg" />
+          <p>
+            Enter your <strong>username</strong> and <strong>app password</strong>.
+          </p>
+        </div>
 
-            {activeTab === "smtp" && (
-              <div className="text-sm text-gray-700 leading-relaxed space-y-4 animate-fadeIn">
-                <div className="flex items-start gap-3">
-                  <FiServer className="text-[#4F46E5] text-lg mt-0.5" />
-                  <p>
-                    Open your email provider or hosting control panel’s{" "}
-                    <strong>SMTP / Email Settings</strong>.
-                  </p>
-                </div>
+        <div className="flex items-start gap-2 sm:gap-3">
+          <FiGlobe className="text-[#4F46E5] mt-0.5 text-sm sm:text-lg" />
+          <p>
+            Use your SMTP Host and Port (e.g. 
+            <code className="bg-gray-100 text-indigo-700 rounded px-1 py-0.5 text-[10px] sm:text-xs">
+              smtp.yourdomain.com
+            </code> Port 
+            <code className="bg-gray-100 text-indigo-700 rounded px-1 py-0.5 text-[10px] sm:text-xs">
+              587
+            </code>).
+          </p>
+        </div>
 
-                <div className="flex items-start gap-3">
-                  <FiKey className="text-[#4F46E5] text-lg mt-0.5" />
-                  <p>
-                    Enter your <strong>username</strong> and{" "}
-                    <strong>app password</strong> (if 2FA is enabled).
-                  </p>
-                </div>
+        <div className="flex items-start gap-2 sm:gap-3">
+          <FiLock className="text-green-600 mt-0.5 text-sm sm:text-lg" />
+          <p>Enable <strong>STARTTLS</strong> or <strong>SSL</strong>.</p>
+        </div>
 
-                <div className="flex items-start gap-3">
-                  <FiGlobe className="text-[#4F46E5] text-lg mt-0.5" />
-                  <p>
-                    Use your SMTP Host and Port settings (e.g.,{" "}
-                    <code className="bg-gray-100 text-indigo-700 rounded px-1 py-0.5 text-xs">
-                      smtp.yourdomain.com
-                    </code>{" "}
-                    , Port{" "}
-                    <code className="bg-gray-100 text-indigo-700 rounded px-1 py-0.5 text-xs">
-                      587
-                    </code>
-                    ).
-                  </p>
-                </div>
+        <div className="flex items-start gap-2 sm:gap-3">
+          <FiCheckCircle className="text-green-600 mt-0.5 text-sm sm:text-lg" />
+          <p>Test your configuration to confirm connection.</p>
+        </div>
+      </div>
+    )}
+  </>
+)}
 
-                <div className="flex items-start gap-3">
-                  <FiLock className="text-green-600 text-lg mt-0.5" />
-                  <p>
-                    Enable <strong>STARTTLS</strong> or <strong>SSL</strong> for
-                    secure connections.
-                  </p>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <FiCheckCircle className="text-green-600 text-lg mt-0.5" />
-                  <p>
-                    Test your configuration to confirm successful SMTP
-                    connection.
-                  </p>
-                </div>
-
-                <div className="mt-5 p-3 bg-indigo-50 border-l-4 border-indigo-500 rounded text-indigo-800 text-xs flex items-center gap-2">
-                  <FiArrowRightCircle className="text-[#4F46E5]" />
-                  <p>
-                    After entering your SMTP credentials in the app, click{" "}
-                    <strong>Next</strong> to continue setup.
-                  </p>
-                </div>
-              </div>
-            )}
-          </>
-        )}
 
         {step === 3 && (
           <>
@@ -1918,66 +1940,68 @@ const InstructionPanel = ({ step, isExpanded, setIsExpanded }) => {
           </>
         )}
 
-        {step === 4 && (
-          <>
-            <div className="flex items-center justify-between mb-4">
-              <h4 className="text-lg font-semibold text-[#111827] flex items-center gap-2">
-                <FiSend className="text-[#4F46E5]" /> Step 4 – Set Up SMTP
-                Sending
-              </h4>
-              <span className="text-xs bg-[#E0E7FF] text-[#3730A3] px-2.5 py-0.5 rounded-full font-medium">
-                4 / 5
-              </span>
-            </div>
+      {step === 4 && (
+  <>
+    {/* Header */}
+    <div className="flex items-center justify-between mb-3 sm:mb-4">
+      <h4 className="text-base sm:text-lg font-semibold text-[#111827] flex items-center gap-2">
+        <FiSend className="text-[#4F46E5]" /> Step 4 – Set Up SMTP Sending
+      </h4>
+      <span className="text-[11px] sm:text-xs bg-[#E0E7FF] text-[#3730A3] px-2 py-0.5 rounded-full font-medium">
+        4 / 5
+      </span>
+    </div>
 
-            <p className="text-sm text-gray-600 leading-relaxed mb-4">
-              Choose how <strong>Zenith Inbox</strong> will send emails on your
-              behalf.
-            </p>
+    {/* Intro */}
+    <p className="text-xs sm:text-sm text-gray-600 leading-relaxed mb-3 sm:mb-4">
+      Choose how <strong>Zenith Inbox</strong> will send emails on your behalf.
+    </p>
 
-            <div className="space-y-3 text-sm text-gray-700">
-              <div className="flex items-start gap-3">
-                <FiMail className="text-[#4F46E5] text-lg mt-0.5" />
-                <p>
-                  Select your sending method — <strong>Gmail</strong>,{" "}
-                  <strong>Microsoft</strong>, or <strong>Custom SMTP</strong>.
-                </p>
-              </div>
+    {/* Main Content */}
+    <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm text-gray-700">
+      <div className="flex items-start gap-2 sm:gap-3">
+        <FiMail className="text-[#4F46E5] text-sm sm:text-lg mt-0.5" />
+        <p>
+          Select your sending method — <strong>Gmail</strong>,{" "}
+          <strong>Microsoft</strong>, or <strong>Custom SMTP</strong>.
+        </p>
+      </div>
 
-              <div className="flex items-start gap-3">
-                <FiKey className="text-[#4F46E5] text-lg mt-0.5" />
-                <p>
-                  Connect securely using <strong>OAuth</strong> (recommended) or
-                  your credentials.
-                </p>
-              </div>
+      <div className="flex items-start gap-2 sm:gap-3">
+        <FiKey className="text-[#4F46E5] text-sm sm:text-lg mt-0.5" />
+        <p>
+          Connect securely using <strong>OAuth</strong> (recommended) or your
+          credentials.
+        </p>
+      </div>
 
-              <div className="flex items-start gap-3">
-                <FiLock className="text-green-600 text-lg mt-0.5" />
-                <p>
-                  Use only verified accounts for better deliverability and
-                  security.
-                </p>
-              </div>
+      <div className="flex items-start gap-2 sm:gap-3">
+        <FiLock className="text-green-600 text-sm sm:text-lg mt-0.5" />
+        <p>
+          Use only verified accounts for better deliverability and security.
+        </p>
+      </div>
 
-              <div className="flex items-start gap-3">
-                <FiCheckCircle className="text-green-600 text-lg mt-0.5" />
-                <p>
-                  Once connected successfully, you’ll be redirected to{" "}
-                  <strong>Step 5</strong> automatically.
-                </p>
-              </div>
-            </div>
+      <div className="flex items-start gap-2 sm:gap-3">
+        <FiCheckCircle className="text-green-600 text-sm sm:text-lg mt-0.5" />
+        <p>
+          Once connected successfully, you’ll be redirected to{" "}
+          <strong>Step 5</strong> automatically.
+        </p>
+      </div>
+    </div>
 
-            <div className="mt-5 bg-indigo-50 border-l-4 border-indigo-500 rounded p-3 text-indigo-800 text-sm flex items-center gap-2">
-              <FiInfo className="text-[#4F46E5]" />
-              <p>
-                <strong>Tip:</strong> Use your business domain email instead of
-                Gmail to improve trust and avoid spam filters.
-              </p>
-            </div>
-          </>
-        )}
+    {/* Tip Card */}
+    <div className="mt-4 sm:mt-5 bg-indigo-50 border-l-4 border-indigo-500 rounded p-3 text-indigo-800 text-[11px] sm:text-sm flex items-start gap-2 sm:gap-3">
+      <FiInfo className="text-[#4F46E5] text-base sm:text-lg mt-0.5" />
+      <p>
+        <strong>Tip:</strong> Use your business-domain email instead of Gmail to
+        improve trust and avoid spam filters.
+      </p>
+    </div>
+  </>
+)}
+
 
         {step === 5 && (
           <>
