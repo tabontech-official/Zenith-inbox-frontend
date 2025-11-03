@@ -1,7 +1,9 @@
+
 // import React, { useState } from "react";
 // import { FaEye, FaEyeSlash } from "react-icons/fa";
 // import { useNavigate } from "react-router-dom";
 // import axios from "axios";
+// import toast from "react-hot-toast"; // ✅ import toast
 
 // const RegisterPage = () => {
 //   const [showPassword, setShowPassword] = useState(false);
@@ -24,12 +26,14 @@
 //       );
 
 //       if (response.status === 200) {
-//         navigate("/login");
+//         toast.success("Signup successful! ");
+//         setTimeout(() => navigate("/login"), 1000);
 //       }
 //     } catch (error) {
-//       setError(
-//         error.response?.data?.error || "Signup failed. Please try again."
-//       );
+//       const errMsg =
+//         error.response?.data?.error || "Signup failed. Please try again.";
+//       setError(errMsg);
+//       toast.error(errMsg); 
 //     }
 //   };
 
@@ -133,19 +137,26 @@
 // };
 
 // export default RegisterPage;
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import toast from "react-hot-toast"; // ✅ import toast
 
 const RegisterPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [alert, setAlert] = useState({ type: "", message: "" });
   const navigate = useNavigate();
+
+  // 🕓 Automatically hide alert after 4 seconds
+  useEffect(() => {
+    if (alert.message) {
+      const timer = setTimeout(() => setAlert({ type: "", message: "" }), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [alert]);
 
   const handleClick = () => {
     navigate("/login");
@@ -160,16 +171,32 @@ const RegisterPage = () => {
       );
 
       if (response.status === 200) {
-        toast.success("Signup successful! ");
-        setTimeout(() => navigate("/login"), 1000);
+        setAlert({
+          type: "success",
+          message: "Signup successful! Redirecting to login...",
+        });
+        setTimeout(() => navigate("/login"), 1200);
       }
     } catch (error) {
       const errMsg =
         error.response?.data?.error || "Signup failed. Please try again.";
-      setError(errMsg);
-      toast.error(errMsg); 
+      setAlert({ type: "error", message: errMsg });
     }
   };
+
+  // 🔔 Alert Message Component
+  const AlertMessage = () =>
+    alert.message ? (
+      <div
+        className={`my-4 p-3 rounded-md text-sm text-center font-medium ${
+          alert.type === "success"
+            ? "bg-green-100 text-green-700 border border-green-300"
+            : "bg-red-100 text-red-700 border border-red-300"
+        }`}
+      >
+        {alert.message}
+      </div>
+    ) : null;
 
   return (
     <div className="min-h-screen flex">
@@ -182,9 +209,8 @@ const RegisterPage = () => {
             Join us today and get started
           </p>
 
-          {error && (
-            <p className="text-red-500 text-sm mb-4 text-center">{error}</p>
-          )}
+          {/* 🔔 Alert here */}
+          <AlertMessage />
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
