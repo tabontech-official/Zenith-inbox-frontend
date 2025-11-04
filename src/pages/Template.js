@@ -300,58 +300,42 @@ export default function Template() {
           </div>
         </header>
 
-        <div className="flex flex-wrap items-center justify-between px-8 py-4 bg-white border-b gap-4">
-          <div className="flex items-center gap-4 flex-wrap">
-            <div className="flex items-center gap-2">
-              <label className="text-sm font-medium text-gray-700">
-                Filter by Service:
-              </label>
-              <select
-                value={selectedServiceFilter}
-                onChange={(e) => setSelectedServiceFilter(e.target.value)}
-                className="border border-gray-300 rounded-lg px-3 py-1 text-sm focus:ring-2 focus:ring-purple-500"
-              >
-                <option value="All">All Services</option>
-                {[
-                  ...new Set(templates.map((t) => t.service).filter(Boolean)),
-                ].map((srv) => (
-                  <option key={srv} value={srv}>
-                    {srv}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Sequence Filter */}
-            {/* <div className="flex items-center gap-2">
-      <label className="text-sm font-medium text-gray-700">
-        Filter by Sequence:
+        <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between px-4 sm:px-8 py-4 bg-white border-b gap-4">
+  <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4 gap-2">
+    <div className="flex items-center gap-2">
+      <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
+        Filter by Service:
       </label>
       <select
-        value={selectedSequenceFilter}
-        onChange={(e) => setSelectedSequenceFilter(e.target.value)}
-        className="border border-gray-300 rounded-lg px-3 py-1 text-sm focus:ring-2 focus:ring-purple-500"
+        value={selectedServiceFilter}
+        onChange={(e) => setSelectedServiceFilter(e.target.value)}
+        className="border border-gray-300 rounded-lg px-3 py-1 text-sm focus:ring-2 focus:ring-purple-500 w-36 sm:w-40"
       >
-        <option value="All">All Templates</option>
-        <option value="Initial Email">Initial Email</option>
-        <option value="First Follow-Up">First Follow-Up</option>
-        <option value="Second Follow-Up">Second Follow-Up</option>
+        <option value="All">All Services</option>
+        {[...new Set(templates.map((t) => t.service).filter(Boolean))].map(
+          (srv) => (
+            <option key={srv} value={srv}>
+              {srv}
+            </option>
+          )
+        )}
       </select>
-    </div> */}
-          </div>
+    </div>
+  </div>
 
-          {viewType && (
-            <div className="bg-indigo-50 px-4 py-2 rounded-md text-sm text-indigo-700 border border-indigo-200">
-              Viewing all <b>{viewType}</b> templates
-              <button
-                onClick={() => navigate("/templates")}
-                className="ml-2 text-indigo-600 underline hover:text-indigo-800"
-              >
-                Clear
-              </button>
-            </div>
-          )}
-        </div>
+  {viewType && (
+    <div className="bg-indigo-50 px-4 py-2 rounded-md text-sm text-indigo-700 border border-indigo-200 w-full sm:w-auto text-center sm:text-left">
+      Viewing all <b>{viewType}</b> templates
+      <button
+        onClick={() => navigate("/templates")}
+        className="ml-2 text-indigo-600 underline hover:text-indigo-800"
+      >
+        Clear
+      </button>
+    </div>
+  )}
+</div>
+
 
         <main className="container mx-auto p-4 sm:p-6 lg:p-8">
           <div className="bg-white shadow rounded-lg overflow-hidden">
