@@ -51,10 +51,25 @@ const ConnectionsPage = () => {
     fetchConnections();
   }, []);
 
-  const handleConnectionAdded = async (newConn) => {
-    toast.success(`${newConn.provider} connected successfully!`);
-    await fetchConnections();
-  };
+ const handleConnectionAdded = async (newConn) => {
+  toast.success(`${newConn.provider} connected successfully!`);
+  await fetchConnections();
+
+  try {
+    const userId = localStorage.getItem("userid");
+    if (!userId) return;
+
+    await axios.put(`https://email-syncing-backend.vercel.app/auth/setup/${userId}`, {
+      stepCompleted: 4, 
+      setupCompleted: false, 
+      skipped: false, 
+    });
+
+  } catch (err) {
+    console.error("Error updating setup progress:", err);
+    toast.error("Failed to update setup progress");
+  }
+};
 
 
   const providerIcon = (provider) => {

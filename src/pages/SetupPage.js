@@ -1797,14 +1797,16 @@ const InstructionPanel = ({
               <h4 className="text-lg sm:text-xl font-semibold text-gray-900 flex items-center gap-2">
                 <FiMail className="text-indigo-600" /> Step 1: Get Started
               </h4>
- <span
-  className="text-[10px] sm:text-xs 
+              <span
+                className="text-[10px] sm:text-xs 
   bg-green-100 text-green-700 
   px-2 sm:px-3 py-0.5 rounded-full 
   font-medium shadow-sm 
   whitespace-nowrap 
   flex-shrink-0"
->                1 / 5
+              >
+                {" "}
+                1 / 5
               </span>
             </div>
 
@@ -1846,14 +1848,16 @@ const InstructionPanel = ({
                 <FiCopy className="text-indigo-600" /> Step 2 – Connect Your
                 Email
               </h4>
- <span
-  className="text-[10px] sm:text-xs 
+              <span
+                className="text-[10px] sm:text-xs 
   bg-green-100 text-green-700 
   px-2 sm:px-3 py-0.5 rounded-full 
   font-medium shadow-sm 
   whitespace-nowrap 
   flex-shrink-0"
->                2 / 5
+              >
+                {" "}
+                2 / 5
               </span>
             </div>
 
@@ -2111,14 +2115,16 @@ const InstructionPanel = ({
                 <FiAlertCircle className="text-indigo-600" /> Step 3 – Verify
                 Forwarding
               </h4>
- <span
-  className="text-[10px] sm:text-xs 
+              <span
+                className="text-[10px] sm:text-xs 
   bg-green-100 text-green-700 
   px-2 sm:px-3 py-0.5 rounded-full 
   font-medium shadow-sm 
   whitespace-nowrap 
   flex-shrink-0"
->                3 / 5
+              >
+                {" "}
+                3 / 5
               </span>
             </div>
 
@@ -2271,14 +2277,16 @@ const InstructionPanel = ({
                 <FiSend className="text-indigo-600" /> Step 4 – Set Up SMTP
                 Sending
               </h4>
- <span
-  className="text-[10px] sm:text-xs 
+              <span
+                className="text-[10px] sm:text-xs 
   bg-green-100 text-green-700 
   px-2 sm:px-3 py-0.5 rounded-full 
   font-medium shadow-sm 
   whitespace-nowrap 
   flex-shrink-0"
->                4 / 5
+              >
+                {" "}
+                4 / 5
               </span>
             </div>
 
@@ -2353,16 +2361,15 @@ const InstructionPanel = ({
                 Go Live
               </h4>
               <span
-  className="text-[10px] sm:text-xs 
+                className="text-[10px] sm:text-xs 
   bg-green-100 text-green-700 
   px-2 sm:px-3 py-0.5 rounded-full 
   font-medium shadow-sm 
   whitespace-nowrap 
   flex-shrink-0"
->
-  5 / 5
-</span>
-
+              >
+                5 / 5
+              </span>
             </div>
 
             {/* Intro */}
@@ -2374,12 +2381,12 @@ const InstructionPanel = ({
             {/* Progress Summary */}
             {user?.setup?.steps ? (
               <div
-  className="bg-gradient-to-br from-indigo-50/70 via-purple-50/60 to-indigo-100/40 
+                className="bg-gradient-to-br from-indigo-50/70 via-purple-50/60 to-indigo-100/40 
   backdrop-blur-md border border-indigo-100/60 
   rounded-2xl p-4 sm:p-5 mb-6 
   shadow-[0_4px_14px_rgba(79,70,229,0.08)] 
   transition-all duration-300 ease-in-out"
->
+              >
                 <h5 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
                   <FiBarChart2 className="text-indigo-600" /> Setup Progress
                   Summary
