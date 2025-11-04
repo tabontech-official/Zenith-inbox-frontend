@@ -1546,11 +1546,11 @@ const ShopifyScenariosPage = () => {
       );
     }
   }, [routerBranches]);
-const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 font-inter">
-        <Sidebar />
+      <Sidebar />
 
       <div className="flex-1 flex flex-col overflow-hidden">
         <div className="bg-white border-b px-4 sm:px-6 py-4 shadow-sm">
@@ -1567,7 +1567,7 @@ const [sidebarOpen, setSidebarOpen] = useState(false);
                 Configure your automation workflow
               </p>
             </div>
-<div className="flex flex-wrap justify-start gap-3">
+            <div className="flex flex-wrap justify-start gap-3">
               {/* <button
                 onClick={handleSaveScenario}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center text-sm"

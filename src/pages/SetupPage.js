@@ -35,7 +35,7 @@ import {
 } from "react-icons/fi";
 import { useLocation, useNavigate } from "react-router-dom";
 import { UserContext } from "../component/UserContext";
-import { FaMicrosoft, FaRegLightbulb } from "react-icons/fa";
+import { FaGoogle, FaMicrosoft, FaRegLightbulb } from "react-icons/fa";
 import toast from "react-hot-toast";
 
 const SetupFlow = () => {
@@ -695,20 +695,20 @@ const SetupFlow = () => {
       : "translate-x-0 scale-100"
   }`}
       >
-        <div className="flex flex-col items-center justify-center w-full max-w-3xl mx-auto px-6">
-          <div className="w-full flex justify-center">
-            <FiMail className="text-[#4F46E5] text-2xl" />
-            <span className="font-semibold text-lg text-[#111827] ml-2">
+        <div className="flex flex-col items-center justify-center w-full max-w-3xl mx-auto ">
+          <div className="w-full flex items-center justify-center mb-4">
+            <FiMail className="text-[#4F46E5] text-2xl sm:text-3xl" />
+            <span className="font-semibold text-lg sm:text-xl text-[#111827] ml-2">
               Zenith Inbox
             </span>
           </div>
 
-          <div className="flex items-center justify-center gap-2 sm:gap-4 mt-6 mb-2">
+          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 mt-6 mb-2">
             {[1, 2, 3, 4, 5].map((num) => (
               <React.Fragment key={num}>
-                <div className="flex flex-col items-center">
+                <div className="flex flex-col items-center min-w-[2rem]">
                   <div
-                    className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold transition-all duration-300 
+                    className={`flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full text-sm font-semibold transition-all duration-300
             ${
               step > num
                 ? "bg-green-500 text-white"
@@ -717,10 +717,15 @@ const SetupFlow = () => {
                 : "bg-gray-200 text-gray-500"
             }`}
                   >
-                    {step > num ? <FiCheck className="text-white" /> : num}
+                    {step > num ? (
+                      <FiCheck className="text-white text-base sm:text-lg" />
+                    ) : (
+                      num
+                    )}
                   </div>
+
                   <span
-                    className={`text-[11px] mt-1 ${
+                    className={`text-[11px] sm:text-xs mt-1 font-medium ${
                       step >= num ? "text-[#4F46E5]" : "text-gray-400"
                     }`}
                   >
@@ -730,7 +735,7 @@ const SetupFlow = () => {
 
                 {num < 5 && (
                   <div
-                    className={`w-10 sm:w-16 h-1 transition-all duration-300 rounded-full 
+                    className={`h-[2px] sm:h-[3px] w-8 sm:w-16 rounded-full transition-all duration-300 
             ${step > num ? "bg-[#4F46E5]" : "bg-gray-300"}`}
                   />
                 )}
@@ -1251,30 +1256,33 @@ const SetupFlow = () => {
                 </div>
 
                 {selectedTab === "Gmail" && (
-                  <div className="border border-[#E5E7EB] rounded-lg p-8 text-center space-y-4">
-                    <p className="text-[#4B5563]">
+                  <div className="border border-[#E5E7EB] rounded-lg p-6 sm:p-8 text-center flex flex-col items-center space-y-4 max-w-sm mx-auto">
+                    <p className="text-[#4B5563] text-sm sm:text-base leading-relaxed">
                       Connect your Gmail account securely using OAuth 2.0.
                     </p>
+
                     <button
                       onClick={handleGmailConnect}
-                      className="bg-[#EA4335] hover:bg-[#C33D2D] text-white px-6 py-3 rounded-lg text-sm font-semibold shadow-md"
+                      className="bg-[#EA4335] hover:bg-[#C33D2D] text-white px-5 py-3 rounded-lg text-sm font-semibold shadow-md flex items-center justify-center gap-2 whitespace-nowrap w-full sm:w-auto"
                     >
+                      <FaGoogle className="text-lg flex-shrink-0" />
                       Connect with Gmail
                     </button>
                   </div>
                 )}
 
                 {selectedTab === "Microsoft" && (
-                  <div className="border border-[#E5E7EB] rounded-lg p-8 text-center space-y-4">
-                    <p className="text-[#4B5563]">
+                  <div className="border border-[#E5E7EB] rounded-lg p-6 sm:p-8 text-center flex flex-col items-center space-y-4 max-w-sm mx-auto">
+                    <p className="text-[#4B5563] text-sm sm:text-base leading-relaxed">
                       Connect your Outlook or Microsoft 365 account securely
                       using OAuth 2.0.
                     </p>
+
                     <button
                       onClick={handleMicrosoftConnect}
-                      className="bg-[#0078D4] hover:bg-[#0063B1] text-white px-6 py-3 rounded-lg text-sm font-semibold shadow-md flex items-center justify-center gap-2 mx-auto"
+                      className="bg-[#0078D4] hover:bg-[#0063B1] text-white px-5 py-3 rounded-lg text-sm font-semibold shadow-md flex items-center justify-center gap-2 whitespace-nowrap w-full sm:w-auto"
                     >
-                      <FaMicrosoft className="text-lg" />
+                      <FaMicrosoft className="text-lg flex-shrink-0" />
                       Connect with Outlook
                     </button>
                   </div>
@@ -1365,7 +1373,7 @@ const SetupFlow = () => {
                       </p>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-[#111827] mb-1">
                           SMTP Host
@@ -1376,8 +1384,10 @@ const SetupFlow = () => {
                           value={smtpForm.host}
                           onChange={handleSmtpChange}
                           className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-[#4F46E5] outline-none"
+                          placeholder="smtp.office365.com"
                         />
                       </div>
+
                       <div>
                         <label className="block text-sm font-medium text-[#111827] mb-1">
                           Port
@@ -1388,6 +1398,7 @@ const SetupFlow = () => {
                           value={smtpForm.port}
                           onChange={handleSmtpChange}
                           className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-[#4F46E5] outline-none"
+                          placeholder="587"
                         />
                       </div>
                     </div>
