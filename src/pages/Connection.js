@@ -31,67 +31,66 @@ const ConnectionsPage = () => {
   const closeOutlookModal = () => setIsOutlookModalOpen(false);
 
   const fetchConnections = async () => {
-  try {
-    const userId = localStorage.getItem("userid");
-    if (!userId) return setLoading(false);
+    try {
+      const userId = localStorage.getItem("userid");
+      if (!userId) return setLoading(false);
 
-    setLoading(true);
+      setLoading(true);
 
-    const res = await axios.get(
-      `https://email-syncing-backend.vercel.app/auth/getConnection/${userId}`
-    );
+      const res = await axios.get(
+        `https://email-syncing-backend.vercel.app/auth/getConnection/${userId}`
+      );
 
-    const connections = res.data || [];
-    setConnections(connections);
+      const connections = res.data || [];
+      setConnections(connections);
 
-    if (connections.length > 0) {
-      try {
-        await axios.put(
-          `https://email-syncing-backend.vercel.app/auth/setup/${userId}`,
-          {
-            stepCompleted: 4,       
-            setupCompleted: true,   
-            skipped: false,         
-          }
-        );
-        console.log(" Setup marked as completed because connection exists");
-      } catch (apiErr) {
-        console.error("Failed to auto-complete setup:", apiErr);
+      if (connections.length > 0) {
+        try {
+          await axios.put(
+            `https://email-syncing-backend.vercel.app/auth/setup/${userId}`,
+            {
+              stepCompleted: 4,
+              setupCompleted: true,
+              skipped: false,
+            }
+          );
+          console.log(" Setup marked as completed because connection exists");
+        } catch (apiErr) {
+          console.error("Failed to auto-complete setup:", apiErr);
+        }
       }
+    } catch (err) {
+      toast.error("Failed to load connections");
+    } finally {
+      setLoading(false);
     }
-
-  } catch (err) {
-    toast.error("Failed to load connections");
-  } finally {
-    setLoading(false);
-  }
-};
-
+  };
 
   useEffect(() => {
     fetchConnections();
   }, []);
 
- const handleConnectionAdded = async (newConn) => {
-  toast.success(`${newConn.provider} connected successfully!`);
-  await fetchConnections();
+  const handleConnectionAdded = async (newConn) => {
+    toast.success(`${newConn.provider} connected successfully!`);
+    await fetchConnections();
 
-  try {
-    const userId = localStorage.getItem("userid");
-    if (!userId) return;
+    try {
+      const userId = localStorage.getItem("userid");
+      if (!userId) return;
 
-    await axios.put(`https://email-syncing-backend.vercel.app/auth/setup/${userId}`, {
-      stepCompleted: 4, 
-      setupCompleted: false, 
-      skipped: false, 
-    });
-
-  } catch (err) {
-    console.error("Error updating setup progress:", err);
-    toast.error("Failed to update setup progress");
-  }
-};
-
+      await axios.put(
+        `https://email-syncing-backend.vercel.app/auth/setup/${userId}`,
+        {
+          stepCompleted: 4,
+          setupCompleted: false,
+          skipped: false,
+        }
+      );
+    } catch (err) {
+      console.error("Error updating setup progress:", err);
+      toast.error("Failed to update setup progress");
+    }
+  };
 
   const providerIcon = (provider) => {
     if (!provider) return <FaEnvelope className="text-gray-500 h-6 w-6" />;
@@ -134,7 +133,7 @@ const ConnectionsPage = () => {
   return (
     <div className="flex">
       <Sidebar />
-     <div className="flex-1 flex flex-col md:ml-64 transition-all duration-300">
+      <div className="flex-1 flex flex-col md:ml-64 transition-all duration-300">
         {/* Header */}
         <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 sm:p-6 bg-white border-b border-gray-200 sticky top-0 z-10">
           <h1 className="text-xl sm:text-2xl font-bold text-gray-800">
@@ -142,6 +141,15 @@ const ConnectionsPage = () => {
           </h1>
 
           <div className="flex flex-wrap sm:flex-nowrap gap-3">
+            <button
+              onClick={() =>
+                toast.success("Mailhook connection feature coming soon!")
+              }
+              className="flex items-center justify-center w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg shadow hover:from-green-600 hover:to-emerald-700 transition"
+            >
+              <FaEnvelope className="h-4 w-4 mr-2" />
+              Add Mailhook Connection
+            </button>
             <button
               onClick={openModal}
               className="flex items-center justify-center w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-red-500 to-pink-600 rounded-lg shadow hover:from-red-600 hover:to-pink-700 transition"
@@ -212,9 +220,7 @@ const ConnectionsPage = () => {
                         onClick={async () => {
                           try {
                             const updated = connections.map((c) =>
-                              c._id === conn._id
-                                ? { ...c, verifying: true }
-                                : c
+                              c._id === conn._id ? { ...c, verifying: true } : c
                             );
                             setConnections(updated);
 
@@ -336,4 +342,3 @@ const ConnectionsPage = () => {
 };
 
 export default ConnectionsPage;
-
