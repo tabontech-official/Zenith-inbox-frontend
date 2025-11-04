@@ -215,7 +215,6 @@ const MailhookConnectionModal = ({
       setValidationPhase(true);
       setShowValidateButton(false);
 
-      // 1️⃣ Send test email
       const res = await fetch(
         `https://email-syncing-backend.vercel.app/mailhook/validate-forwarding/${user._id}`,
         {

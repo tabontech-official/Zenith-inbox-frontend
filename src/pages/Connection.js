@@ -24,13 +24,15 @@ const ConnectionsPage = () => {
   const [isOutlookModalOpen, setIsOutlookModalOpen] = useState(false);
   const [connections, setConnections] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [mailhooks, setMailhooks] = useState([]); // 🟢 NEW
+  const [mailhooks, setMailhooks] = useState([]);
   const [isMailhookModalOpen, setIsMailhookModalOpen] = useState(false);
 
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [connectionToDelete, setConnectionToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
-
+  const [mailhookToDelete, setMailhookToDelete] = useState(null);
+  const [isMailhookDeleteModalOpen, setIsMailhookDeleteModalOpen] =
+    useState(false);
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
   const openOutlookModal = () => setIsOutlookModalOpen(true);
@@ -68,11 +70,14 @@ const ConnectionsPage = () => {
 
       if (connections.length > 0) {
         try {
-          await axios.put(`https://email-syncing-backend.vercel.app/auth/setup/${userId}`, {
-            stepCompleted: 4,
-            setupCompleted: true,
-            skipped: false,
-          });
+          await axios.put(
+            `https://email-syncing-backend.vercel.app/auth/setup/${userId}`,
+            {
+              stepCompleted: 4,
+              setupCompleted: true,
+              skipped: false,
+            }
+          );
           console.log(" Setup marked as completed because connection exists");
         } catch (apiErr) {
           console.error("Failed to auto-complete setup:", apiErr);
@@ -84,30 +89,10 @@ const ConnectionsPage = () => {
       setLoading(false);
     }
   };
-const [mailhookToDelete, setMailhookToDelete] = useState(null);
-const [isMailhookDeleteModalOpen, setIsMailhookDeleteModalOpen] = useState(false);
-const handleConfirmDeleteMailhook = async (cardId) => {
-  try {
-    const res = await axios.delete(`https://email-syncing-backend.vercel.app/mailhookcard/${cardId}`);
-
-    if (res.data.success) {
-      toast.success("Mailhook deleted successfully!");
-      setMailhooks((prev) => prev.filter((m) => m._id !== cardId));
-    } else {
-      toast.error(res.data.message || "Failed to delete mailhook.");
-    }
-  } catch (err) {
-    console.error("Error deleting mailhook:", err);
-    toast.error("Server error while deleting mailhook.");
-  } finally {
-    setIsMailhookDeleteModalOpen(false);
-    setMailhookToDelete(null);
-  }
-};
 
   useEffect(() => {
     fetchConnections();
-    fetchMailhooks(); // 🟢 NEW: fetch mailhook data
+    fetchMailhooks();
   }, []);
   const [selectedMailhookId, setSelectedMailhookId] = useState(null);
 
@@ -119,11 +104,14 @@ const handleConfirmDeleteMailhook = async (cardId) => {
       const userId = localStorage.getItem("userid");
       if (!userId) return;
 
-      await axios.put(`https://email-syncing-backend.vercel.app/auth/setup/${userId}`, {
-        stepCompleted: 4,
-        setupCompleted: false,
-        skipped: false,
-      });
+      await axios.put(
+        `https://email-syncing-backend.vercel.app/auth/setup/${userId}`,
+        {
+          stepCompleted: 4,
+          setupCompleted: false,
+          skipped: false,
+        }
+      );
     } catch (err) {
       console.error("Error updating setup progress:", err);
       toast.error("Failed to update setup progress");
@@ -168,29 +156,31 @@ const handleConfirmDeleteMailhook = async (cardId) => {
     </div>
   );
   const [startAtStep3, setStartAtStep3] = useState(false);
-const handleDeleteMailhook = async (cardId) => {
-  if (!window.confirm("Are you sure you want to delete this mailhook?")) return;
+  const handleDeleteMailhook = async (cardId) => {
+    if (!window.confirm("Are you sure you want to delete this mailhook?"))
+      return;
 
-  try {
-    const res = await axios.delete(`https://email-syncing-backend.vercel.app/mailhookcard/${cardId}`);
+    try {
+      const res = await axios.delete(
+        `https://email-syncing-backend.vercel.app/mailhookcard/${cardId}`
+      );
 
-    if (res.data.success) {
-      toast.success("Mailhook deleted successfully!");
-      setMailhooks((prev) => prev.filter((m) => m._id !== cardId));
-    } else {
-      toast.error(res.data.message || "Failed to delete mailhook.");
+      if (res.data.success) {
+        toast.success("Mailhook deleted successfully!");
+        setMailhooks((prev) => prev.filter((m) => m._id !== cardId));
+      } else {
+        toast.error(res.data.message || "Failed to delete mailhook.");
+      }
+    } catch (err) {
+      console.error("Error deleting mailhook:", err);
+      toast.error("Server error while deleting mailhook.");
     }
-  } catch (err) {
-    console.error("Error deleting mailhook:", err);
-    toast.error("Server error while deleting mailhook.");
-  }
-};
+  };
 
   return (
     <div className="flex">
       <Sidebar />
       <div className="flex-1 flex flex-col md:ml-64 transition-all duration-300">
-        {/* Header */}
         <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 sm:p-6 bg-white border-b border-gray-200 sticky top-0 z-10">
           <h1 className="text-xl sm:text-2xl font-bold text-gray-800">
             Connections
@@ -236,7 +226,6 @@ const handleDeleteMailhook = async (cardId) => {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
-                  {/* 🟣 Mailhook Cards */}
                   {mailhooks.map((hook) => (
                     <div
                       key={hook._id}
@@ -265,7 +254,7 @@ const handleDeleteMailhook = async (cardId) => {
                         ) : (
                           <button
                             onClick={() => {
-                              setSelectedMailhookId(hook._id); // 🆕 store card id
+                              setSelectedMailhookId(hook._id);
                               setIsMailhookModalOpen(true);
                               setStartAtStep3(true);
                             }}
@@ -277,35 +266,33 @@ const handleDeleteMailhook = async (cardId) => {
                         )}
                       </div>
 
-                      {/* Footer */}
-                 <div className="mt-4 border-t pt-3 flex justify-between items-center text-xs sm:text-sm text-gray-600">
-  <span className="truncate">
-    Added on{" "}
-    {new Date(hook.createdAt).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    })}
-  </span>
+                      <div className="mt-4 border-t pt-3 flex justify-between items-center text-xs sm:text-sm text-gray-600">
+                        <span className="truncate">
+                          Added on{" "}
+                          {new Date(hook.createdAt).toLocaleDateString(
+                            "en-US",
+                            {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            }
+                          )}
+                        </span>
 
-  <button
-  onClick={() => {
-    setMailhookToDelete(hook);
-    setIsMailhookDeleteModalOpen(true);
-  }}
-  className="flex items-center space-x-1 text-red-600 hover:text-red-800 transition"
->
-  <FaTrashAlt className="h-4 w-4" />
-  <span>Delete</span>
-</button>
-
-</div>
-
-
+                        <button
+                          onClick={() => {
+                            setMailhookToDelete(hook);
+                            setIsMailhookDeleteModalOpen(true);
+                          }}
+                          className="flex items-center space-x-1 text-red-600 hover:text-red-800 transition"
+                        >
+                          <FaTrashAlt className="h-4 w-4" />
+                          <span>Delete</span>
+                        </button>
+                      </div>
                     </div>
                   ))}
 
-                  {/* 🔵 Gmail / Outlook Cards */}
                   {connections.map((conn) => (
                     <div
                       key={conn._id}
@@ -329,7 +316,6 @@ const handleDeleteMailhook = async (cardId) => {
                         </div>
                       </div>
 
-                      {/* Status Section */}
                       <div className="mt-4 flex flex-wrap justify-between items-center gap-3">
                         {conn.verifying ? (
                           <div className="flex items-center gap-2 text-blue-600 font-medium text-sm">
@@ -450,13 +436,13 @@ const handleDeleteMailhook = async (cardId) => {
         </main>
       </div>
       <ConfirmMailhookDeleteModal
-  isOpen={isMailhookDeleteModalOpen}
-  onClose={() => setIsMailhookDeleteModalOpen(false)}
-  mailhook={mailhookToDelete}
-  onDeleted={(deletedId) => {
-    setMailhooks((prev) => prev.filter((m) => m._id !== deletedId));
-  }}
-/>
+        isOpen={isMailhookDeleteModalOpen}
+        onClose={() => setIsMailhookDeleteModalOpen(false)}
+        mailhook={mailhookToDelete}
+        onDeleted={(deletedId) => {
+          setMailhooks((prev) => prev.filter((m) => m._id !== deletedId));
+        }}
+      />
       <MailhookConnectionModal
         isOpen={isMailhookModalOpen}
         onClose={() => {
