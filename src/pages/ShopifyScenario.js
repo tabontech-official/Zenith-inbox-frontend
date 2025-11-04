@@ -1567,7 +1567,7 @@ const [sidebarOpen, setSidebarOpen] = useState(false);
                 Configure your automation workflow
               </p>
             </div>
-            <div className="flex flex-wrap justify-end gap-3">
+<div className="flex flex-wrap justify-start gap-3">
               {/* <button
                 onClick={handleSaveScenario}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center text-sm"
