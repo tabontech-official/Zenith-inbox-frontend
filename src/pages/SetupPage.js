@@ -696,26 +696,25 @@ const SetupFlow = () => {
   }`}
       >
         <div className="flex flex-col items-center justify-center w-full max-w-3xl mx-auto ">
-          
-<div className="w-full flex items-center justify-center mb-4">
-  <FiMail className="text-[#4F46E5] text-2xl sm:text-3xl" />
-  <span className="font-semibold text-lg sm:text-xl text-[#111827] ml-2">
-    Zenith Inbox
-  </span>
-</div>
+          <div className="w-full flex items-center justify-center mb-4">
+            <FiMail className="text-[#4F46E5] text-2xl sm:text-3xl" />
+            <span className="font-semibold text-lg sm:text-xl text-[#111827] ml-2">
+              Zenith Inbox
+            </span>
+          </div>
 
-<div className="flex justify-center sm:hidden mt-6 mb-2">
-  <div className="bg-[#4F46E5] text-white px-4 py-2 rounded-full text-sm font-semibold shadow-md">
-    Step: {step}/5
-  </div>
-</div>
+          <div className="flex justify-center sm:hidden mt-6 mb-2">
+            <div className="bg-[#4F46E5] text-white px-4 py-2 rounded-full text-sm font-semibold shadow-md">
+              Step: {step}/5
+            </div>
+          </div>
 
-<div className="hidden sm:flex flex-wrap items-center justify-center gap-2 sm:gap-4 mt-6 mb-2">
-  {[1, 2, 3, 4, 5].map((num) => (
-    <React.Fragment key={num}>
-      <div className="flex flex-col items-center min-w-[2rem]">
-        <div
-          className={`flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full text-sm font-semibold transition-all duration-300
+          <div className="hidden sm:flex flex-wrap items-center justify-center gap-2 sm:gap-4 mt-6 mb-2">
+            {[1, 2, 3, 4, 5].map((num) => (
+              <React.Fragment key={num}>
+                <div className="flex flex-col items-center min-w-[2rem]">
+                  <div
+                    className={`flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full text-sm font-semibold transition-all duration-300
             ${
               step > num
                 ? "bg-green-500 text-white"
@@ -723,28 +722,32 @@ const SetupFlow = () => {
                 ? "bg-[#4F46E5] text-white shadow-md"
                 : "bg-gray-200 text-gray-500"
             }`}
-        >
-          {step > num ? <FiCheck className="text-white text-lg" /> : num}
-        </div>
+                  >
+                    {step > num ? (
+                      <FiCheck className="text-white text-lg" />
+                    ) : (
+                      num
+                    )}
+                  </div>
 
-        <span
-          className={`text-[11px] sm:text-xs mt-1 font-medium ${
-            step >= num ? "text-[#4F46E5]" : "text-gray-400"
-          }`}
-        >
-          Step {num}
-        </span>
-      </div>
+                  <span
+                    className={`text-[11px] sm:text-xs mt-1 font-medium ${
+                      step >= num ? "text-[#4F46E5]" : "text-gray-400"
+                    }`}
+                  >
+                    Step {num}
+                  </span>
+                </div>
 
-      {num < 5 && (
-        <div
-          className={`h-[2px] sm:h-[3px] w-8 sm:w-16 rounded-full transition-all duration-300 
+                {num < 5 && (
+                  <div
+                    className={`h-[2px] sm:h-[3px] w-8 sm:w-16 rounded-full transition-all duration-300 
             ${step > num ? "bg-[#4F46E5]" : "bg-gray-300"}`}
-        />
-      )}
-    </React.Fragment>
-  ))}
-</div>
+                  />
+                )}
+              </React.Fragment>
+            ))}
+          </div>
 
           <div className="w-full flex justify-center mt-10">
             {step === 1 && (
@@ -1615,7 +1618,6 @@ const SetupFlow = () => {
         )}
       </div>
 
-   
       <motion.button
         onClick={() => setShowMobileInstructions(true)}
         initial={{ opacity: 0, y: 40 }}
@@ -1721,7 +1723,7 @@ const InstructionPanel = ({
   }`}
     >
       {/* Toggle Button - Hide on Mobile */}
-      
+
       {!isMobile && (
         <button
           onClick={() => setIsExpanded((prev) => !prev)}

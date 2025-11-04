@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import Sidebar from "../component/Sidebar";
 import ConnectionModal from "../component/ConnectionModal";
 import OutlookConnectionModal from "../component/OutlookConnectionModal";
@@ -14,12 +14,18 @@ import {
 import axios from "axios";
 import toast from "react-hot-toast";
 import ConfirmDeleteModal from "../component/ConformationModel";
+import MailhookConnectionModal from "../component/MailhookConnectionModal";
+import { UserContext } from "../component/UserContext";
+import ConfirmMailhookDeleteModal from "../component/ConfirmMailhookDeleteModal";
 
 const ConnectionsPage = () => {
+  const { user } = useContext(UserContext);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isOutlookModalOpen, setIsOutlookModalOpen] = useState(false);
   const [connections, setConnections] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [mailhooks, setMailhooks] = useState([]); // 🟢 NEW
+  const [isMailhookModalOpen, setIsMailhookModalOpen] = useState(false);
 
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [connectionToDelete, setConnectionToDelete] = useState(null);
@@ -29,6 +35,22 @@ const ConnectionsPage = () => {
   const closeModal = () => setIsModalOpen(false);
   const openOutlookModal = () => setIsOutlookModalOpen(true);
   const closeOutlookModal = () => setIsOutlookModalOpen(false);
+
+  const fetchMailhooks = async () => {
+    try {
+      const userId = localStorage.getItem("userid");
+      if (!userId) return;
+
+      const res = await axios.get(
+        `https://email-syncing-backend.vercel.app/mailhookcard/${userId}`
+      );
+      if (res.data.success) {
+        setMailhooks(res.data.data);
+      }
+    } catch (err) {
+      console.error("Error fetching mailhooks:", err);
+    }
+  };
 
   const fetchConnections = async () => {
     try {
@@ -46,14 +68,11 @@ const ConnectionsPage = () => {
 
       if (connections.length > 0) {
         try {
-          await axios.put(
-            `https://email-syncing-backend.vercel.app/auth/setup/${userId}`,
-            {
-              stepCompleted: 4,
-              setupCompleted: true,
-              skipped: false,
-            }
-          );
+          await axios.put(`https://email-syncing-backend.vercel.app/auth/setup/${userId}`, {
+            stepCompleted: 4,
+            setupCompleted: true,
+            skipped: false,
+          });
           console.log(" Setup marked as completed because connection exists");
         } catch (apiErr) {
           console.error("Failed to auto-complete setup:", apiErr);
@@ -65,10 +84,32 @@ const ConnectionsPage = () => {
       setLoading(false);
     }
   };
+const [mailhookToDelete, setMailhookToDelete] = useState(null);
+const [isMailhookDeleteModalOpen, setIsMailhookDeleteModalOpen] = useState(false);
+const handleConfirmDeleteMailhook = async (cardId) => {
+  try {
+    const res = await axios.delete(`https://email-syncing-backend.vercel.app/mailhookcard/${cardId}`);
+
+    if (res.data.success) {
+      toast.success("Mailhook deleted successfully!");
+      setMailhooks((prev) => prev.filter((m) => m._id !== cardId));
+    } else {
+      toast.error(res.data.message || "Failed to delete mailhook.");
+    }
+  } catch (err) {
+    console.error("Error deleting mailhook:", err);
+    toast.error("Server error while deleting mailhook.");
+  } finally {
+    setIsMailhookDeleteModalOpen(false);
+    setMailhookToDelete(null);
+  }
+};
 
   useEffect(() => {
     fetchConnections();
+    fetchMailhooks(); // 🟢 NEW: fetch mailhook data
   }, []);
+  const [selectedMailhookId, setSelectedMailhookId] = useState(null);
 
   const handleConnectionAdded = async (newConn) => {
     toast.success(`${newConn.provider} connected successfully!`);
@@ -78,14 +119,11 @@ const ConnectionsPage = () => {
       const userId = localStorage.getItem("userid");
       if (!userId) return;
 
-      await axios.put(
-        `https://email-syncing-backend.vercel.app/auth/setup/${userId}`,
-        {
-          stepCompleted: 4,
-          setupCompleted: false,
-          skipped: false,
-        }
-      );
+      await axios.put(`https://email-syncing-backend.vercel.app/auth/setup/${userId}`, {
+        stepCompleted: 4,
+        setupCompleted: false,
+        skipped: false,
+      });
     } catch (err) {
       console.error("Error updating setup progress:", err);
       toast.error("Failed to update setup progress");
@@ -129,6 +167,24 @@ const ConnectionsPage = () => {
       </p>
     </div>
   );
+  const [startAtStep3, setStartAtStep3] = useState(false);
+const handleDeleteMailhook = async (cardId) => {
+  if (!window.confirm("Are you sure you want to delete this mailhook?")) return;
+
+  try {
+    const res = await axios.delete(`https://email-syncing-backend.vercel.app/mailhookcard/${cardId}`);
+
+    if (res.data.success) {
+      toast.success("Mailhook deleted successfully!");
+      setMailhooks((prev) => prev.filter((m) => m._id !== cardId));
+    } else {
+      toast.error(res.data.message || "Failed to delete mailhook.");
+    }
+  } catch (err) {
+    console.error("Error deleting mailhook:", err);
+    toast.error("Server error while deleting mailhook.");
+  }
+};
 
   return (
     <div className="flex">
@@ -142,9 +198,7 @@ const ConnectionsPage = () => {
 
           <div className="flex flex-wrap sm:flex-nowrap gap-3">
             <button
-              onClick={() =>
-                toast.success("Mailhook connection feature coming soon!")
-              }
+              onClick={() => setIsMailhookModalOpen(true)}
               className="flex items-center justify-center w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg shadow hover:from-green-600 hover:to-emerald-700 transition"
             >
               <FaEnvelope className="h-4 w-4 mr-2" />
@@ -171,146 +225,252 @@ const ConnectionsPage = () => {
         <main className="flex-1 p-4 sm:p-6 lg:p-8">
           {loading ? (
             <Loader />
-          ) : connections.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-gray-500">
-              <FaEnvelope className="h-12 w-12 text-gray-400 mb-3" />
-              <p className="text-lg text-center px-4 sm:px-0">
-                You haven’t created any connections yet.
-              </p>
-            </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
-              {connections.map((conn) => (
-                <div
-                  key={conn._id}
-                  className="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-lg transition p-5 flex flex-col justify-between"
-                >
-                  {/* Header */}
-                  <div className="flex items-center space-x-3">
-                    {providerIcon(conn.provider)}
-                    <div className="min-w-0">
-                      <h3 className="text-sm sm:text-base font-semibold text-gray-800 truncate flex items-center gap-2">
-                        {conn.email}
-                        {conn.verified ? (
-                          <FaCheckCircle className="text-green-500 text-xs" />
-                        ) : (
-                          <FaShieldAlt className="text-gray-400 text-xs" />
-                        )}
-                      </h3>
-                      <p className="text-xs text-gray-500 capitalize truncate">
-                        {conn.provider} connection
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Status Section */}
-                  <div className="mt-4 flex flex-wrap justify-between items-center gap-3">
-                    {conn.verifying ? (
-                      <div className="flex items-center gap-2 text-blue-600 font-medium text-sm">
-                        <FaSpinner className="animate-spin text-blue-600" />
-                        Verifying...
-                      </div>
-                    ) : conn.verified ? (
-                      <div className="flex items-center gap-2 text-green-600 font-semibold text-sm">
-                        <FaCheckCircle className="text-green-600" />
-                        Verified
-                      </div>
-                    ) : (
-                      <button
-                        onClick={async () => {
-                          try {
-                            const updated = connections.map((c) =>
-                              c._id === conn._id ? { ...c, verifying: true } : c
-                            );
-                            setConnections(updated);
-
-                            const res = await fetch(
-                              `https://email-syncing-backend.vercel.app/mailhook/verify`,
-                              {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({
-                                  connectionId: conn._id,
-                                }),
-                              }
-                            );
-
-                            const data = await res.json();
-
-                            if (data.success) {
-                              toast.success(
-                                `${conn.email} verified successfully!`
-                              );
-                              setConnections((prev) =>
-                                prev.map((c) =>
-                                  c._id === conn._id
-                                    ? { ...c, verified: true, verifying: false }
-                                    : c
-                                )
-                              );
-                            } else {
-                              toast.error(
-                                data.message || "Failed to verify connection"
-                              );
-                              setConnections((prev) =>
-                                prev.map((c) =>
-                                  c._id === conn._id
-                                    ? { ...c, verifying: false }
-                                    : c
-                                )
-                              );
-                            }
-                          } catch (err) {
-                            toast.error(
-                              "Verification error. Please try again."
-                            );
-                            setConnections((prev) =>
-                              prev.map((c) =>
-                                c._id === conn._id
-                                  ? { ...c, verifying: false }
-                                  : c
-                              )
-                            );
-                          }
-                        }}
-                        className="flex items-center gap-2 px-3 py-1.5 text-xs sm:text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 rounded-md hover:from-blue-700 hover:to-indigo-700 shadow-sm transition"
-                      >
-                        <FaShieldAlt className="text-white text-xs" />
-                        Verify
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Footer */}
-                  <div className="mt-4 border-t pt-3 flex justify-between items-center text-xs sm:text-sm text-gray-600">
-                    <span className="truncate">
-                      Added on{" "}
-                      {new Date(conn.createdAt).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
-                    </span>
-
-                    <button
-                      onClick={() => {
-                        setConnectionToDelete(conn);
-                        setDeleteModalOpen(true);
-                      }}
-                      className="flex items-center space-x-1 text-red-600 hover:text-red-800 transition"
-                    >
-                      <FaTrashAlt className="h-4 w-4" />
-                      <span>Delete</span>
-                    </button>
-                  </div>
+            <>
+              {mailhooks.length === 0 && connections.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 text-gray-500">
+                  <FaEnvelope className="h-12 w-12 text-gray-400 mb-3" />
+                  <p className="text-lg text-center px-4 sm:px-0">
+                    You haven’t created any connections yet.
+                  </p>
                 </div>
-              ))}
-            </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+                  {/* 🟣 Mailhook Cards */}
+                  {mailhooks.map((hook) => (
+                    <div
+                      key={hook._id}
+                      className="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-lg transition p-5 flex flex-col justify-between"
+                    >
+                      {/* Header */}
+                      <div className="flex items-center space-x-3">
+                        <FaEnvelope className="text-purple-600 h-6 w-6" />
+                        <div className="min-w-0">
+                          <h3 className="text-sm sm:text-base font-semibold text-gray-800 truncate">
+                            {hook.forwardingEmail}
+                          </h3>
+                          <p className="text-xs text-gray-500 truncate">
+                            Mailhook Connection
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Status Section */}
+                      <div className="mt-4 flex justify-between items-center gap-3">
+                        {hook.connectionVerified ? (
+                          <div className="flex items-center gap-2 text-green-600 font-semibold text-sm">
+                            <FaCheckCircle className="text-green-600" />
+                            Verified
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              setSelectedMailhookId(hook._id); // 🆕 store card id
+                              setIsMailhookModalOpen(true);
+                              setStartAtStep3(true);
+                            }}
+                            className="flex items-center gap-2 px-3 py-1.5 text-xs sm:text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 rounded-md hover:from-blue-700 hover:to-indigo-700 shadow-sm transition"
+                          >
+                            <FaShieldAlt className="text-white text-xs" />
+                            Verify
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Footer */}
+                 <div className="mt-4 border-t pt-3 flex justify-between items-center text-xs sm:text-sm text-gray-600">
+  <span className="truncate">
+    Added on{" "}
+    {new Date(hook.createdAt).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    })}
+  </span>
+
+  <button
+  onClick={() => {
+    setMailhookToDelete(hook);
+    setIsMailhookDeleteModalOpen(true);
+  }}
+  className="flex items-center space-x-1 text-red-600 hover:text-red-800 transition"
+>
+  <FaTrashAlt className="h-4 w-4" />
+  <span>Delete</span>
+</button>
+
+</div>
+
+
+                    </div>
+                  ))}
+
+                  {/* 🔵 Gmail / Outlook Cards */}
+                  {connections.map((conn) => (
+                    <div
+                      key={conn._id}
+                      className="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-lg transition p-5 flex flex-col justify-between"
+                    >
+                      {/* Header */}
+                      <div className="flex items-center space-x-3">
+                        {providerIcon(conn.provider)}
+                        <div className="min-w-0">
+                          <h3 className="text-sm sm:text-base font-semibold text-gray-800 truncate flex items-center gap-2">
+                            {conn.email}
+                            {conn.verified ? (
+                              <FaCheckCircle className="text-green-500 text-xs" />
+                            ) : (
+                              <FaShieldAlt className="text-gray-400 text-xs" />
+                            )}
+                          </h3>
+                          <p className="text-xs text-gray-500 capitalize truncate">
+                            {conn.provider} Connection
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Status Section */}
+                      <div className="mt-4 flex flex-wrap justify-between items-center gap-3">
+                        {conn.verifying ? (
+                          <div className="flex items-center gap-2 text-blue-600 font-medium text-sm">
+                            <FaSpinner className="animate-spin text-blue-600" />
+                            Verifying...
+                          </div>
+                        ) : conn.verified ? (
+                          <div className="flex items-center gap-2 text-green-600 font-semibold text-sm">
+                            <FaCheckCircle className="text-green-600" />
+                            Verified
+                          </div>
+                        ) : (
+                          <button
+                            onClick={async () => {
+                              try {
+                                const updated = connections.map((c) =>
+                                  c._id === conn._id
+                                    ? { ...c, verifying: true }
+                                    : c
+                                );
+                                setConnections(updated);
+
+                                const res = await fetch(
+                                  `https://email-syncing-backend.vercel.app/mailhook/verify`,
+                                  {
+                                    method: "POST",
+                                    headers: {
+                                      "Content-Type": "application/json",
+                                    },
+                                    body: JSON.stringify({
+                                      connectionId: conn._id,
+                                    }),
+                                  }
+                                );
+
+                                const data = await res.json();
+
+                                if (data.success) {
+                                  toast.success(
+                                    `${conn.email} verified successfully!`
+                                  );
+                                  setConnections((prev) =>
+                                    prev.map((c) =>
+                                      c._id === conn._id
+                                        ? {
+                                            ...c,
+                                            verified: true,
+                                            verifying: false,
+                                          }
+                                        : c
+                                    )
+                                  );
+                                } else {
+                                  toast.error(
+                                    data.message ||
+                                      "Failed to verify connection"
+                                  );
+                                  setConnections((prev) =>
+                                    prev.map((c) =>
+                                      c._id === conn._id
+                                        ? { ...c, verifying: false }
+                                        : c
+                                    )
+                                  );
+                                }
+                              } catch (err) {
+                                toast.error(
+                                  "Verification error. Please try again."
+                                );
+                                setConnections((prev) =>
+                                  prev.map((c) =>
+                                    c._id === conn._id
+                                      ? { ...c, verifying: false }
+                                      : c
+                                  )
+                                );
+                              }
+                            }}
+                            className="flex items-center gap-2 px-3 py-1.5 text-xs sm:text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 rounded-md hover:from-blue-700 hover:to-indigo-700 shadow-sm transition"
+                          >
+                            <FaShieldAlt className="text-white text-xs" />
+                            Verify
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Footer */}
+                      <div className="mt-4 border-t pt-3 flex justify-between items-center text-xs sm:text-sm text-gray-600">
+                        <span className="truncate">
+                          Added on{" "}
+                          {new Date(conn.createdAt).toLocaleDateString(
+                            "en-US",
+                            {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            }
+                          )}
+                        </span>
+
+                        <button
+                          onClick={() => {
+                            setConnectionToDelete(conn);
+                            setDeleteModalOpen(true);
+                          }}
+                          className="flex items-center space-x-1 text-red-600 hover:text-red-800 transition"
+                        >
+                          <FaTrashAlt className="h-4 w-4" />
+                          <span>Delete</span>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </main>
       </div>
+      <ConfirmMailhookDeleteModal
+  isOpen={isMailhookDeleteModalOpen}
+  onClose={() => setIsMailhookDeleteModalOpen(false)}
+  mailhook={mailhookToDelete}
+  onDeleted={(deletedId) => {
+    setMailhooks((prev) => prev.filter((m) => m._id !== deletedId));
+  }}
+/>
+      <MailhookConnectionModal
+        isOpen={isMailhookModalOpen}
+        onClose={() => {
+          setIsMailhookModalOpen(false);
+          setStartAtStep3(false);
+          setSelectedMailhookId(null);
+          fetchMailhooks();
+        }}
+        user={{ _id: localStorage.getItem("userid"), mailhook: user?.mailhook }}
+        startAtStep3={startAtStep3}
+        cardId={selectedMailhookId}
+        onMailhookUpdated={fetchMailhooks}
+      />
 
-      {/* Connection Modals */}
       <ConnectionModal
         isOpen={isModalOpen}
         onClose={() => {
