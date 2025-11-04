@@ -681,7 +681,7 @@ const SetupFlow = () => {
     <div className="relative min-h-screen bg-[#F9FAFB] overflow-hidden">
       <button
         onClick={() => setShowMobileInstructions(true)}
-        className="fixed bottom-6 right-6 z-40 bg-[#4F46E5] text-white p-3 rounded-full shadow-lg hover:bg-[#4338CA] transition lg:hidden"
+        className="fixed top-6 right-6 z-40 bg-[#4F46E5] text-white p-3 rounded-full shadow-lg hover:bg-[#4338CA] transition lg:hidden"
       >
         <FiInfo className="text-xl" />
       </button>
@@ -696,19 +696,26 @@ const SetupFlow = () => {
   }`}
       >
         <div className="flex flex-col items-center justify-center w-full max-w-3xl mx-auto ">
-          <div className="w-full flex items-center justify-center mb-4">
-            <FiMail className="text-[#4F46E5] text-2xl sm:text-3xl" />
-            <span className="font-semibold text-lg sm:text-xl text-[#111827] ml-2">
-              Zenith Inbox
-            </span>
-          </div>
+          
+<div className="w-full flex items-center justify-center mb-4">
+  <FiMail className="text-[#4F46E5] text-2xl sm:text-3xl" />
+  <span className="font-semibold text-lg sm:text-xl text-[#111827] ml-2">
+    Zenith Inbox
+  </span>
+</div>
 
-          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 mt-6 mb-2">
-            {[1, 2, 3, 4, 5].map((num) => (
-              <React.Fragment key={num}>
-                <div className="flex flex-col items-center min-w-[2rem]">
-                  <div
-                    className={`flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full text-sm font-semibold transition-all duration-300
+<div className="flex justify-center sm:hidden mt-6 mb-2">
+  <div className="bg-[#4F46E5] text-white px-4 py-2 rounded-full text-sm font-semibold shadow-md">
+    Step: {step}/5
+  </div>
+</div>
+
+<div className="hidden sm:flex flex-wrap items-center justify-center gap-2 sm:gap-4 mt-6 mb-2">
+  {[1, 2, 3, 4, 5].map((num) => (
+    <React.Fragment key={num}>
+      <div className="flex flex-col items-center min-w-[2rem]">
+        <div
+          className={`flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full text-sm font-semibold transition-all duration-300
             ${
               step > num
                 ? "bg-green-500 text-white"
@@ -716,32 +723,28 @@ const SetupFlow = () => {
                 ? "bg-[#4F46E5] text-white shadow-md"
                 : "bg-gray-200 text-gray-500"
             }`}
-                  >
-                    {step > num ? (
-                      <FiCheck className="text-white text-base sm:text-lg" />
-                    ) : (
-                      num
-                    )}
-                  </div>
+        >
+          {step > num ? <FiCheck className="text-white text-lg" /> : num}
+        </div>
 
-                  <span
-                    className={`text-[11px] sm:text-xs mt-1 font-medium ${
-                      step >= num ? "text-[#4F46E5]" : "text-gray-400"
-                    }`}
-                  >
-                    Step {num}
-                  </span>
-                </div>
+        <span
+          className={`text-[11px] sm:text-xs mt-1 font-medium ${
+            step >= num ? "text-[#4F46E5]" : "text-gray-400"
+          }`}
+        >
+          Step {num}
+        </span>
+      </div>
 
-                {num < 5 && (
-                  <div
-                    className={`h-[2px] sm:h-[3px] w-8 sm:w-16 rounded-full transition-all duration-300 
+      {num < 5 && (
+        <div
+          className={`h-[2px] sm:h-[3px] w-8 sm:w-16 rounded-full transition-all duration-300 
             ${step > num ? "bg-[#4F46E5]" : "bg-gray-300"}`}
-                  />
-                )}
-              </React.Fragment>
-            ))}
-          </div>
+        />
+      )}
+    </React.Fragment>
+  ))}
+</div>
 
           <div className="w-full flex justify-center mt-10">
             {step === 1 && (
@@ -1444,7 +1447,7 @@ const SetupFlow = () => {
             )}
 
             {step === 5 && (
-              <div className="bg-white shadow-md rounded-xl p-8 sm:p-10 max-w-2xl w-[90%] text-left mx-auto">
+              <div className="bg-white shadow-md rounded-xl px-3 py-2 sm:p-10 max-w-2xl w-[90%] text-left mx-auto">
                 <h2 className="text-2xl font-bold text-[#111827] text-center mb-2">
                   Review &amp; Go Live
                 </h2>
@@ -1612,37 +1615,7 @@ const SetupFlow = () => {
         )}
       </div>
 
-      {/* {showMobileInstructions && (
-    <div className="fixed inset-0 z-50 flex lg:hidden">
-      <div
-        onClick={() => setShowMobileInstructions(false)}
-        className="absolute inset-0 bg-black bg-opacity-40 transition-opacity"
-      ></div>
-
-       <div className="relative ml-auto w-[90%] sm:w-[400px] h-full bg-white shadow-2xl transform transition-transform duration-300">
-        <div className="flex justify-between items-center p-4 border-b">
-          <h3 className="text-lg font-semibold text-[#111827] flex items-center gap-2">
-            <FiInfo className="text-[#4F46E5]" /> Setup Guidance
-          </h3>
-          <button
-            onClick={() => setShowMobileInstructions(false)}
-            className="text-gray-600 hover:text-gray-800"
-          >
-            <FiX className="text-xl" />
-          </button>
-        </div>
-
-        <div className="overflow-y-auto h-[calc(100%-4rem)] p-4">
-          <InstructionPanel
-            step={step}
-            isExpanded={true}
-            setIsExpanded={() => {}}
-            isMobile={true}
-          />
-        </div>
-      </div>
-    </div>
-  )} */}
+   
       <motion.button
         onClick={() => setShowMobileInstructions(true)}
         initial={{ opacity: 0, y: 40 }}
@@ -1650,7 +1623,7 @@ const SetupFlow = () => {
         transition={{ duration: 0.6, ease: "easeOut" }}
         whileHover={{ scale: 1.08 }}
         whileTap={{ scale: 0.95 }}
-        className="fixed bottom-6 right-6 z-40 bg-[#4F46E5] text-white p-3 rounded-full shadow-lg hover:bg-[#4338CA] transition lg:hidden flex items-center justify-center"
+        className="fixed top-6 right-6 z-40 bg-[#4F46E5] text-white p-3 rounded-full shadow-lg hover:bg-[#4338CA] transition lg:hidden flex items-center justify-center"
       >
         <motion.div
           animate={{ scale: [1, 1.15, 1] }}
@@ -1748,15 +1721,7 @@ const InstructionPanel = ({
   }`}
     >
       {/* Toggle Button - Hide on Mobile */}
-      {/* {!isMobile && (
-        <button
-          onClick={() => setIsExpanded((prev) => !prev)}
-          className="absolute left-0 top-1/2 transform -translate-y-1/2 translate-x-1/2 
-          bg-[#4F46E5] text-white rounded-full p-2 shadow-md hover:bg-[#4338CA] transition-all z-30"
-        >
-          {isExpanded ? <FiArrowRight /> : <FiArrowLeft />}
-        </button>
-      )} */}
+      
       {!isMobile && (
         <button
           onClick={() => setIsExpanded((prev) => !prev)}
