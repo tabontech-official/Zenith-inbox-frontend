@@ -54,7 +54,14 @@ const MailhookWaitingTimer = ({ message }) => {
   );
 };
 
-const MailhookConnectionModal = ({ isOpen, onClose, user, startAtStep3 = false, cardId,onMailhookUpdated,   }) => {
+const MailhookConnectionModal = ({
+  isOpen,
+  onClose,
+  user,
+  startAtStep3 = false,
+  cardId,
+  onMailhookUpdated,
+}) => {
   const [step, setStep] = useState(1);
   const [validating, setValidating] = useState(false);
   const [validated, setValidated] = useState(false);
@@ -64,7 +71,7 @@ const MailhookConnectionModal = ({ isOpen, onClose, user, startAtStep3 = false, 
   const [verificationEmail, setVerificationEmail] = useState(null);
   const [retryKey, setRetryKey] = useState(0);
   const [retrying, setRetrying] = useState(false);
-    const [alert, setAlert] = useState({ type: "", message: "" });
+  const [alert, setAlert] = useState({ type: "", message: "" });
   useEffect(() => {
     if (alert.message) {
       const timer = setTimeout(() => setAlert({ type: "", message: "" }), 4000);
@@ -84,11 +91,11 @@ const MailhookConnectionModal = ({ isOpen, onClose, user, startAtStep3 = false, 
         {alert.message}
       </div>
     ) : null;
-useEffect(() => {
-  if (isOpen) {
-    setStep(startAtStep3 ? 3 : 1); 
-  }
-}, [isOpen, startAtStep3]);
+  useEffect(() => {
+    if (isOpen) {
+      setStep(startAtStep3 ? 3 : 1);
+    }
+  }, [isOpen, startAtStep3]);
 
   useEffect(() => {
     if (step !== 3 || !user?._id) return;
@@ -193,113 +200,115 @@ useEffect(() => {
   }, [step, user, retryKey]);
 
   const handleValidateForwarding = async () => {
-  try {
-    if (!verificationEmail?.toEmail?.trim()) {
-      setAlert({ type: "error", message: "Please enter your forwarding email first." });
-      return;
-    }
-
-    setValidating(true);
-    setValidated(false);
-    setValidationFailed(false);
-    setValidationPhase(true);
-    setShowValidateButton(false);
-
-    // 1️⃣ Send test email
-    const res = await fetch(
-      `https://email-syncing-backend.vercel.app/mailhook/validate-forwarding/${user._id}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ toEmail: verificationEmail.toEmail }),
+    try {
+      if (!verificationEmail?.toEmail?.trim()) {
+        setAlert({
+          type: "error",
+          message: "Please enter your forwarding email first.",
+        });
+        return;
       }
-    );
 
-    const data = await res.json();
+      setValidating(true);
+      setValidated(false);
+      setValidationFailed(false);
+      setValidationPhase(true);
+      setShowValidateButton(false);
 
-    if (!data.success) {
-      setAlert({
-        type: "error",
-        message: data.message || "Forwarding setup failed.",
-      });
-      setValidating(false);
-      setValidationPhase(false);
-      setShowValidateButton(true);
-      return;
-    }
-
-    setAlert({
-      type: "success",
-      message: "Validation started — checking for forwarded email…",
-    });
-
-    // 2️⃣ Loop to verify
-    let attempts = 0;
-    const loop = async () => {
-      attempts++;
-
+      // 1️⃣ Send test email
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/mailhook/validateTest/${user._id}?cardId=${cardId}`,
+        `https://email-syncing-backend.vercel.app/mailhook/validate-forwarding/${user._id}`,
         {
-          method: "GET",
+          method: "POST",
           headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ toEmail: verificationEmail.toEmail }),
         }
       );
 
-      const json = await res.json();
+      const data = await res.json();
 
-     if (json.success) {
-  await axios.post("https://email-syncing-backend.vercel.app/mailhookcard/create", {
-    userId: user._id,
-    forwardingEmail: verificationEmail.toEmail,
-  });
-
-  // 🆕 Call parent callback to refresh Mailhooks
-  if (onMailhookUpdated) onMailhookUpdated();
-
-  setAlert({
-    type: "success",
-    message: "Mailhook verified successfully!",
-  });
-  setValidated(true);
-  setValidating(false);
-  setValidationPhase(false);
-  return;
-}
-
-
-      if (attempts < 5) {
-        setTimeout(loop, 10000);
-      } else {
-        setValidationPhase(false);
-        setValidating(false);
-        setValidationFailed(true);
-        setShowValidateButton(true);
-
+      if (!data.success) {
         setAlert({
           type: "error",
-          message:
-            "Your email forwarding is not set up properly. Please check your Gmail forwarding settings and try again.",
+          message: data.message || "Forwarding setup failed.",
         });
+        setValidating(false);
+        setValidationPhase(false);
+        setShowValidateButton(true);
+        return;
       }
-    };
 
-    loop();
-  } catch (err) {
-    console.error(err);
-    setAlert({
-      type: "error",
-      message: "Error during validation process.",
-    });
-    setValidating(false);
-    setValidationPhase(false);
-    setValidationFailed(true);
-    setShowValidateButton(true);
-  }
-};
+      setAlert({
+        type: "success",
+        message: "Validation started — checking for forwarded email…",
+      });
 
+      let attempts = 0;
+      const loop = async () => {
+        attempts++;
 
+        const res = await fetch(
+          `https://email-syncing-backend.vercel.app/mailhook/validateTest/${user._id}?cardId=${cardId}`,
+          {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+          }
+        );
 
+        const json = await res.json();
+
+        if (json.success) {
+          await axios.post(
+            "https://email-syncing-backend.vercel.app/mailhookcard/create",
+            {
+              userId: user._id,
+              forwardingEmail: verificationEmail.toEmail,
+            }
+          );
+
+          if (onMailhookUpdated) onMailhookUpdated();
+
+          setAlert({
+            type: "success",
+            message: "Mailhook verified successfully!",
+          });
+          setValidated(true);
+          setValidating(false);
+          setValidationPhase(false);
+          onClose();
+
+          return;
+        }
+
+        if (attempts < 5) {
+          setTimeout(loop, 10000);
+        } else {
+          setValidationPhase(false);
+          setValidating(false);
+          setValidationFailed(true);
+          setShowValidateButton(true);
+
+          setAlert({
+            type: "error",
+            message:
+              "Your email forwarding is not set up properly. Please check your Gmail forwarding settings and try again.",
+          });
+        }
+      };
+
+      loop();
+    } catch (err) {
+      console.error(err);
+      setAlert({
+        type: "error",
+        message: "Error during validation process.",
+      });
+      setValidating(false);
+      setValidationPhase(false);
+      setValidationFailed(true);
+      setShowValidateButton(true);
+    }
+  };
 
   if (!isOpen) return null;
 
