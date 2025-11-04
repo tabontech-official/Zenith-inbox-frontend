@@ -68,13 +68,15 @@ const Profile = () => {
     );
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <div className="w-64 border-r bg-white">
+    <div className="flex min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 font-inter">
+  
         <Sidebar />
-      </div>
 
-      <div className="flex-1 flex flex-col">
-        <Navbar />
+      <div className="flex-1 flex flex-col md:ml-64 transition-all duration-300">
+           <div className="hidden sm:block">
+          <Navbar />
+        </div>
+        
 
         <div className="flex-1 p-10">
           <div className="bg-white rounded-xl shadow-lg p-10 max-w-4xl mx-auto">

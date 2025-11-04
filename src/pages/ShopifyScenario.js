@@ -1546,29 +1546,28 @@ const ShopifyScenariosPage = () => {
       );
     }
   }, [routerBranches]);
+const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <div className="w-64">
+    <div className="flex min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 font-inter">
         <Sidebar />
-      </div>
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="bg-white border-b px-6 py-4 shadow-sm">
-          <div className="flex items-center justify-between">
+        <div className="bg-white border-b px-4 sm:px-6 py-4 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex-1">
               <input
                 type="text"
                 value={scenarioName}
                 onChange={(e) => setScenarioName(e.target.value)}
-                className="text-xl font-semibold text-gray-800 border-none outline-none focus:ring-0 w-full"
+                className="text-lg sm:text-xl font-semibold text-gray-800 border-none outline-none focus:ring-0 w-full"
                 placeholder="Scenario Name"
               />
               <p className="text-sm text-gray-500 mt-1">
                 Configure your automation workflow
               </p>
             </div>
-            <div className="flex items-center flex-wrap gap-3">
+            <div className="flex flex-wrap justify-end gap-3">
               {/* <button
                 onClick={handleSaveScenario}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center text-sm"
@@ -1577,7 +1576,7 @@ const ShopifyScenariosPage = () => {
               </button> */}
               <button
                 onClick={handleSaveScenario}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center text-sm"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
               >
                 {editingMode === "update" || scenarioId
                   ? "Update Scenario"
@@ -1592,8 +1591,8 @@ const ShopifyScenariosPage = () => {
                 Run Test
               </button>
 
-              <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-full shadow-sm border ml-2">
-                <span className="text-sm font-medium text-gray-700">
+              <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-full shadow-sm border">
+                <span className="text-xs sm:text-sm font-medium text-gray-700">
                   Activate Scenario
                 </span>
 
@@ -1728,8 +1727,8 @@ const ShopifyScenariosPage = () => {
                     className="sr-only peer"
                   />
 
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:ring-2 peer-focus:ring-indigo-300 rounded-full peer-checked:bg-indigo-600 transition-all"></div>
-                  <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm peer-checked:translate-x-5 transition-transform"></div>
+                  <div className="w-10 h-5 bg-gray-200 peer-checked:bg-indigo-600 rounded-full transition-all"></div>
+                  <div className="absolute left-1 top-1 w-3.5 h-3.5 bg-white rounded-full shadow-sm peer-checked:translate-x-5 transition-transform"></div>
                 </label>
 
                 <span

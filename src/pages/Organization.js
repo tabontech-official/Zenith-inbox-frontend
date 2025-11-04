@@ -596,15 +596,14 @@ const Organization = () => {
 
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 font-inter">
-      {/* Sidebar */}
       <Sidebar />
 
-      {/* Main content area */}
       <div className="flex-1 flex flex-col md:ml-64 transition-all duration-300">
-        <Navbar />
+        <div className="hidden sm:block">
+          <Navbar />
+        </div>
 
         <main className="flex-1 p-6 sm:p-8 overflow-auto">
-          {/* Header */}
           <motion.div
             className="flex flex-col sm:flex-row justify-between sm:items-center mb-10"
             initial={{ opacity: 0, y: -20 }}
@@ -621,7 +620,6 @@ const Organization = () => {
             </div>
           </motion.div>
 
-          {/* Stats Cards */}
           <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-10">
             {statCards.map((item, i) => (
               <motion.div
@@ -641,7 +639,6 @@ const Organization = () => {
             ))}
           </section>
 
-          {/* Recent Scenarios */}
           <motion.div
             className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-10"
             initial={{ opacity: 0 }}
@@ -673,7 +670,10 @@ const Organization = () => {
                 <tbody>
                   {scenariosLoading ? (
                     <tr>
-                      <td colSpan={4} className="py-8 text-center text-gray-500">
+                      <td
+                        colSpan={4}
+                        className="py-8 text-center text-gray-500"
+                      >
                         Loading scenarios...
                       </td>
                     </tr>
@@ -734,9 +734,7 @@ const Organization = () => {
             </div>
           </motion.div>
 
-          {/* Emails + Quick Actions */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Recent Emails */}
             <motion.div
               className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
               initial={{ opacity: 0 }}
@@ -853,7 +851,6 @@ const Organization = () => {
               </div>
             </motion.div>
 
-            {/* Quick Actions */}
             <motion.div
               className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
               initial={{ opacity: 0 }}

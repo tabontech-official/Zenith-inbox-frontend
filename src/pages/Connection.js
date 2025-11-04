@@ -98,65 +98,69 @@ const ConnectionsPage = () => {
   return (
     <div className="flex">
       <Sidebar />
-      <div className="ml-64 flex-1 min-h-screen bg-gray-50 font-sans text-gray-800">
-        <header className="flex items-center justify-between p-6 bg-white border-b border-gray-200 sticky top-0 z-10">
-          <h1 className="text-2xl font-bold text-gray-800">Connections</h1>
-          <div className="flex space-x-3">
+     <div className="flex-1 flex flex-col md:ml-64 transition-all duration-300">
+        {/* Header */}
+        <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 sm:p-6 bg-white border-b border-gray-200 sticky top-0 z-10">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-800">
+            Connections
+          </h1>
+
+          <div className="flex flex-wrap sm:flex-nowrap gap-3">
             <button
               onClick={openModal}
-              className="flex items-center px-5 py-2 text-sm font-semibold text-white bg-gradient-to-r from-red-500 to-pink-600 rounded-lg shadow hover:from-red-600 hover:to-pink-700 focus:outline-none transition"
+              className="flex items-center justify-center w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-red-500 to-pink-600 rounded-lg shadow hover:from-red-600 hover:to-pink-700 transition"
             >
-              <FaGoogle className="h-5 w-5 mr-2" />
+              <FaGoogle className="h-4 w-4 mr-2" />
               Connect Gmail
             </button>
 
             <button
               onClick={openOutlookModal}
-              className="flex items-center px-5 py-2 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg shadow hover:from-blue-700 hover:to-indigo-700 focus:outline-none transition"
+              className="flex items-center justify-center w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg shadow hover:from-blue-700 hover:to-indigo-700 transition"
             >
-              <FaMicrosoft className="h-5 w-5 mr-2" />
+              <FaMicrosoft className="h-4 w-4 mr-2" />
               Connect Outlook
             </button>
           </div>
         </header>
 
-        <main className="container mx-auto p-8">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8">
           {loading ? (
             <Loader />
           ) : connections.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-gray-500">
               <FaEnvelope className="h-12 w-12 text-gray-400 mb-3" />
-              <p className="text-lg">
+              <p className="text-lg text-center px-4 sm:px-0">
                 You haven’t created any connections yet.
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
               {connections.map((conn) => (
                 <div
                   key={conn._id}
-                  className="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-lg transition p-5 relative"
+                  className="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-lg transition p-5 flex flex-col justify-between"
                 >
+                  {/* Header */}
                   <div className="flex items-center space-x-3">
-                    <div className="flex-shrink-0">
-                      {providerIcon(conn.provider)}
-                    </div>
-                    <div>
-                      <h3 className="text-base font-semibold text-gray-800 truncate flex items-center gap-2">
+                    {providerIcon(conn.provider)}
+                    <div className="min-w-0">
+                      <h3 className="text-sm sm:text-base font-semibold text-gray-800 truncate flex items-center gap-2">
                         {conn.email}
                         {conn.verified ? (
-                          <FaCheckCircle className="text-green-500 text-sm" />
+                          <FaCheckCircle className="text-green-500 text-xs" />
                         ) : (
-                          <FaShieldAlt className="text-gray-400 text-sm" />
+                          <FaShieldAlt className="text-gray-400 text-xs" />
                         )}
                       </h3>
-                      <p className="text-xs text-gray-500 capitalize">
+                      <p className="text-xs text-gray-500 capitalize truncate">
                         {conn.provider} connection
                       </p>
                     </div>
                   </div>
 
-                  <div className="mt-4 flex justify-between items-center">
+                  {/* Status Section */}
+                  <div className="mt-4 flex flex-wrap justify-between items-center gap-3">
                     {conn.verifying ? (
                       <div className="flex items-center gap-2 text-blue-600 font-medium text-sm">
                         <FaSpinner className="animate-spin text-blue-600" />
@@ -171,13 +175,12 @@ const ConnectionsPage = () => {
                       <button
                         onClick={async () => {
                           try {
-                            setConnections((prev) =>
-                              prev.map((c) =>
-                                c._id === conn._id
-                                  ? { ...c, verifying: true }
-                                  : c
-                              )
+                            const updated = connections.map((c) =>
+                              c._id === conn._id
+                                ? { ...c, verifying: true }
+                                : c
                             );
+                            setConnections(updated);
 
                             const res = await fetch(
                               `https://email-syncing-backend.vercel.app/mailhook/verify`,
@@ -228,17 +231,17 @@ const ConnectionsPage = () => {
                             );
                           }
                         }}
-                        className="flex items-center gap-2 px-4 py-1.5 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 rounded-md hover:from-blue-700 hover:to-indigo-700 shadow-sm transition"
+                        className="flex items-center gap-2 px-3 py-1.5 text-xs sm:text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 rounded-md hover:from-blue-700 hover:to-indigo-700 shadow-sm transition"
                       >
-                        <FaShieldAlt className="text-white text-sm" />
+                        <FaShieldAlt className="text-white text-xs" />
                         Verify
                       </button>
                     )}
                   </div>
 
-                  {/* 🔻 Footer */}
-                  <div className="mt-4 border-t pt-3 flex justify-between items-center text-sm text-gray-600">
-                    <span>
+                  {/* Footer */}
+                  <div className="mt-4 border-t pt-3 flex justify-between items-center text-xs sm:text-sm text-gray-600">
+                    <span className="truncate">
                       Added on{" "}
                       {new Date(conn.createdAt).toLocaleDateString("en-US", {
                         month: "short",

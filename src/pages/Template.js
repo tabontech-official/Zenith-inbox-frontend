@@ -65,50 +65,51 @@ export default function Template() {
   useEffect(() => {
     fetchTemplates();
   }, []);
-const [selectedSequenceFilter, setSelectedSequenceFilter] = useState("All");
+  const [selectedSequenceFilter, setSelectedSequenceFilter] = useState("All");
 
   // 🟢 Filter Templates whenever dropdown changes
-useEffect(() => {
-  let filtered = [...templates];
+  useEffect(() => {
+    let filtered = [...templates];
 
-  // 🟣 If "viewType" exists (like Initial Email, First Follow-up, etc.)
-  if (viewType) {
-    const lowerView = viewType.toLowerCase();
+    // 🟣 If "viewType" exists (like Initial Email, First Follow-up, etc.)
+    if (viewType) {
+      const lowerView = viewType.toLowerCase();
 
-    // Step 1: Filter by sequence (Initial / First / Second)
-    filtered = filtered.filter((t) => {
-      const name = t.name?.toLowerCase() || "";
-      if (lowerView.includes("initial")) return name.includes("initial");
-      if (lowerView.includes("first")) return name.includes("first");
-      if (lowerView.includes("second")) return name.includes("second");
-      return false;
-    });
+      // Step 1: Filter by sequence (Initial / First / Second)
+      filtered = filtered.filter((t) => {
+        const name = t.name?.toLowerCase() || "";
+        if (lowerView.includes("initial")) return name.includes("initial");
+        if (lowerView.includes("first")) return name.includes("first");
+        if (lowerView.includes("second")) return name.includes("second");
+        return false;
+      });
 
-    // Step 2: If user selects a service manually → filter inside same sequence
-    if (selectedServiceFilter !== "All") {
-      filtered = filtered.filter(
-        (t) => t.service?.toLowerCase() === selectedServiceFilter.toLowerCase()
-      );
+      // Step 2: If user selects a service manually → filter inside same sequence
+      if (selectedServiceFilter !== "All") {
+        filtered = filtered.filter(
+          (t) =>
+            t.service?.toLowerCase() === selectedServiceFilter.toLowerCase()
+        );
+      }
+
+      setFilteredTemplates(filtered);
+      return;
     }
 
-    setFilteredTemplates(filtered);
-    return;
-  }
-
-  // 🟡 Normal filters (when not viewing a specific sequence)
-  if (selectedServiceFilter === "All") {
-    setFilteredTemplates(templates);
-    navigate("/templates");
-  } else {
-    filtered = templates.filter(
-      (t) => t.service?.toLowerCase() === selectedServiceFilter.toLowerCase()
-    );
-    setFilteredTemplates(filtered);
-    navigate(`/templates?service=${encodeURIComponent(selectedServiceFilter)}`);
-  }
-}, [selectedServiceFilter, templates, viewType]);
-
-
+    // 🟡 Normal filters (when not viewing a specific sequence)
+    if (selectedServiceFilter === "All") {
+      setFilteredTemplates(templates);
+      navigate("/templates");
+    } else {
+      filtered = templates.filter(
+        (t) => t.service?.toLowerCase() === selectedServiceFilter.toLowerCase()
+      );
+      setFilteredTemplates(filtered);
+      navigate(
+        `/templates?service=${encodeURIComponent(selectedServiceFilter)}`
+      );
+    }
+  }, [selectedServiceFilter, templates, viewType]);
 
   const formatSequenceName = (name = "") => {
     const lower = name.toLowerCase();
@@ -265,7 +266,6 @@ useEffect(() => {
     <div className="flex">
       <Sidebar />
       <div className="flex-1 min-h-screen bg-gray-50 lg:ml-64">
-        {/* HEADER */}
         <header className="flex items-center justify-between px-8 py-5 bg-white border-b shadow-sm">
           <div>
             <h1 className="text-2xl font-semibold text-gray-800 tracking-tight">
@@ -276,7 +276,6 @@ useEffect(() => {
             </p>
           </div>
 
-          {/* Global Toggle */}
           <div className="flex items-center gap-3">
             <span className="text-sm font-medium text-gray-700">
               All Templates
@@ -301,33 +300,30 @@ useEffect(() => {
           </div>
         </header>
 
-        {/* FILTER BAR */}
-       {/* FILTER BAR */}
-<div className="flex flex-wrap items-center justify-between px-8 py-4 bg-white border-b gap-4">
-  <div className="flex items-center gap-4 flex-wrap">
-    {/* Service Filter */}
-    <div className="flex items-center gap-2">
-      <label className="text-sm font-medium text-gray-700">
-        Filter by Service:
-      </label>
-      <select
-        value={selectedServiceFilter}
-        onChange={(e) => setSelectedServiceFilter(e.target.value)}
-        className="border border-gray-300 rounded-lg px-3 py-1 text-sm focus:ring-2 focus:ring-purple-500"
-      >
-        <option value="All">All Services</option>
-        {[...new Set(templates.map((t) => t.service).filter(Boolean))].map(
-          (srv) => (
-            <option key={srv} value={srv}>
-              {srv}
-            </option>
-          )
-        )}
-      </select>
-    </div>
+        <div className="flex flex-wrap items-center justify-between px-8 py-4 bg-white border-b gap-4">
+          <div className="flex items-center gap-4 flex-wrap">
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-gray-700">
+                Filter by Service:
+              </label>
+              <select
+                value={selectedServiceFilter}
+                onChange={(e) => setSelectedServiceFilter(e.target.value)}
+                className="border border-gray-300 rounded-lg px-3 py-1 text-sm focus:ring-2 focus:ring-purple-500"
+              >
+                <option value="All">All Services</option>
+                {[
+                  ...new Set(templates.map((t) => t.service).filter(Boolean)),
+                ].map((srv) => (
+                  <option key={srv} value={srv}>
+                    {srv}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-    {/* Sequence Filter */}
-    {/* <div className="flex items-center gap-2">
+            {/* Sequence Filter */}
+            {/* <div className="flex items-center gap-2">
       <label className="text-sm font-medium text-gray-700">
         Filter by Sequence:
       </label>
@@ -342,115 +338,181 @@ useEffect(() => {
         <option value="Second Follow-Up">Second Follow-Up</option>
       </select>
     </div> */}
-  </div>
+          </div>
 
-  {viewType && (
-    <div className="bg-indigo-50 px-4 py-2 rounded-md text-sm text-indigo-700 border border-indigo-200">
-      Viewing all <b>{viewType}</b> templates
-      <button
-        onClick={() => navigate("/templates")}
-        className="ml-2 text-indigo-600 underline hover:text-indigo-800"
-      >
-        Clear
-      </button>
-    </div>
-  )}
-</div>
+          {viewType && (
+            <div className="bg-indigo-50 px-4 py-2 rounded-md text-sm text-indigo-700 border border-indigo-200">
+              Viewing all <b>{viewType}</b> templates
+              <button
+                onClick={() => navigate("/templates")}
+                className="ml-2 text-indigo-600 underline hover:text-indigo-800"
+              >
+                Clear
+              </button>
+            </div>
+          )}
+        </div>
 
-
-        {/* MAIN CONTENT */}
-        <main className="container mx-auto p-8">
+        <main className="container mx-auto p-4 sm:p-6 lg:p-8">
           <div className="bg-white shadow rounded-lg overflow-hidden">
-            <table className="w-full border-collapse">
-              <thead className="bg-gray-100 border-b">
-                <tr>
-                  {[
-                    "Service Request",
-                    "Sequence Type",
-                    "Template",
-                    "Status",
-                    "Action",
-                  ].map((h) => (
-                    <th
-                      key={h}
-                      className="p-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wide"
-                    >
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="min-w-full border-collapse text-sm">
+                <thead className="bg-gray-100 border-b">
                   <tr>
-                    <td colSpan="5" className="text-center">
-                      <Loader />
-                    </td>
+                    {[
+                      "Service Request",
+                      "Sequence Type",
+                      "Template",
+                      "Status",
+                      "Action",
+                    ].map((h) => (
+                      <th
+                        key={h}
+                        className="p-3 text-left text-xs sm:text-sm font-semibold text-gray-700 uppercase tracking-wide"
+                      >
+                        {h}
+                      </th>
+                    ))}
                   </tr>
-                ) : Object.keys(groupedTemplates).length > 0 ? (
-                  Object.entries(groupedTemplates).map(([srv, group]) => (
-                    <React.Fragment key={srv}>
-                      <tr className="bg-gray-100">
-                        <td
-                          colSpan="5"
-                          className="p-3 font-semibold text-gray-800 text-base"
-                        >
-                          {srv}
-                        </td>
-                      </tr>
+                </thead>
 
-                      {group.map((t) => (
-                        <tr
-                          key={t._id}
-                          className="border-b hover:bg-gray-50 transition"
-                        >
-                          <td className="p-3 text-sm">{t.service}</td>
-                          <td className="p-3 text-sm">
-                            {formatSequenceName(t.name)}
-                          </td>
-                          <td className="p-3 text-sm text-gray-600">
-                            {t.content.replace(/<[^>]+>/g, "").slice(0, 80)}...
-                          </td>
-                          <td className="p-3 text-center">
-                            <label className="relative inline-flex items-center cursor-pointer">
-                              <input
-                                type="checkbox"
-                                checked={t.active}
-                                onChange={() => handleToggle(t._id, t.active)}
-                                className="sr-only peer"
-                              />
-                              <div className="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:bg-green-500 transition-colors"></div>
-                              <div className="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full shadow-md transition-transform peer-checked:translate-x-5"></div>
-                            </label>
-                          </td>
-                          <td className="p-3">
-                            <button
-                              onClick={() => handleEdit(t)}
-                              className="text-blue-600 hover:underline text-sm"
-                            >
-                              Edit
-                            </button>
+                <tbody>
+                  {loading ? (
+                    <tr>
+                      <td colSpan="5" className="text-center">
+                        <Loader />
+                      </td>
+                    </tr>
+                  ) : Object.keys(groupedTemplates).length > 0 ? (
+                    Object.entries(groupedTemplates).map(([srv, group]) => (
+                      <React.Fragment key={srv}>
+                        <tr className="bg-gray-100">
+                          <td
+                            colSpan="5"
+                            className="p-3 font-semibold text-gray-800 text-sm sm:text-base"
+                          >
+                            {srv}
                           </td>
                         </tr>
-                      ))}
-                    </React.Fragment>
-                  ))
-                ) : (
-                  <tr>
-                    <td
-                      colSpan="5"
-                      className="p-6 text-center text-gray-500 text-sm"
-                    >
-                      No templates found
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+
+                        {group.map((t) => (
+                          <tr
+                            key={t._id}
+                            className="border-b hover:bg-gray-50 transition"
+                          >
+                            <td className="p-3 text-sm">{t.service}</td>
+                            <td className="p-3 text-sm">
+                              {formatSequenceName(t.name)}
+                            </td>
+                            <td className="p-3 text-sm text-gray-600 truncate max-w-[200px]">
+                              {t.content.replace(/<[^>]+>/g, "").slice(0, 80)}
+                              ...
+                            </td>
+                            <td className="p-3 text-center">
+                              <label className="relative inline-flex items-center cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={t.active}
+                                  onChange={() => handleToggle(t._id, t.active)}
+                                  className="sr-only peer"
+                                />
+                                <div className="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:bg-green-500 transition-colors"></div>
+                                <div className="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full shadow-md transition-transform peer-checked:translate-x-5"></div>
+                              </label>
+                            </td>
+                            <td className="p-3">
+                              <button
+                                onClick={() => handleEdit(t)}
+                                className="text-indigo-600 hover:underline text-sm"
+                              >
+                                Edit
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </React.Fragment>
+                    ))
+                  ) : (
+                    <tr>
+                      <td
+                        colSpan="5"
+                        className="p-6 text-center text-gray-500 text-sm"
+                      >
+                        No templates found
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="block sm:hidden divide-y divide-gray-200">
+              {loading ? (
+                <Loader />
+              ) : Object.keys(groupedTemplates).length > 0 ? (
+                Object.entries(groupedTemplates).map(([srv, group]) => (
+                  <div key={srv} className="bg-gray-50">
+                    <h3 className="px-4 py-2 font-semibold text-gray-800 text-sm bg-gray-100 border-b">
+                      {srv}
+                    </h3>
+
+                    {group.map((t) => (
+                      <div
+                        key={t._id}
+                        className="p-4 bg-white border-b hover:bg-gray-50 transition"
+                      >
+                        <div className="flex justify-between items-center mb-2">
+                          <h4 className="font-semibold text-gray-900 text-sm">
+                            {formatSequenceName(t.name)}
+                          </h4>
+                          <button
+                            onClick={() => handleEdit(t)}
+                            className="text-indigo-600 text-xs font-medium hover:underline"
+                          >
+                            Edit
+                          </button>
+                        </div>
+
+                        <p className="text-xs text-gray-500 mb-2">
+                          <span className="font-medium text-gray-700">
+                            Service:
+                          </span>{" "}
+                          {t.service || "N/A"}
+                        </p>
+
+                        <p className="text-xs text-gray-600 line-clamp-2 mb-3">
+                          {t.content.replace(/<[^>]+>/g, "").slice(0, 100)}...
+                        </p>
+
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-gray-500 font-medium">
+                            {t.active ? "Active" : "Inactive"}
+                          </span>
+
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={t.active}
+                              onChange={() => handleToggle(t._id, t.active)}
+                              className="sr-only peer"
+                            />
+                            <div className="w-10 h-5 bg-gray-300 rounded-full peer-checked:bg-green-500 transition-colors"></div>
+                            <div className="absolute left-[2px] top-[2px] w-4 h-4 bg-white rounded-full shadow-md transition-transform peer-checked:translate-x-5"></div>
+                          </label>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ))
+              ) : (
+                <div className="p-6 text-center text-gray-500 text-sm">
+                  No templates found
+                </div>
+              )}
+            </div>
           </div>
         </main>
 
-        {/* SIDE DRAWER */}
         <div className="fixed inset-0 z-50 flex pointer-events-none">
           <div
             className={`flex-1 bg-black transition-opacity duration-300 ${
@@ -460,48 +522,48 @@ useEffect(() => {
           ></div>
 
           <div
-            className={`w-full max-w-xl bg-white shadow-2xl h-full flex flex-col transform transition-transform duration-300 ease-in-out pointer-events-auto ${
+            className={`w-full sm:max-w-lg lg:max-w-xl bg-white shadow-2xl h-full flex flex-col transform transition-transform duration-300 ease-in-out pointer-events-auto ${
               isDrawerOpen ? "translate-x-0" : "translate-x-full"
             }`}
           >
-            <div className="flex justify-between items-center p-6 border-b">
-              <h2 className="text-xl font-bold text-gray-800">
+            <div className="flex justify-between items-center p-4 sm:p-6 border-b">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-800 truncate">
                 {editingId ? "Edit Template" : "Create New Template"}
               </h2>
               <button
                 onClick={() => setIsDrawerOpen(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-600 text-xl sm:text-2xl"
               >
                 ✕
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6">
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                   Service Request
                 </label>
                 <input
                   type="text"
                   value={service || "Any (general)"}
                   readOnly
-                  className="w-full p-2 border rounded-lg bg-gray-100 text-gray-700"
+                  className="w-full p-2 sm:p-3 border rounded-lg bg-gray-100 text-gray-700 text-sm sm:text-base"
                 />
               </div>
 
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                   Sequence Type
                 </label>
                 <input
                   type="text"
                   value={sequenceType || "-"}
                   readOnly
-                  className="w-full p-2 border rounded-lg bg-gray-100 text-gray-700"
+                  className="w-full p-2 sm:p-3 border rounded-lg bg-gray-100 text-gray-700 text-sm sm:text-base"
                 />
               </div>
 
-              <div className="mb-8">
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Template Response
                 </label>
@@ -512,11 +574,12 @@ useEffect(() => {
                     theme="snow"
                     value={content}
                     onChange={setContent}
-                    className="bg-white "
+                    className="bg-white"
                   />
                 </div>
 
-                <div className="mt-3 border rounded-lg bg-gray-50 p-3">
+                {/* Insert Fields Section */}
+                <div className="mt-4 border rounded-lg bg-gray-50 p-3 sm:p-4">
                   <h3 className="text-sm font-semibold text-gray-600 mb-2">
                     Insert Fields
                   </h3>
@@ -550,16 +613,17 @@ useEffect(() => {
               </div>
             </div>
 
-            <div className="p-4 border-t bg-white flex justify-end gap-3">
+            {/* Footer */}
+            <div className="p-4 sm:p-5 border-t bg-white flex flex-col sm:flex-row justify-end gap-3">
               <button
                 onClick={() => setIsDrawerOpen(false)}
-                className="px-6 py-2 text-sm font-medium text-gray-600 bg-gray-200 rounded-lg hover:bg-gray-300"
+                className="w-full sm:w-auto px-5 py-2 text-sm font-medium text-gray-600 bg-gray-200 rounded-lg hover:bg-gray-300"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSaveTemplate}
-                className="px-6 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700"
+                className="w-full sm:w-auto px-5 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700"
               >
                 {editingId ? "Update Template" : "Save Template"}
               </button>
