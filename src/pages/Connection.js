@@ -32,20 +32,43 @@ const ConnectionsPage = () => {
   const closeOutlookModal = () => setIsOutlookModalOpen(false);
 
   const fetchConnections = async () => {
-    try {
-      const userId = localStorage.getItem("userid");
-      if (!userId) return setLoading(false);
-      setLoading(true);
-      const res = await axios.get(
-        `https://email-syncing-backend.vercel.app/auth/getConnection/${userId}`
-      );
-      setConnections(res.data || []);
-    } catch (err) {
-      toast.error("Failed to load connections");
-    } finally {
-      setLoading(false);
+  try {
+    const userId = localStorage.getItem("userid");
+    if (!userId) return setLoading(false);
+
+    setLoading(true);
+
+    const res = await axios.get(
+      `https://email-syncing-backend.vercel.app/auth/getConnection/${userId}`
+    );
+
+    const connections = res.data || [];
+    setConnections(connections);
+
+    // ✅ If at least one connection exists, mark setup as completed
+    if (connections.length > 0) {
+      try {
+        await axios.put(
+          `https://email-syncing-backend.vercel.app/auth/completeSetup/${userId}`,
+          {
+            stepCompleted: 4,       // step 4 = "Email Credential activated"
+            setupCompleted: true,   // mark overall setup complete
+            skipped: false,         // not skipped
+          }
+        );
+        console.log("✅ Setup marked as completed because connection exists");
+      } catch (apiErr) {
+        console.error("Failed to auto-complete setup:", apiErr);
+      }
     }
-  };
+
+  } catch (err) {
+    toast.error("Failed to load connections");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   useEffect(() => {
     fetchConnections();
