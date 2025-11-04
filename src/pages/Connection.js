@@ -21,7 +21,6 @@ const ConnectionsPage = () => {
   const [connections, setConnections] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // 🧱 Delete modal states
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [connectionToDelete, setConnectionToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
@@ -45,18 +44,17 @@ const ConnectionsPage = () => {
     const connections = res.data || [];
     setConnections(connections);
 
-    // ✅ If at least one connection exists, mark setup as completed
     if (connections.length > 0) {
       try {
         await axios.put(
-          `https://email-syncing-backend.vercel.app/auth/completeSetup/${userId}`,
+          `https://email-syncing-backend.vercel.app/auth/setup/${userId}`,
           {
-            stepCompleted: 4,       // step 4 = "Email Credential activated"
-            setupCompleted: true,   // mark overall setup complete
-            skipped: false,         // not skipped
+            stepCompleted: 4,       
+            setupCompleted: true,   
+            skipped: false,         
           }
         );
-        console.log("✅ Setup marked as completed because connection exists");
+        console.log(" Setup marked as completed because connection exists");
       } catch (apiErr) {
         console.error("Failed to auto-complete setup:", apiErr);
       }
