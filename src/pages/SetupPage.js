@@ -161,17 +161,14 @@ const SetupFlow = () => {
 
   const saveSetupProgress = async (data = {}) => {
     try {
-      const res = await fetch(
-        `https://email-syncing-backend.vercel.app/auth/setup/${user._id}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            ...data,
-            updatedAt: new Date(),
-          }),
-        }
-      );
+      const res = await fetch(`https://email-syncing-backend.vercel.app/auth/setup/${user._id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...data,
+          updatedAt: new Date(),
+        }),
+      });
 
       const result = await res.json();
 
@@ -198,18 +195,15 @@ const SetupFlow = () => {
     const stepToUpdate = isSkipped ? step : nextStep;
 
     try {
-      const res = await fetch(
-        `https://email-syncing-backend.vercel.app/auth/setup/${user._id}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            stepCompleted: stepToUpdate,
-            stepStatus: status,
-            ...extra,
-          }),
-        }
-      );
+      const res = await fetch(`https://email-syncing-backend.vercel.app/auth/setup/${user._id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          stepCompleted: stepToUpdate,
+          stepStatus: status,
+          ...extra,
+        }),
+      });
 
       const result = await res.json();
       if (result.success) {
@@ -246,14 +240,11 @@ const SetupFlow = () => {
       const userId = localStorage.getItem("userid");
       const payload = { ...smtpForm, userId, provider: "outlook" };
 
-      const res = await fetch(
-        "https://email-syncing-backend.vercel.app/auth/saveSmtpConnection",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }
-      );
+      const res = await fetch("https://email-syncing-backend.vercel.app/auth/saveSmtpConnection", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
       if (!res.ok) throw new Error("Failed to save SMTP connection");
       alert("SMTP connection saved successfully!");
@@ -374,6 +365,26 @@ const SetupFlow = () => {
     return () => clearInterval(intervalId);
   }, [step, user, retryKey]);
 
+  // const fetchValidateEmail = async () => {
+  //   try {
+  //     const res = await fetch(
+  //       `https://email-syncing-backend.vercel.app/mailhook/validateTest/${user._id}`
+  //     );
+  //     const data = await res.json();
+
+  //     if (data.success) {
+  //       console.log(" Validation email found:", data.data);
+  //       setVerificationEmail(data.data);
+  //       setValidated(true);
+  //     } else {
+  //       console.log(" Not yet validated:", data.message);
+  //       setValidated(false);
+  //     }
+  //   } catch (err) {
+  //     console.error("Error fetching validation email:", err);
+  //   }
+  // };
+
   const fetchValidateEmail = async () => {
     try {
       const res = await fetch(
@@ -382,97 +393,138 @@ const SetupFlow = () => {
       const data = await res.json();
 
       if (data.success) {
-        console.log(" Validation email found:", data.data);
+        console.log("✅ Validation email found:", data.data);
+
         setVerificationEmail(data.data);
         setValidated(true);
-      } else {
-        console.log(" Not yet validated:", data.message);
-        setValidated(false);
+        setValidating(false);
+        setValidationPhase(false);
+        setShowValidateButton(false);
+
+        // ✅ show success alert message
+        setAlert({
+          type: "success",
+          message: data.message || "Mailhook connected successfully!",
+        });
+
+        return true; // ✅ very important!
       }
+
+      return false;
     } catch (err) {
       console.error("Error fetching validation email:", err);
+      return false;
     }
   };
 
   const handleValidateForwarding = async () => {
-    try {
-      if (!verificationEmail?.toEmail?.trim()) {
-        setAlert({
-          type: "error",
-          message: "Please enter a valid email address.",
-        });
+  try {
+    // 🚫 Check if email field is empty
+    if (!verificationEmail?.toEmail?.trim()) {
+      setAlert({
+        type: "error",
+        message: "Please enter a valid email address.",
+      });
+      return;
+    }
 
-        return;
+    // 🔄 Reset validation state
+    setValidating(true);
+    setValidated(false);
+    setValidationFailed(false);
+    setValidationPhase(true);
+
+    // 📨 Send request to backend
+    const res = await fetch(
+      `https://email-syncing-backend.vercel.app/mailhook/validate-forwarding/${user._id}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ toEmail: verificationEmail.toEmail }),
       }
+    );
 
-      setValidating(true);
-      setValidated(false);
-      setValidationFailed(false);
-      setValidationPhase(true);
+    const data = await res.json();
 
-      const res = await fetch(
-        `https://email-syncing-backend.vercel.app/mailhook/validate-forwarding/${user._id}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ toEmail: verificationEmail.toEmail }),
+    // ✅ Success Case
+    if (data.success) {
+      setAlert({
+        type: "success",
+        message:
+          data.message ||
+          "Validation started — checking for forwarded email...",
+      });
+
+      let attempts = 0;
+      const maxAttempts = 5;
+
+      const checkLoop = async () => {
+        attempts++;
+        console.log(`🕒 Attempt ${attempts} of ${maxAttempts}`);
+
+        // 🧠 Try to fetch validation status
+        const found = await fetchValidateEmail();
+
+        if (found) {
+          console.log("✅ Mailhook verified — stopping loop.");
+          setValidated(true);
+          setValidating(false);
+          setValidationPhase(false);
+          setAlert({
+            type: "success",
+            message:
+              data.message ||
+              "Mailhook connected successfully!",
+          });
+          return; // ✅ Stop loop
         }
-      );
 
-      const data = await res.json();
+        if (attempts < maxAttempts) {
+          console.log("🔁 Not yet — retrying in 10s...");
+          setTimeout(checkLoop, 10000);
+        } else {
+          console.log("❌ Validation failed after 5 attempts.");
+          setValidating(false);
+          setValidationPhase(false);
+          setValidationFailed(true);
+          setAlert({
+            type: "error",
+            message:
+              "Validation failed — please ensure your forwarding is active.",
+          });
+        }
+      };
 
-      if (data.success) {
-        setAlert({
-          type: "success",
-          message: "Validation started — checking for forwarded email...",
-        });
-        let attempts = 0;
-        const maxAttempts = 5;
+      checkLoop();
+    }
 
-        const checkLoop = async () => {
-          attempts++;
-          console.log(`🕒 Attempt ${attempts} of ${maxAttempts}`);
-
-          const found = await fetchValidateEmail();
-          if (found) {
-            return;
-          }
-
-          if (attempts < maxAttempts) {
-            console.log("🔁 Not yet — retrying in 10s...");
-            setTimeout(checkLoop, 10000);
-          } else {
-            console.log("❌ Validation failed after 5 attempts.");
-            setValidating(false);
-            setValidationPhase(false);
-            setValidationFailed(true);
-          }
-        };
-
-        checkLoop();
-      } else {
-        setAlert({
-          type: "error",
-          message:
-            data.message ||
-            "Failed to start validation. Please make sure your forwarding setup is correct.",
-        });
-        setValidating(false);
-        setValidationPhase(false);
-        setValidationFailed(true);
-      }
-    } catch (err) {
-      console.error(" Error during validation process:", err);
+    // ❌ Error Case — backend says success: false
+    else {
       setAlert({
         type: "error",
         message:
-          "Something went wrong while validating connection. Please try again.",
+          data.message?.trim() ||
+          "Failed to start validation. Please make sure your forwarding setup is correct.",
       });
+
+      // stop validation immediately
       setValidating(false);
       setValidationPhase(false);
       setValidationFailed(true);
     }
-  };
+  } catch (err) {
+    console.error("❌ Error during validation process:", err);
+    setAlert({
+      type: "error",
+      message:
+        "Something went wrong while validating connection. Please try again.",
+    });
+    setValidating(false);
+    setValidationPhase(false);
+    setValidationFailed(true);
+  }
+};
+
 
   useEffect(() => {
     if (!loading && user) {
@@ -492,9 +544,7 @@ const SetupFlow = () => {
     const fetchSetupProgress = async () => {
       try {
         if (!user?._id) return;
-        const res = await fetch(
-          `https://email-syncing-backend.vercel.app/auth/setup/${user._id}`
-        );
+        const res = await fetch(`https://email-syncing-backend.vercel.app/auth/setup/${user._id}`);
         const data = await res.json();
         if (data.success) setSetupProgress(data.data);
       } catch (err) {

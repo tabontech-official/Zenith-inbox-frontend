@@ -68,6 +68,11 @@ import Profile from "./pages/Profile";
 import ResetPassword from "./Auth/ResetPassword";
 import ForgotPassword from "./Auth/ForgotPassword";
 import LoginVerify from "./Auth/LoginVerify";
+import AdminDashboard from "./Admin/AdminDashboard";
+import AdminUsers from "./Admin/AdminUsers";
+import AdminConnections from "./Admin/AdminConnections";
+import AdminUserActivity from "./Admin/AdminUserActivity";
+import AdminEmailTracking from "./Admin/AdminEmailTracking";
 
 function App() {
   return (
@@ -122,7 +127,7 @@ function App() {
           />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password/:token" element={<ResetPassword />} />
-<Route path="/login-verify/:token" element={<LoginVerify />} />
+          <Route path="/login-verify/:token" element={<LoginVerify />} />
 
           <Route
             path="/scenarios/others/:id"
@@ -195,6 +200,25 @@ function App() {
                 <Profile />
               </ProtectedRoute>
             }
+          />
+          {/* Admin Routing */}
+          <Route
+            path="/admin/dashboard"
+            element={
+              <ProtectedRoute>
+                <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/admin/users" element={<AdminUsers />} />
+          <Route path="/admin/connections" element={<AdminConnections />} />
+          <Route
+            path="/admin/reports/user-activity"
+            element={<AdminUserActivity />}
+          />
+          <Route
+            path="/admin/reports/email-tracking"
+            element={<AdminEmailTracking />}
           />
         </Routes>
 
