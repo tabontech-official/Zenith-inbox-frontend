@@ -248,7 +248,7 @@ const MailhookConnectionModal = ({
 
         const res = await fetch(
           `https://email-syncing-backend.vercel.app/mailhook/validateTest/${user._id}?cardId=${cardId}`,
-          {
+          { 
             method: "GET",
             headers: { "Content-Type": "application/json" },
           }
