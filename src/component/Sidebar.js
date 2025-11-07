@@ -438,12 +438,12 @@ const Sidebar = () => {
           </div>
         </div>
 
-        <div>
+        {/* <div>
           <p className="text-xs text-gray-400 uppercase font-semibold mb-2 tracking-wide">
             Configuration
           </p>
           {renderNavLink("System Settings", FiSettings, "/admin/settings")}
-        </div>
+        </div> */}
       </nav>
     </>
   );

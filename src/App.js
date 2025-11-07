@@ -73,6 +73,8 @@ import AdminUsers from "./Admin/AdminUsers";
 import AdminConnections from "./Admin/AdminConnections";
 import AdminUserActivity from "./Admin/AdminUserActivity";
 import AdminEmailTracking from "./Admin/AdminEmailTracking";
+import AdminScenarioStats from "./Admin/ScenarioStats";
+import AdminTemplateUsage from "./Admin/AdminTemplateUsage";
 
 function App() {
   return (
@@ -219,6 +221,14 @@ function App() {
           <Route
             path="/admin/reports/email-tracking"
             element={<AdminEmailTracking />}
+          />
+            <Route
+            path="/admin/reports/scenarios"
+            element={<AdminScenarioStats />}
+          />
+          <Route
+            path="/admin/reports/templates"
+            element={<AdminTemplateUsage />}
           />
         </Routes>
 
