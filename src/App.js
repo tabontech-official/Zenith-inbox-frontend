@@ -75,6 +75,7 @@ import AdminUserActivity from "./Admin/AdminUserActivity";
 import AdminEmailTracking from "./Admin/AdminEmailTracking";
 import AdminScenarioStats from "./Admin/ScenarioStats";
 import AdminTemplateUsage from "./Admin/AdminTemplateUsage";
+import AdminTemplate from "./Admin/AdminTemplate";
 
 function App() {
   return (
@@ -229,6 +230,10 @@ function App() {
           <Route
             path="/admin/reports/templates"
             element={<AdminTemplateUsage />}
+          />
+             <Route
+            path="/admin/templates/:userId"
+            element={<AdminTemplate />}
           />
         </Routes>
 
