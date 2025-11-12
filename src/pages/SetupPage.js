@@ -161,14 +161,17 @@ const SetupFlow = () => {
 
   const saveSetupProgress = async (data = {}) => {
     try {
-      const res = await fetch(`https://email-syncing-backend.vercel.app/auth/setup/${user._id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...data,
-          updatedAt: new Date(),
-        }),
-      });
+      const res = await fetch(
+        `https://email-syncing-backend.vercel.app/auth/setup/${user._id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...data,
+            updatedAt: new Date(),
+          }),
+        }
+      );
 
       const result = await res.json();
 
@@ -195,15 +198,18 @@ const SetupFlow = () => {
     const stepToUpdate = isSkipped ? step : nextStep;
 
     try {
-      const res = await fetch(`https://email-syncing-backend.vercel.app/auth/setup/${user._id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          stepCompleted: stepToUpdate,
-          stepStatus: status,
-          ...extra,
-        }),
-      });
+      const res = await fetch(
+        `https://email-syncing-backend.vercel.app/auth/setup/${user._id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            stepCompleted: stepToUpdate,
+            stepStatus: status,
+            ...extra,
+          }),
+        }
+      );
 
       const result = await res.json();
       if (result.success) {
@@ -240,11 +246,14 @@ const SetupFlow = () => {
       const userId = localStorage.getItem("userid");
       const payload = { ...smtpForm, userId, provider: "outlook" };
 
-      const res = await fetch("https://email-syncing-backend.vercel.app/auth/saveSmtpConnection", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const res = await fetch(
+        "https://email-syncing-backend.vercel.app/auth/saveSmtpConnection",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
 
       if (!res.ok) throw new Error("Failed to save SMTP connection");
       alert("SMTP connection saved successfully!");
@@ -418,113 +427,110 @@ const SetupFlow = () => {
   };
 
   const handleValidateForwarding = async () => {
-  try {
-    // 🚫 Check if email field is empty
-    if (!verificationEmail?.toEmail?.trim()) {
-      setAlert({
-        type: "error",
-        message: "Please enter a valid email address.",
-      });
-      return;
-    }
-
-    // 🔄 Reset validation state
-    setValidating(true);
-    setValidated(false);
-    setValidationFailed(false);
-    setValidationPhase(true);
-
-    // 📨 Send request to backend
-    const res = await fetch(
-      `https://email-syncing-backend.vercel.app/mailhook/validate-forwarding/${user._id}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ toEmail: verificationEmail.toEmail }),
+    try {
+      // 🚫 Check if email field is empty
+      if (!verificationEmail?.toEmail?.trim()) {
+        setAlert({
+          type: "error",
+          message: "Please enter a valid email address.",
+        });
+        return;
       }
-    );
 
-    const data = await res.json();
+      // 🔄 Reset validation state
+      setValidating(true);
+      setValidated(false);
+      setValidationFailed(false);
+      setValidationPhase(true);
 
-    // ✅ Success Case
-    if (data.success) {
-      setAlert({
-        type: "success",
-        message:
-          data.message ||
-          "Validation started — checking for forwarded email...",
-      });
-
-      let attempts = 0;
-      const maxAttempts = 5;
-
-      const checkLoop = async () => {
-        attempts++;
-        console.log(`🕒 Attempt ${attempts} of ${maxAttempts}`);
-
-        // 🧠 Try to fetch validation status
-        const found = await fetchValidateEmail();
-
-        if (found) {
-          console.log("✅ Mailhook verified — stopping loop.");
-          setValidated(true);
-          setValidating(false);
-          setValidationPhase(false);
-          setAlert({
-            type: "success",
-            message:
-              data.message ||
-              "Mailhook connected successfully!",
-          });
-          return; // ✅ Stop loop
+      // 📨 Send request to backend
+      const res = await fetch(
+        `https://email-syncing-backend.vercel.app/mailhook/validate-forwarding/${user._id}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ toEmail: verificationEmail.toEmail }),
         }
+      );
 
-        if (attempts < maxAttempts) {
-          console.log("🔁 Not yet — retrying in 10s...");
-          setTimeout(checkLoop, 10000);
-        } else {
-          console.log("❌ Validation failed after 5 attempts.");
-          setValidating(false);
-          setValidationPhase(false);
-          setValidationFailed(true);
-          setAlert({
-            type: "error",
-            message:
-              "Validation failed — please ensure your forwarding is active.",
-          });
-        }
-      };
+      const data = await res.json();
 
-      checkLoop();
-    }
+      // ✅ Success Case
+      if (data.success) {
+        setAlert({
+          type: "success",
+          message:
+            data.message ||
+            "Validation started — checking for forwarded email...",
+        });
 
-    // ❌ Error Case — backend says success: false
-    else {
+        let attempts = 0;
+        const maxAttempts = 5;
+
+        const checkLoop = async () => {
+          attempts++;
+          console.log(`🕒 Attempt ${attempts} of ${maxAttempts}`);
+
+          // 🧠 Try to fetch validation status
+          const found = await fetchValidateEmail();
+
+          if (found) {
+            console.log("✅ Mailhook verified — stopping loop.");
+            setValidated(true);
+            setValidating(false);
+            setValidationPhase(false);
+            setAlert({
+              type: "success",
+              message: data.message || "Mailhook connected successfully!",
+            });
+            return; // ✅ Stop loop
+          }
+
+          if (attempts < maxAttempts) {
+            console.log("🔁 Not yet — retrying in 10s...");
+            setTimeout(checkLoop, 10000);
+          } else {
+            console.log("❌ Validation failed after 5 attempts.");
+            setValidating(false);
+            setValidationPhase(false);
+            setValidationFailed(true);
+            setAlert({
+              type: "error",
+              message:
+                "Validation failed — please ensure your forwarding is active.",
+            });
+          }
+        };
+
+        checkLoop();
+      }
+
+      // ❌ Error Case — backend says success: false
+      else {
+        setAlert({
+          type: "error",
+          message:
+            data.message?.trim() ||
+            "Failed to start validation. Please make sure your forwarding setup is correct.",
+        });
+
+        // stop validation immediately
+        setValidating(false);
+        setValidationPhase(false);
+        setValidationFailed(true);
+      }
+    } catch (err) {
+      console.error("❌ Error during validation process:", err);
       setAlert({
         type: "error",
         message:
-          data.message?.trim() ||
-          "Failed to start validation. Please make sure your forwarding setup is correct.",
+          "Something went wrong while validating connection. Please try again.",
       });
-
-      // stop validation immediately
       setValidating(false);
       setValidationPhase(false);
       setValidationFailed(true);
     }
-  } catch (err) {
-    console.error("❌ Error during validation process:", err);
-    setAlert({
-      type: "error",
-      message:
-        "Something went wrong while validating connection. Please try again.",
-    });
-    setValidating(false);
-    setValidationPhase(false);
-    setValidationFailed(true);
-  }
-};
-
+  };
 
   useEffect(() => {
     if (!loading && user) {
@@ -544,7 +550,9 @@ const SetupFlow = () => {
     const fetchSetupProgress = async () => {
       try {
         if (!user?._id) return;
-        const res = await fetch(`https://email-syncing-backend.vercel.app/auth/setup/${user._id}`);
+        const res = await fetch(
+          `https://email-syncing-backend.vercel.app/auth/setup/${user._id}`
+        );
         const data = await res.json();
         if (data.success) setSetupProgress(data.data);
       } catch (err) {
@@ -712,7 +720,7 @@ const SetupFlow = () => {
 
     setRetryKey((prev) => prev + 1);
   };
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [showMobileInstructions, setShowMobileInstructions] = useState(false);
   const AlertMessage = () =>
     alert.message ? (
@@ -801,163 +809,201 @@ const SetupFlow = () => {
 
           <div className="w-full flex justify-center mt-10">
             {step === 1 && (
-              <div className="bg-white shadow-md rounded-xl p-8 sm:p-2 max-w-lg w-[90%] text-center relative">
-                <span
-                  onClick={async () => {
-                    await saveSetupProgress({
-                      skipped: true,
-                      stepCompleted: 1,
-                    });
-                    navigate("/organization");
-                  }}
-                  className="absolute bottom-4 left-4 text-[#4F46E5] text-xs sm:text-sm font-semibold cursor-pointer hover:underline hover:text-[#3730A3] transition-colors"
-                >
-                  Skip
-                </span>
-
-                <h1 className="text-2xl sm:text-3xl font-bold text-[#111827] mb-4 mt-4">
-                  Never miss a lead again.
-                </h1>
-
-                <p className="text-[#4B5563] text-base mb-8 leading-relaxed">
-                  We’ll create your mailhook and help you forward new leads to
-                  it. Then we’ll set up how your replies are sent (SMTP).
-                </p>
-
-                <div className="flex items-center justify-center mt-6">
-                  <button
-                    onClick={async () => {
-                      await saveSetupProgress({
-                        stepCompleted: 1,
-                        stepStatus: "completed",
-                      });
-                      setStep(2);
-                    }}
-                    className="bg-[#4F46E5] hover:bg-[#4338CA] text-white px-8 py-3 rounded-lg text-sm font-semibold flex items-center justify-center space-x-2 shadow-md transition"
-                  >
-                    <span>Start 60-sec Setup</span>
-                    <FiArrowRight />
-                  </button>
-                </div>
-
-                <p className="text-xs text-gray-400 mt-6">
-                  You can complete setup later from your Organization Settings.
-                </p>
-              </div>
-            )}
-
-            {step === 2 && (
-              <div className="bg-white shadow-md rounded-xl p-8 sm:p-10 max-w-2xl w-[90%] text-left relative">
-                <AlertMessage />
-                <span
-                  onClick={async () => {
-                    await updateStep(1, { skipped: true });
-                  }}
-                  className="absolute left-4 top-4 text-[#4F46E5] text-xs sm:text-sm font-semibold cursor-pointer hover:underline hover:text-[#3730A3] transition-colors"
-                >
-                  ← Back
-                </span>
-
-                <span
-                  onClick={() =>
-                    window.open("/pages/mailhook/instruction", "_blank")
-                  }
-                  className="absolute right-4 top-4 text-[#4F46E5] text-xs sm:text-sm font-semibold cursor-pointer hover:underline hover:text-[#3730A3] transition-colors"
-                >
-                  Need help?
-                </span>
-
-                <h2 className="text-2xl font-bold text-[#111827] text-center mb-2 mt-8">
-                  Your Mailhook is Ready
-                </h2>
-                <p className="text-[#4B5563] text-center mb-8">
-                  This is a private, unique address just for your leads.
-                </p>
-
-                <div className="border border-[#E5E7EB] rounded-xl p-5 sm:p-6 space-y-5 sm:space-y-6 bg-white shadow-sm">
-                  {/* Header */}
-                  <div>
-                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-3 sm:mb-2 gap-1">
-                      <h3 className="font-semibold text-[#111827] text-base sm:text-lg">
-                        Your Unique Mailhook
-                      </h3>
-                      <span className="text-green-700 bg-green-100 text-[11px] sm:text-xs px-2.5 py-0.5 rounded-full font-medium self-start sm:self-auto">
-                        Private & Unique
-                      </span>
-                    </div>
-
-                    {/* Mailhook Box */}
-                    <div
-                      className="
-        bg-[#F3F4F6] text-[#4F46E5] px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg 
-        flex flex-col sm:flex-row sm:justify-between sm:items-center 
-        gap-2 sm:gap-3 font-mono text-[11px] sm:text-sm break-all 
-        border border-[#E5E7EB] hover:bg-[#EEF2FF] transition-all
+              <div className="flex justify-center items-center w-full h-[650px]">
+                <div
+                  className="
+        bg-white shadow-lg rounded-2xl 
+        p-8 sm:p-10 
+        w-[95%] sm:w-[720px] 
+        text-center relative 
+        flex flex-col justify-between
       "
-                    >
-                      <span className="w-full text-center sm:text-left break-all leading-relaxed">
-                        {user?.mailhook || "loading-mailhook@zenith-inbox.com"}
-                      </span>
-
-                      <button
-                        onClick={() => {
-                          if (user?.mailhook) {
-                            navigator.clipboard.writeText(user.mailhook);
-                            setAlert({
-                              type: "success",
-                              message: "Mailhook copied successfully!",
-                            });
-                          }
-                        }}
-                        className="
-          self-center sm:self-auto flex items-center gap-1 
-          text-gray-500 hover:text-[#4F46E5] transition-colors text-base sm:text-lg
-          focus:outline-none focus:ring-2 focus:ring-[#4F46E5] focus:ring-offset-1 rounded
-        "
-                        aria-label="Copy mailhook"
-                      >
-                        <FiCopy />
-                        <span className="text-[10px] sm:hidden font-medium">
-                          Copy
-                        </span>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Tip Section */}
-                  <div className="bg-indigo-50 border-l-4 border-indigo-500 rounded-lg p-3 sm:p-4 text-indigo-800 text-[12px] sm:text-sm flex items-start gap-2 sm:gap-3 leading-relaxed">
-                    <FiInfo className="text-[#4F46E5] text-base sm:text-lg mt-0.5 shrink-0" />
-                    <p className="text-[12px] sm:text-sm">
-                      <strong>Tip:</strong> Copy this address and add it as a
-                      forwarding destination in your email provider’s settings
-                      (Gmail or Outlook).
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex justify-between items-center mt-8">
+                >
+                  {/* Skip (only on step 1) */}
                   <span
                     onClick={async () => {
-                      await updateStep(3, { skipped: true });
+                      await saveSetupProgress({
+                        skipped: true,
+                        stepCompleted: 1,
+                      });
+                      navigate("/organization");
                     }}
-                    className="text-[#4F46E5] text-sm font-semibold cursor-pointer hover:underline"
+                    className="
+          absolute top-4 right-6 
+          text-[#4F46E5] text-xs sm:text-sm 
+          font-semibold cursor-pointer 
+          hover:underline hover:text-[#3730A3] 
+          transition-colors
+        "
                   >
                     Skip
                   </span>
 
-                  <button
-                    onClick={async () => {
-                      await saveSetupProgress({
-                        stepCompleted: 2,
-                        stepStatus: "completed",
-                      });
-                      setStep(3);
-                    }}
-                    className="flex items-center space-x-2 px-6 py-2 rounded-lg text-sm font-semibold bg-[#4F46E5] text-white hover:bg-[#4338CA] transition"
-                  >
-                    <span>Next</span>
-                    <FiArrowRight />
-                  </button>
+                  {/* Text content */}
+                  <div className="flex flex-col items-center justify-center flex-grow">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-[#111827] mb-4 mt-4">
+                      Never miss a lead again.
+                    </h1>
+
+                    <p className="text-[#4B5563] text-base mb-8 leading-relaxed max-w-md">
+                      We’ll create your mailhook and help you forward new leads
+                      to it. Then we’ll set up how your replies are sent (SMTP).
+                    </p>
+
+                    <button
+                      onClick={async () => {
+                        await saveSetupProgress({
+                          stepCompleted: 1,
+                          stepStatus: "completed",
+                        });
+                        setStep(2);
+                      }}
+                      className="
+            bg-[#4F46E5] hover:bg-[#4338CA] 
+            text-white px-8 py-3 rounded-lg 
+            text-sm font-semibold 
+            flex items-center justify-center gap-2 
+            shadow-md transition
+          "
+                    >
+                      <span>Start 60-sec Setup</span>
+                      <FiArrowRight />
+                    </button>
+
+                    <p className="text-xs text-gray-400 mt-6">
+                      You can complete setup later from your Organization
+                      Settings.
+                    </p>
+                  </div>
+
+                  {/* Video Section inside card */}
+                  <div className="mt-8 border-t border-gray-200 pt-6">
+                    <h3 className="text-base sm:text-lg font-semibold text-[#111827] mb-3">
+                      Quick Tutorial
+                    </h3>
+                    <div className="rounded-xl overflow-hidden shadow-md aspect-w-16 aspect-h-9">
+                      <iframe
+                        src="https://www.youtube.com/embed/YOUR_STEP1_VIDEO_ID"
+                        title="Step 1 Tutorial"
+                        frameBorder="0"
+                        allowFullScreen
+                        className="w-full h-full"
+                      ></iframe>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {step === 2 && (
+              <div className="flex justify-center items-center w-full h-[650px]">
+                <div
+                  className="
+        bg-white shadow-lg rounded-2xl 
+        p-8 sm:p-10 
+        w-[95%] sm:w-[720px] 
+        text-left relative flex flex-col justify-between
+      "
+                >
+                  {/* Top Navigation */}
+
+                  {/* Step Content */}
+                  <div className="flex-grow overflow-y-auto mt-8">
+                    <AlertMessage />
+
+                    <h2 className="text-2xl font-bold text-[#111827] text-center mb-2">
+                      Your Mailhook is Ready
+                    </h2>
+                    <p className="text-[#4B5563] text-center mb-8">
+                      This is a private, unique address just for your leads.
+                    </p>
+
+                    {/* Mailhook Display */}
+                    <div className="border border-[#E5E7EB] rounded-xl p-5 sm:p-6 space-y-5 sm:space-y-6 bg-white shadow-sm">
+                      {/* Header */}
+                      <div>
+                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-3 sm:mb-2 gap-1">
+                          <h3 className="font-semibold text-[#111827] text-base sm:text-lg">
+                            Your Unique Mailhook
+                          </h3>
+                          <span className="text-green-700 bg-green-100 text-[11px] sm:text-xs px-2.5 py-0.5 rounded-full font-medium self-start sm:self-auto">
+                            Private & Unique
+                          </span>
+                        </div>
+
+                        {/* Mailhook Box */}
+                        <div
+                          className="
+                bg-[#F3F4F6] text-[#4F46E5] px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg 
+                flex flex-col sm:flex-row sm:justify-between sm:items-center 
+                gap-2 sm:gap-3 font-mono text-[11px] sm:text-sm break-all 
+                border border-[#E5E7EB] hover:bg-[#EEF2FF] transition-all
+              "
+                        >
+                          <span className="w-full text-center sm:text-left break-all leading-relaxed">
+                            {user?.mailhook ||
+                              "loading-mailhook@zenith-inbox.com"}
+                          </span>
+
+                          <button
+                            onClick={() => {
+                              if (user?.mailhook) {
+                                navigator.clipboard.writeText(user.mailhook);
+                                setAlert({
+                                  type: "success",
+                                  message: "Mailhook copied successfully!",
+                                });
+                              }
+                            }}
+                            className="
+                  self-center sm:self-auto flex items-center gap-1 
+                  text-gray-500 hover:text-[#4F46E5] transition-colors text-base sm:text-lg
+                  focus:outline-none focus:ring-2 focus:ring-[#4F46E5] focus:ring-offset-1 rounded
+                "
+                            aria-label="Copy mailhook"
+                          >
+                            <FiCopy />
+                            <span className="text-[10px] sm:hidden font-medium">
+                              Copy
+                            </span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Bottom Navigation */}
+
+                  {/* Video Section (inside card) */}
+                  <div className="mt-8 border-t border-gray-200 pt-6">
+                    <h3 className="text-base sm:text-lg font-semibold text-[#111827] mb-3">
+                      Watch how to use your Mailhook
+                    </h3>
+                    <div className="rounded-xl overflow-hidden shadow-md aspect-w-16 aspect-h-9">
+                      <iframe
+                        src="https://www.youtube.com/embed/YOUR_STEP2_VIDEO_ID"
+                        title="Step 2 Tutorial"
+                        frameBorder="0"
+                        allowFullScreen
+                        className="w-full h-full"
+                      ></iframe>
+                    </div>
+                  </div>
+                  <div className="mt-8 flex justify-center items-center border-t border-gray-200 pt-6">
+                    <button
+                      onClick={async () => {
+                        await saveSetupProgress({
+                          stepCompleted: 2,
+                          stepStatus: "completed",
+                        });
+                        setStep(3);
+                      }}
+                      className="flex items-center space-x-2 px-6 py-2 rounded-lg text-sm font-semibold bg-[#4F46E5] text-white hover:bg-[#4338CA] transition"
+                    >
+                      <span>Next</span>
+                      <FiArrowRight />
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
@@ -965,20 +1011,10 @@ const SetupFlow = () => {
             {step === 3 && (
               <div className="bg-white shadow-md rounded-xl p-8 sm:p-10 max-w-2xl w-[90%] text-left relative">
                 <AlertMessage />
-                <span
-                  onClick={() =>
-                    window.open("/pages/mailhook/instruction", "_blank")
-                  }
-                  className="absolute right-4 top-4 text-[#4F46E5] text-xs sm:text-sm font-semibold cursor-pointer hover:underline hover:text-[#3730A3] transition-colors"
-                >
-                  Need help?
-                </span>
+                
                 <h2 className="text-2xl font-bold text-[#111827] text-center mb-2">
                   Set up Forwarding
                 </h2>
-                {/* <p className="text-[#4B5563] text-center mb-8">
-                Automatically send your leads to Zenith Inbox.
-              </p> */}
 
                 <div
                   className="
@@ -1040,13 +1076,6 @@ const SetupFlow = () => {
                           Please read instructions again and check your Email
                           forwarding settings.
                         </p>
-                        {/* <p
-                        onClick={() => setShowHelpModal(true)}
-                        className="text-[#4F46E5] text-sm font-semibold cursor-pointer hover:underline"
-                      >
-                        Need help setting up Email forwarding? Click here to
-                        view instructions.
-                      </p> */}
                       </div>
                     ) : validationPhase ? (
                       showValidateButton ? (
@@ -1071,23 +1100,6 @@ const SetupFlow = () => {
                       </div>
                     ) : verificationEmail && verificationEmail.sender ? (
                       <>
-                        {/* <p className="mb-2">
-                        <strong>From:</strong>{" "}
-                        <span className="text-[#4F46E5]">
-                          {verificationEmail.sender}
-                        </span>
-                      </p>
-                      <p className="mb-2">
-                        <strong>Subject:</strong>{" "}
-                        <span className="font-medium">
-                          {verificationEmail.subject}
-                        </span>
-                      </p>
-                      <p className="mb-2 text-gray-600">
-                        <strong>Date:</strong>{" "}
-                        {new Date(verificationEmail.date).toLocaleString()}
-                      </p> */}
-
                         <div
                           className=" border-gray-200  pt-3 max-h-32 overflow-y-auto text-sm leading-relaxed text-gray-700"
                           dangerouslySetInnerHTML={{
@@ -1121,23 +1133,11 @@ const SetupFlow = () => {
                       <MailhookWaitingTimer />
                     )}
                   </div>
-                  {/* {!validationPhase && !validated && showValidateButton && (
-                  <button
-                    onClick={handleRetryValidation}
-                    className="mt-4 flex items-center justify-center mx-auto space-x-2 px-5 py-2 border border-[#4F46E5] text-[#4F46E5] rounded-lg text-sm font-semibold hover:bg-[#EEF2FF] transition"
-                  >
-                    <FiRefreshCcw className="text-[#4F46E5]" />
-                    <span>Retry Checking</span>
-                  </button>
-                )} */}
+
                   {!validationPhase &&
                     !validated &&
                     (showValidateButton ||
                       verificationEmail?.isGmailVerification) && (
-                      //                   {!validationPhase &&
-                      // !validated &&
-                      // verificationEmail?.isGmailVerification && (
-
                       <div className="space-y-3 mt-6">
                         <p className="text-sm text-gray-600">
                           Enter the email address where you’ve set up forwarding
@@ -1158,82 +1158,23 @@ const SetupFlow = () => {
                       </div>
                     )}
                 </div>
-
+  <div className="mt-8 border-t border-gray-200 pt-6">
+        <h3 className="text-base sm:text-lg font-semibold text-[#111827] mb-3">
+          Watch how to set up Forwarding
+        </h3>
+        <div className="rounded-xl overflow-hidden shadow-md aspect-w-16 aspect-h-9">
+          <iframe
+            src="https://www.youtube.com/embed/YOUR_STEP3_VIDEO_ID"
+            title="Step 3 Tutorial"
+            frameBorder="0"
+            allowFullScreen
+            className="w-full h-full"
+          ></iframe>
+        </div>
+      </div>
                 <div className="mt-10 border-t border-gray-200 pt-6 flex justify-between items-center">
-                  <span
-                    onClick={() => setStep(2)}
-                    className="text-[#4F46E5] text-sm font-semibold cursor-pointer hover:underline"
-                  >
-                    Back
-                  </span>
-                  {/* {!validated ? (
-                  // <button
-                  //   disabled={
-                  //     validating ||
-                  //     !verificationEmail ||
-                  //     !verificationEmail?.toEmail?.trim()
-                  //   }
-                  //   onClick={async () => {
-                  //     setValidating(true);
-                  //     setValidationFailed(false);
-                  //     setShowValidateButton(false);
-                  //     setValidationPhase(true);
-                  //     await handleValidateForwarding();
-                  //     startValidationLoop();
-                  //   }}
-                  //   className={`flex items-center space-x-2 px-6 py-2 rounded-lg text-sm font-semibold text-white transition ${
-                  //     validating
-                  //       ? "bg-gray-400 cursor-not-allowed"
-                  //       : verificationEmail?.toEmail?.trim()
-                  //       ? "bg-[#4F46E5] hover:bg-[#4338CA]"
-                  //       : "bg-gray-300 cursor-not-allowed"
-                  //   }`}
-                  // >
-                  //   {validating ? "Validating..." : "Validate Forwarding"}
-                  //   <FiArrowRight />
-                  // </button>
-                  <button
-                    disabled={validating}
-                    onClick={async () => {
-                      if (!verificationEmail?.toEmail?.trim()) {
-                        toast.error(
-                          "Please enter the email where you set up forwarding!"
-                        );
-                        return;
-                      }
+                 
 
-                      setValidating(true);
-                      setValidationFailed(false);
-                      setShowValidateButton(false);
-                      setValidationPhase(true);
-                      await handleValidateForwarding();
-                      startValidationLoop();
-                    }}
-                    className={`flex items-center space-x-2 px-6 py-2 rounded-lg text-sm font-semibold text-white transition
-    ${
-      validating
-        ? "bg-gray-400 cursor-not-allowed"
-        : "bg-[#4F46E5] hover:bg-[#4338CA] cursor-pointer"
-    }`}
-                  >
-                    {validating ? "Validating..." : "Validate Forwarding"}
-                    <FiArrowRight />
-                  </button>
-                ) : (
-                  <button
-                    onClick={async () => {
-                      await saveSetupProgress({
-                        stepCompleted: 3,
-                        stepStatus: "completed",
-                      });
-                      setStep(4);
-                    }}
-                    className="flex items-center space-x-2 px-6 py-2 rounded-lg text-sm font-semibold bg-green-600 text-white hover:bg-green-700 transition"
-                  >
-                    <span>Next</span> <FiArrowRight />
-                  </button>
-                )}
-              </div> */}
                   {!validated &&
                   !validationPhase &&
                   (showValidateButton ||
@@ -1577,20 +1518,6 @@ const SetupFlow = () => {
                         {user?.mailhook || "loading..."}
                       </span>
                     </p>
-
-                    {/* Optional - Future line for automation status */}
-                    {/* 
-  <p className="flex justify-between text-[12px] sm:text-[13px] text-gray-600">
-    <span>Automation Mode:</span>
-    <span className="font-medium text-[#4F46E5]">
-      {setupProgress?.completed
-        ? "Enabled"
-        : setupProgress?.skipped
-        ? "Skipped"
-        : "Pending"}
-    </span>
-  </p>
-  */}
                   </div>
                 </div>
 
