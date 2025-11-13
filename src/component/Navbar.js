@@ -280,6 +280,235 @@
 // };
 
 // export default Navbar;
+// import React, { useState, useContext, useRef, useEffect } from "react";
+// import {
+//   FiEdit3,
+//   FiLogOut,
+//   FiUser,
+// } from "react-icons/fi";
+// import { useNavigate } from "react-router-dom";
+// import OrganizationSettingsModal from "./OrganizationSettingsModal";
+// import ScenarioSelectModal from "./ScenarioSelectModal";
+// import { UserContext } from "./UserContext";
+// import axios from "axios";
+
+// const Navbar = () => {
+//   const [open, setOpen] = useState(false);
+//   const [openScenario, setOpenScenario] = useState(false);
+//   const [showProfileMenu, setShowProfileMenu] = useState(false);
+//   const profileRef = useRef(null);
+//   const navigate = useNavigate();
+
+//   const { user, loading } = useContext(UserContext);
+
+//   const handleSelect = (type) => {
+//     console.log("Selected Scenario:", type);
+//     setOpenScenario(false);
+//   };
+
+//   const hasSkippedStep = user?.setup?.steps?.some(
+//     (step) => step.status === "skipped" || step.status === "incomplete"
+//   );
+//   const setupCompleted = !hasSkippedStep;
+
+//   const handleWizardClick = () => {
+//     if (!user) return;
+//     const skippedStep = user?.setup?.steps?.find((s) => s.status === "skipped");
+//     if (skippedStep) {
+//       navigate(`/setup?step=${skippedStep.step}`);
+//     } else {
+//       navigate("/setup");
+//     }
+//   };
+
+//   useEffect(() => {
+//     const handleClickOutside = (e) => {
+//       if (profileRef.current && !profileRef.current.contains(e.target)) {
+//         setShowProfileMenu(false);
+//       }
+//     };
+//     document.addEventListener("mousedown", handleClickOutside);
+//     return () => document.removeEventListener("mousedown", handleClickOutside);
+//   }, []);
+
+//   const handleLogout = async () => {
+//     const userId = localStorage.getItem("userid");
+//     try {
+//       await fetch(
+//         `https://email-syncing-backend.vercel.app/auth/logout/${userId}`,
+//         { method: "POST" }
+//       );
+//       localStorage.clear();
+//       navigate("/login", { replace: true });
+//     } catch (error) {
+//       console.error("Logout failed:", error);
+//     }
+//   };
+
+//   const handleSkipSetup = async () => {
+//     const userId = localStorage.getItem("userid");
+//     await axios.post(
+//       `https://email-syncing-backend.vercel.app/auth/skip-all/${userId}`
+//     );
+//     alert("All setup steps skipped successfully!");
+//   };
+
+//   return (
+//   <header
+//   className="
+//     w-full px-6 py-3 flex items-center justify-end sticky top-0 z-30
+//     bg-white/30 backdrop-blur-[16px]
+//     border-b border-white/50
+//     shadow-[0_4px_20px_rgba(0,0,0,0.15)]
+//   "
+//   style={{ WebkitBackdropFilter: "blur(16px)" }}
+// >
+//   <div className="flex items-center gap-3">
+
+//     {/* ⭐ DESKTOP BUTTONS */}
+//     <div className="hidden md:flex items-center gap-3">
+
+//       {/* Wizard Button (Glass Style) */}
+//       {!loading && user && (
+//         <button
+//           onClick={handleWizardClick}
+//           className="
+//             flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold
+//             bg-white/40 text-gray-900
+//             border border-white/60
+//             shadow-[0_4px_15px_rgba(0,0,0,0.12)]
+//             hover:bg-white/50 hover:shadow-[0_6px_25px_rgba(0,0,0,0.18)]
+//             transition-all backdrop-blur-xl
+//           "
+//         >
+//           {(() => {
+//             const totalSteps = user?.setup?.steps?.length || 0;
+//             const completedSteps = user?.setup?.steps?.filter(
+//               (s) => s.status === "completed"
+//             ).length;
+
+//             return (
+//               <>
+//                 {!setupCompleted ? "Complete Wizard" : "Wizard Completed"}{" "}
+//                 <span className="text-xs opacity-80">
+//                   ({completedSteps}/{totalSteps})
+//                 </span>
+//               </>
+//             );
+//           })()}
+//         </button>
+//       )}
+
+//       {/* Organization Settings Button */}
+//       <button
+//         onClick={() => setOpen(true)}
+//         className="
+//           flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold
+//           bg-white/40 text-gray-900
+//           border border-white/60
+//           shadow-[0_4px_15px_rgba(0,0,0,0.12)]
+//           hover:bg-white/50 hover:shadow-[0_6px_25px_rgba(0,0,0,0.18)]
+//           transition-all backdrop-blur-xl
+//         "
+//       >
+//         <FiEdit3 className="text-indigo-600" />
+//         Organization Settings
+//       </button>
+
+//       {/* Create Scenario Button (Purple) */}
+//       <button
+//         onClick={() => setOpenScenario(true)}
+//         className="
+//           flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold
+//           bg-indigo-600 text-white
+//           shadow-[0_4px_20px_rgba(99,102,241,0.4)]
+//           hover:bg-indigo-700 transition-all
+//         "
+//       >
+//         + Create Scenario
+//       </button>
+
+//       {/* Reset Button */}
+//       <button
+//         onClick={handleSkipSetup}
+//         className="
+//           p-2 rounded-full text-gray-700 hover:text-gray-900 
+//           hover:bg-white/40 border border-white/50 
+//           backdrop-blur-xl transition
+//         "
+//       >
+//         reset
+//       </button>
+//     </div>
+
+//     {/* ⭐ PROFILE DROPDOWN */}
+//     <div className="relative" ref={profileRef}>
+//       <div
+//         onClick={() => setShowProfileMenu(!showProfileMenu)}
+//         className="
+//           w-9 h-9 rounded-full bg-indigo-600 
+//           flex items-center justify-center
+//           text-white text-sm font-bold 
+//           cursor-pointer hover:bg-indigo-700 transition
+//           shadow-[0_3px_12px_rgba(0,0,0,0.25)]
+//         "
+//       >
+//         {user?.fullName ? user.fullName.slice(0, 2).toUpperCase() : "U"}
+//       </div>
+
+//       {/* 🎉 Glass Dropdown Menu */}
+//       {showProfileMenu && (
+//         <div
+//           className="
+//             absolute right-0 mt-2 w-48
+//             bg-white/40 backdrop-blur-xl
+//             border border-white/60
+//             rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.25)]
+//             py-1 z-50 animate-fade-in
+//           "
+//         >
+//           <button
+//             onClick={() => {
+//               setShowProfileMenu(false);
+//               navigate("/profile");
+//             }}
+//             className="
+//               w-full text-left px-4 py-2 text-sm text-gray-800 
+//               hover:bg-white/60 
+//               flex items-center gap-2 transition
+//             "
+//           >
+//             <FiUser className="text-indigo-600" /> My Profile
+//           </button>
+
+//           <button
+//             onClick={handleLogout}
+//             className="
+//               w-full text-left px-4 py-2 text-sm text-gray-800 
+//               hover:bg-white/60 
+//               flex items-center gap-2 transition
+//             "
+//           >
+//             <FiLogOut className="text-indigo-600" /> Logout
+//           </button>
+//         </div>
+//       )}
+//     </div>
+//   </div>
+
+//   {/* MODALS */}
+//   <OrganizationSettingsModal open={open} onClose={() => setOpen(false)} />
+//   <ScenarioSelectModal
+//     open={openScenario}
+//     onClose={() => setOpenScenario(false)}
+//     onSelect={handleSelect}
+//   />
+// </header>
+
+//   );
+// };
+
+// export default Navbar;
 import React, { useState, useContext, useRef, useEffect } from "react";
 import {
   FiEdit3,
@@ -354,157 +583,141 @@ const Navbar = () => {
   };
 
   return (
-  <header
-  className="
-    w-full px-6 py-3 flex items-center justify-end sticky top-0 z-30
-    bg-white/30 backdrop-blur-[16px]
-    border-b border-white/50
-    shadow-[0_4px_20px_rgba(0,0,0,0.15)]
-  "
-  style={{ WebkitBackdropFilter: "blur(16px)" }}
->
-  <div className="flex items-center gap-3">
+    <header
+      className="
+        w-full px-6 py-3 flex items-center justify-end sticky top-0 z-30
+        bg-white
+      "
+    >
+      <div className="flex items-center gap-3">
 
-    {/* ⭐ DESKTOP BUTTONS */}
-    <div className="hidden md:flex items-center gap-3">
+        {/* Desktop Buttons */}
+        <div className="hidden md:flex items-center gap-3">
 
-      {/* Wizard Button (Glass Style) */}
-      {!loading && user && (
-        <button
-          onClick={handleWizardClick}
-          className="
-            flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold
-            bg-white/40 text-gray-900
-            border border-white/60
-            shadow-[0_4px_15px_rgba(0,0,0,0.12)]
-            hover:bg-white/50 hover:shadow-[0_6px_25px_rgba(0,0,0,0.18)]
-            transition-all backdrop-blur-xl
-          "
-        >
-          {(() => {
-            const totalSteps = user?.setup?.steps?.length || 0;
-            const completedSteps = user?.setup?.steps?.filter(
-              (s) => s.status === "completed"
-            ).length;
+          {/* Wizard Button */}
+          {!loading && user && (
+            <button
+              onClick={handleWizardClick}
+              className="
+                flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold
+                bg-gray-100 text-gray-900
+                hover:bg-gray-200 transition-all
+              "
+            >
+              {(() => {
+                const totalSteps = user?.setup?.steps?.length || 0;
+                const completedSteps = user?.setup?.steps?.filter(
+                  (s) => s.status === "completed"
+                ).length;
 
-            return (
-              <>
-                {!setupCompleted ? "Complete Wizard" : "Wizard Completed"}{" "}
-                <span className="text-xs opacity-80">
-                  ({completedSteps}/{totalSteps})
-                </span>
-              </>
-            );
-          })()}
-        </button>
-      )}
+                return (
+                  <>
+                    {!setupCompleted ? "Complete Wizard" : "Wizard Completed"}{" "}
+                    <span className="text-xs opacity-80">
+                      ({completedSteps}/{totalSteps})
+                    </span>
+                  </>
+                );
+              })()}
+            </button>
+          )}
 
-      {/* Organization Settings Button */}
-      <button
-        onClick={() => setOpen(true)}
-        className="
-          flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold
-          bg-white/40 text-gray-900
-          border border-white/60
-          shadow-[0_4px_15px_rgba(0,0,0,0.12)]
-          hover:bg-white/50 hover:shadow-[0_6px_25px_rgba(0,0,0,0.18)]
-          transition-all backdrop-blur-xl
-        "
-      >
-        <FiEdit3 className="text-indigo-600" />
-        Organization Settings
-      </button>
-
-      {/* Create Scenario Button (Purple) */}
-      <button
-        onClick={() => setOpenScenario(true)}
-        className="
-          flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold
-          bg-indigo-600 text-white
-          shadow-[0_4px_20px_rgba(99,102,241,0.4)]
-          hover:bg-indigo-700 transition-all
-        "
-      >
-        + Create Scenario
-      </button>
-
-      {/* Reset Button */}
-      <button
-        onClick={handleSkipSetup}
-        className="
-          p-2 rounded-full text-gray-700 hover:text-gray-900 
-          hover:bg-white/40 border border-white/50 
-          backdrop-blur-xl transition
-        "
-      >
-        reset
-      </button>
-    </div>
-
-    {/* ⭐ PROFILE DROPDOWN */}
-    <div className="relative" ref={profileRef}>
-      <div
-        onClick={() => setShowProfileMenu(!showProfileMenu)}
-        className="
-          w-9 h-9 rounded-full bg-indigo-600 
-          flex items-center justify-center
-          text-white text-sm font-bold 
-          cursor-pointer hover:bg-indigo-700 transition
-          shadow-[0_3px_12px_rgba(0,0,0,0.25)]
-        "
-      >
-        {user?.fullName ? user.fullName.slice(0, 2).toUpperCase() : "U"}
-      </div>
-
-      {/* 🎉 Glass Dropdown Menu */}
-      {showProfileMenu && (
-        <div
-          className="
-            absolute right-0 mt-2 w-48
-            bg-white/40 backdrop-blur-xl
-            border border-white/60
-            rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.25)]
-            py-1 z-50 animate-fade-in
-          "
-        >
+          {/* Organization Settings */}
           <button
-            onClick={() => {
-              setShowProfileMenu(false);
-              navigate("/profile");
-            }}
+            onClick={() => setOpen(true)}
             className="
-              w-full text-left px-4 py-2 text-sm text-gray-800 
-              hover:bg-white/60 
-              flex items-center gap-2 transition
+              flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold
+              bg-gray-100 text-gray-900
+              hover:bg-gray-200 transition-all
             "
           >
-            <FiUser className="text-indigo-600" /> My Profile
+            <FiEdit3 className="text-indigo-600" />
+            Organization Settings
           </button>
 
+          {/* Create Scenario */}
           <button
-            onClick={handleLogout}
+            onClick={() => setOpenScenario(true)}
             className="
-              w-full text-left px-4 py-2 text-sm text-gray-800 
-              hover:bg-white/60 
-              flex items-center gap-2 transition
+              flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold
+              bg-indigo-600 text-white
+              hover:bg-indigo-700 transition-all
             "
           >
-            <FiLogOut className="text-indigo-600" /> Logout
+            + Create Scenario
+          </button>
+
+          {/* Reset */}
+          <button
+            onClick={handleSkipSetup}
+            className="
+              p-2 rounded-full text-gray-700 hover:text-gray-900 
+              hover:bg-gray-200 transition
+            "
+          >
+            reset
           </button>
         </div>
-      )}
-    </div>
-  </div>
 
-  {/* MODALS */}
-  <OrganizationSettingsModal open={open} onClose={() => setOpen(false)} />
-  <ScenarioSelectModal
-    open={openScenario}
-    onClose={() => setOpenScenario(false)}
-    onSelect={handleSelect}
-  />
-</header>
+        {/* Profile Menu */}
+        <div className="relative" ref={profileRef}>
+          <div
+            onClick={() => setShowProfileMenu(!showProfileMenu)}
+            className="
+              w-9 h-9 rounded-full bg-indigo-600 
+              flex items-center justify-center
+              text-white text-sm font-bold 
+              cursor-pointer hover:bg-indigo-700 transition
+            "
+          >
+            {user?.fullName ? user.fullName.slice(0, 2).toUpperCase() : "U"}
+          </div>
 
+          {showProfileMenu && (
+            <div
+              className="
+                absolute right-0 mt-2 w-48
+                bg-white rounded-xl
+                py-1 z-50
+              "
+            >
+              <button
+                onClick={() => {
+                  setShowProfileMenu(false);
+                  navigate("/profile");
+                }}
+                className="
+                  w-full text-left px-4 py-2 text-sm text-gray-800 
+                  hover:bg-gray-100 
+                  flex items-center gap-2 transition
+                "
+              >
+                <FiUser className="text-indigo-600" /> My Profile
+              </button>
+
+              <button
+                onClick={handleLogout}
+                className="
+                  w-full text-left px-4 py-2 text-sm text-gray-800 
+                  hover:bg-gray-100 
+                  flex items-center gap-2 transition
+                "
+              >
+                <FiLogOut className="text-indigo-600" /> Logout
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Modals */}
+      <OrganizationSettingsModal open={open} onClose={() => setOpen(false)} />
+      <ScenarioSelectModal
+        open={openScenario}
+        onClose={() => setOpenScenario(false)}
+        onSelect={handleSelect}
+      />
+    </header>
   );
 };
 
