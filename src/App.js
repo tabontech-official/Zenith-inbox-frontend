@@ -259,3 +259,79 @@ function App() {
 }
 
 export default App;
+// import React from "react";
+
+// export default function App() {
+//   return (
+//     <div className="relative flex items-center justify-center min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-black overflow-hidden">
+
+//       {/* ⚪ Neon Gray Bubble (clockwise) */}
+//       <div className="absolute w-[500px] h-[500px] flex items-center justify-center animate-spin-slow">
+//         <div
+//           className="absolute rounded-full blur-3xl"
+//           style={{
+//             width: "220px",
+//             height: "220px",
+//             transform: "translateX(180px)",
+//             background:
+//               "radial-gradient(circle, rgba(200,200,200,0.4), rgba(80,80,80,0.1))",
+//             boxShadow: "0 0 60px 20px rgba(200,200,200,0.3)",
+//             animation: "pulse 5s ease-in-out infinite",
+//           }}
+//         />
+//       </div>
+
+//       {/* 🟢 Neon Bubble (counter-clockwise) */}
+//       <div className="absolute w-[600px] h-[600px] flex items-center justify-center animate-spin-reverse-slow">
+//         <div
+//           className="absolute rounded-full blur-3xl"
+//           style={{
+//             width: "280px",
+//             height: "280px",
+//             transform: "translateX(-200px)",
+//             background:
+//               "radial-gradient(circle, rgba(57,255,20,0.4), rgba(0,255,255,0.1))",
+//             boxShadow: "0 0 80px 30px rgba(0,255,255,0.25)",
+//             animation: "pulse 6s ease-in-out infinite",
+//           }}
+//         />
+//       </div>
+
+//       {/* 💳 Card */}
+//       <div className="relative z-10 bg-white/5 backdrop-blur-md p-10 rounded-2xl shadow-2xl border border-white/10 text-center max-w-sm">
+//         <h1 className="text-4xl font-bold text-white mb-3 tracking-wide">
+//           Neon Bubble Card ⚡
+//         </h1>
+//         <p className="text-gray-300">
+//           Two glowing neon bubbles circulate smoothly behind this glass card.
+//         </p>
+//       </div>
+
+//       {/* 🎬 Inline Keyframes */}
+//       <style>{`
+//         @keyframes pulse {
+//           0%, 100% { transform: scale(1); opacity: 0.8; }
+//           50% { transform: scale(1.15); opacity: 1; }
+//         }
+
+//         @keyframes spin-slow {
+//           from { transform: rotate(0deg); }
+//           to { transform: rotate(360deg); }
+//         }
+
+//         @keyframes spin-reverse-slow {
+//           from { transform: rotate(360deg); }
+//           to { transform: rotate(0deg); }
+//         }
+
+//         .animate-spin-slow {
+//           animation: spin-slow 25s linear infinite;
+//         }
+
+//         .animate-spin-reverse-slow {
+//           animation: spin-reverse-slow 30s linear infinite;
+//         }
+//       `}</style>
+//     </div>
+//   );
+// }

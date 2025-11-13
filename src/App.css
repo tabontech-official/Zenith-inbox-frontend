@@ -5,3 +5,62 @@ body{
     filter: blur(5px);
     pointer-events: none;
   }
+  /* Container base */
+.slide-container {
+  width: 100%;
+  max-width: 40rem;
+  min-height: 600px;
+  position: relative;
+  transition: transform 0.6s ease, opacity 0.6s ease;
+  opacity: 1;
+}
+
+/* Slide In Right */
+.slide-in-right {
+  animation: slideInRight 0.6s ease forwards;
+}
+
+/* Slide In Left */
+.slide-in-left {
+  animation: slideInLeft 0.6s ease forwards;
+}
+
+/* Keyframes */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(80px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-80px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Optional shared card styles */
+.step-card {
+  @apply flex flex-col items-center justify-between min-h-[560px]
+  text-center border border-gray-200 rounded-2xl
+  shadow-[0_4px_20px_rgba(79,70,229,0.05)]
+  bg-gradient-to-br from-white via-indigo-50/40 to-white
+  p-8 sm:p-10 transition-all duration-500;
+}
+
+/* Button style */
+.btn-primary {
+  @apply flex items-center justify-center gap-2 bg-[#4F46E5]
+  hover:bg-[#4338CA] text-white font-semibold text-sm
+  px-8 py-3 rounded-full shadow-md transition-all duration-300
+  hover:scale-[1.03];
+}

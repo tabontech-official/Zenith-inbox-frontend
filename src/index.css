@@ -65,6 +65,20 @@
     opacity: 1;
   }
 }
+@keyframes slideFromRight {
+  0% {
+    opacity: 0;
+    transform: translateX(40px); /* start from right */
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);    /* end in center */
+  }
+}
+
+.slide-right {
+  animation: slideFromRight 0.45s ease-out;
+}
 
 .animate-slideIn {
   animation: slideIn 0.3s ease-out forwards;
@@ -93,4 +107,23 @@
 .custom-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: #7C3AED transparent;
+}
+.slide-enter {
+  opacity: 0;
+  transform: translateX(40px);
+}
+.slide-enter-active {
+  opacity: 1;
+  transform: translateX(0);
+  transition: all 0.5s ease-in-out;
+}
+
+.slide-exit {
+  opacity: 1;
+  transform: translateX(0);
+}
+.slide-exit-active {
+  opacity: 0;
+  transform: translateX(-40px);
+  transition: all 0.5s ease-in-out;
 }

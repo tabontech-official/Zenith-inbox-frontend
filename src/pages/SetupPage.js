@@ -734,6 +734,13 @@ const SetupFlow = () => {
         {alert.message}
       </div>
     ) : null;
+  const [animate, setAnimate] = useState(false);
+
+  useEffect(() => {
+    setAnimate(true);
+    const timer = setTimeout(() => setAnimate(false), 500); // stop animation after 0.5s
+    return () => clearTimeout(timer);
+  }, [step]);
 
   return (
     <div className="relative min-h-screen bg-[#F9FAFB] overflow-hidden">
@@ -762,304 +769,238 @@ const SetupFlow = () => {
           </div>
 
           {/* 🔹 Step Indicator (visible everywhere) */}
-<div className="flex justify-center ">
-  <div className="bg-[#4F46E5] text-white px-5 py-2 rounded-full text-sm sm:text-base font-semibold shadow-md flex items-center justify-center gap-1">
-    <FiCheckCircle className="text-white text-xs sm:text-sm" />
-    <span>Step {step} of 5</span>
-  </div>
-</div>
+          <div className="flex justify-center ">
+            <div className="bg-[#4F46E5] text-white px-5 py-2 rounded-full text-sm sm:text-base font-semibold shadow-md flex items-center justify-center gap-1">
+              <FiCheckCircle className="text-white text-xs sm:text-sm" />
+              <span>Step {step} of 5</span>
+            </div>
+          </div>
 
-
-          {/* <div className="hidden sm:flex flex-wrap items-center justify-center gap-2 sm:gap-4 mt-6 mb-2">
-            {[1, 2, 3, 4, 5].map((num) => (
-              <React.Fragment key={num}>
-                <div className="flex flex-col items-center min-w-[2rem]">
-                  <div
-                    className={`flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full text-sm font-semibold transition-all duration-300
-            ${
-              step > num
-                ? "bg-green-500 text-white"
-                : step === num
-                ? "bg-[#4F46E5] text-white shadow-md"
-                : "bg-gray-200 text-gray-500"
-            }`}
-                  >
-                    {step > num ? (
-                      <FiCheck className="text-white text-lg" />
-                    ) : (
-                      num
-                    )}
-                  </div>
-
-                  <span
-                    className={`text-[11px] sm:text-xs mt-1 font-medium ${
-                      step >= num ? "text-[#4F46E5]" : "text-gray-400"
-                    }`}
-                  >
-                    Step {num}
-                  </span>
-                </div>
-
-                {num < 5 && (
-                  <div
-                    className={`h-[2px] sm:h-[3px] w-8 sm:w-16 rounded-full transition-all duration-300 
-            ${step > num ? "bg-[#4F46E5]" : "bg-gray-300"}`}
-                  />
-                )}
-              </React.Fragment>
-            ))}
-          </div> */}
-
-       <div className="w-full flex justify-center overflow-hidden relative">
-  <AnimatePresence mode="wait">
-    <motion.div
-      key={step}
-      initial={{ opacity: 0, x: 60 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -60 }}
-      transition={{ duration: 0.5, ease: "easeInOut" }}
-      className="
-        p-8 sm:p-10 
-        max-w-2xl w-[90%] 
-        text-left relative 
-        min-h-[600px] 
-        flex flex-col justify-between
-      "
-    >
-      {/* --------------------- STEP 1 --------------------- */}
-    {step === 1 && (
-  <motion.div
-    key="step1"
-    initial={{ opacity: 0, x: 80 }}
-    animate={{ opacity: 1, x: 0 }}
-    exit={{ opacity: 0, x: -80 }}
-    transition={{
-      type: "spring",
-      stiffness: 70,   // lower = smoother
-      damping: 18,     // higher = less bounce
-      duration: 0.7,   // ensure smooth fade
-    }}
-    className="
+          <div className="w-full flex justify-center overflow-hidden relative">
+            <div
+              key={step}
+              className="
+    slide-right
+    p-8 sm:p-10 max-w-2xl w-[90%] text-left 
+    relative min-h-[600px] flex flex-col justify-between
+  "
+            >
+              {step === 1 && (
+                <div
+                  className="
       flex flex-col items-center justify-between 
-      min-h-[560px] text-center border border-[#E5E7EB] 
+      min-h-[600px] text-center border border-[#E5E7EB] 
       rounded-2xl shadow-[0_4px_20px_rgba(79,70,229,0.05)] 
       bg-gradient-to-br from-white via-indigo-50/40 to-white 
       p-8 sm:p-10 transition-all duration-500 relative
     "
-  >
-    {/* 🔹 Reserved alert space (no layout shift) */}
-    <div className="w-full min-h-[48px] flex items-center justify-center mb-2">
-      <AnimatePresence>
-        {alert?.message && (
-          <motion.div
-            key={alert.message}
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.3 }}
-            className={`px-4 py-2 rounded-md text-sm font-medium shadow-sm ${
-              alert.type === "success"
-                ? "bg-green-100 text-green-700 border border-green-300"
-                : "bg-red-100 text-red-700 border border-red-300"
-            }`}
-          >
-            {alert.message}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+                >
+                  <div className="w-full min-h-[48px] flex items-center justify-center mb-2">
+                    <AnimatePresence>
+                      {alert?.message && (
+                        <motion.div
+                          key={alert.message}
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          transition={{ duration: 0.3 }}
+                          className={`px-4 py-2 rounded-md text-sm font-medium shadow-sm ${
+                            alert.type === "success"
+                              ? "bg-green-100 text-green-700 border border-green-300"
+                              : "bg-red-100 text-red-700 border border-red-300"
+                          }`}
+                        >
+                          {alert.message}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
 
-    {/* Header */}
-    <div>
-      <h1 className="text-2xl sm:text-3xl font-bold text-[#111827] mb-4 mt-4">
-        Never miss a lead again.
-      </h1>
+                  <div>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-[#111827] mb-4 mt-4">
+                      Never miss a lead again.
+                    </h1>
 
-      <p className="text-[#4B5563] text-base mb-8 leading-relaxed max-w-md mx-auto">
-        We’ll create your mailhook and help you forward new leads to it.
-        Then we’ll set up how your replies are sent (SMTP).
-      </p>
-    </div>
+                    <p className="text-[#4B5563] text-base mb-8 leading-relaxed max-w-md mx-auto">
+                      We’ll create your mailhook and help you forward new leads
+                      to it. Then we’ll set up how your replies are sent (SMTP).
+                    </p>
+                  </div>
 
-    {/* CTA */}
-    <div className="flex items-center justify-center mt-6">
-      <button
-        onClick={async () => {
-          await saveSetupProgress({
-            stepCompleted: 1,
-            stepStatus: "completed",
-          });
-          setStep(2);
-        }}
-        className="
+                  {/* CTA */}
+                  <div className="flex items-center justify-center mt-6">
+                    <button
+                      onClick={async () => {
+                        await saveSetupProgress({
+                          stepCompleted: 1,
+                          stepStatus: "completed",
+                        });
+                        setStep(2);
+                      }}
+                      className="
           flex items-center justify-center gap-2
           bg-[#4F46E5] hover:bg-[#4338CA]
           text-white font-semibold text-sm
           px-8 py-3 rounded-full shadow-md
           transition-all duration-300 hover:scale-[1.03]
         "
-      >
-        <span>Start 60-sec Setup</span>
-        <FiArrowRight />
-      </button>
-    </div>
+                    >
+                      <span>Start 60-sec Setup</span>
+                      <FiArrowRight />
+                    </button>
+                  </div>
 
-    {/* Footer text */}
-    <p className="text-xs text-gray-400 mt-6">
-      You can complete setup later from your Organization Settings.
-    </p>
+                  <p className="text-xs text-gray-400 mt-6">
+                    You can complete setup later from your Organization
+                    Settings.
+                  </p>
 
-    {/* Skip link (absolute bottom-left) */}
-    <span
-      onClick={async () => {
-        await saveSetupProgress({
-          skipped: true,
-          stepCompleted: 1,
-        });
-        navigate("/organization");
-      }}
-      className="
+                  <span
+                    onClick={async () => {
+                      await saveSetupProgress({
+                        skipped: true,
+                        stepCompleted: 1,
+                      });
+                      navigate("/organization");
+                    }}
+                    className="
         absolute bottom-4 left-4 text-[#4F46E5]
         text-xs sm:text-sm font-semibold cursor-pointer
         hover:underline hover:text-[#3730A3] transition-colors
       "
-    >
-      Skip
-    </span>
-  </motion.div>
-)}
+                  >
+                    Skip
+                  </span>
+                </div>
+              )}
 
-
-
-      {/* --------------------- STEP 2 --------------------- */}
-  {step === 2 && (
-  <div
-    className="
+              {step === 2 && (
+                <div
+                  className="
       flex flex-col items-center justify-between 
-      min-h-[560px] text-center border border-[#E5E7EB] 
+      min-h-[600px] text-center border border-[#E5E7EB] 
       rounded-2xl shadow-[0_4px_20px_rgba(79,70,229,0.05)] 
       bg-gradient-to-br from-white via-indigo-50/40 to-white 
       p-8 sm:p-10 transition-all duration-500
     "
-  >
-    {/* 🔹 Reserved Alert Area (prevents layout shift) */}
-    <div className="w-full min-h-[48px] flex items-center justify-center mb-2">
-      <AnimatePresence>
-        {alert?.message && (
-          <motion.div
-            key={alert.message}
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.3 }}
-            className={`px-4 py-2 rounded-md text-sm font-medium shadow-sm ${
-              alert.type === "success"
-                ? "bg-green-100 text-green-700 border border-green-300"
-                : "bg-red-100 text-red-700 border border-red-300"
-            }`}
-          >
-            {alert.message}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+                >
+                  {/* 🔹 Reserved Alert Area (prevents layout shift) */}
+                  <div className="w-full min-h-[48px] flex items-center justify-center mb-2">
+                    <AnimatePresence>
+                      {alert?.message && (
+                        <motion.div
+                          key={alert.message}
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          transition={{ duration: 0.3 }}
+                          className={`px-4 py-2 rounded-md text-sm font-medium shadow-sm ${
+                            alert.type === "success"
+                              ? "bg-green-100 text-green-700 border border-green-300"
+                              : "bg-red-100 text-red-700 border border-red-300"
+                          }`}
+                        >
+                          {alert.message}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
 
-    {/* Header */}
-    <div>
-      <h2 className="text-2xl sm:text-3xl font-bold text-[#111827] mb-3">
-        Your Mailhook is Ready
-      </h2>
-      <p className="text-[#4B5563] text-sm sm:text-base mb-8 max-w-md mx-auto">
-        This is a private, unique address just for your leads.
-      </p>
+                  {/* Header */}
+                  <div>
+                    <h2 className="text-2xl sm:text-3xl font-bold text-[#111827] mb-3">
+                      Your Mailhook is Ready
+                    </h2>
+                    <p className="text-[#4B5563] text-sm sm:text-base mb-8 max-w-md mx-auto">
+                      This is a private, unique address just for your leads.
+                    </p>
 
-      {/* Mailhook Card */}
-      <div
-        className="
+                    {/* Mailhook Card */}
+                    <div
+                      className="
           border border-[#E5E7EB] bg-white rounded-xl shadow-sm 
           p-5 sm:p-6 mb-5 hover:shadow-md transition-all duration-300
         "
-      >
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-2">
-          <h3 className="font-semibold text-[#111827] text-base sm:text-lg">
-            Your Unique Mailhook
-          </h3>
-          <span className="text-green-700 bg-green-100 text-[11px] sm:text-xs px-2.5 py-0.5 rounded-full font-medium">
-            Private & Unique
-          </span>
-        </div>
+                    >
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-2">
+                        <h3 className="font-semibold text-[#111827] text-base sm:text-lg">
+                          Your Unique Mailhook
+                        </h3>
+                        <span className="text-green-700 bg-green-100 text-[11px] sm:text-xs px-2.5 py-0.5 rounded-full font-medium">
+                          Private & Unique
+                        </span>
+                      </div>
 
-        <div
-          className="
+                      <div
+                        className="
             bg-[#F9FAFB] text-[#4F46E5] px-4 py-3 rounded-lg 
             flex justify-between items-center font-mono text-sm 
             border border-[#E5E7EB] hover:bg-[#EEF2FF] transition-all
           "
-        >
-          <span className="truncate w-full">
-            {user?.mailhook || "loading-mailhook@zenith-inbox.com"}
-          </span>
-          <button
-            onClick={() => {
-              if (user?.mailhook) {
-                navigator.clipboard.writeText(user.mailhook);
-                setAlert({
-                  type: "success",
-                  message: "Mailhook copied successfully!",
-                });
-              }
-            }}
-            className="ml-3 text-gray-500 hover:text-[#4F46E5] transition-colors"
-          >
-            <FiCopy className="text-lg" />
-          </button>
-        </div>
-      </div>
+                      >
+                        <span className="truncate w-full">
+                          {user?.mailhook ||
+                            "loading-mailhook@zenith-inbox.com"}
+                        </span>
+                        <button
+                          onClick={() => {
+                            if (user?.mailhook) {
+                              navigator.clipboard.writeText(user.mailhook);
+                              setAlert({
+                                type: "success",
+                                message: "Mailhook copied successfully!",
+                              });
+                            }
+                          }}
+                          className="ml-3 text-gray-500 hover:text-[#4F46E5] transition-colors"
+                        >
+                          <FiCopy className="text-lg" />
+                        </button>
+                      </div>
+                    </div>
 
-      {/* Tip Section */}
-      <div
-        className="
+                    {/* Tip Section */}
+                    <div
+                      className="
           bg-gradient-to-r from-indigo-50 via-purple-50 to-indigo-100 
           border-l-4 border-indigo-500 rounded-lg p-4 text-indigo-900 
           text-sm shadow-sm leading-relaxed
         "
-      >
-        <strong className="text-indigo-700">💡 Tip:</strong> Copy this address
-        and add it as a forwarding destination in your email provider’s
-        settings (Gmail or Outlook).
-      </div>
-    </div>
+                    >
+                      <strong className="text-indigo-700">💡 Tip:</strong> Copy
+                      this address and add it as a forwarding destination in
+                      your email provider’s settings (Gmail or Outlook).
+                    </div>
+                  </div>
 
-    {/* CTA - Only Next Button */}
-    <div className="flex justify-center mt-10">
-      <button
-        onClick={async () => {
-          await saveSetupProgress({
-            stepCompleted: 2,
-            stepStatus: "completed",
-          });
-          setStep(3);
-        }}
-        className="
+                  {/* CTA - Only Next Button */}
+                  <div className="flex justify-center mt-10">
+                    <button
+                      onClick={async () => {
+                        await saveSetupProgress({
+                          stepCompleted: 2,
+                          stepStatus: "completed",
+                        });
+                        setStep(3);
+                      }}
+                      className="
           flex items-center justify-center gap-2 
           bg-[#4F46E5] hover:bg-[#4338CA] 
           text-white font-semibold text-sm 
           px-8 py-3 rounded-full shadow-md 
           transition-all duration-300 hover:scale-[1.03]
         "
-      >
-        <span>Next</span>
-        <FiArrowRight />
-      </button>
-    </div>
-  </div>
-)}
+                    >
+                      <span>Next</span>
+                      <FiArrowRight />
+                    </button>
+                  </div>
+                </div>
+              )}
 
-
-      {/* --------------------- STEP 3 --------------------- */}
-      {step === 3 && (
-  <div
-    className="
+              {step === 3 && (
+                <div
+                  className="
       flex flex-col items-center justify-between 
       min-h-[600px] text-center 
       border border-[#E5E7EB] rounded-2xl 
@@ -1067,234 +1008,234 @@ const SetupFlow = () => {
       bg-gradient-to-br from-white via-indigo-50/40 to-white 
       p-8 sm:p-10 transition-all duration-500 relative
     "
-  >
-    {/* 🔹 Reserved Alert Space (prevents layout shift) */}
-    <div className="w-full  flex items-center justify-center mb-2">
-      <AlertMessage />
-    </div>
+                >
+                  {/* 🔹 Reserved Alert Space (prevents layout shift) */}
+                  <div className="w-full  flex items-center justify-center mb-2">
+                    <AlertMessage />
+                  </div>
 
-    {/* ---------------- Header ---------------- */}
-    <div className="w-full relative">
-      
+                  {/* ---------------- Header ---------------- */}
+                  <div className="w-full relative">
+                    <h2 className="text-2xl sm:text-3xl font-bold text-[#111827] text-center mb-2">
+                      Set up Forwarding
+                    </h2>
 
-      <h2 className="text-2xl sm:text-3xl font-bold text-[#111827] text-center mb-2">
-        Set up Forwarding
-      </h2>
-
-      {/* Mailhook bar */}
-      <div
-        className="
+                    {/* Mailhook bar */}
+                    <div
+                      className="
           bg-[#F3F4F6] text-[#4F46E5] 
           px-4 py-3 rounded-lg 
           flex flex-col sm:flex-row sm:items-center sm:justify-between 
           gap-2 sm:gap-3 font-mono text-sm mb-6 w-full break-all
         "
-      >
-        <p className="flex flex-col sm:flex-row sm:items-center sm:gap-2 text-center sm:text-left w-full">
-          <span className="text-[#111827] font-medium whitespace-nowrap">
-            Forward emails to:
-          </span>
-          <span className="text-[#4F46E5] break-all truncate sm:truncate-none">
-            {user?.mailhook || "loading..."}
-          </span>
-        </p>
+                    >
+                      <p className="flex flex-col sm:flex-row sm:items-center sm:gap-2 text-center sm:text-left w-full">
+                        <span className="text-[#111827] font-medium whitespace-nowrap">
+                          Forward emails to:
+                        </span>
+                        <span className="text-[#4F46E5] break-all truncate sm:truncate-none">
+                          {user?.mailhook || "loading..."}
+                        </span>
+                      </p>
 
-        <button
-          onClick={() => {
-            if (user?.mailhook) {
-              navigator.clipboard.writeText(user.mailhook);
-              setAlert({
-                type: "success",
-                message: "Mailhook copied successfully!",
-              });
-            }
-          }}
-          className="self-end sm:self-auto flex items-center gap-1 text-gray-500 hover:text-[#4F46E5] transition text-base"
-          aria-label="Copy mailhook"
-        >
-          <FiCopy />
-          <span className="sr-only">Copy</span>
-        </button>
-      </div>
-    </div>
+                      <button
+                        onClick={() => {
+                          if (user?.mailhook) {
+                            navigator.clipboard.writeText(user.mailhook);
+                            setAlert({
+                              type: "success",
+                              message: "Mailhook copied successfully!",
+                            });
+                          }
+                        }}
+                        className="self-end sm:self-auto flex items-center gap-1 text-gray-500 hover:text-[#4F46E5] transition text-base"
+                        aria-label="Copy mailhook"
+                      >
+                        <FiCopy />
+                        <span className="sr-only">Copy</span>
+                      </button>
+                    </div>
+                  </div>
 
-    {/* ---------------- Main Card ---------------- */}
-    <div
-      className="
+                  {/* ---------------- Main Card ---------------- */}
+                  <div
+                    className="
         relative border border-[#E5E7EB] rounded-2xl shadow-sm 
         p-6 w-full max-w-xl mx-auto text-center 
         bg-white transition-all duration-300 
         min-h-[300px] flex flex-col justify-start
       "
-    >
-      {/* Retry Button */}
-      {!validationPhase && !validated && showValidateButton && (
-        <button
-          onClick={handleRetryValidation}
-          className="absolute top-4 right-4 flex items-center gap-1 text-xs font-semibold text-[#4F46E5] hover:text-[#3730A3] transition-colors"
-        >
-          <FiRefreshCcw className="text-sm" />
-          Retry
-        </button>
-      )}
+                  >
+                    {/* Retry Button */}
+                    {!validationPhase && !validated && showValidateButton && (
+                      <button
+                        onClick={handleRetryValidation}
+                        className="absolute top-4 right-4 flex items-center gap-1 text-xs font-semibold text-[#4F46E5] hover:text-[#3730A3] transition-colors"
+                      >
+                        <FiRefreshCcw className="text-sm" />
+                        Retry
+                      </button>
+                    )}
 
-      <h3 className="text-lg font-semibold text-[#111827] mb-4">
-        Email Receiving
-      </h3>
+                    <h3 className="text-lg font-semibold text-[#111827] mb-4">
+                      Email Receiving
+                    </h3>
 
-      {/* 🔹 Fixed Inner Area (stops reflow) */}
-      <div className="relative min-h-[180px] bg-[#F9FAFB] border border-gray-200 rounded-lg p-4 text-left text-sm text-gray-700 shadow-inner flex items-center justify-center">
-        {validationFailed ? (
-          <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4 text-center">
-            <p className="font-semibold mb-2">
-              Your mailhook forwarding may not be set up correctly.
-            </p>
-            <p className="text-sm mb-3">
-              Please check your email forwarding settings and try again.
-            </p>
-          </div>
-        ) : validationPhase ? (
-          showValidateButton ? (
-            <div className="text-center py-6 text-gray-500 text-sm">
-              <p>No email received after several checks.</p>
-              <p>Please enter your email below to continue.</p>
-            </div>
-          ) : (
-            <MailhookWaitingTimer message="Waiting for validation email..." />
-          )
-        ) : validated ? (
-          <div className="text-center py-6">
-            <div className="flex flex-col items-center justify-center space-y-2">
-              <FiCheck className="text-green-600 text-3xl" />
-              <h4 className="text-lg font-semibold text-green-700">
-                Mailhook connected successfully!
-              </h4>
-              <p className="text-sm text-gray-600">
-                Your Gmail forwarding setup is verified.
-              </p>
-            </div>
-          </div>
-        ) : verificationEmail && verificationEmail.sender ? (
-          <>
-            <div
-              className="border-gray-200 pt-3 max-h-32 overflow-y-auto text-sm leading-relaxed text-gray-700"
-              dangerouslySetInnerHTML={{
-                __html:
-                  verificationEmail.formattedBody ||
-                  verificationEmail.textBody,
-              }}
-            />
-            {verificationEmail.isGmailVerification && (
-              <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 rounded-lg p-4 mt-4 text-center text-sm">
-                <p className="font-semibold mb-1">
-                  Gmail forwarding confirmation detected!
-                </p>
-                <p>
-                  Please open Gmail and click the verification link in your
-                  inbox to approve forwarding.
-                </p>
-              </div>
-            )}
-          </>
-        ) : showValidateButton ? (
-          <div className="text-center text-sm text-gray-600">
-            <p>No email received.</p>
-            <p className="text-xs text-gray-500">
-              Please enter your email address below to validate manually.
-            </p>
-          </div>
-        ) : (
-          <MailhookWaitingTimer />
-        )}
-      </div>
+                    {/* 🔹 Fixed Inner Area (stops reflow) */}
+                    <div className="relative min-h-[180px] bg-[#F9FAFB] border border-gray-200 rounded-lg p-4 text-left text-sm text-gray-700 shadow-inner flex items-center justify-center">
+                      {validationFailed ? (
+                        <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4 text-center">
+                          <p className="font-semibold mb-2">
+                            Your mailhook forwarding may not be set up
+                            correctly.
+                          </p>
+                          <p className="text-sm mb-3">
+                            Please check your email forwarding settings and try
+                            again.
+                          </p>
+                        </div>
+                      ) : validationPhase ? (
+                        showValidateButton ? (
+                          <div className="text-center py-6 text-gray-500 text-sm">
+                            <p>No email received after several checks.</p>
+                            <p>Please enter your email below to continue.</p>
+                          </div>
+                        ) : (
+                          <MailhookWaitingTimer message="Waiting for validation email..." />
+                        )
+                      ) : validated ? (
+                        <div className="text-center py-6">
+                          <div className="flex flex-col items-center justify-center space-y-2">
+                            <FiCheck className="text-green-600 text-3xl" />
+                            <h4 className="text-lg font-semibold text-green-700">
+                              Mailhook connected successfully!
+                            </h4>
+                            <p className="text-sm text-gray-600">
+                              Your Gmail forwarding setup is verified.
+                            </p>
+                          </div>
+                        </div>
+                      ) : verificationEmail && verificationEmail.sender ? (
+                        <>
+                          <div
+                            className="border-gray-200 pt-3 max-h-32 overflow-y-auto text-sm leading-relaxed text-gray-700"
+                            dangerouslySetInnerHTML={{
+                              __html:
+                                verificationEmail.formattedBody ||
+                                verificationEmail.textBody,
+                            }}
+                          />
+                          {verificationEmail.isGmailVerification && (
+                            <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 rounded-lg p-4 mt-4 text-center text-sm">
+                              <p className="font-semibold mb-1">
+                                Gmail forwarding confirmation detected!
+                              </p>
+                              <p>
+                                Please open Gmail and click the verification
+                                link in your inbox to approve forwarding.
+                              </p>
+                            </div>
+                          )}
+                        </>
+                      ) : showValidateButton ? (
+                        <div className="text-center text-sm text-gray-600">
+                          <p>No email received.</p>
+                          <p className="text-xs text-gray-500">
+                            Please enter your email address below to validate
+                            manually.
+                          </p>
+                        </div>
+                      ) : (
+                        <MailhookWaitingTimer />
+                      )}
+                    </div>
 
-      {/* Input Field - Reserved Spacing */}
-      <div
-        className={`space-y-3 mt-6 transition-all duration-300 ${
-          !validationPhase &&
-          !validated &&
-          (showValidateButton || verificationEmail?.isGmailVerification)
-            ? "opacity-100 max-h-[140px]"
-            : "opacity-0 max-h-0 overflow-hidden"
-        }`}
-      >
-        <p className="text-sm text-gray-600">
-          Enter the email address where you’ve set up forwarding to verify your
-          setup.
-        </p>
-        <input
-          type="email"
-          placeholder="Enter your email address"
-          className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:ring-2 focus:ring-[#4F46E5] outline-none"
-          value={verificationEmail?.toEmail || ""}
-          onChange={(e) =>
-            setVerificationEmail({
-              ...verificationEmail,
-              toEmail: e.target.value,
-            })
-          }
-        />
-      </div>
-    </div>
+                    {/* Input Field - Reserved Spacing */}
+                    <div
+                      className={`space-y-3 mt-6 transition-all duration-300 ${
+                        !validationPhase &&
+                        !validated &&
+                        (showValidateButton ||
+                          verificationEmail?.isGmailVerification)
+                          ? "opacity-100 max-h-[140px]"
+                          : "opacity-0 max-h-0 overflow-hidden"
+                      }`}
+                    >
+                      <p className="text-sm text-gray-600">
+                        Enter the email address where you’ve set up forwarding
+                        to verify your setup.
+                      </p>
+                      <input
+                        type="email"
+                        placeholder="Enter your email address"
+                        className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:ring-2 focus:ring-[#4F46E5] outline-none"
+                        value={verificationEmail?.toEmail || ""}
+                        onChange={(e) =>
+                          setVerificationEmail({
+                            ...verificationEmail,
+                            toEmail: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                  </div>
 
-    {/* ---------------- Footer Buttons ---------------- */}
-    <div className="mt-10 border-t border-gray-200 pt-6 flex justify-center items-center w-full max-w-xl">
-    
+                  {/* ---------------- Footer Buttons ---------------- */}
+                  <div className="mt-10 border-t border-gray-200 pt-6 flex justify-center items-center w-full max-w-xl">
+                    {!validated &&
+                    !validationPhase &&
+                    (showValidateButton ||
+                      verificationEmail?.isGmailVerification) ? (
+                      <button
+                        disabled={validating}
+                        onClick={async () => {
+                          if (!verificationEmail?.toEmail?.trim()) {
+                            setAlert({
+                              type: "error",
+                              message:
+                                "Please enter the email where you set up forwarding!",
+                            });
+                            return;
+                          }
 
-      {!validated &&
-      !validationPhase &&
-      (showValidateButton || verificationEmail?.isGmailVerification) ? (
-        <button
-          disabled={validating}
-          onClick={async () => {
-            if (!verificationEmail?.toEmail?.trim()) {
-              setAlert({
-                type: "error",
-                message:
-                  "Please enter the email where you set up forwarding!",
-              });
-              return;
-            }
-
-            setValidating(true);
-            setValidationFailed(false);
-            setShowValidateButton(false);
-            setValidationPhase(true);
-            await handleValidateForwarding();
-            startValidationLoop();
-          }}
-          className={`flex items-center space-x-2 px-6 py-2 rounded-lg text-sm font-semibold text-white transition
+                          setValidating(true);
+                          setValidationFailed(false);
+                          setShowValidateButton(false);
+                          setValidationPhase(true);
+                          await handleValidateForwarding();
+                          startValidationLoop();
+                        }}
+                        className={`flex items-center space-x-2 px-6 py-2 rounded-lg text-sm font-semibold text-white transition
             ${
               validating
                 ? "bg-gray-400 cursor-not-allowed"
                 : "bg-[#4F46E5] hover:bg-[#4338CA] cursor-pointer"
             }`}
-        >
-          {validating ? "Validating..." : "Validate Forwarding"}
-          <FiArrowRight />
-        </button>
-      ) : validated ? (
-        <button
-          onClick={async () => {
-            await saveSetupProgress({
-              stepCompleted: 3,
-              stepStatus: "completed",
-            });
-            setStep(4);
-          }}
-          className="flex items-center space-x-2 px-6 py-2 rounded-lg text-sm font-semibold bg-green-600 text-white hover:bg-green-700 transition"
-        >
-          <span>Next</span> <FiArrowRight />
-        </button>
-      ) : null}
-    </div>
-  </div>
-)}
+                      >
+                        {validating ? "Validating..." : "Validate Forwarding"}
+                        <FiArrowRight />
+                      </button>
+                    ) : validated ? (
+                      <button
+                        onClick={async () => {
+                          await saveSetupProgress({
+                            stepCompleted: 3,
+                            stepStatus: "completed",
+                          });
+                          setStep(4);
+                        }}
+                        className="flex items-center space-x-2 px-6 py-2 rounded-lg text-sm font-semibold bg-green-600 text-white hover:bg-green-700 transition"
+                      >
+                        <span>Next</span> <FiArrowRight />
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+              )}
 
-      {/* --------------------- STEP 4 --------------------- */}
-      {step === 4 && (
-  <div
-    className="
+              {step === 4 && (
+                <div
+                  className="
       flex flex-col items-center justify-between
       min-h-[600px] text-center
       border border-[#E5E7EB] rounded-2xl
@@ -1302,98 +1243,102 @@ const SetupFlow = () => {
       bg-gradient-to-br from-white via-indigo-50/40 to-white
       p-8 sm:p-10 transition-all duration-500 relative
     "
-  >
-    {/* 🔹 Reserved alert space (no layout shift) */}
-    <div className="w-full min-h-[48px] flex items-center justify-center mb-2">
-      <AlertMessage />
-    </div>
+                >
+                  {/* 🔹 Reserved alert space (no layout shift) */}
+                  <div className="w-full min-h-[48px] flex items-center justify-center mb-2">
+                    <AlertMessage />
+                  </div>
 
-    {/* ---------------- Header ---------------- */}
-    <div>
-      <h2 className="text-2xl sm:text-3xl font-bold text-[#111827] mb-3">
-        Set up Sending (SMTP)
-      </h2>
-      <p className="text-[#4B5563] text-sm sm:text-base mb-8 max-w-md mx-auto">
-        Configure how <span className="font-semibold text-[#4F46E5]">Zenith Inbox</span> will send
-        replies from your own email address.
-      </p>
-    </div>
+                  {/* ---------------- Header ---------------- */}
+                  <div>
+                    <h2 className="text-2xl sm:text-3xl font-bold text-[#111827] mb-3">
+                      Set up Sending (SMTP)
+                    </h2>
+                    <p className="text-[#4B5563] text-sm sm:text-base mb-8 max-w-md mx-auto">
+                      Configure how{" "}
+                      <span className="font-semibold text-[#4F46E5]">
+                        Zenith Inbox
+                      </span>{" "}
+                      will send replies from your own email address.
+                    </p>
+                  </div>
 
-    {/* ---------------- Tabs ---------------- */}
-    <div className="flex border border-gray-300 rounded-lg overflow-hidden mb-6 w-full sm:w-[26rem] mx-auto">
-      {["Gmail", "Microsoft"].map((tab) => (
-        <button
-          key={tab}
-          onClick={() => setSelectedTab(tab)}
-          className={`w-1/2 px-4 py-2 text-sm font-medium text-center transition-colors ${
-            selectedTab === tab
-              ? "border-b-2 border-[#4F46E5] text-[#4F46E5] bg-[#EEF2FF]"
-              : "text-gray-500 hover:text-[#4F46E5] bg-white"
-          }`}
-        >
-          {tab}
-        </button>
-      ))}
-    </div>
+                  {/* ---------------- Tabs ---------------- */}
+                  <div className="flex border border-gray-300 rounded-lg overflow-hidden mb-6 w-full sm:w-[26rem] mx-auto">
+                    {["Gmail", "Microsoft"].map((tab) => (
+                      <button
+                        key={tab}
+                        onClick={() => setSelectedTab(tab)}
+                        className={`w-1/2 px-4 py-2 text-sm font-medium text-center transition-colors ${
+                          selectedTab === tab
+                            ? "border-b-2 border-[#4F46E5] text-[#4F46E5] bg-[#EEF2FF]"
+                            : "text-gray-500 hover:text-[#4F46E5] bg-white"
+                        }`}
+                      >
+                        {tab}
+                      </button>
+                    ))}
+                  </div>
 
-    {/* ---------------- Gmail ---------------- */}
-    {selectedTab === "Gmail" && (
-      <div
-        className="
+                  {/* ---------------- Gmail ---------------- */}
+                  {selectedTab === "Gmail" && (
+                    <div
+                      className="
           border border-[#E5E7EB] bg-white rounded-xl shadow-sm
           p-6 sm:p-8 text-center flex flex-col items-center
           space-y-4 max-w-sm mx-auto transition-all duration-300
         "
-      >
-        <p className="text-[#4B5563] text-sm sm:text-base leading-relaxed">
-          Connect your Gmail account securely using OAuth 2.0.
-        </p>
+                    >
+                      <p className="text-[#4B5563] text-sm sm:text-base leading-relaxed">
+                        Connect your Gmail account securely using OAuth 2.0.
+                      </p>
 
-        <button
-          onClick={handleGmailConnect}
-          className="
+                      <button
+                        onClick={handleGmailConnect}
+                        className="
             bg-[#EA4335] hover:bg-[#C33D2D] text-white
             px-6 py-3 rounded-full text-sm font-semibold shadow-md
             flex items-center justify-center gap-2 transition-all duration-300
             hover:scale-[1.03]
           "
-        >
-          <FaGoogle className="text-lg" />
-          Connect with Gmail
-        </button>
-      </div>
-    )}
+                      >
+                        <FaGoogle className="text-lg" />
+                        Connect with Gmail
+                      </button>
+                    </div>
+                  )}
 
-    {/* ---------------- Microsoft ---------------- */}
-    {selectedTab === "Microsoft" && (
-      <div
-        className="
+                  {/* ---------------- Microsoft ---------------- */}
+                  {selectedTab === "Microsoft" && (
+                    <div
+                      className="
           border border-[#E5E7EB] bg-white rounded-xl shadow-sm
           p-6 sm:p-8 text-center flex flex-col items-center
           space-y-4 max-w-sm mx-auto transition-all duration-300
         "
-      >
-        <p className="text-[#4B5563] text-sm sm:text-base leading-relaxed">
-          Connect your Outlook or Microsoft 365 account securely using OAuth 2.0.
-        </p>
+                    >
+                      <p className="text-[#4B5563] text-sm sm:text-base leading-relaxed">
+                        Connect your Outlook or Microsoft 365 account securely
+                        using OAuth 2.0.
+                      </p>
 
-        <button
-          onClick={handleMicrosoftConnect}
-          className="
+                      <button
+                        onClick={handleMicrosoftConnect}
+                        className="
             bg-[#0078D4] hover:bg-[#0063B1] text-white
             px-6 py-3 rounded-full text-sm font-semibold shadow-md
             flex items-center justify-center gap-2 transition-all duration-300
             hover:scale-[1.03]
           "
-        >
-          <FaMicrosoft className="text-lg" />
-          Connect with Outlook
-        </button>
-      </div>
-    )}
+                      >
+                        <FaMicrosoft className="text-lg" />
+                        Connect with Outlook
+                      </button>
+                    </div>
+                  )}
 
-    {/* ---------------- Other SMTP ---------------- */}
-    {/* {selectedTab === "Other" && (
+                  {/* ---------------- Other SMTP ---------------- */}
+                  {/* {selectedTab === "Other" && (
       <div
         className="
           border border-[#E5E7EB] bg-white rounded-xl shadow-sm
@@ -1526,37 +1471,33 @@ const SetupFlow = () => {
       </div>
     )} */}
 
-    {/* ---------------- Footer Buttons ---------------- */}
-    <div className="flex justify-center items-center w-full max-w-md mt-10 border-t border-gray-200 pt-6">
-     
-
-      <button
-        onClick={async () => {
-          await saveSetupProgress({
-            stepCompleted: 4,
-            stepStatus: "completed",
-          });
-          setStep(5);
-        }}
-        className="
+                  {/* ---------------- Footer Buttons ---------------- */}
+                  <div className="flex justify-center items-center w-full max-w-md mt-10 border-t border-gray-200 pt-6">
+                    <button
+                      onClick={async () => {
+                        await saveSetupProgress({
+                          stepCompleted: 4,
+                          stepStatus: "completed",
+                        });
+                        setStep(5);
+                      }}
+                      className="
           flex items-center justify-center gap-2
           px-6 py-2 rounded-full text-sm font-semibold
           bg-[#4F46E5] hover:bg-[#4338CA] text-white
           shadow-md transition-all duration-300 hover:scale-[1.03]
         "
-      >
-        <span>Next</span>
-        <FiArrowRight />
-      </button>
-    </div>
-  </div>
-)}
+                    >
+                      <span>Next</span>
+                      <FiArrowRight />
+                    </button>
+                  </div>
+                </div>
+              )}
 
-
-      {/* --------------------- STEP 5 --------------------- */}
-      {step === 5 && (
-  <div
-    className="
+              {step === 5 && (
+                <div
+                  className="
       flex flex-col items-center justify-between
       min-h-[600px] text-center
       border border-[#E5E7EB] rounded-2xl
@@ -1564,73 +1505,77 @@ const SetupFlow = () => {
       bg-gradient-to-br from-white via-indigo-50/40 to-white
       p-8 sm:p-10 transition-all duration-500 relative
     "
-  >
-    {/* 🔹 Reserved alert area (no layout shift) */}
-    <div className="w-full min-h-[48px] flex items-center justify-center mb-2">
-      <AlertMessage />
-    </div>
+                >
+                  {/* 🔹 Reserved alert area (no layout shift) */}
+                  <div className="w-full min-h-[48px] flex items-center justify-center mb-2">
+                    <AlertMessage />
+                  </div>
 
-    {/* ---------------- Header ---------------- */}
-    <div>
-      <h2 className="text-2xl sm:text-3xl font-bold text-[#111827] mb-3">
-        Review &amp; Go Live
-      </h2>
-      <p className="text-[#4B5563] text-sm sm:text-base mb-8 max-w-md mx-auto">
-        Confirm your setup and enable automation.
-      </p>
-    </div>
+                  {/* ---------------- Header ---------------- */}
+                  <div>
+                    <h2 className="text-2xl sm:text-3xl font-bold text-[#111827] mb-3">
+                      Review &amp; Go Live
+                    </h2>
+                    <p className="text-[#4B5563] text-sm sm:text-base mb-8 max-w-md mx-auto">
+                      Confirm your setup and enable automation.
+                    </p>
+                  </div>
 
-    {/* ---------------- Checklist ---------------- */}
-    <div
-      className="
+                  {/* ---------------- Checklist ---------------- */}
+                  <div
+                    className="
         border border-[#E5E7EB] bg-white rounded-xl shadow-sm
         p-6 sm:p-8 w-full max-w-xl text-left space-y-5
         transition-all duration-300
       "
-    >
-      <div>
-        <h3 className="font-semibold text-[#111827] mb-1">
-          Setup Checklist
-        </h3>
-        <p className="text-sm text-[#6B7280]">
-          Here’s a summary of your setup progress:
-        </p>
-      </div>
+                  >
+                    <div>
+                      <h3 className="font-semibold text-[#111827] mb-1">
+                        Setup Checklist
+                      </h3>
+                      <p className="text-sm text-[#6B7280]">
+                        Here’s a summary of your setup progress:
+                      </p>
+                    </div>
 
-      {!setupProgress ? (
-        <p className="text-gray-500 text-center py-6">Loading progress...</p>
-      ) : (
-        <ul className="space-y-3 text-sm text-[#111827]">
-          {setupProgress.steps?.map((stepItem) => (
-            <li
-              key={stepItem.step}
-              className="flex items-center justify-between border-b border-gray-100 pb-2"
-            >
-              <div className="flex items-center space-x-2">
-                {stepItem.status === "completed" ? (
-                  <FiCheckCircle className="text-green-600 text-lg" />
-                ) : (
-                  <FiAlertTriangle className="text-yellow-500 text-lg" />
-                )}
-                <span>{stepItem.title}</span>
-              </div>
+                    {!setupProgress ? (
+                      <p className="text-gray-500 text-center py-6">
+                        Loading progress...
+                      </p>
+                    ) : (
+                      <ul className="space-y-3 text-sm text-[#111827]">
+                        {setupProgress.steps?.map((stepItem) => (
+                          <li
+                            key={stepItem.step}
+                            className="flex items-center justify-between border-b border-gray-100 pb-2"
+                          >
+                            <div className="flex items-center space-x-2">
+                              {stepItem.status === "completed" ? (
+                                <FiCheckCircle className="text-green-600 text-lg" />
+                              ) : (
+                                <FiAlertTriangle className="text-yellow-500 text-lg" />
+                              )}
+                              <span>{stepItem.title}</span>
+                            </div>
 
-              <span
-                className={`text-xs px-2 py-1 rounded-full ${
-                  stepItem.status === "completed"
-                    ? "bg-green-100 text-green-700"
-                    : "bg-yellow-100 text-yellow-700"
-                }`}
-              >
-                {stepItem.status === "completed" ? "Completed" : "Skipped"}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
+                            <span
+                              className={`text-xs px-2 py-1 rounded-full ${
+                                stepItem.status === "completed"
+                                  ? "bg-green-100 text-green-700"
+                                  : "bg-yellow-100 text-yellow-700"
+                              }`}
+                            >
+                              {stepItem.status === "completed"
+                                ? "Completed"
+                                : "Skipped"}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
 
-      {/* Mailhook summary box */}
-      {/* <div
+                    {/* Mailhook summary box */}
+                    {/* <div
         className="
           bg-gradient-to-r from-indigo-50 via-purple-50 to-indigo-100
           border-l-4 border-indigo-500 rounded-lg
@@ -1654,72 +1599,66 @@ const SetupFlow = () => {
           </span>
         </p>
       </div> */}
-    </div>
+                  </div>
 
-    {/* ---------------- Footer Buttons ---------------- */}
-    <div className="flex justify-center mt-10">
-      <button
-        onClick={async () => {
-          await saveSetupProgress({
-            setupCompleted: true,
-            stepCompleted: 5,
-          });
-          navigate("/organization");
-        }}
-        className="
+                  {/* ---------------- Footer Buttons ---------------- */}
+                  <div className="flex justify-center mt-10">
+                    <button
+                      onClick={async () => {
+                        await saveSetupProgress({
+                          setupCompleted: true,
+                          stepCompleted: 5,
+                        });
+                        navigate("/organization");
+                      }}
+                      className="
           flex items-center justify-center gap-2
           bg-[#4F46E5] hover:bg-[#4338CA]
           text-white font-semibold text-sm
           px-8 py-3 rounded-full shadow-md
           transition-all duration-300 hover:scale-[1.03]
         "
-      >
-        <span>Start building scenarios ...</span>
-        <FiArrowRight />
-      </button>
-    </div>
-  </div>
-)}
-
-    </motion.div>
-  </AnimatePresence>
-  
-</div>
-{/* Setup Guide Button - bottom right below step box */}
-{!isExpanded && (
-  <div className="w-full max-w-2xl mx-auto flex justify-end  pr-4">
-    <motion.button
-      onClick={() => setIsExpanded(true)}
-      initial={{ opacity: 0, y: 30 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, ease: "easeOut" }}
-      whileHover={{ scale: 1.08 }}
-      whileTap={{ scale: 0.95 }}
-      className="
+                    >
+                      <span>Start building scenarios ...</span>
+                      <FiArrowRight />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+          {!isExpanded && (
+            <div className="w-full max-w-2xl mx-auto flex justify-end  pr-4">
+              <motion.button
+                onClick={() => setIsExpanded(true)}
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, ease: "easeOut" }}
+                whileHover={{ scale: 1.08 }}
+                whileTap={{ scale: 0.95 }}
+                className="
         bg-[#4F46E5] hover:bg-[#4338CA]
         text-white px-5 py-3 rounded-full shadow-lg
         flex items-center gap-2 text-sm font-semibold
         transition-all
       "
-    >
-      <motion.div
-        animate={{ scale: [1, 1.15, 1] }}
-        transition={{
-          duration: 1.8,
-          repeat: Infinity,
-          repeatType: 'mirror',
-          ease: 'easeInOut',
-        }}
-      >
-        <FiInfo className="text-lg" />
-      </motion.div>
+              >
+                <motion.div
+                  animate={{ scale: [1, 1.15, 1] }}
+                  transition={{
+                    duration: 1.8,
+                    repeat: Infinity,
+                    repeatType: "mirror",
+                    ease: "easeInOut",
+                  }}
+                >
+                  <FiInfo className="text-lg" />
+                </motion.div>
 
-      <span className="text-[14px] font-medium">Setup Guide</span>
-    </motion.button>
-  </div>
-)}
-
-
+                <span className="text-[14px] font-medium">Setup Guide</span>
+              </motion.button>
+            </div>
+          )}
         </div>
       </div>
       <div
@@ -1741,8 +1680,6 @@ const SetupFlow = () => {
             setIsExpanded={setIsExpanded}
           />
         </div>
-
-       
       </div>
 
       <motion.button
@@ -1898,17 +1835,17 @@ const InstructionPanel = ({
       >
         {step === 1 && (
           <div className="bg-gradient-to-br from-indigo-50 via-purple-50 to-white rounded-2xl p-5 sm:p-6 border border-indigo-100 shadow-sm">
-          
-          <div className="mb-5 rounded-xl overflow-hidden shadow-md border border-indigo-100">
-  <video
-    className="w-full rounded-xl"
-    controls
-    poster="/videos/thumbnails/step1-thumb.jpg"
-  >
-    <source src="/videos/step1.mp4" type="video/mp4" />
-    Your browser does not support the video tag.
-  </video>
-</div>  {/* Header */}
+            <div className="mb-5 rounded-xl overflow-hidden shadow-md border border-indigo-100">
+              <video
+                className="w-full rounded-xl"
+                controls
+                poster="/videos/thumbnails/step1-thumb.jpg"
+              >
+                <source src="/videos/step1.mp4" type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
+            </div>{" "}
+            {/* Header */}
             <div className="flex items-center justify-between mb-4">
               <h4 className="text-lg sm:text-xl font-semibold text-gray-900 flex items-center gap-2">
                 <FiMail className="text-indigo-600" /> Step 1: Get Started
@@ -1925,22 +1862,16 @@ const InstructionPanel = ({
                 1 / 5
               </span>
             </div>
-
-            {/* Description */}
             <p className="text-gray-700 text-sm leading-relaxed mb-4">
               Welcome! You’re about to set up your{" "}
               <strong className="text-indigo-700">Zenith Inbox</strong>. This
               process takes less than a minute.
             </p>
-
-            {/* Steps list */}
             <ul className="list-disc list-inside text-sm text-gray-700 space-y-1.5 mb-5">
               <li>We’ll create your private mailhook.</li>
               <li>Then connect your email forwarding.</li>
               <li>Finally, configure how your replies are sent.</li>
             </ul>
-
-            {/* Tip box */}
             <div className="bg-gradient-to-r from-indigo-100 to-purple-100 border-l-4 border-indigo-500 rounded-lg p-4 text-indigo-900 text-sm shadow-sm">
               <strong className="text-indigo-700">💡 Tip:</strong> Click{" "}
               <span className="font-semibold text-indigo-700">
@@ -1959,16 +1890,15 @@ const InstructionPanel = ({
   transition-all duration-300 ease-in-out"
           >
             <div className="mb-5 rounded-xl overflow-hidden shadow-md border border-indigo-100">
-  <video
-    className="w-full rounded-xl"
-    controls
-    poster="/videos/thumbnails/step1-thumb.jpg"
-  >
-    <source src="/videos/step1.mp4" type="video/mp4" />
-    Your browser does not support the video tag.
-  </video>
-</div>
-            {/* Header */}
+              <video
+                className="w-full rounded-xl"
+                controls
+                poster="/videos/thumbnails/step1-thumb.jpg"
+              >
+                <source src="/videos/step1.mp4" type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
+            </div>
             <div className="flex items-center justify-between mb-4">
               <h4 className="text-lg sm:text-xl font-semibold text-gray-900 flex items-center gap-2">
                 <FiCopy className="text-indigo-600" /> Step 2 – Connect Your
@@ -2236,15 +2166,15 @@ const InstructionPanel = ({
   h-full max-h-[80vh] overflow-y-auto custom-scrollbar"
           >
             <div className="mb-5 rounded-xl overflow-hidden shadow-md border border-indigo-100">
-  <video
-    className="w-full rounded-xl"
-    controls
-    poster="/videos/thumbnails/step1-thumb.jpg"
-  >
-    <source src="/videos/step1.mp4" type="video/mp4" />
-    Your browser does not support the video tag.
-  </video>
-</div>
+              <video
+                className="w-full rounded-xl"
+                controls
+                poster="/videos/thumbnails/step1-thumb.jpg"
+              >
+                <source src="/videos/step1.mp4" type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
+            </div>
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
               <h4 className="text-lg sm:text-xl font-semibold text-gray-900 flex items-center gap-2">
@@ -2408,15 +2338,15 @@ const InstructionPanel = ({
     h-full max-h-[80vh] overflow-y-auto custom-scrollbar"
           >
             <div className="mb-5 rounded-xl overflow-hidden shadow-md border border-indigo-100">
-  <video
-    className="w-full rounded-xl"
-    controls
-    poster="/videos/thumbnails/step1-thumb.jpg"
-  >
-    <source src="/videos/step1.mp4" type="video/mp4" />
-    Your browser does not support the video tag.
-  </video>
-</div>
+              <video
+                className="w-full rounded-xl"
+                controls
+                poster="/videos/thumbnails/step1-thumb.jpg"
+              >
+                <source src="/videos/step1.mp4" type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
+            </div>
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
               <h4 className="text-lg sm:text-xl font-semibold text-gray-900 flex items-center gap-2">
@@ -2501,15 +2431,15 @@ const InstructionPanel = ({
     h-full max-h-[80vh] overflow-y-auto custom-scrollbar"
           >
             <div className="mb-5 rounded-xl overflow-hidden shadow-md border border-indigo-100">
-  <video
-    className="w-full rounded-xl"
-    controls
-    poster="/videos/thumbnails/step1-thumb.jpg"
-  >
-    <source src="/videos/step1.mp4" type="video/mp4" />
-    Your browser does not support the video tag.
-  </video>
-</div>
+              <video
+                className="w-full rounded-xl"
+                controls
+                poster="/videos/thumbnails/step1-thumb.jpg"
+              >
+                <source src="/videos/step1.mp4" type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
+            </div>
             {/* Header */}
             <div className="flex items-center justify-between mb-5">
               <h4 className="text-lg sm:text-xl font-semibold text-gray-900 flex items-center gap-2">
