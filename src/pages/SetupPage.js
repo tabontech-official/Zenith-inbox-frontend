@@ -825,17 +825,22 @@ const SetupFlow = () => {
             >
               {step === 1 && (
                 <div
-                  className="
+  className="
     flex flex-col items-center justify-between
     min-h-[600px] text-center
-    rounded-2xl p-8 sm:p-10 transition-all duration-500 relative
+    p-8 sm:p-10
+    rounded-2xl
+    bg-white/75
+    border border-white/60
     shadow-[0_4px_30px_rgba(0,0,0,0.1)]
-    bg-white/40 backdrop-blur-[6px]
+    backdrop-blur-[14px]
+    transition-all duration-500 relative
   "
-                  style={{
-                    WebkitBackdropFilter: "blur(5.7px)",
-                  }}
-                >
+  style={{
+    WebkitBackdropFilter: "blur(14px)",
+  }}
+>
+
                   <div className="w-full min-h-[48px] flex items-center justify-center mb-2">
                     <AnimatePresence>
                       {alert?.message && (
@@ -869,27 +874,34 @@ const SetupFlow = () => {
                   </div>
 
                   {/* CTA */}
-                  <div className="flex items-center justify-center mt-6">
-                    <button
-                      onClick={async () => {
-                        await saveSetupProgress({
-                          stepCompleted: 1,
-                          stepStatus: "completed",
-                        });
-                        setStep(2);
-                      }}
-                      className="
-          flex items-center justify-center gap-2
-          bg-[#4F46E5] hover:bg-[#4338CA]
-          text-white font-semibold text-sm
-          px-8 py-3 rounded-full shadow-md
-          transition-all duration-300 hover:scale-[1.03]
-        "
-                    >
-                      <span>Start 60-sec Setup</span>
-                      <FiArrowRight />
-                    </button>
-                  </div>
+            <div className="flex items-center justify-center mt-6">
+  <button
+    onClick={async () => {
+      await saveSetupProgress({
+        stepCompleted: 1,
+        stepStatus: "completed",
+      });
+      setStep(2);
+    }}
+    className="
+      flex items-center justify-center gap-2
+      px-8 py-3 rounded-full text-sm font-semibold
+      text-[#111827] 
+      bg-white/30
+      border border-white/50
+      backdrop-blur-xl
+      shadow-[0_8px_25px_rgba(0,0,0,0.12)]
+      hover:bg-white/40
+      hover:shadow-[0_10px_30px_rgba(0,0,0,0.16)]
+      transition-all duration-300 hover:scale-[1.04]
+    "
+    style={{ WebkitBackdropFilter: "blur(12px)" }}
+  >
+    <span>Start 60-sec Setup</span>
+    <FiArrowRight className="text-indigo-600" />
+  </button>
+</div>
+
 
                   <p className="text-xs text-gray-400 mt-6">
                     You can complete setup later from your Organization
