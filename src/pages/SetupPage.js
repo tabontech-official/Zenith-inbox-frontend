@@ -751,15 +751,20 @@ const SetupFlow = () => {
         <FiInfo className="text-xl" />
       </button>
 
-      <div
-        className={`relative flex flex-col items-center justify-center min-h-screen bg-[#F9FAFB] 
+<div
+  className={`relative flex flex-col items-center justify-center min-h-screen 
+  bg-cover bg-center bg-no-repeat
   transition-all duration-700 ease-[cubic-bezier(0.4,0,0.2,1)] transform
   ${
     isExpanded
       ? "lg:translate-x-[-350px] lg:scale-[0.97]"
       : "translate-x-0 scale-100"
   }`}
-      >
+  style={{
+    backgroundImage: "url('https://cdn.shopify.com/s/files/1/0730/5553/5360/files/freepik__the-style-is-3d-model-with-octane-render-volumetri__43460.png?v=1763015064)",
+  }}
+>
+
         <div className="flex flex-col items-center justify-center w-full max-w-3xl mx-auto ">
           <div className="w-full flex items-center justify-center mb-4">
             <FiMail className="text-[#4F46E5] text-2xl sm:text-3xl" />
@@ -777,24 +782,30 @@ const SetupFlow = () => {
           </div>
 
           <div className="w-full flex justify-center overflow-hidden relative">
-            <div
-              key={step}
-              className="
+           <div
+  key={step}
+  className="
     slide-right
+    relative z-10
     p-8 sm:p-10 max-w-2xl w-[90%] text-left 
-    relative min-h-[600px] flex flex-col justify-between
+    min-h-[600px] flex flex-col justify-between
   "
-            >
+>
+
               {step === 1 && (
                 <div
-                  className="
-      flex flex-col items-center justify-between 
-      min-h-[600px] text-center border border-[#E5E7EB] 
-      rounded-2xl shadow-[0_4px_20px_rgba(79,70,229,0.05)] 
-      bg-gradient-to-br from-white via-indigo-50/40 to-white 
-      p-8 sm:p-10 transition-all duration-500 relative
-    "
-                >
+  className="
+    flex flex-col items-center justify-between
+    min-h-[600px] text-center
+    rounded-2xl p-8 sm:p-10 transition-all duration-500 relative
+    shadow-[0_4px_30px_rgba(0,0,0,0.1)]
+    bg-white/15 backdrop-blur-[6px]
+  "
+  style={{
+    WebkitBackdropFilter: "blur(5.7px)",
+  }}
+>
+
                   <div className="w-full min-h-[48px] flex items-center justify-center mb-2">
                     <AnimatePresence>
                       {alert?.message && (
@@ -875,15 +886,18 @@ const SetupFlow = () => {
               )}
 
               {step === 2 && (
-                <div
-                  className="
-      flex flex-col items-center justify-between 
-      min-h-[600px] text-center border border-[#E5E7EB] 
-      rounded-2xl shadow-[0_4px_20px_rgba(79,70,229,0.05)] 
-      bg-gradient-to-br from-white via-indigo-50/40 to-white 
-      p-8 sm:p-10 transition-all duration-500
-    "
-                >
+                      <div
+  className="
+    flex flex-col items-center justify-between
+    min-h-[600px] text-center
+    rounded-2xl p-8 sm:p-10 transition-all duration-500 relative
+    shadow-[0_4px_30px_rgba(0,0,0,0.1)]
+    bg-white/15 backdrop-blur-[6px]
+  "
+  style={{
+    WebkitBackdropFilter: "blur(5.7px)",
+  }}
+>
                   {/* 🔹 Reserved Alert Area (prevents layout shift) */}
                   <div className="w-full min-h-[48px] flex items-center justify-center mb-2">
                     <AnimatePresence>
@@ -999,18 +1013,20 @@ const SetupFlow = () => {
               )}
 
               {step === 3 && (
-                <div
-                  className="
-      flex flex-col items-center justify-between 
-      min-h-[600px] text-center 
-      border border-[#E5E7EB] rounded-2xl 
-      shadow-[0_4px_20px_rgba(79,70,229,0.05)] 
-      bg-gradient-to-br from-white via-indigo-50/40 to-white 
-      p-8 sm:p-10 transition-all duration-500 relative
-    "
-                >
+                   <div
+  className="
+    flex flex-col items-center justify-between
+    min-h-[600px] text-center
+    rounded-2xl p-8 sm:p-10 transition-all duration-500 relative
+    shadow-[0_4px_30px_rgba(0,0,0,0.1)]
+    bg-white/15 backdrop-blur-[6px]
+  "
+  style={{
+    WebkitBackdropFilter: "blur(5.7px)",
+  }}
+>
                   {/* 🔹 Reserved Alert Space (prevents layout shift) */}
-<div className="w-full h-[48px] flex items-center justify-center mb-2 overflow-hidden">
+                  <div className="w-full h-[48px] flex items-center justify-center mb-2 overflow-hidden">
                     <AlertMessage />
                   </div>
 
@@ -1234,16 +1250,18 @@ const SetupFlow = () => {
               )}
 
               {step === 4 && (
-                <div
-                  className="
-      flex flex-col items-center justify-between
-      min-h-[600px] text-center
-      border border-[#E5E7EB] rounded-2xl
-      shadow-[0_4px_20px_rgba(79,70,229,0.05)]
-      bg-gradient-to-br from-white via-indigo-50/40 to-white
-      p-8 sm:p-10 transition-all duration-500 relative
-    "
-                >
+                     <div
+  className="
+    flex flex-col items-center justify-between
+    min-h-[600px] text-center
+    rounded-2xl p-8 sm:p-10 transition-all duration-500 relative
+    shadow-[0_4px_30px_rgba(0,0,0,0.1)]
+    bg-white/15 backdrop-blur-[6px]
+  "
+  style={{
+    WebkitBackdropFilter: "blur(5.7px)",
+  }}
+>
                   {/* 🔹 Reserved alert space (no layout shift) */}
                   <div className="w-full min-h-[48px] flex items-center justify-center mb-2">
                     <AlertMessage />
@@ -1496,16 +1514,18 @@ const SetupFlow = () => {
               )}
 
               {step === 5 && (
-                <div
-                  className="
-      flex flex-col items-center justify-between
-      min-h-[600px] text-center
-      border border-[#E5E7EB] rounded-2xl
-      shadow-[0_4px_20px_rgba(79,70,229,0.05)]
-      bg-gradient-to-br from-white via-indigo-50/40 to-white
-      p-8 sm:p-10 transition-all duration-500 relative
-    "
-                >
+                   <div
+  className="
+    flex flex-col items-center justify-between
+    min-h-[600px] text-center
+    rounded-2xl p-8 sm:p-10 transition-all duration-500 relative
+    shadow-[0_4px_30px_rgba(0,0,0,0.1)]
+    bg-white/15 backdrop-blur-[6px]
+  "
+  style={{
+    WebkitBackdropFilter: "blur(5.7px)",
+  }}
+>
                   {/* 🔹 Reserved alert area (no layout shift) */}
                   <div className="w-full min-h-[48px] flex items-center justify-center mb-2">
                     <AlertMessage />
