@@ -76,6 +76,7 @@ import AdminEmailTracking from "./Admin/AdminEmailTracking";
 import AdminScenarioStats from "./Admin/ScenarioStats";
 import AdminTemplateUsage from "./Admin/AdminTemplateUsage";
 import AdminTemplate from "./Admin/AdminTemplate";
+import PublicRoute from "./Protection/PublicRoute";
 
 function App() {
   return (
@@ -84,8 +85,22 @@ function App() {
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
+          <Route
+            path="/login"
+            element={
+              <PublicRoute>
+                <LoginPage />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/register"
+            element={
+              <PublicRoute>
+                <RegisterPage />
+              </PublicRoute>
+            }
+          />
 
           {/* Protected Routes */}
           <Route
@@ -208,32 +223,72 @@ function App() {
           <Route
             path="/admin/dashboard"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute adminOnly={true}>
                 <AdminDashboard />
               </ProtectedRoute>
             }
           />
-          <Route path="/admin/users" element={<AdminUsers />} />
-          <Route path="/admin/connections" element={<AdminConnections />} />
+          <Route
+            path="/admin/users"
+            element={
+              <ProtectedRoute adminOnly={true}>
+                <AdminUsers />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/connections"
+            element={
+              <ProtectedRoute adminOnly={true}>
+                <AdminConnections />
+              </ProtectedRoute>
+            }
+          />
+
           <Route
             path="/admin/reports/user-activity"
-            element={<AdminUserActivity />}
+            element={
+              <ProtectedRoute adminOnly={true}>
+                <AdminUserActivity />
+              </ProtectedRoute>
+            }
           />
+
           <Route
             path="/admin/reports/email-tracking"
-            element={<AdminEmailTracking />}
+            element={
+              <ProtectedRoute adminOnly={true}>
+                <AdminEmailTracking />
+              </ProtectedRoute>
+            }
           />
-            <Route
+
+          <Route
             path="/admin/reports/scenarios"
-            element={<AdminScenarioStats />}
+            element={
+              <ProtectedRoute adminOnly={true}>
+                <AdminScenarioStats />
+              </ProtectedRoute>
+            }
           />
+
           <Route
             path="/admin/reports/templates"
-            element={<AdminTemplateUsage />}
+            element={
+              <ProtectedRoute adminOnly={true}>
+                <AdminTemplateUsage />
+              </ProtectedRoute>
+            }
           />
-             <Route
+
+          <Route
             path="/admin/templates/:userId"
-            element={<AdminTemplate />}
+            element={
+              <ProtectedRoute adminOnly={true}>
+                <AdminTemplate />
+              </ProtectedRoute>
+            }
           />
         </Routes>
 
