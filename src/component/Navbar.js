@@ -583,141 +583,144 @@ const Navbar = () => {
   };
 
   return (
-    <header
-      className="
-        w-full px-6 py-3 flex items-center justify-end sticky top-0 z-30
-        bg-white
-      "
-    >
-      <div className="flex items-center gap-3">
+  <header
+  className="
+    w-full px-6 py-3 flex items-center justify-end sticky top-0 z-30
+    bg-white/20 backdrop-blur-xl
+    border-b border-white/30
+    shadow-[0_4px_20px_rgba(0,0,0,0.1)]
+  "
+>
+  <div className="flex items-center gap-3">
 
-        {/* Desktop Buttons */}
-        <div className="hidden md:flex items-center gap-3">
+    {/* Desktop Buttons */}
+    <div className="hidden md:flex items-center gap-3">
 
-          {/* Wizard Button */}
-          {!loading && user && (
-            <button
-              onClick={handleWizardClick}
-              className="
-                flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold
-                bg-gray-100 text-gray-900
-                hover:bg-gray-200 transition-all
-              "
-            >
-              {(() => {
-                const totalSteps = user?.setup?.steps?.length || 0;
-                const completedSteps = user?.setup?.steps?.filter(
-                  (s) => s.status === "completed"
-                ).length;
+      {/* Wizard Button */}
+      {!loading && user && (
+        <button
+          onClick={handleWizardClick}
+          className="
+            flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold
+            bg-white/40 backdrop-blur-md border border-white/50
+            text-gray-900 hover:bg-white/60 transition-all
+            shadow-[0_4px_15px_rgba(0,0,0,0.1)]
+          "
+        >
+          {(() => {
+            const totalSteps = user?.setup?.steps?.length || 0;
+            const completedSteps = user?.setup?.steps?.filter(
+              (s) => s.status === 'completed'
+            ).length;
 
-                return (
-                  <>
-                    {!setupCompleted ? "Complete Wizard" : "Wizard Completed"}{" "}
-                    <span className="text-xs opacity-80">
-                      ({completedSteps}/{totalSteps})
-                    </span>
-                  </>
-                );
-              })()}
-            </button>
-          )}
+            return (
+              <>
+                {!setupCompleted ? 'Complete Wizard' : 'Wizard Completed'}
+                <span className="text-xs opacity-70">
+                  ({completedSteps}/{totalSteps})
+                </span>
+              </>
+            );
+          })()}
+        </button>
+      )}
 
-          {/* Organization Settings */}
-          <button
-            onClick={() => setOpen(true)}
-            className="
-              flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold
-              bg-gray-100 text-gray-900
-              hover:bg-gray-200 transition-all
-            "
-          >
-            <FiEdit3 className="text-indigo-600" />
-            Organization Settings
-          </button>
+      {/* Organization Settings */}
+      <button
+        onClick={() => setOpen(true)}
+        className="
+          flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold
+          bg-white/40 backdrop-blur-md border border-white/50
+          text-gray-900 hover:bg-white/60 transition-all
+          shadow-[0_4px_15px_rgba(0,0,0,0.1)]
+        "
+      >
+        <FiEdit3 className="text-indigo-600" />
+        Organization Settings
+      </button>
 
-          {/* Create Scenario */}
-          <button
-            onClick={() => setOpenScenario(true)}
-            className="
-              flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold
-              bg-indigo-600 text-white
-              hover:bg-indigo-700 transition-all
-            "
-          >
-            + Create Scenario
-          </button>
+      {/* Create Scenario */}
+      <button
+        onClick={() => setOpenScenario(true)}
+        className="
+          flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold
+          bg-indigo-600 text-white hover:bg-indigo-700 transition-all
+          shadow-[0_4px_15px_rgba(0,0,0,0.2)]
+        "
+      >
+        + Create Scenario
+      </button>
 
-          {/* Reset */}
-          <button
-            onClick={handleSkipSetup}
-            className="
-              p-2 rounded-full text-gray-700 hover:text-gray-900 
-              hover:bg-gray-200 transition
-            "
-          >
-            reset
-          </button>
-        </div>
+      {/* Reset */}
+      <button
+        onClick={handleSkipSetup}
+        className="
+          p-2 rounded-full text-gray-700 hover:text-gray-900 
+          hover:bg-white/50 backdrop-blur-md border border-white/40 transition
+        "
+      >
+        reset
+      </button>
+    </div>
 
-        {/* Profile Menu */}
-        <div className="relative" ref={profileRef}>
-          <div
-            onClick={() => setShowProfileMenu(!showProfileMenu)}
-            className="
-              w-9 h-9 rounded-full bg-indigo-600 
-              flex items-center justify-center
-              text-white text-sm font-bold 
-              cursor-pointer hover:bg-indigo-700 transition
-            "
-          >
-            {user?.fullName ? user.fullName.slice(0, 2).toUpperCase() : "U"}
-          </div>
-
-          {showProfileMenu && (
-            <div
-              className="
-                absolute right-0 mt-2 w-48
-                bg-white rounded-xl
-                py-1 z-50
-              "
-            >
-              <button
-                onClick={() => {
-                  setShowProfileMenu(false);
-                  navigate("/profile");
-                }}
-                className="
-                  w-full text-left px-4 py-2 text-sm text-gray-800 
-                  hover:bg-gray-100 
-                  flex items-center gap-2 transition
-                "
-              >
-                <FiUser className="text-indigo-600" /> My Profile
-              </button>
-
-              <button
-                onClick={handleLogout}
-                className="
-                  w-full text-left px-4 py-2 text-sm text-gray-800 
-                  hover:bg-gray-100 
-                  flex items-center gap-2 transition
-                "
-              >
-                <FiLogOut className="text-indigo-600" /> Logout
-              </button>
-            </div>
-          )}
-        </div>
+    {/* Profile Menu */}
+    <div className="relative" ref={profileRef}>
+      <div
+        onClick={() => setShowProfileMenu(!showProfileMenu)}
+        className="
+          w-9 h-9 rounded-full bg-indigo-600 
+          flex items-center justify-center
+          text-white text-sm font-bold cursor-pointer
+          hover:bg-indigo-700 transition shadow-md
+        "
+      >
+        {user?.fullName ? user.fullName.slice(0, 2).toUpperCase() : 'U'}
       </div>
 
-      {/* Modals */}
-      <OrganizationSettingsModal open={open} onClose={() => setOpen(false)} />
-      <ScenarioSelectModal
-        open={openScenario}
-        onClose={() => setOpenScenario(false)}
-        onSelect={handleSelect}
-      />
-    </header>
+      {showProfileMenu && (
+        <div
+          className="
+            absolute right-0 mt-2 w-48 rounded-xl py-1 z-50
+            bg-white/40 backdrop-blur-xl border border-white/60
+            shadow-[0_4px_20px_rgba(0,0,0,0.15)]
+          "
+        >
+          <button
+            onClick={() => {
+              setShowProfileMenu(false);
+              navigate('/profile');
+            }}
+            className="
+              w-full text-left px-4 py-2 text-sm text-gray-800
+              hover:bg-white/60 flex items-center gap-2 transition
+            "
+          >
+            <FiUser className="text-indigo-600" /> My Profile
+          </button>
+
+          <button
+            onClick={handleLogout}
+            className="
+              w-full text-left px-4 py-2 text-sm text-gray-800
+              hover:bg-white/60 flex items-center gap-2 transition
+            "
+          >
+            <FiLogOut className="text-indigo-600" /> Logout
+          </button>
+        </div>
+      )}
+    </div>
+  </div>
+
+  {/* Modals */}
+  <OrganizationSettingsModal open={open} onClose={() => setOpen(false)} />
+  <ScenarioSelectModal
+    open={openScenario}
+    onClose={() => setOpenScenario(false)}
+    onSelect={handleSelect}
+  />
+</header>
+
   );
 };
 
