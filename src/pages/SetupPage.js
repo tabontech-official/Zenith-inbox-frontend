@@ -1010,7 +1010,7 @@ const SetupFlow = () => {
     "
                 >
                   {/* 🔹 Reserved Alert Space (prevents layout shift) */}
-                  <div className="w-full  flex items-center justify-center mb-2">
+<div className="w-full h-[48px] flex items-center justify-center mb-2 overflow-hidden">
                     <AlertMessage />
                   </div>
 
