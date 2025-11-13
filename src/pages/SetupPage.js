@@ -774,20 +774,44 @@ const SetupFlow = () => {
     />
   </video>
         <div className="flex flex-col items-center justify-center w-full max-w-3xl mx-auto ">
-          <div className="w-full flex items-center justify-center mb-4">
-            <FiMail className="text-[#4F46E5] text-2xl sm:text-3xl" />
-            <span className="font-semibold text-lg sm:text-xl text-[#111827] ml-2">
-              Zenith Inbox
-            </span>
-          </div>
+<div className="w-full flex items-center justify-center mb-4">
+  <div className="flex items-center gap-2 px-3 py-1.5">
+    <FiMail className="text-indigo-600 text-2xl sm:text-3xl drop-shadow" />
+    <span className="font-semibold text-lg sm:text-xl text-gray-900 drop-shadow">
+      Zenith Inbox
+    </span>
+  </div>
+</div>
+
+{/* Step indicator */}
+
+
 
           {/* 🔹 Step Indicator (visible everywhere) */}
-          <div className="flex justify-center ">
-            <div className="bg-[#4F46E5] text-white px-5 py-2 rounded-full text-sm sm:text-base font-semibold shadow-md flex items-center justify-center gap-1">
-              <FiCheckCircle className="text-white text-xs sm:text-sm" />
-              <span>Step {step} of 5</span>
-            </div>
-          </div>
+      <div className="flex justify-center">
+  <div
+    className="
+      px-5 py-2 rounded-full text-sm sm:text-base font-semibold
+      flex items-center justify-center gap-1
+
+      text-[#111827]           /* DARK TEXT */
+      bg-white/30
+      backdrop-blur-[10px]
+      border border-white/40
+
+      shadow-[0_6px_20px_rgba(0,0,0,0.25)]
+      hover:shadow-[0_8px_26px_rgba(0,0,0,0.35)]
+
+      transition-all duration-300
+    "
+  >
+    <FiCheckCircle className="text-indigo-600 text-xs sm:text-sm" />
+    <span>Step {step} of 5</span>
+  </div>
+</div>
+
+
+
 
           <div className="w-full flex justify-center overflow-hidden relative">
             <div
@@ -1560,7 +1584,7 @@ const SetupFlow = () => {
 
             </div>
           </div>
-        {!isExpanded && (
+       {!isExpanded && (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
@@ -1572,23 +1596,23 @@ const SetupFlow = () => {
       pointer-events-auto
     "
   >
-   <motion.button
-  onClick={() => setIsExpanded(true)}
-  whileHover={{ scale: 1.05 }}
-  whileTap={{ scale: 0.95 }}
-  className="
-    bg-black/55
-    backdrop-blur-xl
-    border border-white/20
-    text-white
-    shadow-[0_4px_20px_rgba(0,0,0,0.4)]
-    hover:bg-black/50
-    px-5 py-3 rounded-full
-    flex items-center gap-2 text-sm font-semibold
-    transition-all duration-300
-  "
->
-
+    <motion.button
+      onClick={() => setIsExpanded(true)}
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+      className="
+        bg-white/30
+        backdrop-blur-xl
+        border border-white/50
+        text-[#111827]                      /* DARK TEXT */
+        shadow-[0_8px_25px_rgba(0,0,0,0.15)]
+        hover:bg-white/40
+        px-5 py-3 rounded-full
+        flex items-center gap-2 text-sm font-semibold
+        transition-all duration-300
+      "
+      style={{ WebkitBackdropFilter: 'blur(12px)' }}
+    >
       <motion.div
         animate={{ scale: [1, 1.15, 1] }}
         transition={{
@@ -1598,7 +1622,7 @@ const SetupFlow = () => {
           ease: "easeInOut",
         }}
       >
-        <FiInfo className="text-lg" />
+        <FiInfo className="text-[#4F46E5] text-lg" />   {/* Indigo icon */}
       </motion.div>
 
       <span className="text-[14px] font-medium">
@@ -1607,6 +1631,7 @@ const SetupFlow = () => {
     </motion.button>
   </motion.div>
 )}
+
 
         </div>
       </div>
