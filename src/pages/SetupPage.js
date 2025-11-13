@@ -722,19 +722,29 @@ const SetupFlow = () => {
   };
   const [isExpanded, setIsExpanded] = useState(false);
   const [showMobileInstructions, setShowMobileInstructions] = useState(false);
-  const AlertMessage = () =>
-    alert.message ? (
-      <div
-        className={`my-3 p-3 rounded-md text-sm text-center ${
+ const AlertMessage = () =>
+  alert?.message ? (
+    <div
+      className={`
+        px-4 py-3 rounded-xl text-sm font-medium text-center
+        backdrop-blur-xl shadow-[0_4px_20px_rgba(0,0,0,0.1)]
+        border
+        transition-all
+        ${
           alert.type === "success"
-            ? "bg-green-100 text-green-700 border border-green-300"
-            : "bg-red-100 text-red-700 border border-red-300"
-        }`}
-      >
-        {alert.message}
-      </div>
-    ) : null;
-  const [animate, setAnimate] = useState(false);
+            ? "bg-[rgba(209,250,229,0.7)] text-green-800 border-green-300"
+            : "bg-[rgba(254,226,226,0.7)] text-red-800 border-red-300"
+        }
+      `}
+      style={{ WebkitBackdropFilter: "blur(10px)" }}
+    >
+      {alert.message}
+    </div>
+  ) : null;
+
+  
+  
+    const [animate, setAnimate] = useState(false);
 
   useEffect(() => {
     setAnimate(true);
@@ -751,8 +761,8 @@ const SetupFlow = () => {
         <FiInfo className="text-xl" />
       </button>
 
-  <div
-  className={`relative flex flex-col items-center justify-center min-h-screen 
+      <div
+        className={`relative flex flex-col items-center justify-center min-h-screen 
     bg-cover bg-center bg-no-repeat
     transition-all duration-700 ease-[cubic-bezier(0.4,0,0.2,1)] transform
     ${
@@ -760,37 +770,35 @@ const SetupFlow = () => {
         ? "lg:translate-x-[-350px] lg:scale-[0.97]"
         : "translate-x-0 scale-100"
     }`}
->
-    <video
-    autoPlay
-    loop
-    muted
-    playsInline
-    className="absolute inset-0 w-full h-full object-cover z-0"
-  >
-    <source
-      src="https://cdn.shopify.com/videos/c/o/v/df08c454451b4622be7ffeb6d0eed475.mp4"
-      type="video/mp4"
-    />
-  </video>
+      >
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover z-0"
+        >
+          <source
+            src="https://cdn.shopify.com/videos/c/o/v/df08c454451b4622be7ffeb6d0eed475.mp4"
+            type="video/mp4"
+          />
+        </video>
         <div className="flex flex-col items-center justify-center w-full max-w-3xl mx-auto ">
-<div className="w-full flex items-center justify-center mb-4">
-  <div className="flex items-center gap-2 px-3 py-1.5">
-    <FiMail className="text-indigo-600 text-2xl sm:text-3xl drop-shadow" />
-    <span className="font-semibold text-lg sm:text-xl text-gray-900 drop-shadow">
-      Zenith Inbox
-    </span>
-  </div>
-</div>
+          <div className="w-full flex items-center justify-center mb-4">
+            <div className="flex items-center gap-2 px-3 py-1.5">
+              <FiMail className="text-indigo-600 text-2xl sm:text-3xl drop-shadow" />
+              <span className="font-semibold text-lg sm:text-xl text-gray-900 drop-shadow">
+                Zenith Inbox
+              </span>
+            </div>
+          </div>
 
-{/* Step indicator */}
-
-
+          {/* Step indicator */}
 
           {/* 🔹 Step Indicator (visible everywhere) */}
-      <div className="flex justify-center">
-  <div
-    className="
+          <div className="flex justify-center">
+            <div
+              className="
       px-5 py-2 rounded-full text-sm sm:text-base font-semibold
       flex items-center justify-center gap-1
 
@@ -804,14 +812,11 @@ const SetupFlow = () => {
 
       transition-all duration-300
     "
-  >
-    <FiCheckCircle className="text-indigo-600 text-xs sm:text-sm" />
-    <span>Step {step} of 5</span>
-  </div>
-</div>
-
-
-
+            >
+              <FiCheckCircle className="text-indigo-600 text-xs sm:text-sm" />
+              <span>Step {step} of 5</span>
+            </div>
+          </div>
 
           <div className="w-full flex justify-center overflow-hidden relative">
             <div
@@ -825,22 +830,21 @@ const SetupFlow = () => {
             >
               {step === 1 && (
                 <div
-  className="
+                  className="
     flex flex-col items-center justify-between
     min-h-[600px] text-center
     p-8 sm:p-10
     rounded-2xl
-    bg-white/75
+    bg-white/30
     border border-white/60
     shadow-[0_4px_30px_rgba(0,0,0,0.1)]
-    backdrop-blur-[14px]
+    backdrop-blur-[20px]
     transition-all duration-500 relative
   "
-  style={{
-    WebkitBackdropFilter: "blur(14px)",
-  }}
->
-
+                  style={{
+                    WebkitBackdropFilter: "blur(19.9px)",
+                  }}
+                >
                   <div className="w-full min-h-[48px] flex items-center justify-center mb-2">
                     <AnimatePresence>
                       {alert?.message && (
@@ -874,16 +878,16 @@ const SetupFlow = () => {
                   </div>
 
                   {/* CTA */}
-            <div className="flex items-center justify-center mt-6">
-  <button
-    onClick={async () => {
-      await saveSetupProgress({
-        stepCompleted: 1,
-        stepStatus: "completed",
-      });
-      setStep(2);
-    }}
-    className="
+                  <div className="flex items-center justify-center mt-6">
+                    <button
+                      onClick={async () => {
+                        await saveSetupProgress({
+                          stepCompleted: 1,
+                          stepStatus: "completed",
+                        });
+                        setStep(2);
+                      }}
+                      className="
       flex items-center justify-center gap-2
       px-8 py-3 rounded-full text-sm font-semibold
       text-[#111827] 
@@ -895,13 +899,12 @@ const SetupFlow = () => {
       hover:shadow-[0_10px_30px_rgba(0,0,0,0.16)]
       transition-all duration-300 hover:scale-[1.04]
     "
-    style={{ WebkitBackdropFilter: "blur(12px)" }}
-  >
-    <span>Start 60-sec Setup</span>
-    <FiArrowRight className="text-indigo-600" />
-  </button>
-</div>
-
+                      style={{ WebkitBackdropFilter: "blur(12px)" }}
+                    >
+                      <span>Start 60-sec Setup</span>
+                      <FiArrowRight className="text-indigo-600" />
+                    </button>
+                  </div>
 
                   <p className="text-xs text-gray-400 mt-6">
                     You can complete setup later from your Organization
@@ -917,10 +920,12 @@ const SetupFlow = () => {
                       navigate("/organization");
                     }}
                     className="
-        absolute bottom-4 left-4 text-[#4F46E5]
-        text-xs sm:text-sm font-semibold cursor-pointer
-        hover:underline hover:text-[#3730A3] transition-colors
-      "
+    absolute bottom-4 left-4
+    text-black
+    text-xs sm:text-sm font-semibold cursor-pointer
+    hover:text-black/80 hover:underline
+    transition-colors
+  "
                   >
                     Skip
                   </span>
@@ -928,420 +933,439 @@ const SetupFlow = () => {
               )}
 
               {step === 2 && (
-                <div
-                  className="
-    flex flex-col items-center justify-between
-    min-h-[600px] text-center
-    rounded-2xl p-8 sm:p-10 transition-all duration-500 relative
-    shadow-[0_4px_30px_rgba(0,0,0,0.1)]
-    bg-white/15 backdrop-blur-[6px]
-  "
-                  style={{
-                    WebkitBackdropFilter: "blur(5.7px)",
-                  }}
-                >
-                  {/* 🔹 Reserved Alert Area (prevents layout shift) */}
-                  <div className="w-full min-h-[48px] flex items-center justify-center mb-2">
-                    <AnimatePresence>
-                      {alert?.message && (
-                        <motion.div
-                          key={alert.message}
-                          initial={{ opacity: 0, y: -10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -10 }}
-                          transition={{ duration: 0.3 }}
-                          className={`px-4 py-2 rounded-md text-sm font-medium shadow-sm ${
-                            alert.type === "success"
-                              ? "bg-green-100 text-green-700 border border-green-300"
-                              : "bg-red-100 text-red-700 border border-red-300"
-                          }`}
-                        >
-                          {alert.message}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-
-                  {/* Header */}
-                  <div>
-                    <h2 className="text-2xl sm:text-3xl font-bold text-[#111827] mb-3">
-                      Your Mailhook is Ready
-                    </h2>
-                    <p className="text-[#4B5563] text-sm sm:text-base mb-8 max-w-md mx-auto">
-                      This is a private, unique address just for your leads.
-                    </p>
-
-                    {/* Mailhook Card */}
-                 <div
-  className="
-    rounded-xl p-5 sm:p-6 mb-5 transition-all duration-300
-    bg-[rgba(255,255,255,0.41)]
-    border border-white/60
-    shadow-[0_4px_30px_rgba(0,0,0,0.1)]
-    backdrop-blur-[4.4px]
-    hover:shadow-[0_4px_40px_rgba(0,0,0,0.15)]
-  "
-  style={{ WebkitBackdropFilter: "blur(4.4px)" }}
->
-  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-2">
-    <h3 className="font-semibold text-[#111827] text-base sm:text-lg">
-      Your Unique Mailhook
-    </h3>
-    <span className="text-green-700 bg-green-100 text-[11px] sm:text-xs px-2.5 py-0.5 rounded-full font-medium">
-      Private & Unique
-    </span>
-  </div>
-
   <div
     className="
-      bg-white/30 text-[#4F46E5] px-4 py-3 rounded-lg
-      flex justify-between items-center font-mono text-sm
-      border border-white/50
-      backdrop-blur-md
-      hover:bg-white/40
-      transition-all
+      flex flex-col items-center justify-between
+      min-h-[600px] text-center
+      p-6 sm:p-10
+      rounded-2xl
+      bg-white/30
+      border border-white/60
+      shadow-[0_8px_30px_rgba(0,0,0,0.12)]
+      backdrop-blur-[20px]
+      transition-all duration-500 
+      relative w-full
     "
-    style={{ WebkitBackdropFilter: "blur(6px)" }}
+    style={{
+      WebkitBackdropFilter: "blur(19.9px)",
+    }}
   >
-    <span className="truncate w-full">
-      {user?.mailhook || "loading-mailhook@zenith-inbox.com"}
-    </span>
-
-    <button
-      onClick={() => {
-        if (user?.mailhook) {
-          navigator.clipboard.writeText(user.mailhook);
-          setAlert({
-            type: "success",
-            message: "Mailhook copied successfully!",
-          });
-        }
-      }}
-      className="ml-3 text-gray-500 hover:text-[#4F46E5] transition-colors"
-    >
-      <FiCopy className="text-lg" />
-    </button>
-  </div>
-</div>
-
-
-                    {/* Tip Section */}
-                    <div
-  className="
-    rounded-lg p-4 text-indigo-900 text-sm leading-relaxed
-    bg-[rgba(255,255,255,0.35)]
-    border border-white/60
-    shadow-[0_4px_25px_rgba(0,0,0,0.08)]
-    backdrop-blur-[5px]
-    transition-all duration-300
-    hover:shadow-[0_4px_35px_rgba(0,0,0,0.12)]
-  "
-  style={{ WebkitBackdropFilter: "blur(5px)" }}
->
-  <strong className="text-indigo-700">💡 Tip:</strong>
-  Copy this address and add it as a forwarding destination in your email
-  provider’s settings (Gmail or Outlook).
-</div>
-
-                  </div>
-
-                  {/* CTA - Only Next Button */}
-                  <div className="flex justify-center mt-10">
-                    <button
-                      onClick={async () => {
-                        await saveSetupProgress({
-                          stepCompleted: 2,
-                          stepStatus: "completed",
-                        });
-                        setStep(3);
-                      }}
-                      className="
-          flex items-center justify-center gap-2 
-          bg-[#4F46E5] hover:bg-[#4338CA] 
-          text-white font-semibold text-sm 
-          px-8 py-3 rounded-full shadow-md 
-          transition-all duration-300 hover:scale-[1.03]
-        "
-                    >
-                      <span>Next</span>
-                      <FiArrowRight />
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {step === 3 && (
-              <div
-  className="
-    flex flex-col items-center justify-between
-    min-h-[600px] text-center
-    rounded-2xl p-8 sm:p-10 transition-all duration-500 relative
-    bg-white/30
-    border border-white/50
-    shadow-[0_8px_30px_rgba(0,0,0,0.1)]
-    backdrop-blur-[8px]
-  "
-  style={{ WebkitBackdropFilter: "blur(8px)" }}
->
-
-                  {/* 🔹 Reserved Alert Space (prevents layout shift) */}
-                  <div className="w-full h-[48px] flex items-center justify-center mb-2 overflow-hidden">
-                    <AlertMessage />
-                  </div>
-
-                  {/* ---------------- Header ---------------- */}
-                  <div className="w-full relative">
-                   <h2 className="text-2xl sm:text-3xl font-bold text-[#1A1A1A] text-center mb-4">
-  Set up Forwarding
-</h2>
-
-                    {/* Mailhook bar */}
-                    <div
-                      className="
-          bg-[#F3F4F6] text-[#4F46E5] 
-          px-4 py-3 rounded-lg 
-          flex flex-col sm:flex-row sm:items-center sm:justify-between 
-          gap-2 sm:gap-3 font-mono text-sm mb-6 w-full break-all
-        "
-                    >
-                      <p className="flex flex-col sm:flex-row sm:items-center sm:gap-2 text-center sm:text-left w-full">
-                        <span className="text-[#111827] font-medium whitespace-nowrap">
-                          Forward emails to:
-                        </span>
-                        <span className="text-[#4F46E5] break-all truncate sm:truncate-none">
-                          {user?.mailhook || "loading..."}
-                        </span>
-                      </p>
-
-                      <button
-                        onClick={() => {
-                          if (user?.mailhook) {
-                            navigator.clipboard.writeText(user.mailhook);
-                            setAlert({
-                              type: "success",
-                              message: "Mailhook copied successfully!",
-                            });
-                          }
-                        }}
-                        className="self-end sm:self-auto flex items-center gap-1 text-gray-500 hover:text-[#4F46E5] transition text-base"
-                        aria-label="Copy mailhook"
-                      >
-                        <FiCopy />
-                        <span className="sr-only">Copy</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* ---------------- Main Card ---------------- */}
-                 <div
-  className="
-    relative p-6 w-full max-w-xl mx-auto text-center
-    rounded-2xl
-    bg-white/75
-    border border-white/70
-    backdrop-blur-[4px]
-    shadow-[0_6px_25px_rgba(0,0,0,0.08)]
-    transition-all
-    min-h-[300px] flex flex-col justify-start
-  "
->
-
-                    {/* Retry Button */}
-                    {!validationPhase && !validated && showValidateButton && (
-                      <button
-                        onClick={handleRetryValidation}
-                        className="absolute top-4 right-4 flex items-center gap-1 text-xs font-semibold text-[#4F46E5] hover:text-[#3730A3] transition-colors"
-                      >
-                        <FiRefreshCcw className="text-sm" />
-                        Retry
-                      </button>
-                    )}
-
-                    <h3 className="text-lg font-semibold text-[#111827] mb-4">
-                      Email Receiving
-                    </h3>
-
-                    {/* 🔹 Fixed Inner Area (stops reflow) */}
-<div
-  className="
-    relative min-h-[180px] rounded-lg p-4
-    bg-white/70
-    border border-gray-200/60
-    backdrop-blur-[3px]
-    text-gray-700
-    shadow-inner
-  "
->
-                      {validationFailed ? (
-                        <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4 text-center">
-                          <p className="font-semibold mb-2">
-                            Your mailhook forwarding may not be set up
-                            correctly.
-                          </p>
-                          <p className="text-sm mb-3">
-                            Please check your email forwarding settings and try
-                            again.
-                          </p>
-                        </div>
-                      ) : validationPhase ? (
-                        showValidateButton ? (
-                          <div className="text-center py-6 text-gray-500 text-sm">
-                            <p>No email received after several checks.</p>
-                            <p>Please enter your email below to continue.</p>
-                          </div>
-                        ) : (
-                          <MailhookWaitingTimer message="Waiting for validation email..." />
-                        )
-                      ) : validated ? (
-                        <div className="text-center py-6">
-                          <div className="flex flex-col items-center justify-center space-y-2">
-                            <FiCheck className="text-green-600 text-3xl" />
-                            <h4 className="text-lg font-semibold text-green-700">
-                              Mailhook connected successfully!
-                            </h4>
-                            <p className="text-sm text-gray-600">
-                              Your Gmail forwarding setup is verified.
-                            </p>
-                          </div>
-                        </div>
-                      ) : verificationEmail && verificationEmail.sender ? (
-                        <>
-                          <div
-                            className="border-gray-200 pt-3 max-h-32 overflow-y-auto text-sm leading-relaxed text-gray-700"
-                            dangerouslySetInnerHTML={{
-                              __html:
-                                verificationEmail.formattedBody ||
-                                verificationEmail.textBody,
-                            }}
-                          />
-                          {verificationEmail.isGmailVerification && (
-                            <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 rounded-lg p-4 mt-4 text-center text-sm">
-                              <p className="font-semibold mb-1">
-                                Gmail forwarding confirmation detected!
-                              </p>
-                              <p>
-                                Please open Gmail and click the verification
-                                link in your inbox to approve forwarding.
-                              </p>
-                            </div>
-                          )}
-                        </>
-                      ) : showValidateButton ? (
-                        <div className="text-center text-sm text-gray-600">
-                          <p>No email received.</p>
-                          <p className="text-xs text-gray-500">
-                            Please enter your email address below to validate
-                            manually.
-                          </p>
-                        </div>
-                      ) : (
-                        <MailhookWaitingTimer />
-                      )}
-                    </div>
-
-                    {/* Input Field - Reserved Spacing */}
-                    <div
-                      className={`space-y-3 mt-6 transition-all duration-300 ${
-                        !validationPhase &&
-                        !validated &&
-                        (showValidateButton ||
-                          verificationEmail?.isGmailVerification)
-                          ? "opacity-100 max-h-[140px]"
-                          : "opacity-0 max-h-0 overflow-hidden"
-                      }`}
-                    >
-                      <p className="text-sm text-gray-600">
-                        Enter the email address where you’ve set up forwarding
-                        to verify your setup.
-                      </p>
-                      <input
-                        type="email"
-                        placeholder="Enter your email address"
- className="
-    bg-white/85 
-    border border-gray-300
-    rounded-lg px-3 py-2
-    text-sm text-gray-700
-    w-full
-    placeholder-gray-400
-    focus:ring-2 focus:ring-indigo-400 
-    outline-none
-  "                        value={verificationEmail?.toEmail || ""}
-                        onChange={(e) =>
-                          setVerificationEmail({
-                            ...verificationEmail,
-                            toEmail: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                  </div>
-
-                  {/* ---------------- Footer Buttons ---------------- */}
-                  <div className="mt-10 border-t border-gray-200 pt-6 flex justify-center items-center w-full max-w-xl">
-                    {!validated &&
-                    !validationPhase &&
-                    (showValidateButton ||
-                      verificationEmail?.isGmailVerification) ? (
-                      <button
-                        disabled={validating}
-                        onClick={async () => {
-                          if (!verificationEmail?.toEmail?.trim()) {
-                            setAlert({
-                              type: "error",
-                              message:
-                                "Please enter the email where you set up forwarding!",
-                            });
-                            return;
-                          }
-
-                          setValidating(true);
-                          setValidationFailed(false);
-                          setShowValidateButton(false);
-                          setValidationPhase(true);
-                          await handleValidateForwarding();
-                          startValidationLoop();
-                        }}
-                        className={`flex items-center space-x-2 px-6 py-2 rounded-lg text-sm font-semibold text-white transition
-            ${
-              validating
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-[#4F46E5] hover:bg-[#4338CA] cursor-pointer"
+    {/* ALERT - fixed height (no jump) */}
+    <div className="w-full min-h-[48px] flex items-center justify-center mb-2">
+      <AnimatePresence>
+        {alert?.message && (
+          <motion.div
+            key={alert.message}
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3 }}
+            className={`px-4 py-2 rounded-md text-sm font-medium shadow-sm ${
+              alert.type === "success"
+                ? "bg-green-100 text-green-700 border border-green-300"
+                : "bg-red-100 text-red-700 border border-red-300"
             }`}
-                      >
-                        {validating ? "Validating..." : "Validate Forwarding"}
-                        <FiArrowRight />
-                      </button>
-                    ) : validated ? (
-                      <button
-                        onClick={async () => {
-                          await saveSetupProgress({
-                            stepCompleted: 3,
-                            stepStatus: "completed",
-                          });
-                          setStep(4);
-                        }}
-                        className="flex items-center space-x-2 px-6 py-2 rounded-lg text-sm font-semibold bg-green-600 text-white hover:bg-green-700 transition"
-                      >
-                        <span>Next</span> <FiArrowRight />
-                      </button>
-                    ) : null}
-                  </div>
-                </div>
-              )}
+          >
+            {alert.message}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+
+    {/* HEADER */}
+    <div className="w-full max-w-md mx-auto">
+      <h2 className="text-2xl sm:text-3xl font-bold text-[#111827] mb-3">
+        Your Mailhook is Ready
+      </h2>
+
+      <p className="text-[#4B5563] text-sm sm:text-base mb-8 leading-relaxed">
+        This is your private & unique address for receiving leads.
+      </p>
+    </div>
+
+    {/* MAILHOOK CARD */}
+    <div
+      className="
+        w-full max-w-lg 
+        rounded-xl p-5 sm:p-6 mb-6
+        bg-white/40 
+        border border-white/60
+        shadow-[0_6px_30px_rgba(0,0,0,0.1)]
+        backdrop-blur-[5px]
+        hover:shadow-[0_8px_40px_rgba(0,0,0,0.15)]
+        transition-all
+      "
+      style={{ WebkitBackdropFilter: "blur(5px)" }}
+    >
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-2">
+        <h3 className="font-semibold text-[#111827] text-base sm:text-lg">
+          Your Unique Mailhook
+        </h3>
+        <span className="text-green-700 bg-green-100 text-[11px] sm:text-xs px-2.5 py-0.5 rounded-full font-medium">
+          Private & Unique
+        </span>
+      </div>
+
+      <div
+        className="
+          bg-white/50 
+          text-[#4F46E5]
+          px-4 py-3 rounded-lg
+          flex justify-between items-center
+          font-mono text-xs sm:text-sm
+          border border-white/60
+          backdrop-blur-md
+          hover:bg-white/60
+          transition-all
+        "
+      >
+        <span className="truncate">
+          {user?.mailhook || "loading-mailhook@zenith-inbox.com"}
+        </span>
+
+        <button
+          onClick={() => {
+            if (user?.mailhook) {
+              navigator.clipboard.writeText(user.mailhook);
+              setAlert({
+                type: "success",
+                message: "Mailhook copied successfully!",
+              });
+            }
+          }}
+          className="ml-3 text-gray-600 hover:text-[#4F46E5] transition"
+        >
+          <FiCopy className="text-lg" />
+        </button>
+      </div>
+    </div>
+
+    {/* TIP CARD */}
+    <div
+      className="
+        w-full max-w-lg 
+        rounded-lg p-4 text-indigo-900 text-sm leading-relaxed
+        bg-white/40
+        border border-white/60
+        shadow-[0_4px_25px_rgba(0,0,0,0.08)]
+        backdrop-blur-[6px]
+        transition-all duration-300
+        hover:shadow-[0_6px_35px_rgba(0,0,0,0.12)]
+      "
+    >
+      <strong className="text-indigo-700">💡 Tip:</strong>
+      Add this address as a forwarding destination in Gmail or Outlook.
+    </div>
+
+    {/* NEXT BUTTON (GLASS BUTTON) */}
+    <div className="flex justify-center mt-12">
+      <button
+        onClick={async () => {
+          await saveSetupProgress({
+            stepCompleted: 2,
+            stepStatus: "completed",
+          });
+          setStep(3);
+        }}
+        className="
+          flex items-center justify-center gap-2
+          px-8 py-3 rounded-full
+          text-sm font-semibold text-[#111827]
+          bg-white/30
+          border border-white/50
+          backdrop-blur-xl
+          shadow-[0_8px_25px_rgba(0,0,0,0.12)]
+          hover:bg-white/40
+          hover:shadow-[0_10px_30px_rgba(0,0,0,0.16)]
+          transition-all duration-300 hover:scale-[1.04]
+        "
+        style={{ WebkitBackdropFilter: "blur(12px)" }}
+      >
+        <span>Next</span>
+        <FiArrowRight className="text-indigo-600" />
+      </button>
+    </div>
+  </div>
+)}
+
+
+          {step === 3 && (
+  <div
+    className="
+      flex flex-col items-center justify-between
+      min-h-[600px] text-center
+      p-6 sm:p-10
+      rounded-2xl
+      bg-white/30
+      border border-white/60
+      shadow-[0_8px_30px_rgba(0,0,0,0.12)]
+      backdrop-blur-[20px]
+      transition-all duration-500 relative w-full
+    "
+    style={{ WebkitBackdropFilter: "blur(19.9px)" }}
+  >
+    {/* ALERT FIXED AREA */}
+    <div className="w-full h-[48px] flex items-center justify-center mb-2 overflow-hidden">
+      <AlertMessage />
+    </div>
+
+    {/* HEADER */}
+    <div className="w-full max-w-xl mx-auto">
+      <h2 className="text-2xl sm:text-3xl font-bold text-[#111827] mb-5">
+        Set up Forwarding
+      </h2>
+
+      {/* MAILHOOK BAR (GLASS) */}
+      {/* <div
+        className="
+          w-full
+          bg-white/50 
+          px-4 py-3 rounded-xl
+          flex flex-col sm:flex-row sm:items-center sm:justify-between
+          gap-2 sm:gap-4
+          font-mono text-xs sm:text-sm
+          border border-white/70
+          backdrop-blur-xl
+          shadow-[0_4px_20px_rgba(0,0,0,0.1)]
+        "
+      >
+        <span className="text-[#1A1A1A] font-medium whitespace-nowrap">
+          Forward emails to:
+        </span>
+
+        <div className="flex items-center justify-between w-full sm:w-auto gap-2">
+          <span className="truncate text-[#4F46E5]">
+            {user?.mailhook || "loading..."}
+          </span>
+
+          <button
+            onClick={() => {
+              if (user?.mailhook) {
+                navigator.clipboard.writeText(user.mailhook);
+                setAlert({
+                  type: "success",
+                  message: "Mailhook copied successfully!",
+                });
+              }
+            }}
+            className="text-gray-600 hover:text-[#4F46E5] transition"
+          >
+            <FiCopy />
+          </button>
+        </div>
+      </div> */}
+    </div>
+
+    {/* MAIN VALIDATION CARD (Glass) */}
+    <div
+      className="
+        relative p-6 w-full max-w-xl mx-auto text-center
+        rounded-2xl
+        bg-white/40
+        border border-white/70
+        shadow-[0_6px_30px_rgba(0,0,0,0.1)]
+        backdrop-blur-[8px]
+        mt-8
+      "
+    >
+      {/* RETRY BUTTON */}
+      {!validationPhase && !validated && showValidateButton && (
+        <button
+          onClick={handleRetryValidation}
+          className="
+            absolute top-4 right-4 
+            flex items-center gap-1 
+            text-xs font-semibold text-[#4F46E5]
+            hover:text-[#3730A3] transition
+          "
+        >
+          <FiRefreshCcw className="text-sm" /> Retry
+        </button>
+      )}
+
+      <h3 className="text-lg font-semibold text-[#111827] mb-4">
+        Email Receiving
+      </h3>
+
+      {/* FIXED HEIGHT INNER AREA */}
+      <div
+        className="
+          relative min-h-[180px] rounded-lg p-4
+          bg-white/50
+          border border-white/60
+          backdrop-blur-md
+          shadow-inner text-gray-700
+        "
+      >
+        {/* ERROR */}
+        {validationFailed ? (
+          <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4 text-center">
+            <p className="font-semibold mb-2">
+              Forwarding is not configured correctly.
+            </p>
+            <p className="text-sm">Check settings & retry.</p>
+          </div>
+        ) : validationPhase ? (
+          showValidateButton ? (
+            <div className="text-center py-6 text-gray-500 text-sm">
+              <p>No email received.</p>
+              <p>Please enter your email below.</p>
+            </div>
+          ) : (
+            <MailhookWaitingTimer message="Waiting for validation email..." />
+          )
+        ) : validated ? (
+          <div className="text-center py-6">
+            <FiCheck className="text-green-600 text-3xl" />
+            <h4 className="text-lg font-semibold text-green-700 mt-2">
+              Mailhook connected!
+            </h4>
+            <p className="text-sm text-gray-600">
+              Forwarding verified successfully.
+            </p>
+          </div>
+        ) : verificationEmail?.sender ? (
+          <>
+            <div
+              className="pt-3 max-h-32 overflow-y-auto text-sm leading-relaxed text-gray-700"
+              dangerouslySetInnerHTML={{
+                __html:
+                  verificationEmail.formattedBody ||
+                  verificationEmail.textBody,
+              }}
+            />
+
+            {/* Gmail Warning */}
+            {verificationEmail.isGmailVerification && (
+              <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 rounded-lg p-4 mt-4 text-center text-sm">
+                Gmail confirmation detected — open Gmail and approve forwarding.
+              </div>
+            )}
+          </>
+        ) : showValidateButton ? (
+          <div className="text-center text-sm text-gray-600">
+            <p>No email received.</p>
+            <p className="text-xs text-gray-500">
+              Enter your forwarding email below.
+            </p>
+          </div>
+        ) : (
+          <MailhookWaitingTimer />
+        )}
+      </div>
+
+      {/* EMAIL INPUT (Glass) */}
+      <div
+        className={`space-y-3 mt-6 transition-all duration-300 ${
+          !validationPhase &&
+          !validated &&
+          (showValidateButton || verificationEmail?.isGmailVerification)
+            ? "opacity-100 max-h-[150px]"
+            : "opacity-0 max-h-0 overflow-hidden"
+        }`}
+      >
+        <p className="text-sm text-gray-700">
+          Enter the email address you configured forwarding from:
+        </p>
+
+        <input
+          type="email"
+          placeholder="Enter your email"
+          className="
+            w-full px-3 py-2 rounded-lg text-sm
+            bg-white/70 border border-gray-300
+            text-gray-700 placeholder-gray-400
+            focus:ring-2 focus:ring-indigo-400 outline-none
+            backdrop-blur-md
+          "
+          value={verificationEmail?.toEmail || ""}
+          onChange={(e) =>
+            setVerificationEmail({
+              ...verificationEmail,
+              toEmail: e.target.value,
+            })
+          }
+        />
+      </div>
+    </div>
+
+    {/* FOOTER BUTTON SECTION */}
+    <div className="mt-10 pt-6 flex justify-center w-full max-w-xl border-t border-white/40">
+      {!validated &&
+      !validationPhase &&
+      (showValidateButton || verificationEmail?.isGmailVerification) ? (
+        <button
+          disabled={validating}
+          onClick={async () => {
+            if (!verificationEmail?.toEmail?.trim()) {
+              setAlert({
+                type: "error",
+                message: "Enter your email address!",
+              });
+              return;
+            }
+
+            setValidating(true);
+            setValidationFailed(false);
+            setShowValidateButton(false);
+            setValidationPhase(true);
+
+            await handleValidateForwarding();
+            startValidationLoop();
+          }}
+          className="
+            flex items-center gap-2 px-6 py-2 rounded-full
+            text-sm font-semibold text-[#111827]
+            bg-white/30 border border-white/50
+            backdrop-blur-xl
+            shadow-[0_8px_25px_rgba(0,0,0,0.12)]
+            hover:bg-white/40 hover:shadow-[0_10px_30px_rgba(0,0,0,0.16)]
+            transition-all
+            disabled:opacity-50 disabled:cursor-not-allowed
+          "
+        >
+          {validating ? "Validating..." : "Validate Forwarding"}
+          <FiArrowRight className="text-indigo-600" />
+        </button>
+      ) : validated ? (
+        <button
+          onClick={async () => {
+            await saveSetupProgress({
+              stepCompleted: 3,
+              stepStatus: "completed",
+            });
+            setStep(4);
+          }}
+          className="
+            flex items-center gap-2 px-6 py-2 rounded-full
+            text-sm font-semibold
+            bg-green-600 text-white hover:bg-green-700
+            shadow-[0_6px_20px_rgba(0,0,0,0.2)]
+            transition
+          "
+        >
+          Next <FiArrowRight />
+        </button>
+      ) : null}
+    </div>
+  </div>
+)}
+
 
               {step === 4 && (
   <div
     className="
       flex flex-col items-center justify-between
       min-h-[600px] text-center
-      rounded-2xl p-8 sm:p-10 transition-all duration-500 relative
+      p-8 sm:p-10
+      rounded-2xl
       bg-white/30
-      border border-white/50
-      shadow-[0_8px_30px_rgba(0,0,0,0.15)]
-      backdrop-blur-[10px]
+      border border-white/60
+      shadow-[0_8px_30px_rgba(0,0,0,0.12)]
+      backdrop-blur-[20px]
+      transition-all duration-500 relative
     "
-    style={{ WebkitBackdropFilter: "blur(10px)" }}
+    style={{ WebkitBackdropFilter: "blur(20px)" }}
   >
     {/* Alert */}
     <div className="w-full min-h-[48px] flex items-center justify-center mb-2">
@@ -1350,7 +1374,7 @@ const SetupFlow = () => {
 
     {/* Header */}
     <div>
-      <h2 className="text-2xl sm:text-3xl font-bold text-[#1A1A1A] mb-3">
+      <h2 className="text-2xl sm:text-3xl font-bold text-[#111827] mb-3">
         Set up Sending (SMTP)
       </h2>
 
@@ -1366,8 +1390,9 @@ const SetupFlow = () => {
     {/* Tabs */}
     <div
       className="
-        flex rounded-lg overflow-hidden mb-6 w-full sm:w-[26rem] mx-auto
-        bg-white/40 backdrop-blur-sm border border-white/60
+        flex rounded-xl overflow-hidden mb-6 w-full sm:w-[26rem] mx-auto
+        bg-white/30 border border-white/60 backdrop-blur-xl
+        shadow-[0_4px_20px_rgba(0,0,0,0.12)]
       "
     >
       {["Gmail", "Microsoft"].map((tab) => (
@@ -1375,11 +1400,11 @@ const SetupFlow = () => {
           key={tab}
           onClick={() => setSelectedTab(tab)}
           className={`
-            w-1/2 px-4 py-2 text-sm font-medium text-center transition-colors
+            w-1/2 px-4 py-2 text-sm font-medium transition-all
             ${
               selectedTab === tab
-                ? "bg-indigo-600 text-white font-semibold shadow-lg"
-                : "text-gray-600 bg-white/20 hover:bg-white/40"
+                ? "bg-indigo-600 text-white shadow-[0_4px_20px_rgba(79,70,229,0.4)]"
+                : "text-gray-700 bg-white/20 hover:bg-white/40"
             }
           `}
         >
@@ -1392,25 +1417,25 @@ const SetupFlow = () => {
     {selectedTab === "Gmail" && (
       <div
         className="
-          bg-white/70 backdrop-blur-lg
-          border border-white/70
+          bg-white/40 backdrop-blur-xl
+          border border-white/60
           rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.1)]
           p-6 sm:p-8 text-center flex flex-col items-center
           space-y-4 max-w-sm mx-auto
         "
       >
-        <p className="text-gray-700 text-sm sm:text-base leading-relaxed">
+        <p className="text-gray-800 text-sm sm:text-base leading-relaxed">
           Connect your Gmail account securely using OAuth 2.0.
         </p>
 
         <button
           onClick={handleGmailConnect}
           className="
-            bg-[#EA4335] hover:bg-[#C33D2D]
-            text-white px-6 py-3 rounded-full
-            text-sm font-semibold shadow-md
-            flex items-center justify-center gap-2
-            transition-all hover:scale-[1.03]
+            flex items-center gap-2
+            px-6 py-3 rounded-full text-sm font-semibold
+            bg-[#EA4335] hover:bg-[#C33D2D] text-white
+            shadow-[0_6px_20px_rgba(0,0,0,0.2)]
+            transition-all hover:scale-[1.05]
           "
         >
           <FaGoogle className="text-lg" />
@@ -1423,25 +1448,25 @@ const SetupFlow = () => {
     {selectedTab === "Microsoft" && (
       <div
         className="
-          bg-white/70 backdrop-blur-lg
-          border border-white/70
+          bg-white/40 backdrop-blur-xl
+          border border-white/60
           rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.1)]
           p-6 sm:p-8 text-center flex flex-col items-center
           space-y-4 max-w-sm mx-auto
         "
       >
-        <p className="text-gray-700 text-sm sm:text-base leading-relaxed">
+        <p className="text-gray-800 text-sm sm:text-base leading-relaxed">
           Connect your Outlook or Microsoft 365 account securely using OAuth 2.0.
         </p>
 
         <button
           onClick={handleMicrosoftConnect}
           className="
-            bg-[#0078D4] hover:bg-[#0063B1]
-            text-white px-6 py-3 rounded-full
-            text-sm font-semibold shadow-md
-            flex items-center justify-center gap-2
-            transition-all hover:scale-[1.03]
+            flex items-center gap-2
+            px-6 py-3 rounded-full text-sm font-semibold
+            bg-[#0078D4] hover:bg-[#0063B1] text-white
+            shadow-[0_6px_20px_rgba(0,0,0,0.2)]
+            transition-all hover:scale-[1.05]
           "
         >
           <FaMicrosoft className="text-lg" />
@@ -1451,7 +1476,7 @@ const SetupFlow = () => {
     )}
 
     {/* Footer Button */}
-    <div className="flex justify-center w-full max-w-md mt-10 border-t border-white/40 pt-6">
+    <div className="flex justify-center w-full max-w-md mt-10 border-t border-white/50 pt-6">
       <button
         onClick={async () => {
           await saveSetupProgress({
@@ -1462,13 +1487,16 @@ const SetupFlow = () => {
         }}
         className="
           flex items-center justify-center gap-2
-          px-6 py-3 rounded-full text-sm font-semibold
-          bg-indigo-600 hover:bg-indigo-700 text-white
-          shadow-lg backdrop-blur-sm transition-all hover:scale-[1.03]
+          px-8 py-3 rounded-full text-sm font-semibold
+          bg-white/30 border border-white/60
+          text-[#111827]
+          shadow-[0_6px_25px_rgba(0,0,0,0.15)]
+          backdrop-blur-xl
+          transition-all hover:bg-white/40 hover:scale-[1.05]
         "
       >
         <span>Next</span>
-        <FiArrowRight />
+        <FiArrowRight className="text-indigo-600" />
       </button>
     </div>
   </div>
@@ -1480,13 +1508,15 @@ const SetupFlow = () => {
     className="
       flex flex-col items-center justify-between
       min-h-[600px] text-center
-      rounded-2xl p-8 sm:p-10 transition-all duration-500 relative
-      bg-white/25
-      border border-white/40
-      backdrop-blur-[10px]
-      shadow-[0_8px_40px_rgba(0,0,0,0.15)]
+      p-8 sm:p-10
+      rounded-2xl
+      bg-white/30
+      border border-white/60
+      shadow-[0_8px_35px_rgba(0,0,0,0.15)]
+      backdrop-blur-[20px]
+      transition-all duration-500 relative
     "
-    style={{ WebkitBackdropFilter: "blur(10px)" }}
+    style={{ WebkitBackdropFilter: "blur(20px)" }}
   >
     {/* Alert */}
     <div className="w-full min-h-[48px] flex items-center justify-center mb-2">
@@ -1495,7 +1525,7 @@ const SetupFlow = () => {
 
     {/* Header */}
     <div>
-      <h2 className="text-2xl sm:text-3xl font-bold text-[#1A1A1A] mb-3">
+      <h2 className="text-2xl sm:text-3xl font-bold text-[#111827] mb-3">
         Review & Go Live
       </h2>
 
@@ -1507,17 +1537,18 @@ const SetupFlow = () => {
     {/* Checklist Card */}
     <div
       className="
-        w-full max-w-xl text-left space-y-5 p-6 sm:p-8
-        bg-white/60
-        border border-white/70
+        w-full max-w-xl text-left p-6 sm:p-8 space-y-5
+        bg-white/35
+        border border-white/60
         rounded-xl
         shadow-[0_6px_30px_rgba(0,0,0,0.12)]
-        backdrop-blur-[12px]
+        backdrop-blur-[14px]
         transition-all
       "
+      style={{ WebkitBackdropFilter: "blur(14px)" }}
     >
       <div>
-        <h3 className="font-semibold text-[#1A1A1A] mb-1">
+        <h3 className="font-semibold text-[#111827] mb-1">
           Setup Checklist
         </h3>
         <p className="text-sm text-gray-600">
@@ -1526,17 +1557,15 @@ const SetupFlow = () => {
       </div>
 
       {!setupProgress ? (
-        <p className="text-gray-600 text-center py-6">
-          Loading progress...
-        </p>
+        <p className="text-gray-600 text-center py-6">Loading progress...</p>
       ) : (
-        <ul className="space-y-3 text-sm text-[#1A1A1A]">
+        <ul className="space-y-3 text-sm text-[#111827]">
           {setupProgress.steps?.map((stepItem) => (
             <li
               key={stepItem.step}
               className="
                 flex items-center justify-between
-                border-b border-white/50
+                border-b border-white/40
                 pb-2
               "
             >
@@ -1559,7 +1588,9 @@ const SetupFlow = () => {
                   }
                 `}
               >
-                {stepItem.status === "completed" ? "Completed" : "Skipped"}
+                {stepItem.status === "completed"
+                  ? "Completed"
+                  : "Skipped"}
               </span>
             </li>
           ))}
@@ -1579,16 +1610,19 @@ const SetupFlow = () => {
         }}
         className="
           flex items-center justify-center gap-2
-          px-8 py-3 rounded-full
-          bg-indigo-600 hover:bg-indigo-700
-          text-white text-sm font-semibold
-          shadow-[0_6px_20px_rgba(79,70,229,0.4)]
-          backdrop-blur-sm
-          transition-all duration-300 hover:scale-[1.03]
+          px-8 py-3 rounded-full text-sm font-semibold
+          text-[#111827]
+          bg-white/30
+          border border-white/60
+          shadow-[0_8px_25px_rgba(0,0,0,0.15)]
+          backdrop-blur-xl
+          hover:bg-white/40 hover:scale-[1.05]
+          transition-all duration-300
         "
+        style={{ WebkitBackdropFilter: "blur(14px)" }}
       >
         <span>Start building scenarios...</span>
-        <FiArrowRight />
+        <FiArrowRight className="text-indigo-600" />
       </button>
     </div>
   </div>
@@ -1596,23 +1630,23 @@ const SetupFlow = () => {
 
             </div>
           </div>
-       {!isExpanded && (
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    exit={{ opacity: 0, y: 20 }}
-    transition={{ duration: 0.4 }}
-    className="
+          {!isExpanded && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              transition={{ duration: 0.4 }}
+              className="
       w-full max-w-2xl mx-auto 
       flex justify-end pr-4 
       pointer-events-auto
     "
-  >
-    <motion.button
-      onClick={() => setIsExpanded(true)}
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-      className="
+            >
+              <motion.button
+                onClick={() => setIsExpanded(true)}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="
         bg-white/30
         backdrop-blur-xl
         border border-white/50
@@ -1623,28 +1657,25 @@ const SetupFlow = () => {
         flex items-center gap-2 text-sm font-semibold
         transition-all duration-300
       "
-      style={{ WebkitBackdropFilter: 'blur(12px)' }}
-    >
-      <motion.div
-        animate={{ scale: [1, 1.15, 1] }}
-        transition={{
-          duration: 1.8,
-          repeat: Infinity,
-          repeatType: "mirror",
-          ease: "easeInOut",
-        }}
-      >
-        <FiInfo className="text-[#4F46E5] text-lg" />   {/* Indigo icon */}
-      </motion.div>
+                style={{ WebkitBackdropFilter: "blur(12px)" }}
+              >
+                <motion.div
+                  animate={{ scale: [1, 1.15, 1] }}
+                  transition={{
+                    duration: 1.8,
+                    repeat: Infinity,
+                    repeatType: "mirror",
+                    ease: "easeInOut",
+                  }}
+                >
+                  <FiInfo className="text-[#4F46E5] text-lg" />{" "}
+                  {/* Indigo icon */}
+                </motion.div>
 
-      <span className="text-[14px] font-medium">
-        Setup Guide
-      </span>
-    </motion.button>
-  </motion.div>
-)}
-
-
+                <span className="text-[14px] font-medium">Setup Guide</span>
+              </motion.button>
+            </motion.div>
+          )}
         </div>
       </div>
       <div
@@ -1757,10 +1788,10 @@ const InstructionPanel = ({
   const { user, loading } = useContext(UserContext);
 
   return (
-<div
-  className={`${
-    isMobile ? "flex" : "hidden lg:flex"
-  } flex-col min-h-screen justify-start 
+    <div
+      className={`${
+        isMobile ? "flex" : "hidden lg:flex"
+      } flex-col min-h-screen justify-start 
   backdrop-blur-[12px]
   bg-white/20
   border-l border-white/30
@@ -1773,9 +1804,8 @@ const InstructionPanel = ({
       ? "w-[700px] p-8"
       : "w-[450px] p-7"
   }`}
-  style={{ WebkitBackdropFilter: "blur(12px)" }}
->
-
+      style={{ WebkitBackdropFilter: "blur(12px)" }}
+    >
       {/* Toggle Button - Hide on Mobile */}
 
       {!isMobile && (
@@ -1793,25 +1823,27 @@ const InstructionPanel = ({
           {isExpanded ? <FiArrowLeft size={18} /> : <FiArrowRight size={18} />}
         </button>
       )}
-<div className="flex items-center gap-3 mb-5 
-  border-b border-white/40 pb-3">
-
-  <div className="p-2.5 
+      <div
+        className="flex items-center gap-3 mb-5 
+  border-b border-white/40 pb-3"
+      >
+        <div
+          className="p-2.5 
     bg-white/30 backdrop-blur-sm 
-    rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.08)]">
-    <FiInfo className="text-indigo-600 text-xl sm:text-2xl" />
-  </div>
+    rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.08)]"
+        >
+          <FiInfo className="text-indigo-600 text-xl sm:text-2xl" />
+        </div>
 
-  <div>
-    <h3 className="text-lg sm:text-xl font-semibold text-gray-900">
-      Setup Guidance
-    </h3>
-    <p className="text-xs sm:text-sm text-gray-600 mt-0.5">
-      Follow the steps below to complete your inbox setup
-    </p>
-  </div>
-</div>
-
+        <div>
+          <h3 className="text-lg sm:text-xl font-semibold text-gray-900">
+            Setup Guidance
+          </h3>
+          <p className="text-xs sm:text-sm text-gray-600 mt-0.5">
+            Follow the steps below to complete your inbox setup
+          </p>
+        </div>
+      </div>
 
       {/* Intro Text */}
       <p className="text-gray-500 text-xs sm:text-sm mb-4 sm:mb-6 leading-relaxed">
@@ -1819,8 +1851,8 @@ const InstructionPanel = ({
         toward completing your setup successfully.
       </p>
 
-     <div
-  className="
+      <div
+        className="
     backdrop-blur-[14px]
     bg-white/25 
     border border-white/40
@@ -1829,8 +1861,7 @@ const InstructionPanel = ({
     hover:shadow-[0_12px_40px_rgba(0,0,0,0.16)] 
     transition-all duration-300 ease-in-out
   "
->
-
+      >
         {step === 1 && (
           <div className="bg-gradient-to-br from-indigo-50 via-purple-50 to-white rounded-2xl p-5 sm:p-6 border border-indigo-100 shadow-sm">
             <div className="mb-5 rounded-xl overflow-hidden shadow-md border border-indigo-100">
