@@ -368,7 +368,7 @@ useEffect(() => {
 
         <div className="flex-1 min-h-screen bg-gray-50">
           <div className="border-b bg-white shadow-sm">
-            <div className="p-6 flex items-center justify-between">
+            <div className="p-3 flex items-center justify-between">
               <div className="w-2/3">
                 <h1 className="text-xl font-medium mb-2">
                   {id ? "Edit Scenario" : "Create Scenario"}
