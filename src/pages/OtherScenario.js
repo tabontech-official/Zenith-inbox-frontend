@@ -86,30 +86,33 @@ const OthersScenariosPage = () => {
   const [showOutlookModal, setShowOutlookModal] = useState(false);
 
   const addModule = (type) => {
-    const nodeId = crypto.randomUUID();
+  const nodeId = crypto.randomUUID();
 
-    const newNode = {
-      id: nodeId,
-      type,
-      position: { x: 200, y: 400 },
-      data: {
-        label: type,
-        config: {},
-        deleteNode: () => deleteNode(nodeId),
-      },
-    };
-
-    setRfNodes((prev) => [...prev, newNode]);
-
-    if (type === "routerNode") setShowBranchButton(true);
-
-    if (type === "conditionNode") {
-      setEditingNode(newNode);
-      setShowFilterModal(true);
-    }
-
-    setShowModuleModal(false);
+  const newNode = {
+    id: nodeId,
+    type,
+    position: { x: 200, y: 400 },
+    data: {
+      label: type,
+      config: {},
+      deleteNode: () => deleteNode(nodeId),
+    },
   };
+
+  console.log("🟩 MODULE ADDED:", newNode);
+
+  setRfNodes((prev) => [...prev, newNode]);
+
+  if (type === "routerNode") setShowBranchButton(true);
+
+  if (type === "conditionNode") {
+    setEditingNode(newNode);
+    setShowFilterModal(true);
+  }
+
+  setShowModuleModal(false);
+};
+
   const fetchConnections = async () => {
     try {
       const res = await fetch(
@@ -149,20 +152,26 @@ const OthersScenariosPage = () => {
   );
 
   const handleNodeClick = (event, node) => {
-    setEditingNode(node);
+  console.log("🟦 MODULE CLICKED:", node);
 
-    if (node.type === "gmailNode" || node.type === "outlookNode") {
-      setShowEmailModal(true);
-    } else if (node.type === "delayNode") {
-      setShowDelayModal(true);
-    } else if (node.type === "conditionNode") {
-      setShowFilterModal(true);
-    }
-  };
+  setEditingNode(node);
+
+  if (node.type === "gmailNode" || node.type === "outlookNode") {
+    setShowEmailModal(true);
+  } else if (node.type === "delayNode") {
+    setShowDelayModal(true);
+  } else if (node.type === "conditionNode") {
+    setShowFilterModal(true);
+  }
+};
+
 
   const saveScenario = async () => {
-    const scenario = flowToScenario(rfNodes, rfEdges);
+  const scenario = flowToScenario(rfNodes, rfEdges);
 
+  console.log("🟥 FINAL NODES:", rfNodes);
+  console.log("🟥 FINAL EDGES:", rfEdges);
+  console.log("🟥 FINAL SCENARIO (routerBranches):", scenario);
     const payload = {
       userId,
       name: scenarioName,
@@ -305,16 +314,24 @@ const OthersScenariosPage = () => {
               onClose={() => setShowEmailModal(false)}
               openGmailModal={() => setShowGmailModal(true)}
               openOutlookModal={() => setShowOutlookModal(true)} 
-              onSave={(data) => {
-                setRfNodes((prev) =>
-                  prev.map((n) =>
-                    n.id === editingNode.id
-                      ? { ...n, data: { ...n.data, config: data } }
-                      : n
-                  )
-                );
-                setShowEmailModal(false);
-              }}
+           onSave={(data) => {
+  console.log("🟧 MODULE CONFIG SAVED:", {
+    nodeId: editingNode.id,
+    type: editingNode.type,
+    savedConfig: data
+  });
+
+  setRfNodes((prev) =>
+    prev.map((n) =>
+      n.id === editingNode.id
+        ? { ...n, data: { ...n.data, config: data } }
+        : n
+    )
+  );
+
+  setShowEmailModal(false);
+}}
+
             />
           )}
 
