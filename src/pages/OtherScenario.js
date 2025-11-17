@@ -1031,37 +1031,55 @@ const OthersScenariosPage = () => {
         </div>
 
         <div className="flex-1 min-h-screen bg-gray-50">
-          <div className="border-b bg-white shadow-sm">
-            <div className="p-3 flex items-center justify-between">
-              <div className="w-2/3">
-                <h1 className="text-xl font-medium mb-2">
-                  {id ? "Edit Scenario" : "Create Scenario"}
-                </h1>
-                <input
-                  value={scenarioName}
-                  onChange={(e) => setScenarioName(e.target.value)}
-                  placeholder="Enter scenario name"
-                  className="px-4 py-2 border rounded-md w-full"
-                />
-              </div>
+         <div className="border-b bg-gradient-to-r from-white via-gray-50 to-gray-100 shadow-sm">
+  <div className="p-4 flex items-center justify-between">
+    
+    {/* Left Section */}
+    <div className="w-2/3">
+      <h1 className="text-2xl font-semibold text-gray-800 tracking-tight mb-2">
+        {id ? "Edit Scenario" : "Create Scenario"}
+      </h1>
 
-              <div className="flex gap-2">
-                <button
-                  onClick={() => navigate(-1)}
-                  className="px-4 py-2 border rounded-md"
-                >
-                  <ArrowLeft className="inline mr-2" /> Back
-                </button>
+      <input
+        value={scenarioName}
+        onChange={(e) => setScenarioName(e.target.value)}
+        placeholder="Enter scenario name"
+        className="px-4 py-2 border rounded-lg w-full bg-white shadow-sm
+                   focus:outline-none focus:ring-2 focus:ring-indigo-500
+                   transition"
+      />
+    </div>
 
-                <button
-                  onClick={saveScenario}
-                  className="px-4 py-2 bg-green-600 text-white rounded-md"
-                >
-                  Save
-                </button>
-              </div>
-            </div>
-          </div>
+    {/* Action Buttons */}
+    <div className="flex items-center gap-3">
+      
+      {/* Back Button */}
+      <button
+        onClick={() => navigate(-1)}
+        className="px-4 py-2 rounded-lg flex items-center gap-2
+                   border border-gray-300
+                   bg-white text-gray-700
+                   hover:bg-gray-100 hover:text-indigo-600
+                   shadow-sm transition"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        Back
+      </button>
+
+      {/* Save Button */}
+      <button
+        onClick={saveScenario}
+        className="px-5 py-2 rounded-lg flex items-center gap-2
+                   bg-indigo-600 text-white font-medium
+                   hover:bg-indigo-700 shadow-md transition"
+      >
+        Save
+      </button>
+
+    </div>
+  </div>
+</div>
+
 
           <div className="h-[calc(100vh-120px)]">
             {/* <div className="flex justify-end pr-6 mt-4">
