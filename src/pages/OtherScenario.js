@@ -14,7 +14,6 @@
 //   applyEdgeChanges,
 // } from "reactflow";
 
-
 // import "reactflow/dist/style.css";
 
 // import WebhookNode from "../nodes/WebhookNode";
@@ -336,7 +335,6 @@ const nodeTypes = {
   gmailNode: GmailNode,
   delayNode: DelayNode,
   outlookNode: OutlookNode,
-
 };
 
 const OthersScenariosPage = () => {
@@ -371,8 +369,7 @@ const OthersScenariosPage = () => {
       data: { label: "Webhook", config: {} },
     };
 
-   setRfNodes([defaultWebhook]);
-
+    setRfNodes([defaultWebhook]);
   }, []);
 
   /* ------------------- Add Module Function ------------------- */
@@ -450,7 +447,6 @@ const OthersScenariosPage = () => {
     navigate("/scenarios/all");
   };
 
-  /* ------------------- RETURN UI ------------------- */
   return (
     <ReactFlowProvider>
       <div className="flex">
@@ -497,14 +493,14 @@ const OthersScenariosPage = () => {
           {/* Canvas */}
           <div className="h-[calc(100vh-120px)]">
             {/* Top Right Add Module Button */}
-<div className="flex justify-end pr-6 mt-4">
-  <button
-    onClick={() => setShowModuleModal(true)}
-    className="px-4 py-2 bg-blue-600 text-white rounded-full shadow-md hover:bg-blue-700 transition"
-  >
-    <Plus className="inline mr-1" size={18} /> Add Module
-  </button>
-</div>
+            <div className="flex justify-end pr-6 mt-4">
+              <button
+                onClick={() => setShowModuleModal(true)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-full shadow-md hover:bg-blue-700 transition"
+              >
+                <Plus className="inline mr-1" size={18} /> Add Module
+              </button>
+            </div>
 
             <ReactFlow
               nodes={rfNodes}
