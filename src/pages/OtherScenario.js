@@ -85,7 +85,7 @@ const OthersScenariosPage = () => {
   const [showGmailModal, setShowGmailModal] = useState(false);
   const [showOutlookModal, setShowOutlookModal] = useState(false);
 
-  const addModule = (type) => {
+ const addModule = (type) => {
   const nodeId = crypto.randomUUID();
 
   const newNode = {
@@ -96,6 +96,10 @@ const OthersScenariosPage = () => {
       label: type,
       config: {},
       deleteNode: () => deleteNode(nodeId),
+      openConditionModal: () => {
+        setEditingNode(newNode);
+        setShowFilterModal(true);
+      },
     },
   };
 
@@ -112,6 +116,113 @@ const OthersScenariosPage = () => {
 
   setShowModuleModal(false);
 };
+const rebuildFlowFromScenario = (scenario) => {
+  const nodes = [];
+  const edges = [];
+
+  // 1️⃣ Webhook
+  nodes.push({
+    id: "webhook-1",
+    type: "webhookNode",
+    position: { x: 400, y: 50 },
+    data: { label: "Webhook", config: {} }
+  });
+
+  // 2️⃣ Single Router in center
+  nodes.push({
+    id: "router-1",
+    type: "routerNode",
+    position: { x: 400, y: 200 },
+    data: { label: "Router", config: {} }
+  });
+
+  edges.push({
+    id: "edge-webhook-router",
+    source: "webhook-1",
+    target: "router-1"
+  });
+
+  // 3️⃣ Add branches under this ONE Router
+  let baseY = 380;
+
+  scenario.routerBranches.forEach((branch, index) => {
+    const conditionId = `condition-${index + 1}`;
+
+    const posX = 200 + index * 400;
+
+    // ---- CONDITION NODE ----
+    nodes.push({
+      id: conditionId,
+      type: "conditionNode",
+      position: { x: posX, y: baseY },
+      data: {
+        label: "Condition",
+        config: branch.filter
+      }
+    });
+
+    edges.push({
+      id: `edge-router-condition-${index}`,
+      source: "router-1",
+      target: conditionId
+    });
+
+    // ---- MODULES (Email or Delay) ----
+    let moduleY = baseY + 180;
+
+    branch.modules.forEach((mod, i) => {
+      const modNodeId = mod.id;
+
+      nodes.push({
+        id: modNodeId,
+        type:
+          mod.type === "Send Email"
+            ? "gmailNode"
+            : mod.type === "Delay"
+            ? "delayNode"
+            : "customEmailNode",
+
+        position: { x: posX, y: moduleY },
+        data: { label: mod.type, config: mod }
+      });
+
+      edges.push({
+        id: `edge-${conditionId}-${modNodeId}`,
+        source: i === 0 ? conditionId : branch.modules[i - 1].id,
+        target: modNodeId
+      });
+
+      moduleY += 180;
+    });
+  });
+
+  setRfNodes(nodes);
+  setRfEdges(edges);
+};
+
+
+const loadScenario = async () => {
+  if (!id) return; // Create page, not edit
+
+  try {
+    const res = await fetch(
+      `https://email-syncing-backend.vercel.app/scenario/detail/${id}`
+    );
+    const data = await res.json();
+
+    console.log("📥 Loaded Scenario:", data);
+
+    setScenarioName(data.name || "");
+
+    // Convert scenario back to RF nodes + edges
+    rebuildFlowFromScenario(data);
+  } catch (err) {
+    console.error("Error loading scenario:", err);
+  }
+};
+useEffect(() => {
+  loadScenario();
+}, [id]);
 
   const fetchConnections = async () => {
     try {

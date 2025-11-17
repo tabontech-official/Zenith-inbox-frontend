@@ -1,25 +1,32 @@
 import React, { useState } from "react";
 import { X, Plus } from "lucide-react";
 
-const emptyCond = { field: "", operator: "Equal to", value: "" };
-
 const FilterModal = ({ node, onSave, onClose }) => {
   const config = node?.data?.config || {};
 
   const [label, setLabel] = useState(config.label || "");
+
+  // clone conditions OR create new empty
   const [conditions, setConditions] = useState(
-    config.conditions?.length ? config.conditions : [emptyCond]
+    config.conditions?.length
+      ? config.conditions.map((c) => ({ ...c }))
+      : [{ field: "", operator: "Equal to", value: "" }]
   );
 
   const updateCond = (i, key, value) => {
     setConditions((prev) => {
       const arr = [...prev];
-      arr[i][key] = value;
+      arr[i] = { ...arr[i], [key]: value }; // ensure new object per update
       return arr;
     });
   };
 
-  const addCond = () => setConditions([...conditions, emptyCond]);
+  // ★ NEW FIXED ADD CONDITION
+  const addCond = () =>
+    setConditions((prev) => [
+      ...prev,
+      { field: "", operator: "Equal to", value: "" }, // always new object
+    ]);
 
   const removeCond = (index) =>
     setConditions((prev) => prev.filter((_, i) => i !== index));
@@ -102,13 +109,20 @@ const FilterModal = ({ node, onSave, onClose }) => {
           </div>
         </div>
 
-        {/* FOOTER */}
         <div className="p-4 border-t bg-gray-50 flex justify-end gap-3">
-          <button onClick={onClose} className="px-4 py-2 border rounded-md">
-            Cancel
-          </button>
           <button
-            onClick={() => onSave({ label, conditions })}
+            onClick={() => {
+              const validCond = conditions.filter(
+                (c) => c.field && c.operator && c.value
+              );
+
+              if (validCond.length === 0) {
+                alert("At least one valid condition is required");
+                return;
+              }
+
+              onSave({ label, conditions: validCond });
+            }}
             className="px-4 py-2 bg-green-600 text-white rounded-md"
           >
             Save

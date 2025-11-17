@@ -85,12 +85,7 @@
 // }
 
 export default function flowToScenario(nodes, edges) {
-  const routerNode = nodes.find((n) => n.type === "routerNode");
-  const webhookNode = nodes.find((n) => n.type === "webhookNode");
-
-  if (!routerNode || !webhookNode) {
-    return [];
-  }
+  if (!nodes || nodes.length === 0) return [];
 
   const graph = {};
   edges.forEach((e) => {
@@ -98,85 +93,112 @@ export default function flowToScenario(nodes, edges) {
     graph[e.source].push(e.target);
   });
 
-  const routerBranches = (graph[routerNode.id] || []).map((branchId) => ({
-    branchId,
-    nodes: traverseBranch(branchId, graph),
-  }));
+  const routerNode = nodes.find((n) => n.type === "routerNode");
 
-  const finalBranches = routerBranches.map((branch) => {
-    const modules = [];
+  let branchStarts = [];
+
+  if (routerNode) {
+    branchStarts = graph[routerNode.id] || [];
+  } else {
+    const first = findStartNode(nodes, edges);
+    branchStarts = first ? [first.id] : [];
+  }
+
+  const resultBranches = branchStarts.map((startNodeId, index) => {
+    const visitedNodeIds = walk(startNodeId, graph);
+
     let filter = null;
+    const modules = [];
 
-    branch.nodes.forEach((nodeId) => {
-      const rfNode = nodes.find((n) => n.id === nodeId);
-      if (!rfNode) return;
+    visitedNodeIds.forEach((id) => {
+      const n = nodes.find((item) => item.id === id);
+      if (!n) return;
 
-      const config = rfNode.data?.config || {};
+      const config = n.data?.config || {};
 
-      if (rfNode.type === "conditionNode" || rfNode.type === "routerNode") {
+      if (n.type === "conditionNode" || n.type === "routerNode") {
         filter = {
           label: config.label || "",
-          conditions: config.conditions || [],
+          conditions: (config.conditions || []).filter(
+            (c) => c.field && c.value
+          ),
           template: config.template || "",
         };
+        return;
       }
 
-      if (
-        rfNode.type === "gmailNode" ||
-        rfNode.type === "outlookNode" ||
-        rfNode.type === "customEmailNode"
-      ) {
+      if (n.type === "delayNode") {
         modules.push({
-          id: rfNode.id,
-          type:
-            rfNode.type === "gmailNode"
-              ? "Send Email"
-              : rfNode.type === "outlookNode"
-              ? "Outlook"
-              : "Custom Email",
-
-          appType: config.appType || "",
-          connectionId: config.connectionId || "",
-
-          to: config.to || "",
-          subject: config.subject || "",
-          body: config.body || "",
-
-          cc: config.cc || [],
-          bcc: config.bcc || [],
-
-          template: config.body || "",
-        });
-      }
-
-      if (rfNode.type === "delayNode") {
-        modules.push({
-          id: rfNode.id,
+          id: n.id,
           type: "Delay",
           delayValue: config.delayValue || 0,
           delayUnit: config.delayUnit || "seconds",
+          emailType: "Delay",
+          position: n.position,
+        });
+        return;
+      }
+
+      if (
+        n.type === "gmailNode" ||
+        n.type === "outlookNode" ||
+        n.type === "customEmailNode"
+      ) {
+        const emailType =
+          n.type === "gmailNode"
+            ? "Gmail"
+            : n.type === "outlookNode"
+            ? "Email"
+            : "Email";
+
+        modules.push({
+          id: n.id,
+          type:
+            n.type === "gmailNode"
+              ? "Send Email"
+              : n.type === "outlookNode"
+              ? "Outlook"
+              : "Custom Email",
+
+          emailType, // REQUIRED ENUM
+
+          connectionId: config.connectionId || "",
+          to: config.to || "",
+          subject: config.subject || "",
+          cc: config.cc || [],
+          bcc: config.bcc || [],
+          template: config.body || "",
+          position: n.position,
         });
       }
     });
 
-    return { filter, modules };
+    return {
+      id: index + 1, // 🔥 REQUIRED BY MONGOOSE
+      filter,
+      modules,
+    };
   });
 
-  return finalBranches;
+  return resultBranches;
 }
 
-function traverseBranch(start, graph) {
+// --- HELPERS ---
+function walk(start, graph) {
   const visited = [];
   let current = start;
 
   while (current && !visited.includes(current)) {
     visited.push(current);
-
     const next = graph[current];
     if (!next || next.length === 0) break;
-
     current = next[0];
   }
 
   return visited;
+}
+
+function findStartNode(nodes, edges) {
+  const targets = edges.map((e) => e.target);
+  return nodes.find((n) => !targets.includes(n.id));
 }

@@ -14,49 +14,52 @@ const ConditionNode = ({ data }) => {
         shadow-[0_2px_8px_rgba(0,0,0,0.06)] 
         w-[260px]
       "
+      onClick={() => data?.openConditionModal?.()}  // ★ OPEN MODAL ON CLICK
     >
 
-      {/* ---- DELETE BUTTON (hover only) ---- */}
-     <button
-  onClick={(e) => {
-    e.stopPropagation();  
-    data?.deleteNode();
-  }}
-  className="
-    opacity-0 group-hover:opacity-100 
-    absolute top-2 right-12
-    w-7 h-7 
-    rounded-xl 
-    bg-red-500 text-white 
-    flex items-center justify-center 
-    shadow 
-    transition
-  "
->
-  <X size={16} />
-</button>
-
-
-      {/* ---- VIEW BUTTON ---- */}
+      {/* ---- DELETE BUTTON ---- */}
       <button
+        onClick={(e) => {
+          e.stopPropagation();
+          data?.deleteNode();
+        }}
         className="
-          absolute top-2 right-2 
-          w-8 h-8 
-          border border-[#facc15] 
+          opacity-0 group-hover:opacity-100 
+          absolute top-2 right-12
+          w-7 h-7 
           rounded-xl 
+          bg-red-500 text-white 
           flex items-center justify-center 
-          bg-white 
-          hover:bg-[#fffce7] 
+          shadow 
           transition
         "
       >
-        <Eye size={16} className="text-[#eab308]" />
+        <X size={16} />
       </button>
 
-      {/* ---- Icon + Text ---- */}
-      <div className="flex items-center gap-4">
+      {/* ---- VIEW BUTTON ---- */}
+      <button
+  onClick={(e) => {
+    e.stopPropagation();
+    data?.openConditionModal?.();
+  }}
+  className="
+    absolute top-2 right-2 
+    w-8 h-8 
+    border border-[#facc15]
+    rounded-xl 
+    flex items-center justify-center 
+    bg-white 
+    hover:bg-[#fffce7] 
+    transition
+  "
+>
+  <Eye size={16} className="text-[#eab308]" />
+</button>
 
-        {/* Yellow Icon Box */}
+
+      {/* Icon + Text */}
+      <div className="flex items-center gap-4">
         <div className="w-12 h-12 rounded-xl bg-[#fef9c3] flex items-center justify-center">
           <svg
             stroke="#eab308"
@@ -71,7 +74,6 @@ const ConditionNode = ({ data }) => {
           </svg>
         </div>
 
-        {/* Title + Description */}
         <div className="leading-tight">
           <h3 className="text-[16px] font-semibold text-gray-800">
             Condition
@@ -80,10 +82,8 @@ const ConditionNode = ({ data }) => {
             Filter criteria
           </p>
         </div>
-
       </div>
 
-      {/* ---- Handles ---- */}
       <Handle type="source" position="bottom" className="!bg-gray-400" />
       <Handle type="target" position="top" className="!bg-gray-400" />
     </div>
