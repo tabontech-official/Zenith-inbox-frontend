@@ -15,7 +15,7 @@ import ReactFlow, {
 } from "reactflow";
 
 import "reactflow/dist/style.css";
-
+import { FiMail, FiGitBranch, FiClock, FiFilter, FiX } from "react-icons/fi"
 import WebhookNode from "../nodes/WebhookNode";
 import RouterNode from "../nodes/RouterNode";
 import GmailNode from "../nodes/GmailNode";
@@ -375,7 +375,7 @@ useEffect(() => {
             </ReactFlow>
           </div>
 
-          {showModuleModal && (
+          {/* {showModuleModal && (
             <div className="fixed inset-0 bg-black/40 flex justify-center items-center">
               <div className="bg-white p-6 rounded-lg w-80 space-y-4">
                 <h2 className="text-lg font-semibold">Select Module</h2>
@@ -416,7 +416,70 @@ useEffect(() => {
                 </button>
               </div>
             </div>
-          )}
+          )} */}
+
+{showModuleModal && (
+  <div className="fixed inset-0 backdrop-blur-sm bg-black/40 flex justify-center items-center animate-fadeIn">
+    <div className="bg-white/90 p-6 rounded-2xl shadow-xl w-80 space-y-6 border border-white/30 animate-scaleIn">
+      
+      {/* Title */}
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-semibold text-gray-800">Select Module</h2>
+        <button 
+          onClick={() => setShowModuleModal(false)}
+          className="text-gray-600 hover:text-red-500 transition"
+        >
+          <FiX size={22} />
+        </button>
+      </div>
+
+      {/* Options */}
+      <div className="space-y-3">
+        
+        <button
+          className="w-full p-3 border rounded-xl bg-gray-50 hover:bg-blue-100 hover:border-blue-400 
+          transition-all flex items-center gap-3"
+          onClick={() => addModule("gmailNode")}
+        >
+          <FiMail size={20} className="text-blue-500" /> Email
+        </button>
+
+        <button
+          className="w-full p-3 border rounded-xl bg-gray-50 hover:bg-purple-100 hover:border-purple-400 
+          transition-all flex items-center gap-3"
+          onClick={() => addModule("routerNode")}
+        >
+          <FiGitBranch size={20} className="text-purple-500" /> Router
+        </button>
+
+        <button
+          className="w-full p-3 border rounded-xl bg-gray-50 hover:bg-yellow-100 hover:border-yellow-400 
+          transition-all flex items-center gap-3"
+          onClick={() => addModule("delayNode")}
+        >
+          <FiClock size={20} className="text-yellow-500" /> Delay
+        </button>
+
+        <button
+          className="w-full p-3 border rounded-xl bg-gray-50 hover:bg-green-100 hover:border-green-400 
+          transition-all flex items-center gap-3"
+          onClick={() => addModule("conditionNode")}
+        >
+          <FiFilter size={20} className="text-green-500" /> Condition
+        </button>
+      </div>
+
+      {/* Cancel Button */}
+      <button
+        className="w-full p-3 bg-gray-200 rounded-xl hover:bg-gray-300 transition-all"
+        onClick={() => setShowModuleModal(false)}
+      >
+        Cancel
+      </button>
+
+    </div>
+  </div>
+)}
 
           {showEmailModal && (
             <EmailModal
