@@ -120,85 +120,139 @@ const rebuildFlowFromScenario = (scenario) => {
   const nodes = [];
   const edges = [];
 
-  // 1️⃣ Webhook
+  // Always add Webhook node
   nodes.push({
     id: "webhook-1",
     type: "webhookNode",
-    position: { x: 400, y: 50 },
-    data: { label: "Webhook", config: {} }
+    position: { x: 200, y: 80 },
+    data: { label: "Webhook", config: {}, deleteNode: () => {} },
   });
 
-  // 2️⃣ Single Router in center
+  const branches = scenario.routerBranches;
+
+  // CASE 1: NO router, NO filter → simple straight-line modules
+  const hasAnyFilter = branches.some(b => b.filter && b.filter.conditions?.length);
+
+  if (!hasAnyFilter && branches.length === 1) {
+    let y = 200;
+    let prev = "webhook-1";
+
+    branches[0].modules.forEach(mod => {
+      const nodeType =
+        mod.type === "Send Email"
+          ? "gmailNode"
+          : mod.type === "Delay"
+          ? "delayNode"
+          : "customEmailNode";
+
+      nodes.push({
+        id: mod.id,
+        type: nodeType,
+        position: { x: 200, y },
+        data: { label: mod.type, config: mod, deleteNode: () => {} },
+      });
+
+      edges.push({
+        id: `edge-${prev}-${mod.id}`,
+        source: prev,
+        target: mod.id,
+        type: "smoothstep",
+      });
+
+      prev = mod.id;
+      y += 160;
+    });
+
+    setRfNodes(nodes);
+    setRfEdges(edges);
+    return;
+  }
+
+  // CASE 2: Router scenario
+  let baseY = 200;
+
+  const routerId = "router-main";
   nodes.push({
-    id: "router-1",
+    id: routerId,
     type: "routerNode",
-    position: { x: 400, y: 200 },
-    data: { label: "Router", config: {} }
+    position: { x: 200, y: baseY },
+    data: { label: "Router", config: {}, deleteNode: () => {} },
   });
 
   edges.push({
     id: "edge-webhook-router",
     source: "webhook-1",
-    target: "router-1"
+    target: routerId,
+    type: "smoothstep",
   });
 
-  // 3️⃣ Add branches under this ONE Router
-  let baseY = 380;
+  let branchIndex = 0;
 
-  scenario.routerBranches.forEach((branch, index) => {
-    const conditionId = `condition-${index + 1}`;
+  branches.forEach((branch) => {
+    const branchX = 200 + branchIndex * 300;
+    const branchStartId =
+      branch.filter && branch.filter.conditions?.length
+        ? `cond-${branch.id}`
+        : branch.modules[0]?.id;
 
-    const posX = 200 + index * 400;
-
-    // ---- CONDITION NODE ----
-    nodes.push({
-      id: conditionId,
-      type: "conditionNode",
-      position: { x: posX, y: baseY },
-      data: {
-        label: "Condition",
-        config: branch.filter
-      }
-    });
-
-    edges.push({
-      id: `edge-router-condition-${index}`,
-      source: "router-1",
-      target: conditionId
-    });
-
-    // ---- MODULES (Email or Delay) ----
-    let moduleY = baseY + 180;
-
-    branch.modules.forEach((mod, i) => {
-      const modNodeId = mod.id;
-
+    // Add condition node if exists
+    if (branch.filter && branch.filter.conditions?.length) {
       nodes.push({
-        id: modNodeId,
-        type:
-          mod.type === "Send Email"
-            ? "gmailNode"
-            : mod.type === "Delay"
-            ? "delayNode"
-            : "customEmailNode",
-
-        position: { x: posX, y: moduleY },
-        data: { label: mod.type, config: mod }
+        id: branchStartId,
+        type: "conditionNode",
+        position: { x: branchX, y: baseY + 160 },
+        data: { label: "Condition", config: branch.filter, deleteNode: () => {} },
       });
 
       edges.push({
-        id: `edge-${conditionId}-${modNodeId}`,
-        source: i === 0 ? conditionId : branch.modules[i - 1].id,
-        target: modNodeId
+        id: `edge-router-${branchStartId}`,
+        source: routerId,
+        target: branchStartId,
+      });
+    } else {
+      edges.push({
+        id: `edge-router-${branchStartId}`,
+        source: routerId,
+        target: branchStartId,
+      });
+    }
+
+    // Add modules under branch
+    let y = baseY + 300;
+    let prev = branchStartId;
+
+    branch.modules.forEach((mod) => {
+      const nodeType =
+        mod.type === "Send Email"
+          ? "gmailNode"
+          : mod.type === "Delay"
+          ? "delayNode"
+          : "customEmailNode";
+
+      nodes.push({
+        id: mod.id,
+        type: nodeType,
+        position: { x: branchX, y },
+        data: { label: mod.type, config: mod, deleteNode: () => {} },
       });
 
-      moduleY += 180;
+      edges.push({
+        id: `edge-${prev}-${mod.id}`,
+        source: prev,
+        target: mod.id,
+      });
+
+      prev = mod.id;
+      y += 180;
     });
+
+    branchIndex++;
   });
 
   setRfNodes(nodes);
   setRfEdges(edges);
 };
+
 
 
 const loadScenario = async () => {
