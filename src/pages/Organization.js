@@ -622,7 +622,7 @@ const Organization = () => {
               </p>
             </div>
             {/* Automation Switch - New attractive component */}
-            <div className="flex items-center mt-4 sm:mt-0 bg-white p-2 rounded-xl shadow-md border border-gray-100">
+            {/* <div className="flex items-center mt-4 sm:mt-0 bg-white p-2 rounded-xl shadow-md border border-gray-100">
               <span className="text-sm font-medium text-gray-700 mr-3 flex items-center">
                 <FiSettings className="w-4 h-4 mr-1 text-indigo-500" />
                 Automation Status:
@@ -645,7 +645,7 @@ const Organization = () => {
               <span className={`ml-3 text-sm font-semibold ${automationOn ? 'text-indigo-600' : 'text-gray-500'}`}>
                 {automationOn ? "ON" : "OFF"}
               </span>
-            </div>
+            </div> */}
           </motion.div>
 
           {/* Stat Cards Section */}

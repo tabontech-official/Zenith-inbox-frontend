@@ -1,13 +1,13 @@
 import React from "react";
 import { Handle } from "reactflow";
 import { FaGoogle } from "react-icons/fa";
-import { Edit, Eye } from "lucide-react";
+import { Edit, X } from "lucide-react";
 
 const GmailNode = ({ data }) => {
   return (
     <div
       className="
-        relative 
+        relative group
         px-5 py-4 
         bg-white 
         rounded-2xl 
@@ -17,7 +17,28 @@ const GmailNode = ({ data }) => {
       "
     >
 
-      {/* ---- Top Right Mini Button ---- */}
+      {/* ---- DELETE BUTTON (hover only) ---- */}
+    <button
+  onClick={(e) => {
+    e.stopPropagation();  
+    data?.deleteNode();
+  }}
+  className="
+    opacity-0 group-hover:opacity-100 
+    absolute top-2 right-12
+    w-7 h-7 
+    rounded-xl 
+    bg-red-500 text-white 
+    flex items-center justify-center 
+    shadow 
+    transition
+  "
+>
+  <X size={16} />
+</button>
+
+
+      {/* ---- EDIT BUTTON ---- */}
       <button
         className="
           absolute top-2 right-2 
@@ -35,7 +56,7 @@ const GmailNode = ({ data }) => {
 
       {/* ---- Icon + Text ---- */}
       <div className="flex items-center gap-4">
-        
+
         {/* Icon Box */}
         <div className="w-12 h-12 rounded-xl bg-[#fde0e0] flex items-center justify-center">
           <FaGoogle size={26} className="text-[#e57373]" />

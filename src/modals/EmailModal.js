@@ -1,28 +1,60 @@
 import React, { useState } from "react";
-import ReactQuill from "react-quill";
 import { X } from "lucide-react";
-import "react-quill/dist/quill.snow.css";
 
-const EmailModal = ({ node, connections, onSave, onClose }) => {
+const EmailModal = ({
+  node,
+  connections,
+  onSave,
+  onClose,
+  openGmailModal,
+  openOutlookModal,
+}) => {
   const config = node?.data?.config || {};
 
+  const [appType, setAppType] = useState(config.appType || "");
   const [connectionId, setConnectionId] = useState(config.connectionId || "");
-  const [subject, setSubject] = useState(config.subject || "");
   const [to, setTo] = useState(config.to || "");
-  const [cc, setCc] = useState(config.cc || []);
-  const [bcc, setBcc] = useState(config.bcc || []);
+  const [subject, setSubject] = useState(config.subject || "");
   const [body, setBody] = useState(config.body || "");
 
-  const handleAddEmail = (listSetter, valueSetter, value) => {
-    if (!value.trim()) return;
-    listSetter((prev) => [...prev, value.trim()]);
-    valueSetter("");
+  const [ccList, setCcList] = useState(config.cc || []);
+  const [bccList, setBccList] = useState(config.bcc || []);
+  const [ccInput, setCcInput] = useState("");
+  const [bccInput, setBccInput] = useState("");
+
+  /* Filter based on App Type */
+  const filteredConnections = connections.filter((c) => {
+    if (appType === "Gmail") return c.provider === "gmail";
+    if (appType === "Email") return c.provider === "outlook" || c.provider === "smtp";
+    return false;
+  });
+
+  /* Add CC/BCC */
+  const handleAddEmail = (e, type) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+
+      const value = type === "cc" ? ccInput.trim() : bccInput.trim();
+      if (!value || !/\S+@\S+\.\S+/.test(value)) return;
+
+      if (type === "cc") {
+        setCcList([...ccList, value]);
+        setCcInput("");
+      } else {
+        setBccList([...bccList, value]);
+        setBccInput("");
+      }
+    }
   };
+
+  const removeCc = (i) => setCcList(ccList.filter((_, index) => index !== i));
+  const removeBcc = (i) => setBccList(bccList.filter((_, index) => index !== i));
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
       <div className="bg-white w-[550px] rounded-lg shadow-lg">
-        <div className="flex items-center justify-between bg-purple-600 text-white px-4 py-3 rounded-t-lg">
+
+        <div className="flex items-center justify-between bg-purple-600 text-white px-5 py-3 rounded-t-lg">
           <h2 className="font-semibold">Configure Email</h2>
           <button onClick={onClose}>
             <X className="w-5 h-5" />
@@ -30,105 +62,131 @@ const EmailModal = ({ node, connections, onSave, onClose }) => {
         </div>
 
         <div className="p-5 space-y-5">
-          {/* Connection */}
-          <div>
-            <label className="text-sm font-medium">Connection</label>
-            <select
-              className="w-full border rounded px-3 py-2 mt-1"
-              value={connectionId}
-              onChange={(e) => setConnectionId(e.target.value)}
-            >
-              <option value="">Select a connection</option>
-              {connections.map((conn) => (
-                <option key={conn._id} value={conn._id}>
-                  {conn.provider.toUpperCase()} - {conn.email}
-                </option>
-              ))}
-            </select>
-          </div>
 
-          {/* TO FIELD */}
+          <div>
+  <label className="text-sm font-medium">Application Type</label>
+
+  <div className="relative mt-1">
+
+    <select
+      value={appType}
+      onChange={(e) => setAppType(e.target.value)}
+      className="w-full border rounded-lg px-3 py-2 pr-24 appearance-none focus:ring-0 focus:outline-none"
+      style={{ paddingRight: "90px" }} 
+    >
+      <option value="">Select Type</option>
+      <option value="Gmail">Gmail</option>
+      <option value="Email">Email (Outlook / SMTP)</option>
+    </select>
+
+    <button
+      onClick={() =>
+        appType === "Gmail" ? openGmailModal() : openOutlookModal()
+      }
+      disabled={!appType}
+      className={`absolute right-1 top-1 bottom-1 px-4 text-sm rounded-md 
+        ${appType ? "bg-purple-600 text-white hover:bg-purple-700" : "bg-gray-200 text-gray-500 cursor-not-allowed"}
+        focus:outline-none
+      `}
+      style={{
+        height: "calc(100% - 8px)",  
+      }}
+    >
+      Add
+    </button>
+
+  </div>
+</div>
+
+
+          {appType && (
+            <div>
+              <label className="text-sm font-medium">Connection</label>
+              <select
+                value={connectionId}
+                onChange={(e) => setConnectionId(e.target.value)}
+                className="w-full border rounded px-3 py-2 mt-1"
+              >
+                <option value="">Select Connection</option>
+                {filteredConnections.map((c) => (
+                  <option key={c._id} value={c._id}>
+                    {c.provider.toUpperCase()} - {c.email}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div>
             <label className="text-sm font-medium">To</label>
             <input
               className="w-full border rounded px-3 py-2 mt-1"
               value={to}
               onChange={(e) => setTo(e.target.value)}
-              placeholder="Recipient email"
+              placeholder="Recipient Email"
             />
           </div>
 
-          {/* CC */}
           <div>
             <label className="text-sm font-medium">CC</label>
-
-            <input
-              className="w-full border rounded px-3 py-2 mt-1"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  handleAddEmail(setCc, () => {}, e.target.value);
-                  e.target.value = "";
-                }
-              }}
-              placeholder="Add CC and press Enter"
-            />
-
-            <div className="flex flex-wrap mt-2 gap-2">
-              {cc.map((email, index) => (
-                <span
-                  key={index}
-                  className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs flex items-center"
-                >
-                  {email}
-                  <button
-                    onClick={() =>
-                      setCc((prev) => prev.filter((_, i) => i !== index))
-                    }
-                    className="ml-2 text-red-500"
+            <div className="border rounded px-3 py-2">
+              <div className="flex flex-wrap gap-2 mb-2">
+                {ccList.map((email, i) => (
+                  <span
+                    key={i}
+                    className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs flex items-center"
                   >
-                    ✕
-                  </button>
-                </span>
-              ))}
+                    {email}
+                    <button
+                      onClick={() => removeCc(i)}
+                      className="ml-2 text-red-500"
+                    >
+                      ✕
+                    </button>
+                  </span>
+                ))}
+              </div>
+
+              <input
+                value={ccInput}
+                onChange={(e) => setCcInput(e.target.value)}
+                onKeyDown={(e) => handleAddEmail(e, "cc")}
+                placeholder="Type email and press Enter"
+                className="w-full outline-none text-sm"
+              />
             </div>
           </div>
 
-          {/* BCC */}
           <div>
             <label className="text-sm font-medium">BCC</label>
-
-            <input
-              className="w-full border rounded px-3 py-2 mt-1"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  handleAddEmail(setBcc, () => {}, e.target.value);
-                  e.target.value = "";
-                }
-              }}
-              placeholder="Add BCC and press Enter"
-            />
-
-            <div className="flex flex-wrap mt-2 gap-2">
-              {bcc.map((email, index) => (
-                <span
-                  key={index}
-                  className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs flex items-center"
-                >
-                  {email}
-                  <button
-                    onClick={() =>
-                      setBcc((prev) => prev.filter((_, i) => i !== index))
-                    }
-                    className="ml-2 text-red-500"
+            <div className="border rounded px-3 py-2">
+              <div className="flex flex-wrap gap-2 mb-2">
+                {bccList.map((email, i) => (
+                  <span
+                    key={i}
+                    className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs flex items-center"
                   >
-                    ✕
-                  </button>
-                </span>
-              ))}
+                    {email}
+                    <button
+                      onClick={() => removeBcc(i)}
+                      className="ml-2 text-red-500"
+                    >
+                      ✕
+                    </button>
+                  </span>
+                ))}
+              </div>
+
+              <input
+                value={bccInput}
+                onChange={(e) => setBccInput(e.target.value)}
+                onKeyDown={(e) => handleAddEmail(e, "bcc")}
+                placeholder="Type email and press Enter"
+                className="w-full outline-none text-sm"
+              />
             </div>
           </div>
 
-          {/* SUBJECT */}
           <div>
             <label className="text-sm font-medium">Subject</label>
             <input
@@ -138,37 +196,41 @@ const EmailModal = ({ node, connections, onSave, onClose }) => {
             />
           </div>
 
-          {/* BODY */}
           <div>
             <label className="text-sm font-medium">Body</label>
-            <ReactQuill value={body} onChange={setBody} className="h-32" />
+            <textarea
+              className="w-full border rounded px-3 py-2 mt-1 h-32"
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+            />
           </div>
         </div>
 
-        {/* FOOTER */}
         <div className="flex justify-end gap-2 px-4 py-3 border-t bg-gray-50">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 border rounded-md text-sm"
-          >
+          <button onClick={onClose} className="px-4 py-2 border rounded-md">
             Cancel
           </button>
+
           <button
             onClick={() =>
-              onSave({
-                connectionId,
-                subject,
-                to,
-                cc,
-                bcc,
-                body,
-              })
+             onSave({
+  appType,
+  connectionId,
+  to,
+  subject,
+  body,
+  cc: ccList,
+  bcc: bccList,
+  template: body,    // <-- THIS IS THE FIX
+})
+
             }
-            className="px-4 py-2 bg-purple-600 text-white rounded-md text-sm"
+            className="px-4 py-2 bg-purple-600 text-white rounded-md"
           >
             Save
           </button>
         </div>
+
       </div>
     </div>
   );
