@@ -1289,7 +1289,6 @@ const SetupFlow = () => {
       </div>
     </div>
 
-    {/* FOOTER BUTTON SECTION */}
     <div className="mt-10 pt-6 flex justify-center w-full max-w-xl  border-white/40">
       {!validated &&
       !validationPhase &&
@@ -1338,10 +1337,13 @@ const SetupFlow = () => {
           }}
           className="
             flex items-center gap-2 px-6 py-2 rounded-full
-            text-sm font-semibold
-            bg-green-600 text-white hover:bg-green-700
-            shadow-[0_6px_20px_rgba(0,0,0,0.2)]
-            transition
+            text-sm font-semibold text-[#111827]
+            bg-white/30 border border-white/50
+            backdrop-blur-xl
+            shadow-[0_8px_25px_rgba(0,0,0,0.12)]
+            hover:bg-white/40 hover:shadow-[0_10px_30px_rgba(0,0,0,0.16)]
+            transition-all
+            disabled:opacity-50 disabled:cursor-not-allowed
           "
         >
           Next <FiArrowRight />
