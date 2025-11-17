@@ -1290,7 +1290,7 @@ const SetupFlow = () => {
     </div>
 
     {/* FOOTER BUTTON SECTION */}
-    <div className="mt-10 pt-6 flex justify-center w-full max-w-xl border-t border-white/40">
+    <div className="mt-10 pt-6 flex justify-center w-full max-w-xl  border-white/40">
       {!validated &&
       !validationPhase &&
       (showValidateButton || verificationEmail?.isGmailVerification) ? (
