@@ -3,7 +3,6 @@ import { ArrowLeft, Plus, Redo, Undo } from "lucide-react";
 import Sidebar from "../component/Sidebar";
 import toast from "react-hot-toast";
 import { useNavigate, useParams } from "react-router-dom";
-
 import ReactFlow, {
   ReactFlowProvider,
   addEdge,
@@ -13,7 +12,6 @@ import ReactFlow, {
   applyNodeChanges,
   applyEdgeChanges,
 } from "reactflow";
-
 import "reactflow/dist/style.css";
 import { FiMail, FiGitBranch, FiClock, FiFilter, FiX } from "react-icons/fi";
 import WebhookNode from "../nodes/WebhookNode";
@@ -22,17 +20,17 @@ import GmailNode from "../nodes/GmailNode";
 import DelayNode from "../nodes/DelayNode";
 import OutlookNode from "../nodes/OutlookNode";
 import ConditionNode from "../nodes/conditionNode";
-
 import EmailModal from "../modals/EmailModal";
 import DelayModal from "../modals/DelayModal";
 import FilterModal from "../modals/FilterModal";
 import ConnectionModal from "../component/ConnectionModal";
-
 import flowToScenario from "../utils/flowToScenario";
 import OutlookConnectionModal from "../component/OutlookConnectionModal";
 import WebhookModal from "../component/WebhookModal";
 import { useContext } from "react";
 import { UserContext } from "../component/UserContext";
+
+
 const nodeTypes = {
   webhookNode: WebhookNode,
   // routerNode: RouterNode,
@@ -44,6 +42,8 @@ const nodeTypes = {
 
 const OthersScenariosPage = () => {
   const navigate = useNavigate();
+  const [highlightedNodes, setHighlightedNodes] = useState([]);
+
   const { id } = useParams();
   const [showWebhookModal, setShowWebhookModal] = useState(false);
   const { user } = useContext(UserContext);
@@ -82,6 +82,64 @@ const OthersScenariosPage = () => {
     setShowDeleteConfirm(false);
     setNodeToDelete(null);
   };
+const validateBeforeActivate = () => {
+  let errors = [];
+  let highlight = [];
+
+  rfNodes.forEach((node) => {
+    const cfg = node.data?.config || {};
+
+    // ---- Gmail Node Validation ----
+    if (node.type === "gmailNode") {
+      if (!cfg.connectionId) {
+        errors.push("Gmail: Connection is missing");
+        highlight.push(node.id);
+      }
+      if (!cfg.to) {
+        errors.push("Gmail: 'To' email missing");
+        highlight.push(node.id);
+      }
+      if (!cfg.subject) {
+        errors.push("Gmail: Subject missing");
+        highlight.push(node.id);
+      }
+      if (!cfg.body) {
+        errors.push("Gmail: Email Body missing");
+        highlight.push(node.id);
+      }
+    }
+
+    // ---- Delay Node ----
+    if (node.type === "delayNode") {
+      if (!cfg.delayValue) {
+        errors.push("Delay: delayValue is missing");
+        highlight.push(node.id);
+      }
+      if (!cfg.delayUnit) {
+        errors.push("Delay: delayUnit is missing");
+        highlight.push(node.id);
+      }
+    }
+
+    // ---- Condition Node ----
+    if (node.type === "conditionNode") {
+      const conds = cfg.conditions || [];
+      if (conds.length === 0) {
+        errors.push("Condition: No conditions added");
+        highlight.push(node.id);
+      }
+    }
+  });
+
+  setHighlightedNodes(highlight);
+
+  if (errors.length > 0) {
+    errors.forEach((e) => toast.error(e));
+    return false;
+  }
+
+  return true;
+};
 
   const [rfNodes, setRfNodes] = useState([]);
   const [rfEdges, setRfEdges] = useState([]);
@@ -253,7 +311,6 @@ const OthersScenariosPage = () => {
             ? "delayNode"
             : "gmailNode";
 
-        // 🔥 RESTORE ALL FUNCTIONS BACK INTO data:
         nodes.push({
           id: mod.id,
           type: nodeType,
@@ -423,7 +480,6 @@ const OthersScenariosPage = () => {
                   {id ? "Update Scenario" : "Create Scenario"}
                 </button>
 
-                {/* Run Test */}
                 <button
                   className="
           flex items-center gap-2
@@ -456,7 +512,14 @@ const OthersScenariosPage = () => {
                   </span>
 
                   <button
-                    onClick={() => setIsActive(!isActive)}
+onClick={() => {
+  if (!isActive) {
+    // activating
+    const ok = validateBeforeActivate();
+    if (!ok) return; // stop activation
+  }
+  setIsActive(!isActive);
+}}
                     className={`
             relative inline-flex h-5 w-10 items-center rounded-full transition
             ${isActive ? "bg-indigo-600" : "bg-gray-300"}
