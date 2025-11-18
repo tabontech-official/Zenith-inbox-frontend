@@ -8,22 +8,20 @@ import {
   FiArrowRight,
   FiEdit,
   FiPlusCircle,
-  FiBarChart2, // Changed FiInbox for a more dashboard/stat feel
-  FiZap, // Added for quick actions
-  FiSettings, // Added for automation switch
+  FiBarChart2, 
+  FiZap,
+  FiSettings, 
 } from "react-icons/fi";
 import axios from "axios";
 import { motion } from "framer-motion";
 import { FiCheckCircle, FiAlertTriangle, FiXOctagon, FiClock } from "react-icons/fi";
 
-// Helper component for Stat Card Icons
 const StatIcon = ({ icon: Icon, colorClass }) => (
   <div className={`p-3 rounded-full ${colorClass} bg-opacity-10`}>
     <Icon className={`w-5 h-5 ${colorClass}`} />
   </div>
 );
 
-// Helper component for Status Badge
 const StatusBadge = ({ status, isActive = true }) => {
   let color = "";
   let text = status;
@@ -87,7 +85,6 @@ useEffect(() => {
   }
 }, []);
 
-  // --- API Calls (kept the same logic) ---
 
   const fetchEmails = async () => {
     try {
@@ -156,11 +153,9 @@ useEffect(() => {
 
   useEffect(() => {
     fetchEmails();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
   const fetchEmailById = () => {
-    // Navigating to general inbox for now as _id is not used directly here
     navigate(`/inbox`);
   };
 
@@ -174,7 +169,6 @@ useEffect(() => {
 
   const rootEmails = emails.filter((e) => !e.isForwarded && !e.parentEmailId);
 
-  // Enhanced Stat Cards with Icons and colors
   const statCards = [
     { label: "Total Emails", value: stats.total, icon: FiBarChart2, color: "text-indigo-600" },
     { label: "Processed", value: stats.processed, icon: FiCheckCircle, color: "text-green-600" },
@@ -233,14 +227,12 @@ useEffect(() => {
           </section>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Recent Scenarios and Recent Emails on a single large panel */}
             <motion.div
               className="lg:col-span-2 space-y-8"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.1 }}
             >
-              {/* Recent Scenarios Table */}
               <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
                 <div className="flex justify-between items-center pb-4 border-b border-gray-100 mb-4">
                   <h3 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
@@ -424,7 +416,6 @@ useEffect(() => {
               </div>
             </motion.div>
 
-            {/* Quick Actions Panel */}
             <motion.div
               className="lg:col-span-1 bg-white rounded-2xl shadow-lg border border-gray-200 p-6 h-fit sticky top-6"
               initial={{ opacity: 0 }}
@@ -462,6 +453,5 @@ useEffect(() => {
   );
 };
 
-// Add helper icons needed for the stat cards (must be imported or defined)
 
 export default Organization;

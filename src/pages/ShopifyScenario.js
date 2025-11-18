@@ -552,75 +552,160 @@ const ShopifyScenariosPage = () => {
 
   const [allActive, setAllActive] = useState(false);
 
-  const handleSave = () => {
-    if (editingBranch !== null) {
-      const updatedBranches = [...routerBranches];
+  // const handleSave = () => {
+  //   if (editingBranch !== null) {
+  //     const updatedBranches = [...routerBranches];
 
-      let type = "";
-      let description = "";
+  //     let type = "";
+  //     let description = "";
 
-      const isDelay = selectedApp?.name === "Delay";
+  //     const isDelay = selectedApp?.name === "Delay";
 
-      if (isDelay) {
-        type = "Delay";
-        if (delayValue && delayUnit) {
-          description = `Wait ${delayValue} ${delayUnit}`;
-        } else {
-          description = "Delay (no duration set)";
-        }
-      } else if (
-        selectedApp?.name === "Email" ||
-        selectedApp?.name === "Gmail"
-      ) {
-        type = selectedApp.name === "Email" ? "Custom Email" : "Send an Email";
-        description = `Send email via ${selectedAppType || selectedApp.name}`;
-      }
+  //     if (isDelay) {
+  //       type = "Delay";
+  //       if (delayValue && delayUnit) {
+  //         description = `Wait ${delayValue} ${delayUnit}`;
+  //       } else {
+  //         description = "Delay (no duration set)";
+  //       }
+  //     } else if (
+  //       selectedApp?.name === "Email" ||
+  //       selectedApp?.name === "Gmail"
+  //     ) {
+  //       type = selectedApp.name === "Email" ? "Custom Email" : "Send an Email";
+  //       description = `Send email via ${selectedAppType || selectedApp.name}`;
+  //     }
 
-      const moduleData = {
-        id: editingModuleId || Date.now(),
-        app: {
-          ...selectedApp,
-          name:
-            selectedApp.displayName ||
-            selectedTemplate ||
-            selectedApp.defaultTemplate ||
-            "Unnamed Module",
-          color: selectedApp.color,
-          icon: selectedApp.icon,
-        },
-        type,
-        description,
-        connectionId: selectedConnection,
-        template: selectedTemplate,
-        cc: ccList,
-        bcc: bccList,
-        emailType: selectedAppType || selectedApp?.name || "",
-        ...(isDelay
-          ? { delayValue: delayValue || "", delayUnit: delayUnit || "" }
-          : {}),
-      };
+  //     const moduleData = {
+  //       id: editingModuleId || Date.now(),
+  //       app: {
+  //         ...selectedApp,
+  //         name:
+  //           selectedApp.displayName ||
+  //           selectedTemplate ||
+  //           selectedApp.defaultTemplate ||
+  //           "Unnamed Module",
+  //         color: selectedApp.color,
+  //         icon: selectedApp.icon,
+  //       },
+  //       type,
+  //       description,
+  //       connectionId: selectedConnection,
+  //       template: selectedTemplate,
+  //       cc: ccList,
+  //       bcc: bccList,
+  //       emailType: selectedAppType || selectedApp?.name || "",
+  //       ...(isDelay
+  //         ? { delayValue: delayValue || "", delayUnit: delayUnit || "" }
+  //         : {}),
+  //     };
 
-      if (editingModuleId) {
-        const moduleIndex = updatedBranches[editingBranch].modules.findIndex(
-          (m) => m.id === editingModuleId
-        );
-        if (moduleIndex >= 0) {
-          updatedBranches[editingBranch].modules[moduleIndex] = {
-            ...updatedBranches[editingBranch].modules[moduleIndex],
-            ...moduleData,
-          };
-        }
+  //     if (editingModuleId) {
+  //       const moduleIndex = updatedBranches[editingBranch].modules.findIndex(
+  //         (m) => m.id === editingModuleId
+  //       );
+  //       if (moduleIndex >= 0) {
+  //         updatedBranches[editingBranch].modules[moduleIndex] = {
+  //           ...updatedBranches[editingBranch].modules[moduleIndex],
+  //           ...moduleData,
+  //         };
+  //       }
+  //     } else {
+  //       updatedBranches[editingBranch].modules.push(moduleData);
+  //     }
+
+  //     setRouterBranches(updatedBranches);
+  //     setEditingBranch(null);
+  //     setEditingModuleId(null);
+  //   }
+
+  //   resetForm();
+  // };
+
+const handleSave = () => {
+  if (editingBranch !== null) {
+    const updatedBranches = [...routerBranches];
+
+    let type = "";
+    let description = "";
+
+    const isDelay = selectedApp?.name === "Delay";
+
+    if (isDelay) {
+      type = "Delay";
+      if (delayValue && delayUnit) {
+        description = `Wait ${delayValue} ${delayUnit}`;
       } else {
-        updatedBranches[editingBranch].modules.push(moduleData);
+        description = "Delay (no duration set)";
       }
-
-      setRouterBranches(updatedBranches);
-      setEditingBranch(null);
-      setEditingModuleId(null);
+    } else if (
+      selectedApp?.name === "Email" ||
+      selectedApp?.name === "Gmail"
+    ) {
+      type = selectedApp.name === "Email" ? "Custom Email" : "Send an Email";
+      description = `Send email via ${selectedAppType || selectedApp.name}`;
     }
 
-    resetForm();
-  };
+    const moduleData = {
+      id: editingModuleId || Date.now(),
+      app: {
+        ...selectedApp,
+        name:
+          selectedApp.displayName ||
+          selectedTemplate ||
+          selectedApp.defaultTemplate ||
+          "Unnamed Module",
+        color: selectedApp.color,
+        icon: selectedApp.icon,
+      },
+      type,
+      description,
+      connectionId: selectedConnection,
+      template: selectedTemplate,
+      cc: ccList,
+      bcc: bccList,
+      emailType: selectedAppType || selectedApp?.name || "",
+      ...(isDelay
+        ? { delayValue: delayValue || "", delayUnit: delayUnit || "" }
+        : {}),
+    };
+
+    // 🔥🔥 INSERT MODULE AT SPECIFIC INDEX
+    if (insertAtIndex !== null) {
+      updatedBranches[editingBranch].modules.splice(
+        insertAtIndex,
+        0,
+        moduleData
+      );
+      setInsertAtIndex(null); // reset
+    }
+
+    // ✏ Edit existing module
+    else if (editingModuleId) {
+      const moduleIndex = updatedBranches[editingBranch].modules.findIndex(
+        (m) => m.id === editingModuleId
+      );
+      if (moduleIndex >= 0) {
+        updatedBranches[editingBranch].modules[moduleIndex] = {
+          ...updatedBranches[editingBranch].modules[moduleIndex],
+          ...moduleData,
+        };
+      }
+    }
+
+    // ➕ Normal Add to end
+    else {
+      updatedBranches[editingBranch].modules.push(moduleData);
+    }
+
+    setRouterBranches(updatedBranches);
+    setEditingBranch(null);
+    setEditingModuleId(null);
+  }
+
+  resetForm();
+};
+
 
   const handleRemoveModule = (branchIndex, moduleId) => {
     const updatedBranches = [...routerBranches];
@@ -886,6 +971,7 @@ const ShopifyScenariosPage = () => {
         {!isLast && (
           <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-gray-400 rounded-full border-2 border-white"></div>
         )}
+        
         {!isFirst && (
           <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-gray-400 rounded-full border-2 border-white"></div>
         )}
@@ -904,6 +990,22 @@ const ShopifyScenariosPage = () => {
       </span>
     </button>
   );
+  const AddBetweenButton = ({ onClick }) => (
+  <button
+    onClick={onClick}
+    className="
+      w-7 h-7 rounded-full 
+      bg-white border border-gray-300 
+      flex items-center justify-center 
+      shadow hover:bg-gray-100 transition 
+      absolute left-1/2 transform -translate-x-1/2
+      z-20
+    "
+  >
+    <Plus size={16} className="text-gray-700" />
+  </button>
+);
+
   const resetForm = () => {
     setSelectedApp(null);
     setSelectedConnection("");
@@ -1280,6 +1382,7 @@ const ShopifyScenariosPage = () => {
   const [selectedAppType, setSelectedAppType] = useState("");
   const [showServiceModal, setShowServiceModal] = useState(false);
   const [loadingServices, setLoadingServices] = useState(false);
+const [insertAtIndex, setInsertAtIndex] = useState(null);
 
   const handleEdit = async () => {
     if (!showValidation) {
@@ -1686,8 +1789,28 @@ const ShopifyScenariosPage = () => {
                               ))}
 
                             {moduleIndex < branch.modules.length - 1 && (
-                              <div className="w-0.5 h-12 bg-gray-300"></div>
-                            )}
+  <div className="relative flex flex-col items-center">
+    
+    {/* vertical line */}
+    <div className="w-0.5 h-12 bg-gray-300"></div>
+    
+    {/* PLUS BUTTON BETWEEN NODES */}
+    <AddBetweenButton
+      onClick={() => {
+        setEditingBranch(branchIndex);
+        setEditingModuleId(null);
+
+        // NEW: store position so module adds EXACT here
+        setInsertAtIndex(moduleIndex + 1);
+
+        setOpen(true);
+      }}
+      className="top-1/2"
+    />
+
+  </div>
+)}
+
                           </React.Fragment>
                         );
                       })
