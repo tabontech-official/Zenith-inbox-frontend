@@ -29,7 +29,7 @@ import OutlookConnectionModal from "../component/OutlookConnectionModal";
 import WebhookModal from "../component/WebhookModal";
 import { useContext } from "react";
 import { UserContext } from "../component/UserContext";
-
+import { ListOrdered, MailCheck, Sparkles } from "lucide-react";
 
 const nodeTypes = {
   webhookNode: WebhookNode,
@@ -47,6 +47,7 @@ const OthersScenariosPage = () => {
   const { id } = useParams();
   const [showWebhookModal, setShowWebhookModal] = useState(false);
   const { user } = useContext(UserContext);
+  const [validNodes, setValidNodes] = useState([]);
 
   const [webhookUrl, setWebhookUrl] = useState("");
   const performDeleteNode = () => {
@@ -82,64 +83,51 @@ const OthersScenariosPage = () => {
     setShowDeleteConfirm(false);
     setNodeToDelete(null);
   };
-const validateBeforeActivate = () => {
-  let errors = [];
-  let highlight = [];
+  const validateBeforeActivate = () => {
+    let highlight = [];
+    let validList = [];
+    let hasError = false;
 
-  rfNodes.forEach((node) => {
-    const cfg = node.data?.config || {};
+    rfNodes.forEach((node) => {
+      const cfg = node.data?.config || {};
+      let invalid = false;
 
-    // ---- Gmail Node Validation ----
-    if (node.type === "gmailNode") {
-      if (!cfg.connectionId) {
-        errors.push("Gmail: Connection is missing");
-        highlight.push(node.id);
+      if (node.type === "gmailNode") {
+        if (!cfg.connectionId || !cfg.subject || !cfg.body) {
+          invalid = true;
+        }
       }
-      if (!cfg.to) {
-        errors.push("Gmail: 'To' email missing");
-        highlight.push(node.id);
+
+      if (node.type === "delayNode") {
+        if (!cfg.delayValue || !cfg.delayUnit) {
+          invalid = true;
+        }
       }
-      if (!cfg.subject) {
-        errors.push("Gmail: Subject missing");
-        highlight.push(node.id);
+
+      if (node.type === "conditionNode") {
+        if (!cfg.conditions || cfg.conditions.length === 0) {
+          invalid = true;
+        }
       }
-      if (!cfg.body) {
-        errors.push("Gmail: Email Body missing");
+
+      if (invalid) {
         highlight.push(node.id);
+        hasError = true;
+      } else {
+        validList.push(node.id);
       }
+    });
+
+    setHighlightedNodes(highlight);
+    setValidNodes(validList);
+
+    if (hasError) {
+      toast.error("Please fix highlighted nodes before activating scenario.");
+      return false;
     }
 
-    // ---- Delay Node ----
-    if (node.type === "delayNode") {
-      if (!cfg.delayValue) {
-        errors.push("Delay: delayValue is missing");
-        highlight.push(node.id);
-      }
-      if (!cfg.delayUnit) {
-        errors.push("Delay: delayUnit is missing");
-        highlight.push(node.id);
-      }
-    }
-
-    // ---- Condition Node ----
-    if (node.type === "conditionNode") {
-      const conds = cfg.conditions || [];
-      if (conds.length === 0) {
-        errors.push("Condition: No conditions added");
-        highlight.push(node.id);
-      }
-    }
-  });
-
-  setHighlightedNodes(highlight);
-
-  if (errors.length > 0) {
-    errors.forEach((e) => toast.error(e));
-    return false;
-  }
-
-  return true;
-};
+    return true;
+  };
 
   const [rfNodes, setRfNodes] = useState([]);
   const [rfEdges, setRfEdges] = useState([]);
@@ -221,7 +209,8 @@ const validateBeforeActivate = () => {
   const [showOutlookModal, setShowOutlookModal] = useState(false);
 
   const addModule = (type) => {
-    const parentId = editingNode;
+    const parentId = editingNode?.id || editingNode; // ← FIXED
+
     const nodeId = crypto.randomUUID();
 
     const parentNode = rfNodes.find((n) => n.id === parentId);
@@ -246,12 +235,12 @@ const validateBeforeActivate = () => {
         },
 
         openModuleModal: () => {
-          setEditingNode(nodeId);
+          setEditingNode({ id: nodeId, type });
           setShowModuleModal(true);
         },
 
         openConditionModal: () => {
-          setEditingNode(nodeId);
+          setEditingNode({ id: nodeId, type });
           setShowFilterModal(true);
         },
       },
@@ -259,6 +248,7 @@ const validateBeforeActivate = () => {
 
     setRfNodes((prev) => [...prev, newNode]);
 
+    // AUTO CONNECT FIX
     if (parentId) {
       setRfEdges((prev) => [
         ...prev,
@@ -274,6 +264,22 @@ const validateBeforeActivate = () => {
     if (type === "conditionNode") {
       setEditingNode(newNode);
       setShowFilterModal(true);
+    }
+
+    if (type === "delayNode") {
+      setRfNodes((prev) =>
+        prev.map((n) =>
+          n.id === nodeId
+            ? {
+                ...n,
+                data: {
+                  ...n.data,
+                  config: { delayValue: 5, delayUnit: "seconds" },
+                },
+              }
+            : n
+        )
+      );
     }
 
     setShowModuleModal(false);
@@ -437,7 +443,23 @@ const validateBeforeActivate = () => {
     navigate("/scenarios/all");
   };
   const [isActive, setIsActive] = useState(false);
+  const organizeNodes = () => {
+    const spacingY = 170;
+    const spacingX = 0;
 
+    setRfNodes((nodes) => {
+      let y = 80;
+      return nodes.map((n, index) => ({
+        ...n,
+        position: {
+          x: 200 + spacingX,
+          y: index === 0 ? 80 : 80 + index * spacingY,
+        },
+      }));
+    });
+
+    toast.success("Nodes organized neatly!");
+  };
   return (
     <ReactFlowProvider>
       <div className="flex">
@@ -512,14 +534,13 @@ const validateBeforeActivate = () => {
                   </span>
 
                   <button
-onClick={() => {
-  if (!isActive) {
-    // activating
-    const ok = validateBeforeActivate();
-    if (!ok) return; // stop activation
-  }
-  setIsActive(!isActive);
-}}
+                    onClick={() => {
+                      if (!isActive) {
+                        const ok = validateBeforeActivate();
+                        if (!ok) return;
+                      }
+                      setIsActive(!isActive);
+                    }}
                     className={`
             relative inline-flex h-5 w-10 items-center rounded-full transition
             ${isActive ? "bg-indigo-600" : "bg-gray-300"}
@@ -547,7 +568,14 @@ onClick={() => {
 
           <div className="h-[calc(100vh-120px)]">
             <ReactFlow
-              nodes={rfNodes}
+              nodes={rfNodes.map((n) => ({
+                ...n,
+                data: {
+                  ...n.data,
+                  highlight: highlightedNodes.includes(n.id),
+                  success: validNodes.includes(n.id), // <-- NEW
+                },
+              }))}
               edges={rfEdges}
               nodeTypes={nodeTypes}
               onNodesChange={(chg) =>
@@ -564,6 +592,45 @@ onClick={() => {
               <MiniMap />
               <Background gap={16} />
             </ReactFlow>
+          </div>
+          <div
+            className="
+    fixed bottom-6 left-1/2 -translate-x-1/2
+    bg-white/90 backdrop-blur-md
+    shadow-xl border border-gray-200
+    rounded-full px-6 py-3
+    flex items-center gap-6
+    z-50
+"
+          >
+            <button
+              onClick={organizeNodes}
+              className="
+      flex items-center gap-2
+      text-purple-700 font-medium
+      hover:text-purple-900
+      transition
+    "
+            >
+              <ListOrdered size={18} />
+              Organize
+            </button>
+
+            {/* Divider */}
+            <div className="w-[1px] h-6 bg-gray-300"></div>
+
+            {/* Test Email */}
+            <button
+              className="
+      flex items-center gap-2
+      text-green-700 font-medium
+      hover:text-green-900
+      transition
+    "
+            >
+              <MailCheck size={18} />
+              Test Email
+            </button>
           </div>
 
           {showModuleModal && (
