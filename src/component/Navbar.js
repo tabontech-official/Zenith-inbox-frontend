@@ -10,18 +10,22 @@ const Navbar = () => {
   const [open, setOpen] = useState(false);
   const [openScenario, setOpenScenario] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-const [showScenarioGuide, setShowScenarioGuide] = useState(false);
-useEffect(() => {
-  const hasSeenGuide = localStorage.getItem("scenarioGuideSeen");
+  const [showScenarioGuide, setShowScenarioGuide] = useState(false);
+  const [guideStep, setGuideStep] = useState(0);
+  useEffect(() => {
+    const step = localStorage.getItem("scenarioGuideStep");
 
-  if (!hasSeenGuide) {
-    setShowScenarioGuide(true);
-  }
-}, []);
-const handleCloseGuide = () => {
-  localStorage.setItem("scenarioGuideSeen", "true");
-  setShowScenarioGuide(false);
-};
+    if (!step) {
+      setGuideStep(1); // Start at Settings tooltip
+    } else if (step !== "done") {
+      setGuideStep(Number(step));
+    }
+  }, []);
+
+  const handleCloseGuide = () => {
+    localStorage.setItem("scenarioGuideSeen", "true");
+    setShowScenarioGuide(false);
+  };
 
   const navigate = useNavigate();
   const profileRef = useRef(null);
@@ -59,14 +63,31 @@ const handleCloseGuide = () => {
     const userId = localStorage.getItem("userid");
 
     try {
-      await fetch(
-        `https://email-syncing-backend.vercel.app/auth/logout/${userId}`,
-        { method: "POST" }
-      );
+      if (userId) {
+        await fetch(
+          `https://email-syncing-backend.vercel.app/auth/logout/${userId}`,
+          { method: "POST" }
+        );
+      }
 
       localStorage.clear();
+
       navigate("/login", { replace: true });
-    } catch {}
+      window.location.reload();
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
+
+  const skipGuide = () => {
+    setGuideStep(0);
+    localStorage.setItem("scenarioGuideStep", "done");
+  };
+
+  const nextGuide = () => {
+    const next = guideStep + 1;
+    setGuideStep(next);
+    localStorage.setItem("scenarioGuideStep", next);
   };
 
   const handleSkipSetup = async () => {
@@ -76,16 +97,15 @@ const handleCloseGuide = () => {
     );
     alert("All setup steps skipped.");
   };
-const skipAll = () => {
-  localStorage.setItem("scenarioGuideSeen", "true");
-  setShowScenarioGuide(false);
-};
+  const skipAll = () => {
+    localStorage.setItem("scenarioGuideSeen", "true");
+    setShowScenarioGuide(false);
+  };
 
   return (
     <header className="w-full bg-white px-6 py-3 flex items-center justify-end sticky top-0 z-30 border-b border-gray-100">
       {/* --- Right Section --- */}
       <div className="flex items-center gap-4">
-
         {/* WIZARD BUTTON */}
         {!loading && user && (
           <button
@@ -99,7 +119,9 @@ const skipAll = () => {
           >
             {(() => {
               const total = user?.setup?.steps?.length || 0;
-              const done = user?.setup?.steps?.filter((s) => s.status === "completed").length;
+              const done = user?.setup?.steps?.filter(
+                (s) => s.status === "completed"
+              ).length;
 
               return setupCompleted
                 ? `Wizard Completed (${done}/${total})`
@@ -109,73 +131,101 @@ const skipAll = () => {
         )}
 
         {/* ORG SETTINGS */}
-        <button
-          onClick={() => setOpen(true)}
-          className="hidden md:flex items-center gap-2 bg-white border border-gray-300 hover:border-gray-400 text-gray-700 px-3 py-1.5 rounded-md text-sm transition"
-        >
-          <FiEdit3 className="text-gray-500" />
-          Settings
-        </button>
+        <div className="relative inline-block">
+          <button
+            onClick={() => setOpen(true)}
+            className={`hidden md:flex items-center gap-2 bg-white border border-gray-300 hover:border-gray-400 text-gray-700 px-3 py-1.5 rounded-md text-sm transition 
+    ${
+      guideStep === 1
+        ? "ring-4 ring-blue-400 ring-offset-2 relative z-[60]"
+        : ""
+    }`}
+          >
+            <FiEdit3 className="text-gray-500" />
+            Settings
+          </button>
+
+          {guideStep === 1 && (
+            <div className="absolute top-12 left-1/2 -translate-x-1/2 bg-white shadow-xl border border-gray-200 rounded-lg w-72 p-4 z-[70]">
+              <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white rotate-45 border-t border-l border-gray-200"></div>
+
+              <div className="flex justify-between items-center mb-2">
+                <h4 className="font-semibold text-gray-900">Settings</h4>
+                <span className="text-xs text-gray-500">1/2</span>
+              </div>
+
+              <p className="text-sm text-gray-600 mb-3">
+                Update your organization settings here.
+              </p>
+
+              <div className="flex justify-between">
+                <button
+                  onClick={skipGuide}
+                  className="px-3 py-1 text-sm border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100"
+                >
+                  Skip
+                </button>
+                <button
+                  onClick={nextGuide}
+                  className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* CREATE SCENARIO */}
-      <div className="relative">
+        <div className="relative inline-block">
+          <button
+            onClick={() => {
+              setOpenScenario(true);
+              setGuideStep(0);
+              localStorage.setItem("scenarioGuideStep", "done");
+            }}
+            className={`hidden md:flex items-center gap-2 bg-black text-white px-4 py-1.5 rounded-md text-sm font-medium transition
+      ${
+        guideStep === 2
+          ? "ring-4 ring-blue-400 ring-offset-2 relative z-[60]"
+          : ""
+      }
+    `}
+          >
+            + Scenario
+          </button>
 
-<div className="relative pointer-events-none">
+          {guideStep === 2 && (
+            <div className="absolute top-12 left-1/2 -translate-x-1/2 bg-white shadow-xl border border-gray-200 rounded-lg w-72 p-4 z-[70]">
+              <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white rotate-45 border-t border-l border-gray-200"></div>
 
-  {showScenarioGuide && (
-    <div className="fixed inset-0 bg-black/10 backdrop-blur-sm z-40 pointer-events-auto"></div>
-  )}
+              <div className="flex justify-between items-center mb-2">
+                <h4 className="font-semibold text-gray-900">Create Scenario</h4>
+                <span className="text-xs text-gray-500">2/2</span>
+              </div>
 
-<button
-  onClick={() => {
-    setOpenScenario(true);     // open the scenario modal
-    setShowScenarioGuide(false);  // hide tooltip
-  }}
-  className={`hidden md:flex items-center gap-2 bg-black text-white px-4 py-1.5 rounded-md text-sm font-medium transition pointer-events-auto
-    ${showScenarioGuide ? "ring-4 ring-blue-400 ring-offset-2 relative z-[60]" : ""}
-  `}
->
-  + Scenario
-</button>
+              <p className="text-sm text-gray-600 mb-3">
+                Create your first automation scenario here.
+              </p>
 
+              <div className="flex justify-between">
+                <button
+                  onClick={skipGuide}
+                  className="px-3 py-1 text-sm border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100"
+                >
+                  Skip
+                </button>
 
-  {/* TOOLTIP */}
-  {showScenarioGuide && (
-    <div className="absolute top-12 left-1/2 -translate-x-1/2 bg-white shadow-xl border border-gray-200 rounded-lg w-64 p-4 z-[70]">
-
-      {/* ARROW ON TOP */}
-      <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white rotate-45 border-t border-l border-gray-200"></div>
-
-      <div className="flex justify-between items-center mb-2">
-        <h4 className="font-semibold text-gray-900">Scenario</h4>
-        <span className="text-xs text-gray-500">1/1</span>
-      </div>
-
-      <p className="text-sm text-gray-600 mb-3">
-        Click here to create your first scenario and get started.
-      </p>
-
-      <div className="flex justify-between mt-3">
-        <button
-          onClick={skipAll}
-          className="px-3 py-1 text-sm border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100 pointer-events-auto"
-        >
-          Skip all
-        </button>
-
-        <button
-          onClick={skipAll}
-          className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 pointer-events-auto"
-        >
-          Got it
-        </button>
-      </div>
-    </div>
-  )}
-</div>
-
-</div>
-
+                <button
+                  onClick={nextGuide}
+                  className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* RESET */}
         <button
