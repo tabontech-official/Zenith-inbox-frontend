@@ -1808,7 +1808,6 @@ const InstructionPanel = ({
   }`}
       style={{ WebkitBackdropFilter: "blur(12px)" }}
     >
-      {/* Toggle Button - Hide on Mobile */}
 
       {!isMobile && (
         <button
