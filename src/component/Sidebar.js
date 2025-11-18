@@ -76,21 +76,28 @@ const Sidebar = () => {
   }, [location.pathname]);
 
   const handleLogout = async () => {
-    const userId = localStorage.getItem("userid");
-    try {
-      if (userId) {
-        await fetch(
-          `https://email-syncing-backend.vercel.app/auth/logout/${userId}`,
-          { method: "POST" }
-        );
-      }
-      localStorage.clear();
-      setIsSidebarOpen(false);
-      navigate("/login", { replace: true });
-    } catch (error) {
-      console.error("Logout failed:", error);
+  const userId = localStorage.getItem("userid");
+
+  try {
+    if (userId) {
+      await fetch(
+        `https://email-syncing-backend.vercel.app/auth/logout/${userId}`,
+        { method: "POST" }
+      );
     }
-  };
+
+    localStorage.clear();
+    setIsSidebarOpen(false);
+
+    // 🔥 This prevents auto redirect to setup
+    navigate("/login", { replace: true });
+    window.location.reload(); 
+
+  } catch (error) {
+    console.error("Logout failed:", error);
+  }
+};
+
 
   const SidebarHeader = ({ title, Icon }) => (
     <div className="flex items-center justify-between py-5 px-6 border-b border-gray-200 bg-white shadow-sm">
