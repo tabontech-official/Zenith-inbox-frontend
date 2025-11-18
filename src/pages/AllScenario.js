@@ -80,7 +80,7 @@
 //     try {
 //       setLoading(true);
 //       const res = await fetch(
-//         `https://email-syncing-backend.vercel.app/scenario/user/${userId}`
+//         `http://localhost:5000/scenario/user/${userId}`
 //       );
 //       const data = await res.json();
 //       setScenarios(Array.isArray(data) ? data : data.data || []);
@@ -103,7 +103,7 @@
 //     if (!selectedScenario) return;
 //     try {
 //       await fetch(
-//         `https://email-syncing-backend.vercel.app/scenario/detail/${selectedScenario._id}`,
+//         `http://localhost:5000/scenario/detail/${selectedScenario._id}`,
 //         { method: "DELETE" }
 //       );
 //       setDeleteModalOpen(false);
@@ -388,7 +388,7 @@ const AllScenariosPage = () => {
     try {
       setLoading(true);
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/scenario/user/${userId}`
+        `http://localhost:5000/scenario/user/${userId}`
       );
       const data = await res.json();
       setScenarios(Array.isArray(data) ? data : data.data || []);
@@ -411,7 +411,7 @@ const AllScenariosPage = () => {
     if (!selectedScenario) return;
     try {
       await fetch(
-        `https://email-syncing-backend.vercel.app/scenario/detail/${selectedScenario._id}`,
+        `http://localhost:5000/scenario/detail/${selectedScenario._id}`,
         { method: "DELETE" }
       );
       setDeleteModalOpen(false);

@@ -30,10 +30,12 @@ import ConnectionModal from "../component/ConnectionModal";
 
 import flowToScenario from "../utils/flowToScenario";
 import OutlookConnectionModal from "../component/OutlookConnectionModal";
-
+import WebhookModal from "../component/WebhookModal";
+import { useContext } from "react";
+import { UserContext } from "../component/UserContext";
 const nodeTypes = {
   webhookNode: WebhookNode,
-  routerNode: RouterNode,
+  // routerNode: RouterNode,
   gmailNode: GmailNode,
   delayNode: DelayNode,
   outlookNode: OutlookNode,
@@ -43,10 +45,48 @@ const nodeTypes = {
 const OthersScenariosPage = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  const [showWebhookModal, setShowWebhookModal] = useState(false);
+  const { user } = useContext(UserContext);
+
+  const [webhookUrl, setWebhookUrl] = useState("");
+  const performDeleteNode = () => {
+    const nodeId = nodeToDelete;
+
+    setRfNodes((nodes) => {
+      const updatedNodes = nodes.filter((n) => n.id !== nodeId);
+
+      setRfEdges((edges) => {
+        const incoming = edges.find((e) => e.target === nodeId);
+        const outgoing = edges.find((e) => e.source === nodeId);
+
+        let newEdges = edges.filter(
+          (e) => e.source !== nodeId && e.target !== nodeId
+        );
+
+        // Auto-reconnect chain
+        if (incoming && outgoing) {
+          newEdges.push({
+            id: `edge-${incoming.source}-${outgoing.target}`,
+            source: incoming.source,
+            target: outgoing.target,
+            type: "smoothstep",
+          });
+        }
+
+        return newEdges;
+      });
+
+      return updatedNodes;
+    });
+
+    setShowDeleteConfirm(false);
+    setNodeToDelete(null);
+  };
 
   const [rfNodes, setRfNodes] = useState([]);
   const [rfEdges, setRfEdges] = useState([]);
-
+  const [nodeToDelete, setNodeToDelete] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [connections, setConnections] = useState([]);
   const [scenarioName, setScenarioName] = useState("");
   const [editingNode, setEditingNode] = useState(null);
@@ -60,12 +100,38 @@ const OthersScenariosPage = () => {
   const [showBranchButton, setShowBranchButton] = useState(false);
 
   const userId = localStorage.getItem("userid");
-
+  useEffect(() => {
+    if (user?.mailhook) {
+      setWebhookUrl(user.mailhook);
+    }
+  }, [user]);
   const deleteNode = (nodeId) => {
-    setRfNodes((nds) => nds.filter((n) => n.id !== nodeId));
-    setRfEdges((eds) =>
-      eds.filter((e) => e.source !== nodeId && e.target !== nodeId)
-    );
+    setRfNodes((nodes) => {
+      const updatedNodes = nodes.filter((n) => n.id !== nodeId);
+
+      setRfEdges((edges) => {
+        const incoming = edges.find((e) => e.target === nodeId);
+        const outgoing = edges.find((e) => e.source === nodeId);
+
+        let newEdges = edges.filter(
+          (e) => e.source !== nodeId && e.target !== nodeId
+        );
+
+        // IF BOTH EXIST → Reconnect previous to next
+        if (incoming && outgoing) {
+          newEdges.push({
+            id: `edge-${incoming.source}-${outgoing.target}`,
+            source: incoming.source,
+            target: outgoing.target,
+            type: "smoothstep",
+          });
+        }
+
+        return newEdges;
+      });
+
+      return updatedNodes;
+    });
   };
 
   useEffect(() => {
@@ -83,6 +149,10 @@ const OthersScenariosPage = () => {
           setEditingNode("webhook-1");
           setShowModuleModal(true);
         },
+
+        openWebhookModal: () => {
+          setShowWebhookModal(true);
+        },
       },
     };
 
@@ -98,15 +168,6 @@ const OthersScenariosPage = () => {
 
     const parentNode = rfNodes.find((n) => n.id === parentId);
 
-    if (parentNode && parentNode.type !== "routerNode") {
-      const childExists = rfEdges.some((e) => e.source === parentId);
-
-      // if (childExists) {
-      //   toast.error("This module already has an output.");
-      //   return;
-      // }
-    }
-
     const newNode = {
       id: nodeId,
       type,
@@ -118,15 +179,21 @@ const OthersScenariosPage = () => {
         id: nodeId,
         label: type,
         config: {},
+
         deleteNode: () => deleteNode(nodeId),
 
-        openModuleModal: (id) => {
-          setEditingNode(id);
+        confirmDeleteNode: () => {
+          setNodeToDelete(nodeId);
+          setShowDeleteConfirm(true);
+        },
+
+        openModuleModal: () => {
+          setEditingNode(nodeId);
           setShowModuleModal(true);
         },
 
         openConditionModal: () => {
-          setEditingNode(newNode);
+          setEditingNode(nodeId);
           setShowFilterModal(true);
         },
       },
@@ -134,7 +201,6 @@ const OthersScenariosPage = () => {
 
     setRfNodes((prev) => [...prev, newNode]);
 
-    // 3) Auto-connect
     if (parentId) {
       setRfEdges((prev) => [
         ...prev,
@@ -147,13 +213,11 @@ const OthersScenariosPage = () => {
       ]);
     }
 
-    // 4) Special cases
     if (type === "conditionNode") {
       setEditingNode(newNode);
       setShowFilterModal(true);
     }
 
-    // Close modal
     setShowModuleModal(false);
   };
 
@@ -161,38 +225,60 @@ const OthersScenariosPage = () => {
     const nodes = [];
     const edges = [];
 
-    // Always add Webhook node
+    // Add webhook
     nodes.push({
       id: "webhook-1",
       type: "webhookNode",
       position: { x: 200, y: 80 },
-      data: { label: "Webhook", config: {}, deleteNode: () => {} },
+      data: {
+        id: "webhook-1",
+        config: {},
+        deleteNode: () => deleteNode("webhook-1"),
+        openModuleModal: () => {
+          setEditingNode("webhook-1");
+          setShowModuleModal(true);
+        },
+        openWebhookModal: () => setShowWebhookModal(true),
+      },
     });
 
-    const branches = scenario.routerBranches;
-
-    // CASE 1: NO router, NO filter → simple straight-line modules
-    const hasAnyFilter = branches.some(
-      (b) => b.filter && b.filter.conditions?.length
-    );
-
-    if (!hasAnyFilter && branches.length === 1) {
-      let y = 200;
+    scenario.routerBranches.forEach((branch) => {
       let prev = "webhook-1";
 
-      branches[0].modules.forEach((mod) => {
-        const nodeType =
-          mod.type === "Send Email"
-            ? "gmailNode"
+      branch.modules.forEach((mod) => {
+        let nodeType =
+          mod.type === "Condition"
+            ? "conditionNode"
             : mod.type === "Delay"
             ? "delayNode"
-            : "customEmailNode";
+            : "gmailNode";
 
+        // 🔥 RESTORE ALL FUNCTIONS BACK INTO data:
         nodes.push({
           id: mod.id,
           type: nodeType,
-          position: { x: 200, y },
-          data: { label: mod.type, config: mod, deleteNode: () => {} },
+          position: mod.position,
+          data: {
+            id: mod.id,
+            config: mod,
+
+            deleteNode: () => deleteNode(mod.id),
+
+            confirmDeleteNode: () => {
+              setNodeToDelete(mod.id);
+              setShowDeleteConfirm(true);
+            },
+
+            openModuleModal: () => {
+              setEditingNode({ id: mod.id, type: nodeType });
+              setShowModuleModal(true);
+            },
+
+            openConditionModal: () => {
+              setEditingNode({ id: mod.id, type: nodeType });
+              setShowFilterModal(true);
+            },
+          },
         });
 
         edges.push({
@@ -203,97 +289,7 @@ const OthersScenariosPage = () => {
         });
 
         prev = mod.id;
-        y += 160;
       });
-
-      setRfNodes(nodes);
-      setRfEdges(edges);
-      return;
-    }
-
-    // CASE 2: Router scenario
-    let baseY = 200;
-
-    const routerId = "router-main";
-    nodes.push({
-      id: routerId,
-      type: "routerNode",
-      position: { x: 200, y: baseY },
-      data: { label: "Router", config: {}, deleteNode: () => {} },
-    });
-
-    edges.push({
-      id: "edge-webhook-router",
-      source: "webhook-1",
-      target: routerId,
-      type: "smoothstep",
-    });
-
-    let branchIndex = 0;
-
-    branches.forEach((branch) => {
-      const branchX = 200 + branchIndex * 300;
-      const branchStartId =
-        branch.filter && branch.filter.conditions?.length
-          ? `cond-${branch.id}`
-          : branch.modules[0]?.id;
-
-      // Add condition node if exists
-      if (branch.filter && branch.filter.conditions?.length) {
-        nodes.push({
-          id: branchStartId,
-          type: "conditionNode",
-          position: { x: branchX, y: baseY + 160 },
-          data: {
-            label: "Condition",
-            config: branch.filter,
-            deleteNode: () => {},
-          },
-        });
-
-        edges.push({
-          id: `edge-router-${branchStartId}`,
-          source: routerId,
-          target: branchStartId,
-        });
-      } else {
-        edges.push({
-          id: `edge-router-${branchStartId}`,
-          source: routerId,
-          target: branchStartId,
-        });
-      }
-
-      // Add modules under branch
-      let y = baseY + 300;
-      let prev = branchStartId;
-
-      branch.modules.forEach((mod) => {
-        const nodeType =
-          mod.type === "Send Email"
-            ? "gmailNode"
-            : mod.type === "Delay"
-            ? "delayNode"
-            : "customEmailNode";
-
-        nodes.push({
-          id: mod.id,
-          type: nodeType,
-          position: { x: branchX, y },
-          data: { label: mod.type, config: mod, deleteNode: () => {} },
-        });
-
-        edges.push({
-          id: `edge-${prev}-${mod.id}`,
-          source: prev,
-          target: mod.id,
-        });
-
-        prev = mod.id;
-        y += 180;
-      });
-
-      branchIndex++;
     });
 
     setRfNodes(nodes);
@@ -301,19 +297,16 @@ const OthersScenariosPage = () => {
   };
 
   const loadScenario = async () => {
-    if (!id) return; // Create page, not edit
+    if (!id) return;
 
     try {
-      const res = await fetch(
-        `https://email-syncing-backend.vercel.app/scenario/detail/${id}`
-      );
+      const res = await fetch(`http://localhost:5000/scenario/detail/${id}`);
       const data = await res.json();
 
       console.log("📥 Loaded Scenario:", data);
 
       setScenarioName(data.name || "");
 
-      // Convert scenario back to RF nodes + edges
       rebuildFlowFromScenario(data);
     } catch (err) {
       console.error("Error loading scenario:", err);
@@ -326,7 +319,7 @@ const OthersScenariosPage = () => {
   const fetchConnections = async () => {
     try {
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/auth/getConnection/${localStorage.getItem(
+        `http://localhost:5000/auth/getConnection/${localStorage.getItem(
           "userid"
         )}`
       );
@@ -339,22 +332,6 @@ const OthersScenariosPage = () => {
   useEffect(() => {
     fetchConnections();
   }, []);
-
-  const addBranch = () => {
-    const id = crypto.randomUUID();
-
-    const branchNode = {
-      id,
-      type: "routerNode",
-      position: { x: 450, y: 400 },
-      data: {
-        label: "Branch",
-        deleteNode: () => deleteNode(id),
-      },
-    };
-
-    setRfNodes((prev) => [...prev, branchNode]);
-  };
 
   const onConnect = useCallback(
     (params) => setRfEdges((eds) => addEdge(params, eds)),
@@ -390,8 +367,8 @@ const OthersScenariosPage = () => {
     };
 
     const url = id
-      ? `https://email-syncing-backend.vercel.app/scenario/detail/${id}`
-      : `https://email-syncing-backend.vercel.app/scenario`;
+      ? `http://localhost:5000/scenario/detail/${id}`
+      : `http://localhost:5000/scenario`;
 
     await fetch(url, {
       method: id ? "PUT" : "POST",
@@ -414,7 +391,6 @@ const OthersScenariosPage = () => {
         <div className="flex-1 min-h-screen bg-gray-50">
           <div className="border-b bg-white/90 backdrop-blur-sm shadow-sm">
             <div className="px-6 py-4 flex items-center justify-between">
-              {/* Left: Title + Subtitle */}
               <div>
                 <input
                   type="text"
@@ -434,9 +410,7 @@ const OthersScenariosPage = () => {
                 </p>
               </div>
 
-              {/* Right: Buttons + Toggle */}
               <div className="flex items-center gap-4">
-                {/* Update Scenario */}
                 <button
                   onClick={saveScenario}
                   className="
@@ -476,7 +450,6 @@ const OthersScenariosPage = () => {
                   Run Test
                 </button>
 
-                {/* Activate Scenario Toggle */}
                 <div className="flex items-center gap-3 px-4 py-2 border rounded-full bg-white shadow-sm">
                   <span className="text-sm font-medium text-gray-800">
                     Activate Scenario
@@ -556,13 +529,13 @@ const OthersScenariosPage = () => {
                     <FiMail size={20} className="text-blue-500" /> Email
                   </button>
 
-                  <button
+                  {/* <button
                     className="w-full p-3 border rounded-xl bg-gray-50 hover:bg-purple-100 hover:border-purple-400 
           transition-all flex items-center gap-3"
                     onClick={() => addModule("routerNode")}
                   >
                     <FiGitBranch size={20} className="text-purple-500" /> Router
-                  </button>
+                  </button> */}
 
                   <button
                     className="w-full p-3 border rounded-xl bg-gray-50 hover:bg-yellow-100 hover:border-yellow-400 
@@ -652,7 +625,14 @@ const OthersScenariosPage = () => {
               }}
             />
           )}
-
+          {showWebhookModal && (
+            <WebhookModal
+              showWebhookInfo={showWebhookModal}
+              setShowWebhookInfo={setShowWebhookModal}
+              webhookUrl={webhookUrl}
+              loading={false}
+            />
+          )}
           <ConnectionModal
             isOpen={showGmailModal}
             onClose={() => setShowGmailModal(false)}
@@ -670,6 +650,37 @@ const OthersScenariosPage = () => {
               setShowOutlookModal(false);
             }}
           />
+          {showDeleteConfirm && (
+            <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 backdrop-blur-sm">
+              <div className="bg-white p-6 rounded-xl shadow-xl w-80">
+                <h2 className="text-lg font-semibold text-gray-800">
+                  Delete Module?
+                </h2>
+                <p className="text-gray-600 mt-2">
+                  Are you sure you want to delete this module?
+                </p>
+
+                <div className="flex justify-end gap-3 mt-5">
+                  <button
+                    className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300"
+                    onClick={() => {
+                      setShowDeleteConfirm(false);
+                      setNodeToDelete(null);
+                    }}
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                    onClick={performDeleteNode}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </ReactFlowProvider>

@@ -21,7 +21,7 @@
 //     e.preventDefault();
 //     try {
 //       const response = await axios.post(
-//         "https://email-syncing-backend.vercel.app/auth/signUp",
+//         "http://localhost:5000/auth/signUp",
 //         { fullName, email, password }
 //       );
 
@@ -166,7 +166,7 @@ const RegisterPage = () => {
     e.preventDefault();
     try {
       const response = await axios.post(
-        "https://email-syncing-backend.vercel.app/auth/signUp",
+        "http://localhost:5000/auth/signUp",
         { fullName, email, password }
       );
 

@@ -17,7 +17,7 @@
 
 //       try {
 //         const userRes = await fetch(
-//           `https://email-syncing-backend.vercel.app/auth/getUsers/${userId}`
+//           `http://localhost:5000/auth/getUsers/${userId}`
 //         );
 //         const userData = await userRes.json();
 
@@ -64,7 +64,7 @@ export const UserProvider = ({ children }) => {
 
       try {
         const res = await fetch(
-          `https://email-syncing-backend.vercel.app/auth/getUsers/${userId}`
+          `http://localhost:5000/auth/getUsers/${userId}`
         );
         const data = await res.json();
 
@@ -76,7 +76,7 @@ export const UserProvider = ({ children }) => {
         } else {
           // if not nested, fetch organization manually
           const orgRes = await fetch(
-            `https://email-syncing-backend.vercel.app/organization/${userId}`
+            `http://localhost:5000/organization/${userId}`
           );
           const orgData = await orgRes.json();
           setOrganization(orgData.data);

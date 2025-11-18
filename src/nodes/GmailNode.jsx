@@ -102,10 +102,10 @@ const GmailNode = ({ data }) => {
 
       {/* ---- DELETE BUTTON (hover only) ---- */}
       <button
-        onClick={(e) => {
-          e.stopPropagation();
-          data?.deleteNode();
-        }}
+ onClick={(e) => {
+    e.stopPropagation();  
+    data?.confirmDeleteNode(data.id);
+  }}
         className="
           opacity-0 group-hover:opacity-100 
           absolute top-2 right-12

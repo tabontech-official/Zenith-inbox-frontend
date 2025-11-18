@@ -54,21 +54,26 @@ const WebhookNode = ({ data, selected }) => {
       </div>
 
       <div className="absolute top-2 right-2 flex gap-1">
-        <button
-          className={`
-            w-7 h-7 
-            border 
-            rounded-md 
-            flex items-center justify-center 
-            bg-white 
-            hover:bg-gray-50 
-            transition
-          `}
-          style={{ borderColor: BORDER_COLOR }}
-          title="View Details"
-        >
-          <Eye size={14} className="text-gray-600" />
-        </button>
+       <button
+  onClick={(e) => {
+    e.stopPropagation();
+    data?.openWebhookModal?.(data?.id);
+  }}
+  className="
+    w-7 h-7 
+    border 
+    rounded-md 
+    flex items-center justify-center 
+    bg-white 
+    hover:bg-gray-50 
+    transition
+  "
+  style={{ borderColor: BORDER_COLOR }}
+  title="View Details"
+>
+  <Eye size={14} className="text-gray-600" />
+</button>
+
       </div>
 
       <button

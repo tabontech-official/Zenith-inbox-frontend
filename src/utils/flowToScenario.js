@@ -87,100 +87,106 @@
 export default function flowToScenario(nodes, edges) {
   if (!nodes || nodes.length === 0) return [];
 
+  // Build graph
   const graph = {};
   edges.forEach((e) => {
     if (!graph[e.source]) graph[e.source] = [];
     graph[e.source].push(e.target);
   });
 
-  const routerNode = nodes.find((n) => n.type === "routerNode");
+  // Find webhook root node
+  const webhookNode = nodes.find((n) => n.type === "webhookNode");
+  if (!webhookNode) return [];
 
-  let branchStarts = [];
-
-  if (routerNode) {
-    branchStarts = graph[routerNode.id] || [];
-  } else {
-    const first = findStartNode(nodes, edges);
-    branchStarts = first ? [first.id] : [];
-  }
+  // All outgoing nodes from webhook = branches
+  const branchStarts = graph[webhookNode.id] || [];
 
   const resultBranches = branchStarts.map((startNodeId, index) => {
-    const visitedNodeIds = walk(startNodeId, graph);
+    const visited = walkBranch(startNodeId, graph);
 
-    let filter = null;
     const modules = [];
+    let filter = null;
 
-    visitedNodeIds.forEach((id) => {
+    visited.forEach((id) => {
       const n = nodes.find((item) => item.id === id);
       if (!n) return;
 
       const config = n.data?.config || {};
 
-      if (n.type === "conditionNode" || n.type === "routerNode") {
-        filter = {
-          label: config.label || "",
-          conditions: (config.conditions || []).filter(
-            (c) => c.field && c.value
-          ),
-          template: config.template || "",
-        };
+      // Condition Node
+      // if (n.type === "conditionNode") {
+      //   filter = {
+      //     conditions: config.conditions || [],
+      //   };
+      //   return;
+      // }
+
+      // Condition node in branch
+      if (n.type === "conditionNode") {
+        modules.push({
+          id: n.id,
+          type: "Condition",
+          position: n.position,
+          filter: config, // conditions
+        });
         return;
       }
-
+      // Delay Node
       if (n.type === "delayNode") {
         modules.push({
           id: n.id,
           type: "Delay",
-          delayValue: config.delayValue || 0,
-          delayUnit: config.delayUnit || "seconds",
+          delayValue: config.delayValue,
+          delayUnit: config.delayUnit,
           emailType: "Delay",
           position: n.position,
         });
         return;
       }
 
-      if (
-        n.type === "gmailNode" ||
-        n.type === "outlookNode" ||
-        n.type === "customEmailNode"
-      ) {
-        const emailType =
-          n.type === "gmailNode"
-            ? "Gmail"
-            : n.type === "outlookNode"
-            ? "Email"
-            : "Email";
-
+      // Email Node
+      if (n.type === "gmailNode" || n.type === "outlookNode") {
         modules.push({
           id: n.id,
-          type:
-            n.type === "gmailNode"
-              ? "Send Email"
-              : n.type === "outlookNode"
-              ? "Outlook"
-              : "Custom Email",
-
-          emailType, // REQUIRED ENUM
-
-          connectionId: config.connectionId || "",
-          to: config.to || "",
-          subject: config.subject || "",
+          type: "Send Email",
+          to: config.to,
+          subject: config.subject,
           cc: config.cc || [],
           bcc: config.bcc || [],
-          template: config.body || "",
+          template: config.body,
+          emailType: n.type === "gmailNode" ? "Gmail" : "Email",
+          connectionId: config.connectionId,
           position: n.position,
         });
       }
     });
 
     return {
-      id: index + 1, // 🔥 REQUIRED BY MONGOOSE
+      id: index + 1,
       filter,
       modules,
     };
   });
 
   return resultBranches;
+}
+
+// Walk down each branch
+function walkBranch(start, graph) {
+  const visited = [];
+  let current = start;
+
+  while (current && !visited.includes(current)) {
+    visited.push(current);
+
+    const next = graph[current];
+    if (!next || next.length === 0) break;
+
+    // Always choose first child (your UI constrains 1 chain per branch)
+    current = next[0];
+  }
+
+  return visited;
 }
 
 // --- HELPERS ---
