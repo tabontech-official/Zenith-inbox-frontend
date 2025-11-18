@@ -20,7 +20,7 @@
 //   // const handleSubmit = async (e) => {
 //   //   e.preventDefault();
 //   //   try {
-//   //     const response = await axios.post("http://localhost:5000/auth/signIn", {
+//   //     const response = await axios.post("https://email-syncing-backend.vercel.app/auth/signIn", {
 //   //       email,
 //   //       password,
 //   //     });
@@ -62,7 +62,7 @@
 //     const loadingToast = toast.loading("Logging you in...");
 //     try {
 //       const response = await axios.post(
-//         "http://localhost:5000/auth/signIn",
+//         "https://email-syncing-backend.vercel.app/auth/signIn",
 //         { email, password }
 //       );
 
@@ -286,7 +286,7 @@ const LoginPage = () => {
 
   //   try {
   //     const response = await axios.post(
-  //       "http://localhost:5000/auth/signIn",
+  //       "https://email-syncing-backend.vercel.app/auth/signIn",
   //       { email, password }
   //     );
 
@@ -335,7 +335,7 @@ const LoginPage = () => {
 
   try {
     const response = await axios.post(
-      "http://localhost:5000/auth/signIn",
+      "https://email-syncing-backend.vercel.app/auth/signIn",
       { email, password }
     );
 

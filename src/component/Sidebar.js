@@ -81,7 +81,7 @@ const Sidebar = () => {
   try {
     if (userId) {
       await fetch(
-        `http://localhost:5000/auth/logout/${userId}`,
+        `https://email-syncing-backend.vercel.app/auth/logout/${userId}`,
         { method: "POST" }
       );
     }
