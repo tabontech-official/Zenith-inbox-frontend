@@ -101,9 +101,24 @@ const Navbar = () => {
     localStorage.setItem("scenarioGuideSeen", "true");
     setShowScenarioGuide(false);
   };
+const isBlurred =
+  open ||
+  openScenario ||
+  showProfileMenu ||
+  showScenarioGuide ||
+  guideStep < 3;
+
 
   return (
+    <>
+    {isBlurred && (
+      <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-20"></div>
+    )}
+
+    
     <header className="w-full bg-white px-6 py-3 flex items-center justify-end sticky top-0 z-30 border-b border-gray-100">
+  
+  
       {/* --- Right Section --- */}
       <div className="flex items-center gap-4">
         {/* WIZARD BUTTON */}
@@ -276,6 +291,7 @@ const Navbar = () => {
         onSelect={handleSelect}
       />
     </header>
+    </>
   );
 };
 
