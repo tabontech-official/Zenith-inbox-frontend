@@ -277,27 +277,26 @@ const EmailModal = ({
   const removeCc = (i) => setCcList(ccList.filter((_, index) => index !== i));
   const removeBcc = (i) =>
     setBccList(bccList.filter((_, index) => index !== i));
-const insertField = (value) => {
-  const editor = quillRef.current?.getEditor();
-  if (!editor) return;
+  const insertField = (value) => {
+    const editor = quillRef.current?.getEditor();
+    if (!editor) return;
 
-  let range = editor.getSelection();
+    let range = editor.getSelection();
 
-  // If no cursor, insert at end safely
-  if (!range) {
-    const length = editor.getLength();
-    editor.insertText(length - 1, value);
-    editor.setSelection(length + value.length);
-    return;
-  }
+    // If no cursor, insert at end safely
+    if (!range) {
+      const length = editor.getLength();
+      editor.insertText(length - 1, value);
+      editor.setSelection(length + value.length);
+      return;
+    }
 
-  // Insert at cursor
-  editor.insertText(range.index, value);
-  editor.setSelection(range.index + value.length);
-};
+    // Insert at cursor
+    editor.insertText(range.index, value);
+    editor.setSelection(range.index + value.length);
+  };
 
-
-const quillRef = useRef(null);
+  const quillRef = useRef(null);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
@@ -441,14 +440,14 @@ const quillRef = useRef(null);
           {/* Body */}
           <div>
             <label className="text-sm font-medium">Body</label>
-<ReactQuill
-  ref={quillRef}
-  theme="snow"
-  value={body}
-  onChange={setBody}
-  className="mt-1 bg-white"
-  style={{  marginBottom: "40px" }}
-/>
+            <ReactQuill
+              ref={quillRef}
+              theme="snow"
+              value={body}
+              onChange={setBody}
+              className="mt-1 bg-white"
+              style={{ marginBottom: "40px" }}
+            />
 
             {/* Insert Fields Box */}
             <div className="mt-4 border rounded-lg bg-gray-50 p-3 sm:p-4">

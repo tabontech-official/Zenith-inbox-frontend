@@ -59,7 +59,7 @@ const ScenarioSelectModal = ({ open, onClose }) => {
                   Shopify Scenario
                 </h3>
                 <p className="text-sm text-gray-500 mt-1 text-center">
-                  Automate Shopify workflows easily.
+                  Automate your Shopify Partner Lead Response.
                 </p>
               </motion.button>
 
@@ -76,7 +76,7 @@ const ScenarioSelectModal = ({ open, onClose }) => {
                   Custom Scenario
                 </h3>
                 <p className="text-sm text-gray-500 mt-1 text-center">
-                  Build your own automation logic.
+                  Automate your Business Lead Replies.
                 </p>
               </motion.button>
             </div>

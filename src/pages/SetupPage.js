@@ -1053,8 +1053,8 @@ const SetupFlow = () => {
         hover:shadow-[0_6px_35px_rgba(0,0,0,0.12)]
       "
     >
-      <strong className="text-indigo-700">💡 Tip:</strong>
-      Add this address as a forwarding destination in Gmail or Outlook.
+      <strong className="text-indigo-700">💡 Tip: </strong>
+      Add this address as a forwarding destination in email service provider settings (Gmail, outlook, hotmail etc...)
     </div>
 
     {/* NEXT BUTTON (GLASS BUTTON) */}
@@ -1110,51 +1110,56 @@ const SetupFlow = () => {
     </div>
 
     {/* HEADER */}
-    <div className="w-full max-w-xl mx-auto">
-      <h2 className="text-2xl sm:text-3xl font-bold text-[#111827] mb-5">
-        Set up Forwarding
-      </h2>
+   <div className="w-full max-w-xl mx-auto">
+  <h2 className="text-2xl sm:text-3xl font-bold text-[#111827] mb-5">
+    Set up Forwarding
+  </h2>
 
-      {/* MAILHOOK BAR (GLASS) */}
-      {/* <div
-        className="
-          w-full
-          bg-white/50 
-          px-4 py-3 rounded-xl
-          flex flex-col sm:flex-row sm:items-center sm:justify-between
-          gap-2 sm:gap-4
-          font-mono text-xs sm:text-sm
-          border border-white/70
-          backdrop-blur-xl
-          shadow-[0_4px_20px_rgba(0,0,0,0.1)]
-        "
-      >
-        <span className="text-[#1A1A1A] font-medium whitespace-nowrap">
-          Forward emails to:
-        </span>
+  {/* Description / Instruction */}
+  <p className="text-sm text-gray-600 mb-4 leading-relaxed">
+    Set the following address as your <strong>email forwarding destination</strong>. 
+    Once forwarding is active, you will receive a verification email like the example below.
+  </p>
 
-        <div className="flex items-center justify-between w-full sm:w-auto gap-2">
-          <span className="truncate text-[#4F46E5]">
-            {user?.mailhook || "loading..."}
-          </span>
+  {/* MAILHOOK BAR (GLASS) */}
+ <div
+  className="
+    w-full bg-white/50 px-4 py-3 rounded-xl
+    flex flex-col sm:flex-row sm:items-center sm:justify-between
+    gap-2 sm:gap-4 font-mono text-xs sm:text-sm
+    border border-white/70 backdrop-blur-xl
+    shadow-[0_4px_20px_rgba(0,0,0,0.1)]
+  "
+>
+  <span className="text-[#1A1A1A] font-medium whitespace-nowrap">
+    Forward emails to:
+  </span>
 
-          <button
-            onClick={() => {
-              if (user?.mailhook) {
-                navigator.clipboard.writeText(user.mailhook);
-                setAlert({
-                  type: "success",
-                  message: "Mailhook copied successfully!",
-                });
-              }
-            }}
-            className="text-gray-600 hover:text-[#4F46E5] transition"
-          >
-            <FiCopy />
-          </button>
-        </div>
-      </div> */}
-    </div>
+  {/* FIXED WRAPPER */}
+  <div className="flex items-center gap-2 flex-nowrap">
+    <span className="text-[#4F46E5] truncate max-w-[220px]">
+      {user?.mailhook || "loading..."}
+    </span>
+
+    <button
+      onClick={() => {
+        if (user?.mailhook) {
+          navigator.clipboard.writeText(user.mailhook);
+          setAlert({
+            type: "success",
+            message: "Mailhook copied successfully!",
+          });
+        }
+      }}
+      className="text-gray-600 hover:text-[#4F46E5] transition"
+    >
+      <FiCopy />
+    </button>
+  </div>
+</div>
+
+</div>
+
 
     {/* MAIN VALIDATION CARD (Glass) */}
     <div
@@ -1203,7 +1208,15 @@ const SetupFlow = () => {
             <p className="font-semibold mb-2">
               Forwarding is not configured correctly.
             </p>
-            <p className="text-sm">Check settings & retry.</p>
+            <p className="text-sm">Please check your forwarding configuration or refer to our  <button
+    onClick={() => {
+      setIsExpanded(true);           
+      setShowMobileInstructions(true); 
+    }}
+    className="text-red-700 font-semibold underline hover:text-red-900"
+  >
+    Setup Guide
+  </button> for step by step instructions.</p>
           </div>
         ) : validationPhase ? (
           showValidateButton ? (
@@ -1244,10 +1257,26 @@ const SetupFlow = () => {
           </>
         ) : showValidateButton ? (
           <div className="text-center text-sm text-gray-600">
-            <p>No email received.</p>
-            <p className="text-xs text-gray-500">
-              Enter your forwarding email below.
-            </p>
+            <p>No verfication email received yet.</p>
+       <div class="bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded-lg text-sm">
+  <p class="leading-relaxed">
+    Please confirm that you have correctly set up email forwarding in your email provider.
+    We recommend visiting our <strong>  <button
+    onClick={() => {
+      setIsExpanded(true);          
+      setShowMobileInstructions(true);
+    }}
+    className="text-red-700 font-semibold underline hover:text-red-900"
+  >
+    Setup Guide
+  </button></strong> for a complete step-by-step walkthrough.
+    <br /><br />
+    If you have already configured forwarding and want to skip the verification process,
+    please enter your email below to validate and finalize the setup.
+  </p>
+</div>
+
+
           </div>
         ) : (
           <MailhookWaitingTimer />
@@ -1821,7 +1850,7 @@ const InstructionPanel = ({
       hover:scale-110 transition-all duration-300 ease-in-out z-50`}
           aria-label="Toggle sidebar"
         >
-          {isExpanded ? <FiArrowLeft size={18} /> : <FiArrowRight size={18} />}
+          {isExpanded ? <FiArrowRight size={18} /> : <FiArrowLeft size={18} />}
         </button>
       )}
       <div
