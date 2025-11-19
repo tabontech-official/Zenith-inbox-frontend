@@ -1510,7 +1510,7 @@ const ShopifyScenariosPage = () => {
     <div className="flex min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 font-inter">
       <Sidebar />
 
-      <div className="flex-1 flex flex-col overflow-hidden ml-64">
+<div className="flex-1 flex flex-col overflow-hidden md:ml-64 ml-0 transition-all duration-300">
         <div className="bg-white border-b px-4 sm:px-6 py-4 shadow-sm">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex-1">
