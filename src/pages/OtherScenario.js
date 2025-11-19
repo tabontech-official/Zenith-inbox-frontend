@@ -13,7 +13,14 @@ import ReactFlow, {
   applyEdgeChanges,
 } from "reactflow";
 import "reactflow/dist/style.css";
-import { FiMail, FiGitBranch, FiClock, FiFilter, FiX } from "react-icons/fi";
+import {
+  FiMail,
+  FiGitBranch,
+  FiClock,
+  FiFilter,
+  FiX,
+  FiFileText,
+} from "react-icons/fi";
 import WebhookNode from "../nodes/WebhookNode";
 import RouterNode from "../nodes/RouterNode";
 import GmailNode from "../nodes/GmailNode";
@@ -32,6 +39,7 @@ import { UserContext } from "../component/UserContext";
 import { ListOrdered, MailCheck, Sparkles } from "lucide-react";
 import RunTestModal from "../modals/RunTestModal";
 import TestEmailModal from "../modals/TestEmailModal";
+import TemplateNode from "../nodes/TemplateNode";
 
 const nodeTypes = {
   webhookNode: WebhookNode,
@@ -40,6 +48,7 @@ const nodeTypes = {
   delayNode: DelayNode,
   outlookNode: OutlookNode,
   conditionNode: ConditionNode,
+  templateNode: TemplateNode,
 };
 
 const OthersScenariosPage = () => {
@@ -52,6 +61,7 @@ const OthersScenariosPage = () => {
   const [showWebhookModal, setShowWebhookModal] = useState(false);
   const { user } = useContext(UserContext);
   const [validNodes, setValidNodes] = useState([]);
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
 
   const [webhookUrl, setWebhookUrl] = useState("");
   const performDeleteNode = () => {
@@ -561,6 +571,206 @@ const OthersScenariosPage = () => {
     setExecutingNode(null);
     return !hasError;
   };
+  const [selectedEdge, setSelectedEdge] = useState(null);
+  const [showEdgeModal, setShowEdgeModal] = useState(false);
+  const handleEdgeContextMenu = (event, edge) => {
+    event.preventDefault();
+    setSelectedEdge(edge);
+    setShowEdgeModal(true);
+  };
+  const handleAddEmailTemplateFromEdge = (edge) => {
+    const sourceId = edge.source;
+    const targetId = edge.target;
+    const newNodeId = crypto.randomUUID();
+
+    const sourceNode = rfNodes.find((n) => n.id === sourceId);
+    const targetNode = rfNodes.find((n) => n.id === targetId);
+
+    const newX = (sourceNode.position.x + targetNode.position.x) / 2;
+    const newY = (sourceNode.position.y + targetNode.position.y) / 2;
+
+    setRfNodes((prev) => [
+      ...prev,
+      {
+        id: newNodeId,
+        type: "templateNode",
+        position: { x: newX, y: newY },
+        data: {
+          id: newNodeId,
+          config: {},
+
+          openTemplateModal: () => {
+            setEditingNode({ id: newNodeId, type: "templateNode" });
+            setShowTemplateModal(true);
+          },
+
+          confirmDeleteNode: () => {
+            setNodeToDelete(newNodeId);
+            setShowDeleteConfirm(true);
+          },
+
+          openModuleModal: () => {
+            setEditingNode({ id: newNodeId, type: "templateNode" });
+            setShowModuleModal(true);
+          },
+        },
+      },
+    ]);
+
+    // 2️⃣ Replace original edge with two edges
+    setRfEdges((prev) => {
+      const filtered = prev.filter((e) => e.id !== edge.id);
+
+      return [
+        ...filtered,
+        {
+          id: `edge-${sourceId}-${newNodeId}`,
+          source: sourceId,
+          target: newNodeId,
+          type: "smoothstep",
+        },
+        {
+          id: `edge-${newNodeId}-${targetId}`,
+          source: newNodeId,
+          target: targetId,
+          type: "smoothstep",
+        },
+      ];
+    });
+
+    // 3️⃣ Open Template Modal Automatically
+    setEditingNode({ id: newNodeId, type: "templateNode" });
+    setShowTemplateModal(true);
+  };
+
+  const handleAddDelayFromEdge = (edge) => {
+    const sourceId = edge.source;
+    const targetId = edge.target;
+    const newNodeId = crypto.randomUUID();
+
+    const sourceNode = rfNodes.find((n) => n.id === sourceId);
+    const targetNode = rfNodes.find((n) => n.id === targetId);
+
+    const newX = (sourceNode.position.x + targetNode.position.x) / 2;
+    const newY = (sourceNode.position.y + targetNode.position.y) / 2;
+
+    // 1️⃣ Insert Delay Node in Center
+    setRfNodes((prev) => [
+      ...prev,
+      {
+        id: newNodeId,
+        type: "delayNode",
+        position: { x: newX, y: newY },
+        data: {
+          id: newNodeId,
+          config: { delayValue: 5, delayUnit: "seconds" },
+
+          confirmDeleteNode: () => {
+            setNodeToDelete(newNodeId);
+            setShowDeleteConfirm(true);
+          },
+
+          openModuleModal: () => {
+            setEditingNode({ id: newNodeId, type: "delayNode" });
+            setShowModuleModal(true);
+          },
+
+          openEditModal: () => {
+            setEditingNode({ id: newNodeId, type: "delayNode" });
+            setShowDelayModal(true);
+          },
+        },
+      },
+    ]);
+
+    // 2️⃣ Replace old edge → 2 edges
+    setRfEdges((prev) => {
+      const filtered = prev.filter((e) => e.id !== edge.id);
+
+      return [
+        ...filtered,
+        {
+          id: `edge-${sourceId}-${newNodeId}`,
+          source: sourceId,
+          target: newNodeId,
+          type: "smoothstep",
+        },
+        {
+          id: `edge-${newNodeId}-${targetId}`,
+          source: newNodeId,
+          target: targetId,
+          type: "smoothstep",
+        },
+      ];
+    });
+
+    // 3️⃣ Auto-open Delay modal
+    setEditingNode({ id: newNodeId, type: "delayNode" });
+    setShowDelayModal(true);
+  };
+
+  const handleAddConditionFromEdge = (edge) => {
+    const sourceId = edge.source;
+    const targetId = edge.target;
+    const newNodeId = crypto.randomUUID();
+
+    const sourceNode = rfNodes.find((n) => n.id === sourceId);
+    const targetNode = rfNodes.find((n) => n.id === targetId);
+
+    const newX = (sourceNode.position.x + targetNode.position.x) / 2;
+    const newY = (sourceNode.position.y + targetNode.position.y) / 2;
+
+    setRfNodes((prev) => [
+      ...prev,
+      {
+        id: newNodeId,
+        type: "conditionNode",
+        position: { x: newX, y: newY },
+        data: {
+          id: newNodeId,
+          config: {},
+
+          confirmDeleteNode: () => {
+            setNodeToDelete(newNodeId);
+            setShowDeleteConfirm(true);
+          },
+
+          openModuleModal: () => {
+            setEditingNode({ id: newNodeId, type: "conditionNode" });
+            setShowModuleModal(true);
+          },
+
+          openConditionModal: () => {
+            setEditingNode({ id: newNodeId, type: "conditionNode" });
+            setShowFilterModal(true);
+          },
+        },
+      },
+    ]);
+
+    setRfEdges((prev) => {
+      const filtered = prev.filter((e) => e.id !== edge.id);
+
+      return [
+        ...filtered,
+        {
+          id: `edge-${sourceId}-${newNodeId}`,
+          source: sourceId,
+          target: newNodeId,
+          type: "smoothstep",
+        },
+        {
+          id: `edge-${newNodeId}-${targetId}`,
+          source: newNodeId,
+          target: targetId,
+          type: "smoothstep",
+        },
+      ];
+    });
+
+    setEditingNode({ id: newNodeId, type: "conditionNode" });
+    setShowFilterModal(true);
+  };
 
   return (
     <ReactFlowProvider>
@@ -690,6 +900,7 @@ const OthersScenariosPage = () => {
               }
               onConnect={onConnect}
               onNodeClick={handleNodeClick}
+              onEdgeContextMenu={handleEdgeContextMenu}
               fitView
             >
               <Controls />
@@ -744,6 +955,90 @@ const OthersScenariosPage = () => {
             />
           )}
 
+          {showEdgeModal && selectedEdge && (
+            <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center animate-fadeIn z-50">
+              <div className="bg-white/90 p-6 rounded-2xl shadow-xl w-80 space-y-6 border border-white/30 animate-scaleIn">
+                {/* Title */}
+                <div className="flex justify-between items-center">
+                  <h2 className="text-xl font-semibold text-gray-800">
+                    Connection Options
+                  </h2>
+                  <button
+                    onClick={() => setShowEdgeModal(false)}
+                    className="text-gray-600 hover:text-red-500 transition"
+                  >
+                    <FiX size={22} />
+                  </button>
+                </div>
+
+                {/* Buttons List */}
+                <div className="space-y-3">
+                  {/* Unlink */}
+                  <button
+                    className="w-full p-3 border rounded-xl bg-red-50 hover:bg-red-100 hover:border-red-300
+          transition-all flex items-center gap-3"
+                    onClick={() => {
+                      setRfEdges((edges) =>
+                        edges.filter((e) => e.id !== selectedEdge.id)
+                      );
+                      setShowEdgeModal(false);
+                    }}
+                  >
+                    <FiX size={20} className="text-red-500" />
+                    Unlink Connection
+                  </button>
+
+                  {/* Template */}
+                  <button
+                    className="w-full p-3 border rounded-xl bg-purple-50 hover:bg-purple-100 hover:border-purple-300 
+          transition-all flex items-center gap-3"
+                    onClick={() => {
+                      handleAddEmailTemplateFromEdge(selectedEdge);
+                      setShowEdgeModal(false);
+                    }}
+                  >
+                    <FiFileText size={20} className="text-purple-600" />
+                    Add Email Template
+                  </button>
+
+                  {/* Delay */}
+                  <button
+                    className="w-full p-3 border rounded-xl bg-yellow-50 hover:bg-yellow-100 hover:border-yellow-300 
+          transition-all flex items-center gap-3"
+                    onClick={() => {
+                      handleAddDelayFromEdge(selectedEdge);
+                      setShowEdgeModal(false);
+                    }}
+                  >
+                    <FiClock size={20} className="text-yellow-600" />
+                    Add Delay
+                  </button>
+
+                  {/* Condition */}
+                  <button
+                    className="w-full p-3 border rounded-xl bg-blue-50 hover:bg-blue-100 hover:border-blue-300 
+          transition-all flex items-center gap-3"
+                    onClick={() => {
+                      handleAddConditionFromEdge(selectedEdge);
+                      setShowEdgeModal(false);
+                    }}
+                  >
+                    <FiFilter size={20} className="text-blue-600" />
+                    Add Condition
+                  </button>
+                </div>
+
+                {/* Cancel */}
+                <button
+                  className="w-full p-3 bg-gray-200 rounded-xl hover:bg-gray-300 transition-all"
+                  onClick={() => setShowEdgeModal(false)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+
           {showModuleModal && (
             <div className="fixed inset-0 backdrop-blur-sm bg-black/40 flex justify-center items-center animate-fadeIn">
               <div className="bg-white/90 p-6 rounded-2xl shadow-xl w-80 space-y-6 border border-white/30 animate-scaleIn">
@@ -762,6 +1057,7 @@ const OthersScenariosPage = () => {
 
                 {/* Options */}
                 <div className="space-y-3">
+                  {/* Email */}
                   <button
                     className="w-full p-3 border rounded-xl bg-gray-50 hover:bg-blue-100 hover:border-blue-400 
           transition-all flex items-center gap-3"
@@ -770,14 +1066,17 @@ const OthersScenariosPage = () => {
                     <FiMail size={20} className="text-blue-500" /> Email
                   </button>
 
-                  {/* <button
+                  {/* Template Node */}
+                  <button
                     className="w-full p-3 border rounded-xl bg-gray-50 hover:bg-purple-100 hover:border-purple-400 
           transition-all flex items-center gap-3"
-                    onClick={() => addModule("routerNode")}
+                    onClick={() => addModule("templateNode")}
                   >
-                    <FiGitBranch size={20} className="text-purple-500" /> Router
-                  </button> */}
+                    <FiFileText size={20} className="text-purple-500" />
+                    Email Template
+                  </button>
 
+                  {/* Delay */}
                   <button
                     className="w-full p-3 border rounded-xl bg-gray-50 hover:bg-yellow-100 hover:border-yellow-400 
           transition-all flex items-center gap-3"
@@ -786,6 +1085,7 @@ const OthersScenariosPage = () => {
                     <FiClock size={20} className="text-yellow-500" /> Delay
                   </button>
 
+                  {/* Condition */}
                   <button
                     className="w-full p-3 border rounded-xl bg-gray-50 hover:bg-green-100 hover:border-green-400 
           transition-all flex items-center gap-3"
@@ -795,7 +1095,7 @@ const OthersScenariosPage = () => {
                   </button>
                 </div>
 
-                {/* Cancel Button */}
+                {/* Cancel */}
                 <button
                   className="w-full p-3 bg-gray-200 rounded-xl hover:bg-gray-300 transition-all"
                   onClick={() => setShowModuleModal(false)}
