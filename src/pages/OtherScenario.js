@@ -31,6 +31,7 @@ import { useContext } from "react";
 import { UserContext } from "../component/UserContext";
 import { ListOrdered, MailCheck, Sparkles } from "lucide-react";
 import RunTestModal from "../modals/RunTestModal";
+import TestEmailModal from "../modals/TestEmailModal";
 
 const nodeTypes = {
   webhookNode: WebhookNode,
@@ -131,8 +132,30 @@ const OthersScenariosPage = () => {
 
     return true;
   };
-const [executingNode, setExecutingNode] = useState(null);
-const [executionComplete, setExecutionComplete] = useState(false);
+  const [showTestEmailModal, setShowTestEmailModal] = useState(false);
+  const [testEmail, setTestEmail] = useState(null);
+
+  const fetchTestEmail = async () => {
+    try {
+      const res = await fetch(
+        `http://localhost:5000/mailhook/email/latest/${userId}`
+      );
+
+      const data = await res.json();
+
+      if (data.success) {
+        setTestEmail(data.email);
+        setShowTestEmailModal(true);
+      } else {
+        toast.error(data.message || "No email found!");
+      }
+    } catch (err) {
+      toast.error("Error fetching test email");
+    }
+  };
+
+  const [executingNode, setExecutingNode] = useState(null);
+  const [executionComplete, setExecutionComplete] = useState(false);
   const [rfNodes, setRfNodes] = useState([]);
   const [rfEdges, setRfEdges] = useState([]);
   const [nodeToDelete, setNodeToDelete] = useState(null);
@@ -463,69 +486,64 @@ const [executionComplete, setExecutionComplete] = useState(false);
 
     toast.success("Nodes organized neatly!");
   };
- const runScenarioExecutionAnimation = async () => {
-  setHighlightedNodes([]);
-  setValidNodes([]);
-  setExecutingNode(null);
+  const runScenarioExecutionAnimation = async () => {
+    setHighlightedNodes([]);
+    setValidNodes([]);
+    setExecutingNode(null);
 
-  let hasError = false;
+    let hasError = false;
 
-  // Clear old errors
-  setRfNodes(prev =>
-    prev.map(n => ({ ...n, data: { ...n.data, errorMessage: null } }))
-  );
+    // Clear old errors
+    setRfNodes((prev) =>
+      prev.map((n) => ({ ...n, data: { ...n.data, errorMessage: null } }))
+    );
 
-  for (let i = 0; i < rfNodes.length; i++) {
-    const node = rfNodes[i];
-    const cfg = node.data?.config || {};
+    for (let i = 0; i < rfNodes.length; i++) {
+      const node = rfNodes[i];
+      const cfg = node.data?.config || {};
 
-    setExecutingNode(node.id);
-    await new Promise((res) => setTimeout(res, 700));
+      setExecutingNode(node.id);
+      await new Promise((res) => setTimeout(res, 700));
 
-    let error = null;
+      let error = null;
 
-    if (node.type === "gmailNode") {
-      if (!cfg.connectionId) error = "Connection not selected";
-      else if (!cfg.subject) error = "Email subject missing";
-      else if (!cfg.body) error = "Email body missing";
+      if (node.type === "gmailNode") {
+        if (!cfg.connectionId) error = "Connection not selected";
+        else if (!cfg.subject) error = "Email subject missing";
+        else if (!cfg.body) error = "Email body missing";
+      }
+
+      if (node.type === "delayNode") {
+        if (!cfg.delayValue || !cfg.delayUnit)
+          error = "Delay duration or unit missing";
+      }
+
+      if (node.type === "conditionNode") {
+        if (!cfg.conditions || cfg.conditions.length === 0)
+          error = "At least 1 condition is required";
+      }
+
+      if (error) {
+        hasError = true;
+
+        setHighlightedNodes((prev) => [...prev, node.id]);
+
+        // 🔥 Attach error message to node
+        setRfNodes((prev) =>
+          prev.map((n) =>
+            n.id === node.id
+              ? { ...n, data: { ...n.data, errorMessage: error } }
+              : n
+          )
+        );
+      } else {
+        setValidNodes((prev) => [...prev, node.id]);
+      }
     }
 
-    if (node.type === "delayNode") {
-      if (!cfg.delayValue || !cfg.delayUnit)
-        error = "Delay duration or unit missing";
-    }
-
-    if (node.type === "conditionNode") {
-      if (!cfg.conditions || cfg.conditions.length === 0)
-        error = "At least 1 condition is required";
-    }
-
-    if (error) {
-      hasError = true;
-
-      setHighlightedNodes(prev => [...prev, node.id]);
-
-      // 🔥 Attach error message to node
-      setRfNodes(prev =>
-        prev.map(n =>
-          n.id === node.id
-            ? { ...n, data: { ...n.data, errorMessage: error } }
-            : n
-        )
-      );
-
-    } else {
-      setValidNodes(prev => [...prev, node.id]);
-    }
-  }
-
-  setExecutingNode(null);
-  return !hasError;
-};
-
-
-
-  
+    setExecutingNode(null);
+    return !hasError;
+  };
 
   return (
     <ReactFlowProvider>
@@ -636,15 +654,15 @@ const [executionComplete, setExecutionComplete] = useState(false);
 
           <div className="h-[calc(100vh-120px)]">
             <ReactFlow
-             nodes={rfNodes.map((n) => ({
-  ...n,
-  data: {
-    ...n.data,
-    highlight: highlightedNodes.includes(n.id),
-    success: validNodes.includes(n.id),
-    executing: executingNode === n.id,     // 🔥 add this
-  },
-}))}
+              nodes={rfNodes.map((n) => ({
+                ...n,
+                data: {
+                  ...n.data,
+                  highlight: highlightedNodes.includes(n.id),
+                  success: validNodes.includes(n.id),
+                  executing: executingNode === n.id, // 🔥 add this
+                },
+              }))}
               edges={rfEdges}
               nodeTypes={nodeTypes}
               onNodesChange={(chg) =>
@@ -690,17 +708,24 @@ const [executionComplete, setExecutionComplete] = useState(false);
 
             {/* Test Email */}
             <button
+              onClick={fetchTestEmail}
               className="
-      flex items-center gap-2
-      text-green-700 font-medium
-      hover:text-green-900
-      transition
-    "
+    flex items-center gap-2
+    text-green-700 font-medium
+    hover:text-green-900
+    transition
+  "
             >
               <MailCheck size={18} />
               Test Email
             </button>
           </div>
+          {showTestEmailModal && (
+            <TestEmailModal
+              email={testEmail}
+              onClose={() => setShowTestEmailModal(false)}
+            />
+          )}
 
           {showModuleModal && (
             <div className="fixed inset-0 backdrop-blur-sm bg-black/40 flex justify-center items-center animate-fadeIn">
@@ -851,10 +876,9 @@ const [executionComplete, setExecutionComplete] = useState(false);
           />
           {showRunTestModal && (
             <RunTestModal
-  onClose={() => setShowRunTestModal(false)}
-  runScenarioExecutionAnimation={runScenarioExecutionAnimation}
-/>
-
+              onClose={() => setShowRunTestModal(false)}
+              runScenarioExecutionAnimation={runScenarioExecutionAnimation}
+            />
           )}
 
           {showDeleteConfirm && (
