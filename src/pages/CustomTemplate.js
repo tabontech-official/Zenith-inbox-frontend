@@ -5,11 +5,9 @@ import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import toast from "react-hot-toast";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useParams } from "react-router-dom";
 
-export default function AdminTemplate() {
+export default function Template() {
   const location = useLocation();
-  const { userId } = useParams();
 
   const [templates, setTemplates] = useState([]);
   const urlParams = new URLSearchParams(location.search);
@@ -41,21 +39,18 @@ export default function AdminTemplate() {
   const fetchTemplates = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(
-        "http://localhost:5000/template/all",
-        {
-          params: { userId }, // coming from useParams now
-        }
-      );
+      const userId = localStorage.getItem("userid");
+      const res = await axios.get("http://localhost:5000/template/all/custom", {
+        params: { userId },
+      });
 
       setTemplates(res.data);
       setFilteredTemplates(res.data);
-      const nonGeneral = res.data.filter(
-        (t) => t.service?.toLowerCase() !== "general"
-      );
-      const allActive =
-        nonGeneral.length > 0 && nonGeneral.every((t) => t.active);
-      setGlobalActive(allActive);
+      const otherTemplates = res.data.filter((t) => t.platform === "other");
+
+      const hasActive = otherTemplates.some((t) => t.active === true);
+
+      setGlobalActive(hasActive);
     } catch (err) {
       toast.error("Failed to fetch templates");
     } finally {
@@ -69,59 +64,6 @@ export default function AdminTemplate() {
   const [selectedSequenceFilter, setSelectedSequenceFilter] = useState("All");
 
   // 🟢 Filter Templates whenever dropdown changes
-  useEffect(() => {
-    let filtered = [...templates];
-
-    // 🟣 If "viewType" exists (like Initial Email, First Follow-up, etc.)
-    if (viewType) {
-      const lowerView = viewType.toLowerCase();
-
-      // Step 1: Filter by sequence (Initial / First / Second)
-      filtered = filtered.filter((t) => {
-        const name = t.name?.toLowerCase() || "";
-        if (lowerView.includes("initial")) return name.includes("initial");
-        if (lowerView.includes("first")) return name.includes("first");
-        if (lowerView.includes("second")) return name.includes("second");
-        return false;
-      });
-
-      // Step 2: If user selects a service manually → filter inside same sequence
-      if (selectedServiceFilter !== "All") {
-        filtered = filtered.filter(
-          (t) =>
-            t.service?.toLowerCase() === selectedServiceFilter.toLowerCase()
-        );
-      }
-
-      setFilteredTemplates(filtered);
-      return;
-    }
-
-    if (selectedServiceFilter === "All") {
-      setFilteredTemplates(templates);
-    } else {
-      filtered = templates.filter(
-        (t) => t.service?.toLowerCase() === selectedServiceFilter.toLowerCase()
-      );
-      setFilteredTemplates(filtered);
-    }
-
-    if (!location.pathname.includes("/admin")) {
-      navigate(
-        selectedServiceFilter === "All"
-          ? "/templates"
-          : `/templates?service=${encodeURIComponent(selectedServiceFilter)}`
-      );
-    }
-  }, [selectedServiceFilter, templates, viewType]);
-
-  const formatSequenceName = (name = "") => {
-    const lower = name.toLowerCase();
-    if (lower.includes("initial")) return "Initial Email";
-    if (lower.includes("first")) return "First Follow-Up";
-    if (lower.includes("second")) return "Second Follow-Up";
-    return name;
-  };
 
   const groupedTemplates = filteredTemplates.reduce((acc, tpl) => {
     if (!acc[tpl.service]) acc[tpl.service] = [];
@@ -144,7 +86,6 @@ export default function AdminTemplate() {
     setEditingId(template._id);
     setPlatform(template.platform);
     setService(template.service || "");
-    setSequenceType(formatSequenceName(template.name) || "-");
     setConditions(
       template.conditions?.length > 0
         ? template.conditions
@@ -166,10 +107,7 @@ export default function AdminTemplate() {
         );
         toast.success("Template updated successfully!");
       } else {
-        await axios.post(
-          "http://localhost:5000/template/create",
-          payload
-        );
+        await axios.post("http://localhost:5000/template/create", payload);
         toast.success("Template created successfully!");
       }
 
@@ -187,10 +125,6 @@ export default function AdminTemplate() {
 
   const handleToggle = async (id, currentStatus) => {
     const template = templates.find((tpl) => tpl._id === id);
-    if (template?.service?.toLowerCase() === "general" && currentStatus) {
-      toast.error("You cannot deactivate General templates.");
-      return;
-    }
 
     setTemplates((prev) =>
       prev.map((tpl) =>
@@ -199,15 +133,13 @@ export default function AdminTemplate() {
     );
 
     try {
-      await axios.put(
-        `http://localhost:5000/template/update/${id}`,
-        {
-          active: !currentStatus,
-        }
-      );
+      await axios.put(`http://localhost:5000/template/update/${id}`, {
+        active: !currentStatus,
+      });
       toast.success(
         `Template ${!currentStatus ? "activated" : "deactivated"} successfully`
       );
+      fetchTemplates();
     } catch (err) {
       setTemplates((prev) =>
         prev.map((tpl) =>
@@ -217,12 +149,33 @@ export default function AdminTemplate() {
       toast.error("Failed to toggle template status");
     }
   };
+  const [deleteId, setDeleteId] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  const openDeleteConfirm = (id) => {
+    setDeleteId(id);
+    setShowDeleteConfirm(true);
+  };
+  const handleDeleteTemplate = async () => {
+    try {
+      await axios.delete(`http://localhost:5000/template/delete/${deleteId}`);
+
+      toast.success("Template deleted!");
+
+      setShowDeleteConfirm(false);
+      setDeleteId(null);
+
+      fetchTemplates(); // Refresh list
+    } catch (err) {
+      toast.error("Failed to delete template");
+    }
+  };
 
   const handleGlobalToggle = async () => {
     try {
       const userId = localStorage.getItem("userid");
       const res = await axios.patch(
-        "http://localhost:5000/template/templatestatus/all",
+        "http://localhost:5000/template/templatestatus/all/other",
         { userId }
       );
       if (res.data.success) {
@@ -346,13 +299,7 @@ export default function AdminTemplate() {
               <table className="min-w-full border-collapse text-sm">
                 <thead className="bg-gray-100 border-b">
                   <tr>
-                    {[
-                      "Service Request",
-                      "Sequence Type",
-                      "Template",
-                      "Status",
-                      "Action",
-                    ].map((h) => (
+                    {["Label", "Template", "Status", "Action"].map((h) => (
                       <th
                         key={h}
                         className="p-3 text-left text-xs sm:text-sm font-semibold text-gray-700 uppercase tracking-wide"
@@ -387,10 +334,8 @@ export default function AdminTemplate() {
                             key={t._id}
                             className="border-b hover:bg-gray-50 transition"
                           >
-                            <td className="p-3 text-sm">{t.service}</td>
-                            <td className="p-3 text-sm">
-                              {formatSequenceName(t.name)}
-                            </td>
+                            {/* <td className="p-3 text-sm">{t.service}</td> */}
+                            <td className="p-3 text-sm">{t.name}</td>
                             <td className="p-3 text-sm text-gray-600 truncate max-w-[200px]">
                               {t.content.replace(/<[^>]+>/g, "").slice(0, 80)}
                               ...
@@ -407,12 +352,21 @@ export default function AdminTemplate() {
                                 <div className="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full shadow-md transition-transform peer-checked:translate-x-5"></div>
                               </label>
                             </td>
-                            <td className="p-3">
+                            <td className="p-3 flex gap-3">
+                              {/* EDIT */}
                               <button
                                 onClick={() => handleEdit(t)}
                                 className="text-indigo-600 hover:underline text-sm"
                               >
                                 Edit
+                              </button>
+
+                              {/* DELETE */}
+                              <button
+                                onClick={() => openDeleteConfirm(t._id)}
+                                className="text-red-600 hover:underline text-sm"
+                              >
+                                Delete
                               </button>
                             </td>
                           </tr>
@@ -449,9 +403,7 @@ export default function AdminTemplate() {
                         className="p-4 bg-white border-b hover:bg-gray-50 transition"
                       >
                         <div className="flex justify-between items-center mb-2">
-                          <h4 className="font-semibold text-gray-900 text-sm">
-                            {formatSequenceName(t.name)}
-                          </h4>
+                          <h4 className="font-semibold text-gray-900 text-sm"></h4>
                           <button
                             onClick={() => handleEdit(t)}
                             className="text-indigo-600 text-xs font-medium hover:underline"
@@ -617,6 +569,36 @@ export default function AdminTemplate() {
             </div>
           </div>
         </div>
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-lg w-[350px] shadow-xl">
+              <h2 className="text-lg font-semibold text-gray-800 mb-2">
+                Delete Template?
+              </h2>
+
+              <p className="text-gray-600 text-sm mb-4">
+                Are you sure you want to delete this template? This action
+                cannot be undone.
+              </p>
+
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="px-4 py-2 bg-gray-200 rounded"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  onClick={handleDeleteTemplate}
+                  className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

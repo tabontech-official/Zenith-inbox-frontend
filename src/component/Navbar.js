@@ -65,7 +65,7 @@ const Navbar = () => {
     try {
       if (userId) {
         await fetch(
-          `https://email-syncing-backend.vercel.app/auth/logout/${userId}`,
+          `http://localhost:5000/auth/logout/${userId}`,
           { method: "POST" }
         );
       }
@@ -79,21 +79,28 @@ const Navbar = () => {
     }
   };
 
-  const skipGuide = () => {
-    setGuideStep(0);
-    localStorage.setItem("scenarioGuideStep", "done");
-  };
-
   const nextGuide = () => {
-    const next = guideStep + 1;
-    setGuideStep(next);
-    localStorage.setItem("scenarioGuideStep", next);
-  };
+  const next = guideStep + 1;
+
+  if (next > 2) {  
+    localStorage.setItem("scenarioGuideStep", "done");
+    setGuideStep(0);
+    return;
+  }
+
+  setGuideStep(next);
+  localStorage.setItem("scenarioGuideStep", next);
+};
+
+const skipGuide = () => {
+  setGuideStep(0);
+  localStorage.setItem("scenarioGuideStep", "done");
+};
 
   const handleSkipSetup = async () => {
     const userId = localStorage.getItem("userid");
     await axios.post(
-      `https://email-syncing-backend.vercel.app/auth/skip-all/${userId}`
+      `http://localhost:5000/auth/skip-all/${userId}`
     );
     alert("All setup steps skipped.");
   };
@@ -101,13 +108,31 @@ const Navbar = () => {
     localStorage.setItem("scenarioGuideSeen", "true");
     setShowScenarioGuide(false);
   };
+const scenarioStep = localStorage.getItem("scenarioGuideStep");
 const isBlurred =
   open ||
   openScenario ||
   showProfileMenu ||
   showScenarioGuide ||
-  guideStep < 3;
+  scenarioStep !== "done";
 
+useEffect(() => {
+  const sidebarStep = Number(localStorage.getItem("sidebarGuideStep"));
+  const navbarStep = localStorage.getItem("scenarioGuideStep");
+
+  // Sidebar not finished (step < 5) → block Navbar guide
+  if (!sidebarStep || sidebarStep < 5) {
+    setGuideStep(0);
+    return;
+  }
+
+  // Sidebar finished (step >= 5) → now Navbar guide can start
+  if (!navbarStep || navbarStep === "0") {
+    setGuideStep(1); // start Navbar Step 1
+  } else if (navbarStep !== "done") {
+    setGuideStep(Number(navbarStep));
+  }
+}, []);
 
   return (
     <>
@@ -174,12 +199,12 @@ const isBlurred =
               </p>
 
               <div className="flex justify-between">
-                <button
+                {/* <button
                   onClick={skipGuide}
                   className="px-3 py-1 text-sm border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100"
                 >
                   Skip
-                </button>
+                </button> */}
                 <button
                   onClick={nextGuide}
                   className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
@@ -224,12 +249,12 @@ const isBlurred =
               </p>
 
               <div className="flex justify-between">
-                <button
+                {/* <button
                   onClick={skipGuide}
                   className="px-3 py-1 text-sm border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100"
                 >
                   Skip
-                </button>
+                </button> */}
 
                 <button
                   onClick={nextGuide}

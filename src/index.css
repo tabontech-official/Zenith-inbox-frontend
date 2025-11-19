@@ -148,3 +148,22 @@
   0%, 100% { transform: translate(0, 0); }
   50% { transform: translate(-40px, 30px); }
 }
+.sidebar-highlight {
+  position: relative;
+  z-index: 999;
+  animation: pulseHighlight 1.4s infinite;
+  border-radius: 8px;
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.7);
+}
+
+@keyframes pulseHighlight {
+  0% {
+    box-shadow: 0 0 0px rgba(59, 130, 246, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(59, 130, 246, 0.9);
+  }
+  100% {
+    box-shadow: 0 0 0px rgba(59, 130, 246, 0.4);
+  }
+}

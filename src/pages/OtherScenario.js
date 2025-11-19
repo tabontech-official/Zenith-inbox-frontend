@@ -148,7 +148,7 @@ const OthersScenariosPage = () => {
   const fetchTestEmail = async () => {
     try {
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/mailhook/email/latest/${userId}`
+        `http://localhost:5000/mailhook/email/latest/${userId}`
       );
 
       const data = await res.json();
@@ -179,6 +179,7 @@ const OthersScenariosPage = () => {
   const [connections, setConnections] = useState([]);
   const [scenarioName, setScenarioName] = useState("");
   const [editingNode, setEditingNode] = useState(null);
+const [otherActiveTemplates, setOtherActiveTemplates] = useState([]);
 
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [showDelayModal, setShowDelayModal] = useState(false);
@@ -189,6 +190,21 @@ const OthersScenariosPage = () => {
   const [showBranchButton, setShowBranchButton] = useState(false);
 
   const userId = localStorage.getItem("userid");
+  const fetchActiveTemplates = async () => {
+  try {
+    const res = await fetch(
+      `http://localhost:5000/template/other/active?userId=${userId}`
+    );
+
+    const data = await res.json();
+    if (data.success) {
+      setOtherActiveTemplates(data.templates);
+    }
+  } catch (err) {
+    console.error("Error fetching templates", err);
+  }
+};
+
   useEffect(() => {
     if (user?.mailhook) {
       setWebhookUrl(user.mailhook);
@@ -311,6 +327,9 @@ const OthersScenariosPage = () => {
       setEditingNode(newNode);
       setShowFilterModal(true);
     }
+if (type === "templateNode") {
+   fetchActiveTemplates(); // <-- ADD THIS
+}
 
     if (type === "delayNode") {
       setRfNodes((prev) =>
@@ -406,13 +425,14 @@ const OthersScenariosPage = () => {
     setRfNodes(nodes);
     setRfEdges(edges);
   };
+const [isTemplateAvailable, setIsTemplateAvailable] = useState(false);
 
   const loadScenario = async () => {
     if (!id) return;
 
     try {
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/scenario/detail/${id}`
+        `http://localhost:5000/scenario/detail/${id}`
       );
       const data = await res.json();
 
@@ -433,7 +453,7 @@ const OthersScenariosPage = () => {
   const fetchConnections = async () => {
     try {
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/auth/getConnection/${localStorage.getItem(
+        `http://localhost:5000/auth/getConnection/${localStorage.getItem(
           "userid"
         )}`
       );
@@ -452,19 +472,20 @@ const OthersScenariosPage = () => {
     []
   );
 
-  const handleNodeClick = (event, node) => {
-    console.log("🟦 MODULE CLICKED:", node);
+const handleNodeClick = (event, node) => {
+  setEditingNode(node);
 
-    setEditingNode(node);
+  const isTemplateConnected = checkIfTemplateBefore(node.id);
 
-    if (node.type === "gmailNode" || node.type === "outlookNode") {
-      setShowEmailModal(true);
-    } else if (node.type === "delayNode") {
-      setShowDelayModal(true);
-    } else if (node.type === "conditionNode") {
-      setShowFilterModal(true);
-    }
-  };
+  if (node.type === "gmailNode") {
+    setShowEmailModal(true);
+    setIsTemplateAvailable(isTemplateConnected); // <— new flag
+  }
+
+  if (node.type === "delayNode") setShowDelayModal(true);
+  if (node.type === "conditionNode") setShowFilterModal(true);
+};
+
 
   const saveScenario = async () => {
     const scenario = flowToScenario(rfNodes, rfEdges);
@@ -482,8 +503,8 @@ const OthersScenariosPage = () => {
     };
 
     const url = id
-      ? `https://email-syncing-backend.vercel.app/scenario/detail/${id}`
-      : `https://email-syncing-backend.vercel.app/scenario`;
+      ? `http://localhost:5000/scenario/detail/${id}`
+      : `http://localhost:5000/scenario`;
 
     await fetch(url, {
       method: id ? "PUT" : "POST",
@@ -577,70 +598,156 @@ const OthersScenariosPage = () => {
     setSelectedEdge(edge);
     setShowEdgeModal(true);
   };
-  const handleAddEmailTemplateFromEdge = (edge) => {
-    const sourceId = edge.source;
-    const targetId = edge.target;
-    const newNodeId = crypto.randomUUID();
+  // const handleAddEmailTemplateFromEdge = (edge) => {
+  //   const sourceId = edge.source;
+  //   const targetId = edge.target;
+  //   const newNodeId = crypto.randomUUID();
 
-    const sourceNode = rfNodes.find((n) => n.id === sourceId);
-    const targetNode = rfNodes.find((n) => n.id === targetId);
+  //   const sourceNode = rfNodes.find((n) => n.id === sourceId);
+  //   const targetNode = rfNodes.find((n) => n.id === targetId);
 
-    const newX = (sourceNode.position.x + targetNode.position.x) / 2;
-    const newY = (sourceNode.position.y + targetNode.position.y) / 2;
+  //   const newX = (sourceNode.position.x + targetNode.position.x) / 2;
+  //   const newY = (sourceNode.position.y + targetNode.position.y) / 2;
 
-    setRfNodes((prev) => [
-      ...prev,
-      {
+  //   setRfNodes((prev) => [
+  //     ...prev,
+  //     {
+  //       id: newNodeId,
+  //       type: "templateNode",
+  //       position: { x: newX, y: newY },
+  //       data: {
+  //         id: newNodeId,
+  //         config: {},
+
+  //         openTemplateModal: () => {
+  //           setEditingNode({ id: newNodeId, type: "templateNode" });
+  //           setShowTemplateModal(true);
+  //         },
+
+  //         confirmDeleteNode: () => {
+  //           setNodeToDelete(newNodeId);
+  //           setShowDeleteConfirm(true);
+  //         },
+
+  //         openModuleModal: () => {
+  //           setEditingNode({ id: newNodeId, type: "templateNode" });
+  //           setShowModuleModal(true);
+  //         },
+  //       },
+  //     },
+  //   ]);
+
+  //   // 2️⃣ Replace original edge with two edges
+  //   setRfEdges((prev) => {
+  //     const filtered = prev.filter((e) => e.id !== edge.id);
+
+  //     return [
+  //       ...filtered,
+  //       {
+  //         id: `edge-${sourceId}-${newNodeId}`,
+  //         source: sourceId,
+  //         target: newNodeId,
+  //         type: "smoothstep",
+  //       },
+  //       {
+  //         id: `edge-${newNodeId}-${targetId}`,
+  //         source: newNodeId,
+  //         target: targetId,
+  //         type: "smoothstep",
+  //       },
+  //     ];
+  //   });
+
+  //   // 3️⃣ Open Template Modal Automatically
+  //   setEditingNode({ id: newNodeId, type: "templateNode" });
+  //   setShowTemplateModal(true);
+  // };
+
+
+  const handleAddEmailTemplateFromEdge = async (edge) => {
+  const sourceId = edge.source;
+  const targetId = edge.target;
+  const newNodeId = crypto.randomUUID();
+
+  // ⭐ Fetch templates BEFORE showing modal
+  await fetchActiveTemplates();  // <----- ADD THIS LINE
+
+  const sourceNode = rfNodes.find((n) => n.id === sourceId);
+  const targetNode = rfNodes.find((n) => n.id === targetId);
+
+  const newX = (sourceNode.position.x + targetNode.position.x) / 2;
+  const newY = (sourceNode.position.y + targetNode.position.y) / 2;
+
+  setRfNodes((prev) => [
+    ...prev,
+    {
+      id: newNodeId,
+      type: "templateNode",
+      position: { x: newX, y: newY },
+      data: {
         id: newNodeId,
-        type: "templateNode",
-        position: { x: newX, y: newY },
-        data: {
-          id: newNodeId,
-          config: {},
+        config: {},
 
-          openTemplateModal: () => {
-            setEditingNode({ id: newNodeId, type: "templateNode" });
-            setShowTemplateModal(true);
-          },
+        openTemplateModal: () => {
+          setEditingNode({ id: newNodeId, type: "templateNode" });
+          setShowTemplateModal(true);
+        },
 
-          confirmDeleteNode: () => {
-            setNodeToDelete(newNodeId);
-            setShowDeleteConfirm(true);
-          },
+        confirmDeleteNode: () => {
+          setNodeToDelete(newNodeId);
+          setShowDeleteConfirm(true);
+        },
 
-          openModuleModal: () => {
-            setEditingNode({ id: newNodeId, type: "templateNode" });
-            setShowModuleModal(true);
-          },
+        openModuleModal: () => {
+          setEditingNode({ id: newNodeId, type: "templateNode" });
+          setShowModuleModal(true);
         },
       },
-    ]);
+    },
+  ]);
 
-    // 2️⃣ Replace original edge with two edges
-    setRfEdges((prev) => {
-      const filtered = prev.filter((e) => e.id !== edge.id);
+  // Replace original edge → two edges
+  setRfEdges((prev) => {
+    const filtered = prev.filter((e) => e.id !== edge.id);
 
-      return [
-        ...filtered,
-        {
-          id: `edge-${sourceId}-${newNodeId}`,
-          source: sourceId,
-          target: newNodeId,
-          type: "smoothstep",
-        },
-        {
-          id: `edge-${newNodeId}-${targetId}`,
-          source: newNodeId,
-          target: targetId,
-          type: "smoothstep",
-        },
-      ];
-    });
+    return [
+      ...filtered,
+      {
+        id: `edge-${sourceId}-${newNodeId}`,
+        source: sourceId,
+        target: newNodeId,
+        type: "smoothstep",
+      },
+      {
+        id: `edge-${newNodeId}-${targetId}`,
+        source: newNodeId,
+        target: targetId,
+        type: "smoothstep",
+      },
+    ];
+  });
 
-    // 3️⃣ Open Template Modal Automatically
-    setEditingNode({ id: newNodeId, type: "templateNode" });
-    setShowTemplateModal(true);
-  };
+  // Open the template modal
+  setEditingNode({ id: newNodeId, type: "templateNode" });
+  setShowTemplateModal(true);
+};
+const checkIfTemplateBefore = (gmailNodeId) => {
+  // find any edge that leads into this gmail node
+  const incoming = rfEdges.filter((e) => e.target === gmailNodeId);
+
+  if (!incoming.length) return false;
+
+  // get parent node
+  const parentId = incoming[0].source;
+  const parentNode = rfNodes.find((n) => n.id === parentId);
+
+  if (!parentNode) return false;
+
+  // If parent node is templateNode → show dropdown
+  if (parentNode.type === "templateNode") return true;
+
+  return false;
+};
 
   const handleAddDelayFromEdge = (edge) => {
     const sourceId = edge.source;
@@ -770,6 +877,33 @@ const OthersScenariosPage = () => {
     setEditingNode({ id: newNodeId, type: "conditionNode" });
     setShowFilterModal(true);
   };
+const saveTemplateToDB = async (name, content) => {
+  try {
+    const userId = localStorage.getItem("userid");
+
+    const res = await fetch("http://localhost:5000/template/save/other", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId,
+        name,
+        content,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      alert("Template saved successfully!");
+    } else {
+      alert("Failed to save template");
+    }
+
+  } catch (err) {
+    console.error(err);
+    alert("Error saving template");
+  }
+};
 
   return (
     <ReactFlowProvider>
@@ -1112,6 +1246,9 @@ const OthersScenariosPage = () => {
               onClose={() => setShowEmailModal(false)}
               openGmailModal={() => setShowGmailModal(true)}
               openOutlookModal={() => setShowOutlookModal(true)}
+               templates={otherActiveTemplates} 
+                   showTemplateOption={isTemplateAvailable}   // <-- NEW
+
               onSave={(data) => {
                 console.log("🟧 MODULE CONFIG SAVED:", {
                   nodeId: editingNode.id,

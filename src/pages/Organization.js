@@ -93,7 +93,7 @@ useEffect(() => {
       if (!userId) return console.error("No userId in localStorage");
 
       const res = await axios.get(
-        `https://email-syncing-backend.vercel.app/mailhook/getAllEmails/${userId}?page=${page}&limit=${limit}`
+        `http://localhost:5000/mailhook/getAllEmails/${userId}?page=${page}&limit=${limit}`
       );
 
       setEmails(res.data?.data || []);
@@ -112,7 +112,7 @@ useEffect(() => {
       if (!userId) return console.error("No userId in localStorage");
 
       const res = await axios.get(
-        `https://email-syncing-backend.vercel.app/auth/getUsers/${userId}`
+        `http://localhost:5000/auth/getUsers/${userId}`
       );
       setUser(res.data?.data || null);
     } catch (err) {
@@ -127,7 +127,7 @@ useEffect(() => {
       if (!userId) return;
 
       const res = await axios.get(
-        `https://email-syncing-backend.vercel.app/scenario/user/${userId}`
+        `http://localhost:5000/scenario/user/${userId}`
       );
 
       const scenarios = Array.isArray(res.data)

@@ -77,6 +77,7 @@ import AdminScenarioStats from "./Admin/ScenarioStats";
 import AdminTemplateUsage from "./Admin/AdminTemplateUsage";
 import AdminTemplate from "./Admin/AdminTemplate";
 import PublicRoute from "./Protection/PublicRoute";
+import Custom from "./pages/CustomTemplate";
 
 function App() {
   return (
@@ -208,6 +209,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Template />
+              </ProtectedRoute>
+            }
+          />
+           <Route
+            path="/templates/general"
+            element={
+              <ProtectedRoute>
+                <Custom />
               </ProtectedRoute>
             }
           />
