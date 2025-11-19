@@ -153,7 +153,14 @@ const OthersScenariosPage = () => {
       toast.error("Error fetching test email");
     }
   };
+  const handleRunTest = async () => {
+    const success = await runScenarioExecutionAnimation();
 
+    if (success) {
+      // No error → automatically open Test Email modal!
+      await fetchTestEmail();
+    }
+  };
   const [executingNode, setExecutingNode] = useState(null);
   const [executionComplete, setExecutionComplete] = useState(false);
   const [rfNodes, setRfNodes] = useState([]);
@@ -255,6 +262,11 @@ const OthersScenariosPage = () => {
 
         deleteNode: () => deleteNode(nodeId),
 
+        openEditEmailModal: () => {
+          setEditingNode({ id: nodeId, type });
+          setShowEmailModal(true);
+        },
+
         confirmDeleteNode: () => {
           setNodeToDelete(nodeId);
           setShowDeleteConfirm(true);
@@ -350,7 +362,10 @@ const OthersScenariosPage = () => {
             config: mod,
 
             deleteNode: () => deleteNode(mod.id),
-
+            openEditEmailModal: () => {
+              setEditingNode({ id: mod.id, type: nodeType });
+              setShowEmailModal(true);
+            },
             confirmDeleteNode: () => {
               setNodeToDelete(mod.id);
               setShowDeleteConfirm(true);
@@ -395,6 +410,7 @@ const OthersScenariosPage = () => {
       console.log("📥 Loaded Scenario:", data);
 
       setScenarioName(data.name || "");
+      setIsActive(data.scenarioActive || false);
 
       rebuildFlowFromScenario(data);
     } catch (err) {
@@ -453,6 +469,7 @@ const OthersScenariosPage = () => {
       description: "",
       type: "other",
       routerBranches: scenario,
+      scenarioActive: isActive,
     };
 
     const url = id
@@ -877,7 +894,7 @@ const OthersScenariosPage = () => {
           {showRunTestModal && (
             <RunTestModal
               onClose={() => setShowRunTestModal(false)}
-              runScenarioExecutionAnimation={runScenarioExecutionAnimation}
+              runScenarioExecutionAnimation={handleRunTest}
             />
           )}
 

@@ -156,7 +156,7 @@ const GmailNode = ({ data }) => {
       <button
         onClick={(e) => {
           e.stopPropagation();
-          data?.openModuleModal?.(data?.id);
+data?.openEditEmailModal?.(data?.id);
         }}
         className="
           absolute top-3 right-3 
@@ -171,7 +171,24 @@ const GmailNode = ({ data }) => {
       >
         <Edit size={16} className="text-red-500" />
       </button>
-
+ <button
+        onClick={(e) => {
+          e.stopPropagation();
+          data?.confirmDeleteNode(data.id);
+        }}
+        className="
+          opacity-0 group-hover:opacity-100
+          absolute top-3 right-14
+          w-7 h-7 
+          rounded-lg 
+          bg-red-500 text-white 
+          flex items-center justify-center 
+          shadow 
+          transition z-20
+        "
+      >
+        <X size={16} />
+      </button>
       {/* ---- ERROR MESSAGE ---- */}
       {data?.errorMessage && (
         <div className="
