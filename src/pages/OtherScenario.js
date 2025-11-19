@@ -41,6 +41,7 @@ const nodeTypes = {
 };
 
 const OthersScenariosPage = () => {
+  
   const navigate = useNavigate();
   const [highlightedNodes, setHighlightedNodes] = useState([]);
 

@@ -62,6 +62,32 @@ import EmailInspector from "./EmailInspector";
 
 const ShopifyScenariosPage = () => {
   const quillRef = useRef(null);
+  const [guideStep, setGuideStep] = useState(0);
+
+  useEffect(() => {
+    const step = localStorage.getItem("shopifyGuideStep");
+
+    if (!step) {
+      setGuideStep(1); // Start guide
+    } else if (step !== "done") {
+      setGuideStep(Number(step));
+    }
+  }, []);
+
+  const skipGuide = () => {
+    setGuideStep(0);
+    localStorage.setItem("shopifyGuideStep", "done");
+  };
+
+  const nextGuide = () => {
+    const next = guideStep + 1;
+    if (next > 3) {
+      skipGuide();
+    } else {
+      setGuideStep(next);
+      localStorage.setItem("shopifyGuideStep", next);
+    }
+  };
 
   const { id } = useParams();
   const navigate = useNavigate();
@@ -230,7 +256,6 @@ const ShopifyScenariosPage = () => {
     }
   }, []);
 
- 
   const handleSaveScenario = async () => {
     const payload = {
       userId: localStorage.getItem("userid"),
@@ -474,7 +499,6 @@ const ShopifyScenariosPage = () => {
     );
   }, []);
 
-
   useEffect(() => {
     if (localStorage.getItem("skipScenarioFetch") === "true") {
       console.log("🛑 Skipping fetchScenario — local restore already done");
@@ -622,90 +646,85 @@ const ShopifyScenariosPage = () => {
   //   resetForm();
   // };
 
-const handleSave = () => {
-  if (editingBranch !== null) {
-    const updatedBranches = [...routerBranches];
+  const handleSave = () => {
+    if (editingBranch !== null) {
+      const updatedBranches = [...routerBranches];
 
-    let type = "";
-    let description = "";
+      let type = "";
+      let description = "";
 
-    const isDelay = selectedApp?.name === "Delay";
+      const isDelay = selectedApp?.name === "Delay";
 
-    if (isDelay) {
-      type = "Delay";
-      if (delayValue && delayUnit) {
-        description = `Wait ${delayValue} ${delayUnit}`;
-      } else {
-        description = "Delay (no duration set)";
+      if (isDelay) {
+        type = "Delay";
+        if (delayValue && delayUnit) {
+          description = `Wait ${delayValue} ${delayUnit}`;
+        } else {
+          description = "Delay (no duration set)";
+        }
+      } else if (
+        selectedApp?.name === "Email" ||
+        selectedApp?.name === "Gmail"
+      ) {
+        type = selectedApp.name === "Email" ? "Custom Email" : "Send an Email";
+        description = `Send email via ${selectedAppType || selectedApp.name}`;
       }
-    } else if (
-      selectedApp?.name === "Email" ||
-      selectedApp?.name === "Gmail"
-    ) {
-      type = selectedApp.name === "Email" ? "Custom Email" : "Send an Email";
-      description = `Send email via ${selectedAppType || selectedApp.name}`;
-    }
 
-    const moduleData = {
-      id: editingModuleId || Date.now(),
-      app: {
-        ...selectedApp,
-        name:
-          selectedApp.displayName ||
-          selectedTemplate ||
-          selectedApp.defaultTemplate ||
-          "Unnamed Module",
-        color: selectedApp.color,
-        icon: selectedApp.icon,
-      },
-      type,
-      description,
-      connectionId: selectedConnection,
-      template: selectedTemplate,
-      cc: ccList,
-      bcc: bccList,
-      emailType: selectedAppType || selectedApp?.name || "",
-      ...(isDelay
-        ? { delayValue: delayValue || "", delayUnit: delayUnit || "" }
-        : {}),
-    };
+      const moduleData = {
+        id: editingModuleId || Date.now(),
+        app: {
+          ...selectedApp,
+          name:
+            selectedApp.displayName ||
+            selectedTemplate ||
+            selectedApp.defaultTemplate ||
+            "Unnamed Module",
+          color: selectedApp.color,
+          icon: selectedApp.icon,
+        },
+        type,
+        description,
+        connectionId: selectedConnection,
+        template: selectedTemplate,
+        cc: ccList,
+        bcc: bccList,
+        emailType: selectedAppType || selectedApp?.name || "",
+        ...(isDelay
+          ? { delayValue: delayValue || "", delayUnit: delayUnit || "" }
+          : {}),
+      };
 
-    // 🔥🔥 INSERT MODULE AT SPECIFIC INDEX
-    if (insertAtIndex !== null) {
-      updatedBranches[editingBranch].modules.splice(
-        insertAtIndex,
-        0,
-        moduleData
-      );
-      setInsertAtIndex(null); // reset
-    }
-
-    // ✏ Edit existing module
-    else if (editingModuleId) {
-      const moduleIndex = updatedBranches[editingBranch].modules.findIndex(
-        (m) => m.id === editingModuleId
-      );
-      if (moduleIndex >= 0) {
-        updatedBranches[editingBranch].modules[moduleIndex] = {
-          ...updatedBranches[editingBranch].modules[moduleIndex],
-          ...moduleData,
-        };
+      if (insertAtIndex !== null) {
+        updatedBranches[editingBranch].modules.splice(
+          insertAtIndex,
+          0,
+          moduleData
+        );
+        setInsertAtIndex(null);
+      } else if (editingModuleId) {
+        const moduleIndex = updatedBranches[editingBranch].modules.findIndex(
+          (m) => m.id === editingModuleId
+        );
+        if (moduleIndex >= 0) {
+          updatedBranches[editingBranch].modules[moduleIndex] = {
+            ...updatedBranches[editingBranch].modules[moduleIndex],
+            ...moduleData,
+          };
+        }
       }
+
+      // ➕ Normal Add to end
+      else {
+        updatedBranches[editingBranch].modules.push(moduleData);
+      }
+
+      setRouterBranches(updatedBranches);
+      setEditingBranch(null);
+      setEditingModuleId(null);
     }
 
-    // ➕ Normal Add to end
-    else {
-      updatedBranches[editingBranch].modules.push(moduleData);
-    }
-
-    setRouterBranches(updatedBranches);
-    setEditingBranch(null);
-    setEditingModuleId(null);
-  }
-
-  resetForm();
-};
-
+    resetForm();
+  };
 
   const handleRemoveModule = (branchIndex, moduleId) => {
     const updatedBranches = [...routerBranches];
@@ -971,7 +990,7 @@ const handleSave = () => {
         {!isLast && (
           <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-gray-400 rounded-full border-2 border-white"></div>
         )}
-        
+
         {!isFirst && (
           <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-gray-400 rounded-full border-2 border-white"></div>
         )}
@@ -991,9 +1010,9 @@ const handleSave = () => {
     </button>
   );
   const AddBetweenButton = ({ onClick }) => (
-  <button
-    onClick={onClick}
-    className="
+    <button
+      onClick={onClick}
+      className="
       w-7 h-7 rounded-full 
       bg-white border border-gray-300 
       flex items-center justify-center 
@@ -1001,10 +1020,10 @@ const handleSave = () => {
       absolute left-1/2 transform -translate-x-1/2
       z-20
     "
-  >
-    <Plus size={16} className="text-gray-700" />
-  </button>
-);
+    >
+      <Plus size={16} className="text-gray-700" />
+    </button>
+  );
 
   const resetForm = () => {
     setSelectedApp(null);
@@ -1382,7 +1401,7 @@ const handleSave = () => {
   const [selectedAppType, setSelectedAppType] = useState("");
   const [showServiceModal, setShowServiceModal] = useState(false);
   const [loadingServices, setLoadingServices] = useState(false);
-const [insertAtIndex, setInsertAtIndex] = useState(null);
+  const [insertAtIndex, setInsertAtIndex] = useState(null);
 
   const handleEdit = async () => {
     if (!showValidation) {
@@ -1468,12 +1487,30 @@ const [insertAtIndex, setInsertAtIndex] = useState(null);
     }
   }, [routerBranches]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [savedGuideStep, setSavedGuideStep] = useState(null);
+
+  useEffect(() => {
+    const modalOpen =
+      showServiceModal || showEditTemplateModal || showEmailPreview; // 👈 Added EmailInspector modal
+
+    if (modalOpen) {
+      if (guideStep > 0 && savedGuideStep === null) {
+        setSavedGuideStep(guideStep); // Save current step
+      }
+      setGuideStep(0); // Hide guide
+    } else {
+      if (savedGuideStep !== null) {
+        setGuideStep(savedGuideStep); // Restore step
+        setSavedGuideStep(null);
+      }
+    }
+  }, [showServiceModal, showEditTemplateModal, showEmailPreview]);
 
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 font-inter">
       <Sidebar />
 
-<div className="flex-1 flex flex-col overflow-hidden ml-64">
+      <div className="flex-1 flex flex-col overflow-hidden ml-64">
         <div className="bg-white border-b px-4 sm:px-6 py-4 shadow-sm">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex-1">
@@ -1665,25 +1702,85 @@ const [insertAtIndex, setInsertAtIndex] = useState(null);
         </div>
 
         <div className="flex-1 overflow-auto p-8">
+          {guideStep > 0 && (
+            <div
+              className="
+    fixed inset-0 
+    bg-black bg-opacity-20 
+    backdrop-blur-sm
+    z-[40]
+  "
+            ></div>
+          )}
+
           <div className="max-w-5xl mx-auto">
             <div className="flex flex-col items-center mb-8">
-              <FlowNode
-                icon={Cloud}
-                title="Webhooks"
-                subtitle="Custom mailhook"
-                color="border-red-500"
-                number={1}
-                isFirst={true}
-                completed={
-                  showValidation
-                    ? completedSteps.find((v) => v.id === "webhook")?.passed ??
-                      null
-                    : null
-                }
-                isWebhook={true}
-                onEdit={() => setShowWebhookInfo(true)}
-              />
+              <div className={guideStep === 1 ? "relative z-[70]" : "relative"}>
+                {/* GUIDE STEP 1 */}
+                {guideStep === 1 && (
+                  <div
+                    className="
+      absolute top-1/2 left-full -translate-y-1/2 ml-4
+      w-72 bg-white shadow-xl border border-gray-200 
+      rounded-lg p-4 z-[80]
+    "
+                  >
+                    {/* ARROW pointing left */}
+                    <div
+                      className="
+          absolute top-1/2 -left-2 -translate-y-1/2
+          w-4 h-4 bg-white rotate-45
+          border-b border-r border-gray-200
+        "
+                    ></div>
 
+                    <div className="flex justify-between items-center mb-2">
+                      <h4 className="font-semibold text-gray-900">
+                        Webhook Trigger
+                      </h4>
+                      <span className="text-xs text-gray-500">1/3</span>
+                    </div>
+
+                    <p className="text-sm text-gray-600 mb-3">
+                      This is the starting point of your automation. The
+                      workflow is triggered here.
+                    </p>
+
+                    <div className="flex justify-between">
+                      <button
+                        onClick={skipGuide}
+                        className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-100"
+                      >
+                        Skip
+                      </button>
+
+                      <button
+                        onClick={nextGuide}
+                        className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                <FlowNode
+                  icon={Cloud}
+                  title="Webhooks"
+                  subtitle="Custom mailhook"
+                  color="border-red-500"
+                  number={1}
+                  isFirst={true}
+                  completed={
+                    showValidation
+                      ? completedSteps.find((v) => v.id === "webhook")
+                          ?.passed ?? null
+                      : null
+                  }
+                  isWebhook={true}
+                  onEdit={() => setShowWebhookInfo(true)}
+                />
+              </div>
               <div className="w-0.5 h-12 bg-gray-300 relative">
                 <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
                   <Zap className="w-4 h-4 text-gray-400" />
@@ -1692,37 +1789,133 @@ const [insertAtIndex, setInsertAtIndex] = useState(null);
             </div>
 
             <div className="flex flex-col items-center mb-8">
-              <FlowNode
-                icon={GitBranch}
-                title="Router"
-                subtitle="Route to different paths"
-                color="border-green-500"
-                number={2}
-                isRouter={true}
-                completed={
-                  showValidation
-                    ? completedSteps.find((v) => v.id === "router")?.passed ??
-                      null
-                    : null
-                }
-              />
+              <div className={guideStep === 2 ? "relative z-[70]" : "relative"}>
+                {/* GUIDE STEP 2 */}
+                {guideStep === 2 && (
+                  <div
+                    className="
+        absolute top-1/2 left-full -translate-y-1/2 ml-4
+        w-72 bg-white shadow-xl border border-gray-200
+        rounded-lg p-4 z-[80]
+      "
+                  >
+                    {/* ARROW pointing left */}
+                    <div
+                      className="
+          absolute top-1/2 -left-2 -translate-y-1/2
+          w-4 h-4 bg-white rotate-45
+          border-b border-r border-gray-200
+        "
+                    ></div>
 
+                    <div className="flex justify-between items-center mb-2">
+                      <h4 className="font-semibold text-gray-900">Router</h4>
+                      <span className="text-xs text-gray-500">2/3</span>
+                    </div>
+
+                    <p className="text-sm text-gray-600 mb-3">
+                      In this step, you can view your test email. It displays
+                      the actual data captured from the webhook.
+                    </p>
+
+                    <div className="flex justify-between">
+                      <button
+                        onClick={skipGuide}
+                        className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-100"
+                      >
+                        Skip
+                      </button>
+
+                      <button
+                        onClick={nextGuide}
+                        className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                <FlowNode
+                  icon={GitBranch}
+                  title="Router"
+                  subtitle="Route to different paths"
+                  color="border-green-500"
+                  number={2}
+                  isRouter={true}
+                  completed={
+                    showValidation
+                      ? completedSteps.find((v) => v.id === "router")?.passed ??
+                        null
+                      : null
+                  }
+                />
+              </div>
               <div className="w-0.5 h-12 bg-gray-300"></div>
-              <FlowNode
-                icon={FiFileText}
-                title="Template"
-                subtitle="Define message structure and content"
-                color="border-blue-500"
-                number={3}
-                completed={
-                  showValidation
-                    ? completedSteps.find((v) => v.id === "template")?.passed ??
-                      null
-                    : null
-                }
-                module={{ app: { name: "Template" } }}
-                onEdit={handleEdit}
-              />
+              <div className={guideStep === 3 ? "relative z-[70]" : "relative"}>
+                {/* GUIDE STEP 3 */}
+                {guideStep === 3 && (
+                  <div
+                    className="
+        absolute top-1/2 left-full -translate-y-1/2 ml-4
+        w-72 bg-white shadow-xl border border-gray-200
+        rounded-lg p-4 z-[80]
+      "
+                  >
+                    {/* ARROW pointing left */}
+                    <div
+                      className="
+          absolute top-1/2 -left-2 -translate-y-1/2
+          w-4 h-4 bg-white rotate-45
+          border-b border-r border-gray-200
+        "
+                    ></div>
+
+                    <div className="flex justify-between items-center mb-2">
+                      <h4 className="font-semibold text-gray-900">
+                        Email Templates
+                      </h4>
+                      <span className="text-xs text-gray-500">3/3</span>
+                    </div>
+
+                    <p className="text-sm text-gray-600 mb-3">
+                      Templates define the content of your emails. You can
+                      customize your initial email and follow-ups here.
+                    </p>
+
+                    <div className="flex justify-between">
+                      <button
+                        onClick={skipGuide}
+                        className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-100"
+                      >
+                        Skip
+                      </button>
+
+                      <button
+                        onClick={nextGuide}
+                        className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                      >
+                        Finish
+                      </button>
+                    </div>
+                  </div>
+                )}
+                <FlowNode
+                  icon={FiFileText}
+                  title="Template"
+                  subtitle="Define message structure and content"
+                  color="border-blue-500"
+                  number={3}
+                  completed={
+                    showValidation
+                      ? completedSteps.find((v) => v.id === "template")
+                          ?.passed ?? null
+                      : null
+                  }
+                  module={{ app: { name: "Template" } }}
+                  onEdit={handleEdit}
+                />
+              </div>
 
               <div className="w-0.5 h-12 bg-gray-300"></div>
             </div>
@@ -1789,28 +1982,25 @@ const [insertAtIndex, setInsertAtIndex] = useState(null);
                               ))}
 
                             {moduleIndex < branch.modules.length - 1 && (
-  <div className="relative flex flex-col items-center">
-    
-    {/* vertical line */}
-    <div className="w-0.5 h-12 bg-gray-300"></div>
-    
-    {/* PLUS BUTTON BETWEEN NODES */}
-    <AddBetweenButton
-      onClick={() => {
-        setEditingBranch(branchIndex);
-        setEditingModuleId(null);
+                              <div className="relative flex flex-col items-center">
+                                {/* vertical line */}
+                                <div className="w-0.5 h-12 bg-gray-300"></div>
 
-        // NEW: store position so module adds EXACT here
-        setInsertAtIndex(moduleIndex + 1);
+                                {/* PLUS BUTTON BETWEEN NODES */}
+                                <AddBetweenButton
+                                  onClick={() => {
+                                    setEditingBranch(branchIndex);
+                                    setEditingModuleId(null);
 
-        setOpen(true);
-      }}
-      className="top-1/2"
-    />
+                                    // NEW: store position so module adds EXACT here
+                                    setInsertAtIndex(moduleIndex + 1);
 
-  </div>
-)}
-
+                                    setOpen(true);
+                                  }}
+                                  className="top-1/2"
+                                />
+                              </div>
+                            )}
                           </React.Fragment>
                         );
                       })
@@ -2304,9 +2494,7 @@ const [insertAtIndex, setInsertAtIndex] = useState(null);
               </button>
             </div>
 
-            {/* Body */}
             <div className="px-6 py-5 space-y-4 overflow-y-auto max-h-[70vh]">
-              {/* Business Email (editable) */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Business Email <span className="text-red-500">*</span>
