@@ -1,23 +1,31 @@
-
 // import React from "react";
 // import { Handle } from "reactflow";
 // import { Eye, X, Plus } from "lucide-react";
 
 // const ConditionNode = ({ data }) => {
+//   // --- Highlight Effect ---
+//  const highlightStyle = data?.highlight
+//   ? "border-red-500 shadow-[0_0_12px_rgba(255,0,0,0.6)] bg-gradient-to-br from-red-50 to-red-100"
+//   : data?.success
+//   ? "border-green-500 shadow-[0_0_12px_rgba(34,197,94,0.6)] bg-gradient-to-br from-green-50 to-green-100"
+//   : ""; // default
+
 //   return (
 //     <div
-//       className="
+//       className={`
 //         relative group
 //         px-5 py-5 
-//         bg-white 
 //         rounded-2xl 
-//         border-2 border-[#facc15]/60
+//         border-2 
 //         shadow-[0_3px_10px_rgba(0,0,0,0.05)] 
 //         w-[260px]
 //         transition-all
-//       "
+//         ${highlightStyle}
+//       `}
 //       onClick={() => data?.openConditionModal?.()}
 //     >
+
+//       {/* Delete Button */}
 //       <button
 //         onClick={(e) => {
 //           e.stopPropagation();
@@ -116,6 +124,7 @@
 //       >
 //         <Plus size={16} className="text-gray-700" />
 //       </button>
+
 //     </div>
 //   );
 // };
@@ -123,15 +132,14 @@
 // export default ConditionNode;
 import React from "react";
 import { Handle } from "reactflow";
-import { Eye, X, Plus } from "lucide-react";
+import { Eye, X, Plus, AlertCircle } from "lucide-react";
 
 const ConditionNode = ({ data }) => {
-  // --- Highlight Effect ---
- const highlightStyle = data?.highlight
-  ? "border-red-500 shadow-[0_0_12px_rgba(255,0,0,0.6)] bg-gradient-to-br from-red-50 to-red-100"
-  : data?.success
-  ? "border-green-500 shadow-[0_0_12px_rgba(34,197,94,0.6)] bg-gradient-to-br from-green-50 to-green-100"
-  : ""; // default
+  const highlightStyle = data?.highlight
+    ? "border-red-500 shadow-[0_0_12px_rgba(255,0,0,0.6)] bg-gradient-to-br from-red-50 to-red-100"
+    : data?.success
+    ? "border-green-500 shadow-[0_0_12px_rgba(34,197,94,0.6)] bg-gradient-to-br from-green-50 to-green-100"
+    : "";
 
   return (
     <div
@@ -140,57 +148,76 @@ const ConditionNode = ({ data }) => {
         px-5 py-5 
         rounded-2xl 
         border-2 
-        shadow-[0_3px_10px_rgba(0,0,0,0.05)] 
+        shadow-[0_3px_10px_rgba(0,0,0,0.05)]
         w-[260px]
         transition-all
+        cursor-pointer
         ${highlightStyle}
       `}
       onClick={() => data?.openConditionModal?.()}
     >
 
-      {/* Delete Button */}
+      {/* ---- Delete Button ---- */}
       <button
         onClick={(e) => {
           e.stopPropagation();
           data?.confirmDeleteNode(data.id);
         }}
         className="
-          opacity-0 group-hover:opacity-100 
-          absolute top-2 right-12
+          opacity-0 group-hover:opacity-100
+          absolute top-3 right-14
           w-7 h-7 
           rounded-lg 
           bg-red-500 text-white 
           flex items-center justify-center 
           shadow 
-          transition
+          transition z-20
         "
       >
         <X size={16} />
       </button>
 
-      {/* View Button */}
+      {/* ---- Edit / View Button ---- */}
       <button
         onClick={(e) => {
           e.stopPropagation();
           data?.openConditionModal?.();
         }}
         className="
-          absolute top-2 right-2 
+          absolute top-3 right-3 
           w-8 h-8 
-          border border-[#facc15]/70
+          border border-yellow-300
           rounded-lg 
           flex items-center justify-center 
           bg-white 
-          hover:bg-[#fffce7] 
-          transition
+          hover:bg-yellow-50 
+          transition z-20
         "
       >
-        <Eye size={16} className="text-[#eab308]" />
+        <Eye size={16} className="text-yellow-600" />
       </button>
 
-      {/* Icon + Title */}
-      <div className="flex items-center gap-4 mt-2">
-        <div className="w-12 h-12 rounded-xl bg-[#fef9c3] flex items-center justify-center">
+      {/* ---- Error Message ---- */}
+      {data?.errorMessage && (
+        <div className="
+          w-full
+          flex items-center gap-2
+          bg-red-100 
+          border border-red-300 
+          text-red-700 
+          text-sm 
+          px-3 py-2 
+          rounded-lg 
+          mt-10
+        ">
+          <AlertCircle size={16} />
+          <span>{data.errorMessage}</span>
+        </div>
+      )}
+
+      {/* ---- Icon + Title ---- */}
+      <div className="flex items-center gap-4 mt-4">
+        <div className="w-12 h-12 rounded-xl bg-yellow-100 flex items-center justify-center shadow-inner">
           <svg
             stroke="#eab308"
             fill="none"
@@ -210,19 +237,20 @@ const ConditionNode = ({ data }) => {
         </div>
       </div>
 
-      {/* Handles */}
+      {/* ---- Handles ---- */}
       <Handle
         type="target"
         position="top"
         className="!w-4 !h-2 !rounded-full !bg-gray-400 !border-2 !border-white"
       />
+
       <Handle
         type="source"
         position="bottom"
         className="!w-4 !h-2 !rounded-full !bg-gray-400 !border-2 !border-white"
       />
 
-      {/* Bottom Center Add Button */}
+      {/* ---- Add module Button ---- */}
       <button
         onClick={(e) => {
           e.stopPropagation();

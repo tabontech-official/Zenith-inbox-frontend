@@ -30,6 +30,7 @@ import WebhookModal from "../component/WebhookModal";
 import { useContext } from "react";
 import { UserContext } from "../component/UserContext";
 import { ListOrdered, MailCheck, Sparkles } from "lucide-react";
+import RunTestModal from "../modals/RunTestModal";
 
 const nodeTypes = {
   webhookNode: WebhookNode,
@@ -41,7 +42,8 @@ const nodeTypes = {
 };
 
 const OthersScenariosPage = () => {
-  
+  const [showRunTestModal, setShowRunTestModal] = useState(false);
+
   const navigate = useNavigate();
   const [highlightedNodes, setHighlightedNodes] = useState([]);
 
@@ -129,7 +131,8 @@ const OthersScenariosPage = () => {
 
     return true;
   };
-
+const [executingNode, setExecutingNode] = useState(null);
+const [executionComplete, setExecutionComplete] = useState(false);
   const [rfNodes, setRfNodes] = useState([]);
   const [rfEdges, setRfEdges] = useState([]);
   const [nodeToDelete, setNodeToDelete] = useState(null);
@@ -164,7 +167,6 @@ const OthersScenariosPage = () => {
           (e) => e.source !== nodeId && e.target !== nodeId
         );
 
-        // IF BOTH EXIST → Reconnect previous to next
         if (incoming && outgoing) {
           newEdges.push({
             id: `edge-${incoming.source}-${outgoing.target}`,
@@ -249,7 +251,6 @@ const OthersScenariosPage = () => {
 
     setRfNodes((prev) => [...prev, newNode]);
 
-    // AUTO CONNECT FIX
     if (parentId) {
       setRfEdges((prev) => [
         ...prev,
@@ -290,7 +291,6 @@ const OthersScenariosPage = () => {
     const nodes = [];
     const edges = [];
 
-    // Add webhook
     nodes.push({
       id: "webhook-1",
       type: "webhookNode",
@@ -364,7 +364,9 @@ const OthersScenariosPage = () => {
     if (!id) return;
 
     try {
-      const res = await fetch(`https://email-syncing-backend.vercel.app/scenario/detail/${id}`);
+      const res = await fetch(
+        `https://email-syncing-backend.vercel.app/scenario/detail/${id}`
+      );
       const data = await res.json();
 
       console.log("📥 Loaded Scenario:", data);
@@ -461,6 +463,70 @@ const OthersScenariosPage = () => {
 
     toast.success("Nodes organized neatly!");
   };
+ const runScenarioExecutionAnimation = async () => {
+  setHighlightedNodes([]);
+  setValidNodes([]);
+  setExecutingNode(null);
+
+  let hasError = false;
+
+  // Clear old errors
+  setRfNodes(prev =>
+    prev.map(n => ({ ...n, data: { ...n.data, errorMessage: null } }))
+  );
+
+  for (let i = 0; i < rfNodes.length; i++) {
+    const node = rfNodes[i];
+    const cfg = node.data?.config || {};
+
+    setExecutingNode(node.id);
+    await new Promise((res) => setTimeout(res, 700));
+
+    let error = null;
+
+    if (node.type === "gmailNode") {
+      if (!cfg.connectionId) error = "Connection not selected";
+      else if (!cfg.subject) error = "Email subject missing";
+      else if (!cfg.body) error = "Email body missing";
+    }
+
+    if (node.type === "delayNode") {
+      if (!cfg.delayValue || !cfg.delayUnit)
+        error = "Delay duration or unit missing";
+    }
+
+    if (node.type === "conditionNode") {
+      if (!cfg.conditions || cfg.conditions.length === 0)
+        error = "At least 1 condition is required";
+    }
+
+    if (error) {
+      hasError = true;
+
+      setHighlightedNodes(prev => [...prev, node.id]);
+
+      // 🔥 Attach error message to node
+      setRfNodes(prev =>
+        prev.map(n =>
+          n.id === node.id
+            ? { ...n, data: { ...n.data, errorMessage: error } }
+            : n
+        )
+      );
+
+    } else {
+      setValidNodes(prev => [...prev, node.id]);
+    }
+  }
+
+  setExecutingNode(null);
+  return !hasError;
+};
+
+
+
+  
+
   return (
     <ReactFlowProvider>
       <div className="flex">
@@ -504,13 +570,14 @@ const OthersScenariosPage = () => {
                 </button>
 
                 <button
+                  onClick={() => setShowRunTestModal(true)}
                   className="
-          flex items-center gap-2
-          px-5 py-2 rounded-lg 
-          bg-green-600 text-white text-sm font-medium
-          hover:bg-green-700 
-          shadow-sm transition
-        "
+    flex items-center gap-2
+    px-5 py-2 rounded-lg 
+    bg-green-600 text-white text-sm font-medium
+    hover:bg-green-700 
+    shadow-sm transition
+  "
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -569,14 +636,15 @@ const OthersScenariosPage = () => {
 
           <div className="h-[calc(100vh-120px)]">
             <ReactFlow
-              nodes={rfNodes.map((n) => ({
-                ...n,
-                data: {
-                  ...n.data,
-                  highlight: highlightedNodes.includes(n.id),
-                  success: validNodes.includes(n.id), // <-- NEW
-                },
-              }))}
+             nodes={rfNodes.map((n) => ({
+  ...n,
+  data: {
+    ...n.data,
+    highlight: highlightedNodes.includes(n.id),
+    success: validNodes.includes(n.id),
+    executing: executingNode === n.id,     // 🔥 add this
+  },
+}))}
               edges={rfEdges}
               nodeTypes={nodeTypes}
               onNodesChange={(chg) =>
@@ -781,6 +849,14 @@ const OthersScenariosPage = () => {
               setShowOutlookModal(false);
             }}
           />
+          {showRunTestModal && (
+            <RunTestModal
+  onClose={() => setShowRunTestModal(false)}
+  runScenarioExecutionAnimation={runScenarioExecutionAnimation}
+/>
+
+          )}
+
           {showDeleteConfirm && (
             <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 backdrop-blur-sm">
               <div className="bg-white p-6 rounded-xl shadow-xl w-80">
