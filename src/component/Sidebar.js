@@ -272,7 +272,7 @@ const Sidebar = () => {
   const navigate = useNavigate();
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isScenariosOpen, setIsScenariosOpen] = useState(false);
+  const [isScenariosOpen, setIsScenariosOpen] = useState(true);
   const [role, setRole] = useState("user");
 
   const [guideStep, setGuideStep] = useState(() => {
