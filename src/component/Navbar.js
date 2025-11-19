@@ -65,7 +65,7 @@ const Navbar = () => {
     try {
       if (userId) {
         await fetch(
-          `http://localhost:5000/auth/logout/${userId}`,
+          `https://email-syncing-backend.vercel.app/auth/logout/${userId}`,
           { method: "POST" }
         );
       }
@@ -100,7 +100,7 @@ const skipGuide = () => {
   const handleSkipSetup = async () => {
     const userId = localStorage.getItem("userid");
     await axios.post(
-      `http://localhost:5000/auth/skip-all/${userId}`
+      `https://email-syncing-backend.vercel.app/auth/skip-all/${userId}`
     );
     alert("All setup steps skipped.");
   };
