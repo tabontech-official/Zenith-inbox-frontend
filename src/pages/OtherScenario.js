@@ -148,7 +148,7 @@ const OthersScenariosPage = () => {
   const fetchTestEmail = async () => {
     try {
       const res = await fetch(
-        `http://localhost:5000/mailhook/email/latest/${userId}`
+        `https://email-syncing-backend.vercel.app/mailhook/email/latest/${userId}`
       );
 
       const data = await res.json();
@@ -167,7 +167,6 @@ const OthersScenariosPage = () => {
     const success = await runScenarioExecutionAnimation();
 
     if (success) {
-      // No error → automatically open Test Email modal!
       await fetchTestEmail();
     }
   };
@@ -252,7 +251,7 @@ const OthersScenariosPage = () => {
   const [showOutlookModal, setShowOutlookModal] = useState(false);
 
   const addModule = (type) => {
-    const parentId = editingNode?.id || editingNode; // ← FIXED
+    const parentId = editingNode?.id || editingNode; 
 
     const nodeId = crypto.randomUUID();
 

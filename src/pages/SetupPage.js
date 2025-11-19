@@ -161,17 +161,14 @@ const SetupFlow = () => {
 
   const saveSetupProgress = async (data = {}) => {
     try {
-      const res = await fetch(
-        `https://email-syncing-backend.vercel.app/auth/setup/${user._id}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            ...data,
-            updatedAt: new Date(),
-          }),
-        }
-      );
+      const res = await fetch(`https://email-syncing-backend.vercel.app/auth/setup/${user._id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...data,
+          updatedAt: new Date(),
+        }),
+      });
 
       const result = await res.json();
 
@@ -198,18 +195,15 @@ const SetupFlow = () => {
     const stepToUpdate = isSkipped ? step : nextStep;
 
     try {
-      const res = await fetch(
-        `https://email-syncing-backend.vercel.app/auth/setup/${user._id}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            stepCompleted: stepToUpdate,
-            stepStatus: status,
-            ...extra,
-          }),
-        }
-      );
+      const res = await fetch(`https://email-syncing-backend.vercel.app/auth/setup/${user._id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          stepCompleted: stepToUpdate,
+          stepStatus: status,
+          ...extra,
+        }),
+      });
 
       const result = await res.json();
       if (result.success) {
@@ -246,14 +240,11 @@ const SetupFlow = () => {
       const userId = localStorage.getItem("userid");
       const payload = { ...smtpForm, userId, provider: "outlook" };
 
-      const res = await fetch(
-        "https://email-syncing-backend.vercel.app/auth/saveSmtpConnection",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }
-      );
+      const res = await fetch("https://email-syncing-backend.vercel.app/auth/saveSmtpConnection", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
       if (!res.ok) throw new Error("Failed to save SMTP connection");
       alert("SMTP connection saved successfully!");
@@ -550,9 +541,7 @@ const SetupFlow = () => {
     const fetchSetupProgress = async () => {
       try {
         if (!user?._id) return;
-        const res = await fetch(
-          `https://email-syncing-backend.vercel.app/auth/setup/${user._id}`
-        );
+        const res = await fetch(`https://email-syncing-backend.vercel.app/auth/setup/${user._id}`);
         const data = await res.json();
         if (data.success) setSetupProgress(data.data);
       } catch (err) {
@@ -722,10 +711,10 @@ const SetupFlow = () => {
   };
   const [isExpanded, setIsExpanded] = useState(false);
   const [showMobileInstructions, setShowMobileInstructions] = useState(false);
- const AlertMessage = () =>
-  alert?.message ? (
-    <div
-      className={`
+  const AlertMessage = () =>
+    alert?.message ? (
+      <div
+        className={`
         px-4 py-3 rounded-xl text-sm font-medium text-center
         backdrop-blur-xl shadow-[0_4px_20px_rgba(0,0,0,0.1)]
         border
@@ -736,15 +725,13 @@ const SetupFlow = () => {
             : "bg-[rgba(254,226,226,0.7)] text-red-800 border-red-300"
         }
       `}
-      style={{ WebkitBackdropFilter: "blur(10px)" }}
-    >
-      {alert.message}
-    </div>
-  ) : null;
+        style={{ WebkitBackdropFilter: "blur(10px)" }}
+      >
+        {alert.message}
+      </div>
+    ) : null;
 
-  
-  
-    const [animate, setAnimate] = useState(false);
+  const [animate, setAnimate] = useState(false);
 
   useEffect(() => {
     setAnimate(true);
@@ -933,8 +920,8 @@ const SetupFlow = () => {
               )}
 
               {step === 2 && (
-  <div
-    className="
+                <div
+                  className="
       flex flex-col items-center justify-between
       min-h-[600px] text-center
       p-6 sm:p-10
@@ -946,46 +933,46 @@ const SetupFlow = () => {
       transition-all duration-500 
       relative w-full
     "
-    style={{
-      WebkitBackdropFilter: "blur(19.9px)",
-    }}
-  >
-    {/* ALERT - fixed height (no jump) */}
-    <div className="w-full min-h-[48px] flex items-center justify-center mb-2">
-      <AnimatePresence>
-        {alert?.message && (
-          <motion.div
-            key={alert.message}
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.3 }}
-            className={`px-4 py-2 rounded-md text-sm font-medium shadow-sm ${
-              alert.type === "success"
-                ? "bg-green-100 text-green-700 border border-green-300"
-                : "bg-red-100 text-red-700 border border-red-300"
-            }`}
-          >
-            {alert.message}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+                  style={{
+                    WebkitBackdropFilter: "blur(19.9px)",
+                  }}
+                >
+                  {/* ALERT - fixed height (no jump) */}
+                  <div className="w-full min-h-[48px] flex items-center justify-center mb-2">
+                    <AnimatePresence>
+                      {alert?.message && (
+                        <motion.div
+                          key={alert.message}
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          transition={{ duration: 0.3 }}
+                          className={`px-4 py-2 rounded-md text-sm font-medium shadow-sm ${
+                            alert.type === "success"
+                              ? "bg-green-100 text-green-700 border border-green-300"
+                              : "bg-red-100 text-red-700 border border-red-300"
+                          }`}
+                        >
+                          {alert.message}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
 
-    {/* HEADER */}
-    <div className="w-full max-w-md mx-auto">
-      <h2 className="text-2xl sm:text-3xl font-bold text-[#111827] mb-3">
-        Your Mailhook is Ready
-      </h2>
+                  {/* HEADER */}
+                  <div className="w-full max-w-md mx-auto">
+                    <h2 className="text-2xl sm:text-3xl font-bold text-[#111827] mb-3">
+                      Your Mailhook is Ready
+                    </h2>
 
-      <p className="text-[#4B5563] text-sm sm:text-base mb-8 leading-relaxed">
-        This is your private & unique address for receiving leads.
-      </p>
-    </div>
+                    <p className="text-[#4B5563] text-sm sm:text-base mb-8 leading-relaxed">
+                      This is your private & unique address for receiving leads.
+                    </p>
+                  </div>
 
-    {/* MAILHOOK CARD */}
-    <div
-      className="
+                  {/* MAILHOOK CARD */}
+                  <div
+                    className="
         w-full max-w-lg 
         rounded-xl p-5 sm:p-6 mb-6
         bg-white/40 
@@ -995,19 +982,19 @@ const SetupFlow = () => {
         hover:shadow-[0_8px_40px_rgba(0,0,0,0.15)]
         transition-all
       "
-      style={{ WebkitBackdropFilter: "blur(5px)" }}
-    >
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-2">
-        <h3 className="font-semibold text-[#111827] text-base sm:text-lg">
-          Your Unique Mailhook
-        </h3>
-        <span className="text-green-700 bg-green-100 text-[11px] sm:text-xs px-2.5 py-0.5 rounded-full font-medium">
-          Private & Unique
-        </span>
-      </div>
+                    style={{ WebkitBackdropFilter: "blur(5px)" }}
+                  >
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-2">
+                      <h3 className="font-semibold text-[#111827] text-base sm:text-lg">
+                        Your Unique Mailhook
+                      </h3>
+                      <span className="text-green-700 bg-green-100 text-[11px] sm:text-xs px-2.5 py-0.5 rounded-full font-medium">
+                        Private & Unique
+                      </span>
+                    </div>
 
-      <div
-        className="
+                    <div
+                      className="
           bg-white/50 
           text-[#4F46E5]
           px-4 py-3 rounded-lg
@@ -1018,31 +1005,31 @@ const SetupFlow = () => {
           hover:bg-white/60
           transition-all
         "
-      >
-        <span className="truncate">
-          {user?.mailhook || "loading-mailhook@zenith-inbox.com"}
-        </span>
+                    >
+                      <span className="truncate">
+                        {user?.mailhook || "loading-mailhook@zenith-inbox.com"}
+                      </span>
 
-        <button
-          onClick={() => {
-            if (user?.mailhook) {
-              navigator.clipboard.writeText(user.mailhook);
-              setAlert({
-                type: "success",
-                message: "Mailhook copied successfully!",
-              });
-            }
-          }}
-          className="ml-3 text-gray-600 hover:text-[#4F46E5] transition"
-        >
-          <FiCopy className="text-lg" />
-        </button>
-      </div>
-    </div>
+                      <button
+                        onClick={() => {
+                          if (user?.mailhook) {
+                            navigator.clipboard.writeText(user.mailhook);
+                            setAlert({
+                              type: "success",
+                              message: "Mailhook copied successfully!",
+                            });
+                          }
+                        }}
+                        className="ml-3 text-gray-600 hover:text-[#4F46E5] transition"
+                      >
+                        <FiCopy className="text-lg" />
+                      </button>
+                    </div>
+                  </div>
 
-    {/* TIP CARD */}
-    <div
-      className="
+                  {/* TIP CARD */}
+                  <div
+                    className="
         w-full max-w-lg 
         rounded-lg p-4 text-indigo-900 text-sm leading-relaxed
         bg-white/40
@@ -1052,22 +1039,23 @@ const SetupFlow = () => {
         transition-all duration-300
         hover:shadow-[0_6px_35px_rgba(0,0,0,0.12)]
       "
-    >
-      <strong className="text-indigo-700">💡 Tip: </strong>
-      Add this address as a forwarding destination in email service provider settings (Gmail, outlook, hotmail etc...)
-    </div>
+                  >
+                    <strong className="text-indigo-700">💡 Tip: </strong>
+                    Add this address as a forwarding destination in email
+                    service provider settings (Gmail, outlook, hotmail etc...)
+                  </div>
 
-    {/* NEXT BUTTON (GLASS BUTTON) */}
-    <div className="flex justify-center mt-12">
-      <button
-        onClick={async () => {
-          await saveSetupProgress({
-            stepCompleted: 2,
-            stepStatus: "completed",
-          });
-          setStep(3);
-        }}
-        className="
+                  {/* NEXT BUTTON (GLASS BUTTON) */}
+                  <div className="flex justify-center mt-12">
+                    <button
+                      onClick={async () => {
+                        await saveSetupProgress({
+                          stepCompleted: 2,
+                          stepStatus: "completed",
+                        });
+                        setStep(3);
+                      }}
+                      className="
           flex items-center justify-center gap-2
           px-8 py-3 rounded-full
           text-sm font-semibold text-[#111827]
@@ -1079,19 +1067,18 @@ const SetupFlow = () => {
           hover:shadow-[0_10px_30px_rgba(0,0,0,0.16)]
           transition-all duration-300 hover:scale-[1.04]
         "
-        style={{ WebkitBackdropFilter: "blur(12px)" }}
-      >
-        <span>Next</span>
-        <FiArrowRight className="text-indigo-600" />
-      </button>
-    </div>
-  </div>
-)}
+                      style={{ WebkitBackdropFilter: "blur(12px)" }}
+                    >
+                      <span>Next</span>
+                      <FiArrowRight className="text-indigo-600" />
+                    </button>
+                  </div>
+                </div>
+              )}
 
-
-          {step === 3 && (
-  <div
-    className="
+              {step === 3 && (
+                <div
+                  className="
       flex flex-col items-center justify-between
       min-h-[600px] text-center
       p-6 sm:p-10
@@ -1102,68 +1089,68 @@ const SetupFlow = () => {
       backdrop-blur-[20px]
       transition-all duration-500 relative w-full
     "
-    style={{ WebkitBackdropFilter: "blur(19.9px)" }}
-  >
-    {/* ALERT FIXED AREA */}
-    <div className="w-full h-[48px] flex items-center justify-center mb-2 overflow-hidden">
-      <AlertMessage />
-    </div>
+                  style={{ WebkitBackdropFilter: "blur(19.9px)" }}
+                >
+                  {/* ALERT FIXED AREA */}
+                  <div className="w-full h-[48px] flex items-center justify-center mb-2 overflow-hidden">
+                    <AlertMessage />
+                  </div>
 
-    {/* HEADER */}
-   <div className="w-full max-w-xl mx-auto">
-  <h2 className="text-2xl sm:text-3xl font-bold text-[#111827] mb-5">
-    Set up Forwarding
-  </h2>
+                  {/* HEADER */}
+                  <div className="w-full max-w-xl mx-auto">
+                    <h2 className="text-2xl sm:text-3xl font-bold text-[#111827] mb-5">
+                      Set up Forwarding
+                    </h2>
 
-  {/* Description / Instruction */}
-  <p className="text-sm text-gray-600 mb-4 leading-relaxed">
-    Set the following address as your <strong>email forwarding destination</strong>. 
-    Once forwarding is active, you will receive a verification email like the example below.
-  </p>
+                    {/* Description / Instruction */}
+                    <p className="text-sm text-gray-600 mb-4 leading-relaxed">
+                      Set the following address as your{" "}
+                      <strong>email forwarding destination</strong>. Once
+                      forwarding is active, you will receive a verification
+                      email like the example below.
+                    </p>
 
-  {/* MAILHOOK BAR (GLASS) */}
- <div
-  className="
+                    {/* MAILHOOK BAR (GLASS) */}
+                    <div
+                      className="
     w-full bg-white/50 px-4 py-3 rounded-xl
     flex flex-col sm:flex-row sm:items-center sm:justify-between
     gap-2 sm:gap-4 font-mono text-xs sm:text-sm
     border border-white/70 backdrop-blur-xl
     shadow-[0_4px_20px_rgba(0,0,0,0.1)]
   "
->
-  <span className="text-[#1A1A1A] font-medium whitespace-nowrap">
-    Forward emails to:
-  </span>
+                    >
+                      <span className="text-[#1A1A1A] font-medium whitespace-nowrap">
+                        Forward emails to:
+                      </span>
 
-  {/* FIXED WRAPPER */}
-  <div className="flex items-center gap-2 flex-nowrap">
-    <span className="text-[#4F46E5] truncate max-w-[220px]">
-      {user?.mailhook || "loading..."}
-    </span>
+                      {/* FIXED WRAPPER */}
+                      <div className="flex items-center gap-2 flex-nowrap">
+                        <span className="text-[#4F46E5] truncate max-w-[220px]">
+                          {user?.mailhook || "loading..."}
+                        </span>
 
-    <button
-      onClick={() => {
-        if (user?.mailhook) {
-          navigator.clipboard.writeText(user.mailhook);
-          setAlert({
-            type: "success",
-            message: "Mailhook copied successfully!",
-          });
-        }
-      }}
-      className="text-gray-600 hover:text-[#4F46E5] transition"
-    >
-      <FiCopy />
-    </button>
-  </div>
-</div>
+                        <button
+                          onClick={() => {
+                            if (user?.mailhook) {
+                              navigator.clipboard.writeText(user.mailhook);
+                              setAlert({
+                                type: "success",
+                                message: "Mailhook copied successfully!",
+                              });
+                            }
+                          }}
+                          className="text-gray-600 hover:text-[#4F46E5] transition"
+                        >
+                          <FiCopy />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
 
-</div>
-
-
-    {/* MAIN VALIDATION CARD (Glass) */}
-    <div
-      className="
+                  {/* MAIN VALIDATION CARD (Glass) */}
+                  <div
+                    className="
         relative p-6 w-full max-w-xl mx-auto text-center
         rounded-2xl
         bg-white/40
@@ -1172,176 +1159,194 @@ const SetupFlow = () => {
         backdrop-blur-[8px]
         mt-8
       "
-    >
-      {/* RETRY BUTTON */}
-      {!validationPhase && !validated && showValidateButton && (
-        <button
-          onClick={handleRetryValidation}
-          className="
+                  >
+                    {/* RETRY BUTTON */}
+                    {!validationPhase && !validated && showValidateButton && (
+                      <button
+                        onClick={handleRetryValidation}
+                        className="
             absolute top-4 right-4 
             flex items-center gap-1 
             text-xs font-semibold text-[#4F46E5]
             hover:text-[#3730A3] transition
           "
-        >
-          <FiRefreshCcw className="text-sm" /> Retry
-        </button>
-      )}
+                      >
+                        <FiRefreshCcw className="text-sm" /> Retry
+                      </button>
+                    )}
 
-      <h3 className="text-lg font-semibold text-[#111827] mb-4">
-        Email Receiving
-      </h3>
+                    <h3 className="text-lg font-semibold text-[#111827] mb-4">
+                      Email Receiving
+                    </h3>
 
-      {/* FIXED HEIGHT INNER AREA */}
-      <div
-        className="
+                    {/* FIXED HEIGHT INNER AREA */}
+                    <div
+                      className="
           relative min-h-[180px] rounded-lg p-4
           bg-white/50
           border border-white/60
           backdrop-blur-md
           shadow-inner text-gray-700
         "
-      >
-        {/* ERROR */}
-        {validationFailed ? (
-          <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4 text-center">
-            <p className="font-semibold mb-2">
-              Forwarding is not configured correctly.
-            </p>
-            <p className="text-sm">Please check your forwarding configuration or refer to our  <button
-    onClick={() => {
-      setIsExpanded(true);           
-      setShowMobileInstructions(true); 
-    }}
-    className="text-red-700 font-semibold underline hover:text-red-900"
-  >
-    Setup Guide
-  </button> for step by step instructions.</p>
-          </div>
-        ) : validationPhase ? (
-          showValidateButton ? (
-            <div className="text-center py-6 text-gray-500 text-sm">
-              <p>No email received.</p>
-              <p>Please enter your email below.</p>
-            </div>
-          ) : (
-            <MailhookWaitingTimer message="Waiting for validation email..." />
-          )
-        ) : validated ? (
-          <div className="text-center py-6">
-            <FiCheck className="text-green-600 text-3xl" />
-            <h4 className="text-lg font-semibold text-green-700 mt-2">
-              Mailhook connected!
-            </h4>
-            <p className="text-sm text-gray-600">
-              Forwarding verified successfully.
-            </p>
-          </div>
-        ) : verificationEmail?.sender ? (
-          <>
-            <div
-              className="pt-3 max-h-32 overflow-y-auto text-sm leading-relaxed text-gray-700"
-              dangerouslySetInnerHTML={{
-                __html:
-                  verificationEmail.formattedBody ||
-                  verificationEmail.textBody,
-              }}
-            />
+                    >
+                      {/* ERROR */}
+                      {validationFailed ? (
+                        <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4 text-center">
+                          <p className="font-semibold mb-2">
+                            Forwarding is not configured correctly.
+                          </p>
+                          <p className="text-sm">
+                            Please check your forwarding configuration or refer
+                            to our{" "}
+                            <button
+                              onClick={() => {
+                                setIsExpanded(true);
+                                setShowMobileInstructions(true);
+                              }}
+                              className="text-red-700 font-semibold underline hover:text-red-900"
+                            >
+                              Setup Guide
+                            </button>{" "}
+                            for step by step instructions.
+                          </p>
+                        </div>
+                      ) : validationPhase ? (
+                        showValidateButton ? (
+                          <div className="text-center py-6 text-gray-500 text-sm">
+                            <p>No email received.</p>
+                            <p>Please enter your email below.</p>
+                          </div>
+                        ) : (
+                          <MailhookWaitingTimer message="Waiting for validation email..." />
+                        )
+                      ) : validated ? (
+                        <div className="flex flex-col items-center justify-center py-6">
+                          <div className="bg-green-100 text-green-700 px-4 py-3 rounded-full flex items-center gap-2 shadow-sm border border-green-200">
+                            <FiCheck className="text-green-600 text-2xl" />
+                            <span className="font-semibold text-green-700">
+                              Mailhook Connected
+                            </span>
+                          </div>
 
-            {/* Gmail Warning */}
-            {verificationEmail.isGmailVerification && (
-              <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 rounded-lg p-4 mt-4 text-center text-sm">
-                Gmail confirmation detected — open Gmail and approve forwarding.
-              </div>
-            )}
-          </>
-        ) : showValidateButton ? (
-          <div className="text-center text-sm text-gray-600">
-            <p>No verfication email received yet.</p>
-       <div class="bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded-lg text-sm">
-  <p class="leading-relaxed">
-    Please confirm that you have correctly set up email forwarding in your email provider.
-    We recommend visiting our <strong>  <button
-    onClick={() => {
-      setIsExpanded(true);          
-      setShowMobileInstructions(true);
-    }}
-    className="text-red-700 font-semibold underline hover:text-red-900"
-  >
-    Setup Guide
-  </button></strong> for a complete step-by-step walkthrough.
-    <br /><br />
-    If you have already configured forwarding and want to skip the verification process,
-    please enter your email below to validate and finalize the setup.
-  </p>
-</div>
+                          <p className="text-sm text-gray-600 mt-3">
+                            Forwarding verified successfully.
+                          </p>
+                        </div>
+                      ) : verificationEmail?.sender ? (
+                        <>
+                          <div
+                            className="pt-3 max-h-32 overflow-y-auto text-sm leading-relaxed text-gray-700"
+                            dangerouslySetInnerHTML={{
+                              __html:
+                                verificationEmail.formattedBody ||
+                                verificationEmail.textBody,
+                            }}
+                          />
 
+                          {/* Gmail Warning */}
+                          {verificationEmail.isGmailVerification && (
+                            <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 rounded-lg p-4 mt-4 text-center text-sm">
+                              Gmail confirmation detected — open Gmail and
+                              approve forwarding.
+                            </div>
+                          )}
+                        </>
+                      ) : showValidateButton ? (
+                        <div className="text-center text-sm text-gray-600">
+                          <p>No verfication email received yet.</p>
+                          <div class="bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded-lg text-sm">
+                            <p class="leading-relaxed">
+                              Please confirm that you have correctly set up
+                              email forwarding in your email provider. We
+                              recommend visiting our{" "}
+                              <strong>
+                                {" "}
+                                <button
+                                  onClick={() => {
+                                    setIsExpanded(true);
+                                    setShowMobileInstructions(true);
+                                  }}
+                                  className="text-red-700 font-semibold underline hover:text-red-900"
+                                >
+                                  Setup Guide
+                                </button>
+                              </strong>{" "}
+                              for a complete step-by-step walkthrough.
+                              <br />
+                              <br />
+                              If you have already configured forwarding and want
+                              to skip the verification process, please enter
+                              your email below to validate and finalize the
+                              setup.
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
+                        <MailhookWaitingTimer />
+                      )}
+                    </div>
 
-          </div>
-        ) : (
-          <MailhookWaitingTimer />
-        )}
-      </div>
+                    {/* EMAIL INPUT (Glass) */}
+                    <div
+                      className={`space-y-3 mt-6 transition-all duration-300 ${
+                        !validationPhase &&
+                        !validated &&
+                        (showValidateButton ||
+                          verificationEmail?.isGmailVerification)
+                          ? "opacity-100 max-h-[150px]"
+                          : "opacity-0 max-h-0 overflow-hidden"
+                      }`}
+                    >
+                      <p className="text-sm text-gray-700">
+                        Enter the email address you configured forwarding from:
+                      </p>
 
-      {/* EMAIL INPUT (Glass) */}
-      <div
-        className={`space-y-3 mt-6 transition-all duration-300 ${
-          !validationPhase &&
-          !validated &&
-          (showValidateButton || verificationEmail?.isGmailVerification)
-            ? "opacity-100 max-h-[150px]"
-            : "opacity-0 max-h-0 overflow-hidden"
-        }`}
-      >
-        <p className="text-sm text-gray-700">
-          Enter the email address you configured forwarding from:
-        </p>
-
-        <input
-          type="email"
-          placeholder="Enter your email"
-          className="
+                      <input
+                        type="email"
+                        placeholder="Enter your email"
+                        className="
             w-full px-3 py-2 rounded-lg text-sm
             bg-white/70 border border-gray-300
             text-gray-700 placeholder-gray-400
             focus:ring-2 focus:ring-indigo-400 outline-none
             backdrop-blur-md
           "
-          value={verificationEmail?.toEmail || ""}
-          onChange={(e) =>
-            setVerificationEmail({
-              ...verificationEmail,
-              toEmail: e.target.value,
-            })
-          }
-        />
-      </div>
-    </div>
+                        value={verificationEmail?.toEmail || ""}
+                        onChange={(e) =>
+                          setVerificationEmail({
+                            ...verificationEmail,
+                            toEmail: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                  </div>
 
-    <div className="mt-10 pt-6 flex justify-center w-full max-w-xl  border-white/40">
-      {!validated &&
-      !validationPhase &&
-      (showValidateButton || verificationEmail?.isGmailVerification) ? (
-        <button
-          disabled={validating}
-          onClick={async () => {
-            if (!verificationEmail?.toEmail?.trim()) {
-              setAlert({
-                type: "error",
-                message: "Enter your email address!",
-              });
-              return;
-            }
+                  <div className="mt-10 pt-6 flex justify-center w-full max-w-xl  border-white/40">
+                    {!validated &&
+                    !validationPhase &&
+                    (showValidateButton ||
+                      verificationEmail?.isGmailVerification) ? (
+                      <button
+                        disabled={validating}
+                        onClick={async () => {
+                          if (!verificationEmail?.toEmail?.trim()) {
+                            setAlert({
+                              type: "error",
+                              message: "Enter your email address!",
+                            });
+                            return;
+                          }
 
-            setValidating(true);
-            setValidationFailed(false);
-            setShowValidateButton(false);
-            setValidationPhase(true);
+                          setValidating(true);
+                          setValidationFailed(false);
+                          setShowValidateButton(false);
+                          setValidationPhase(true);
 
-            await handleValidateForwarding();
-            startValidationLoop();
-          }}
-          className="
+                          await handleValidateForwarding();
+                          startValidationLoop();
+                        }}
+                        className="
             flex items-center gap-2 px-6 py-2 rounded-full
             text-sm font-semibold text-[#111827]
             bg-white/30 border border-white/50
@@ -1351,20 +1356,20 @@ const SetupFlow = () => {
             transition-all
             disabled:opacity-50 disabled:cursor-not-allowed
           "
-        >
-          {validating ? "Validating..." : "Validate Forwarding"}
-          <FiArrowRight className="text-indigo-600" />
-        </button>
-      ) : validated ? (
-        <button
-          onClick={async () => {
-            await saveSetupProgress({
-              stepCompleted: 3,
-              stepStatus: "completed",
-            });
-            setStep(4);
-          }}
-          className="
+                      >
+                        {validating ? "Validating..." : "Validate Forwarding"}
+                        <FiArrowRight className="text-indigo-600" />
+                      </button>
+                    ) : validated ? (
+                      <button
+                        onClick={async () => {
+                          await saveSetupProgress({
+                            stepCompleted: 3,
+                            stepStatus: "completed",
+                          });
+                          setStep(4);
+                        }}
+                        className="
             flex items-center gap-2 px-6 py-2 rounded-full
             text-sm font-semibold text-[#111827]
             bg-white/30 border border-white/50
@@ -1374,18 +1379,17 @@ const SetupFlow = () => {
             transition-all
             disabled:opacity-50 disabled:cursor-not-allowed
           "
-        >
-          Next <FiArrowRight />
-        </button>
-      ) : null}
-    </div>
-  </div>
-)}
-
+                      >
+                        Next <FiArrowRight />
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+              )}
 
               {step === 4 && (
-  <div
-    className="
+                <div
+                  className="
       flex flex-col items-center justify-between
       min-h-[600px] text-center
       p-8 sm:p-10
@@ -1396,41 +1400,41 @@ const SetupFlow = () => {
       backdrop-blur-[20px]
       transition-all duration-500 relative
     "
-    style={{ WebkitBackdropFilter: "blur(20px)" }}
-  >
-    {/* Alert */}
-    <div className="w-full min-h-[48px] flex items-center justify-center mb-2">
-      <AlertMessage />
-    </div>
+                  style={{ WebkitBackdropFilter: "blur(20px)" }}
+                >
+                  {/* Alert */}
+                  <div className="w-full min-h-[48px] flex items-center justify-center mb-2">
+                    <AlertMessage />
+                  </div>
 
-    {/* Header */}
-    <div>
-      <h2 className="text-2xl sm:text-3xl font-bold text-[#111827] mb-3">
-        Set up Sending (SMTP)
-      </h2>
+                  {/* Header */}
+                  <div>
+                    <h2 className="text-2xl sm:text-3xl font-bold text-[#111827] mb-3">
+                      Set up Sending (SMTP)
+                    </h2>
 
-      <p className="text-gray-700 text-sm sm:text-base mb-8 max-w-md mx-auto">
-        Configure how{" "}
-        <span className="font-semibold text-indigo-600">
-          Zenith Inbox
-        </span>{" "}
-        will send replies from your email address.
-      </p>
-    </div>
+                    <p className="text-gray-700 text-sm sm:text-base mb-8 max-w-md mx-auto">
+                      Configure how{" "}
+                      <span className="font-semibold text-indigo-600">
+                        Zenith Inbox
+                      </span>{" "}
+                      will send replies from your email address.
+                    </p>
+                  </div>
 
-    {/* Tabs */}
-    <div
-      className="
+                  {/* Tabs */}
+                  <div
+                    className="
         flex rounded-xl overflow-hidden mb-6 w-full sm:w-[26rem] mx-auto
         bg-white/30 border border-white/60 backdrop-blur-xl
         shadow-[0_4px_20px_rgba(0,0,0,0.12)]
       "
-    >
-      {["Gmail", "Microsoft"].map((tab) => (
-        <button
-          key={tab}
-          onClick={() => setSelectedTab(tab)}
-          className={`
+                  >
+                    {["Gmail", "Microsoft"].map((tab) => (
+                      <button
+                        key={tab}
+                        onClick={() => setSelectedTab(tab)}
+                        className={`
             w-1/2 px-4 py-2 text-sm font-medium transition-all
             ${
               selectedTab === tab
@@ -1438,85 +1442,86 @@ const SetupFlow = () => {
                 : "text-gray-700 bg-white/20 hover:bg-white/40"
             }
           `}
-        >
-          {tab}
-        </button>
-      ))}
-    </div>
+                      >
+                        {tab}
+                      </button>
+                    ))}
+                  </div>
 
-    {/* Gmail Panel */}
-    {selectedTab === "Gmail" && (
-      <div
-        className="
+                  {/* Gmail Panel */}
+                  {selectedTab === "Gmail" && (
+                    <div
+                      className="
           bg-white/40 backdrop-blur-xl
           border border-white/60
           rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.1)]
           p-6 sm:p-8 text-center flex flex-col items-center
           space-y-4 max-w-sm mx-auto
         "
-      >
-        <p className="text-gray-800 text-sm sm:text-base leading-relaxed">
-          Connect your Gmail account securely using OAuth 2.0.
-        </p>
+                    >
+                      <p className="text-gray-800 text-sm sm:text-base leading-relaxed">
+                        Connect your Gmail account securely using OAuth 2.0.
+                      </p>
 
-        <button
-          onClick={handleGmailConnect}
-          className="
+                      <button
+                        onClick={handleGmailConnect}
+                        className="
             flex items-center gap-2
             px-6 py-3 rounded-full text-sm font-semibold
             bg-[#EA4335] hover:bg-[#C33D2D] text-white
             shadow-[0_6px_20px_rgba(0,0,0,0.2)]
             transition-all hover:scale-[1.05]
           "
-        >
-          <FaGoogle className="text-lg" />
-          Connect with Gmail
-        </button>
-      </div>
-    )}
+                      >
+                        <FaGoogle className="text-lg" />
+                        Connect with Gmail
+                      </button>
+                    </div>
+                  )}
 
-    {/* Microsoft Panel */}
-    {selectedTab === "Microsoft" && (
-      <div
-        className="
+                  {/* Microsoft Panel */}
+                  {selectedTab === "Microsoft" && (
+                    <div
+                      className="
           bg-white/40 backdrop-blur-xl
           border border-white/60
           rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.1)]
           p-6 sm:p-8 text-center flex flex-col items-center
           space-y-4 max-w-sm mx-auto
         "
-      >
-        <p className="text-gray-800 text-sm sm:text-base leading-relaxed">
-          Connect your Outlook or Microsoft 365 account securely using OAuth 2.0.
-        </p>
+                    >
+                      <p className="text-gray-800 text-sm sm:text-base leading-relaxed">
+                        Connect your Outlook or Microsoft 365 account securely
+                        using OAuth 2.0.
+                      </p>
 
-        <button
-          onClick={handleMicrosoftConnect}
-          className="
+                      <button
+                        onClick={handleMicrosoftConnect}
+                        className="
             flex items-center gap-2
             px-6 py-3 rounded-full text-sm font-semibold
             bg-[#0078D4] hover:bg-[#0063B1] text-white
             shadow-[0_6px_20px_rgba(0,0,0,0.2)]
             transition-all hover:scale-[1.05]
           "
-        >
-          <FaMicrosoft className="text-lg" />
-          Connect with Outlook
-        </button>
-      </div>
-    )}
+                      >
+                        <FaMicrosoft className="text-lg" />
+                        Connect with Outlook
+                      </button>
+                    </div>
+                  )}
 
-    {/* Footer Button */}
-    <div className="flex justify-center w-full max-w-md mt-10 border-t border-white/50 pt-6">
-      <button
-        onClick={async () => {
-          await saveSetupProgress({
-            stepCompleted: 4,
-            stepStatus: "completed",
-          });
-          setStep(5);
-        }}
-        className="
+                  {/* Footer Button */}
+                  <div className="flex justify-center w-full max-w-md mt-10 border-t border-white/50 pt-6">
+                    <button
+                      onClick={async () => {
+                        await saveSetupProgress({
+                          stepCompleted: 4,
+                          stepStatus: "completed",
+                        });
+                        setStep(5);
+                      }}
+                      className="
           flex items-center justify-center gap-2
           px-8 py-3 rounded-full text-sm font-semibold
           bg-white/30 border border-white/60
@@ -1525,18 +1530,17 @@ const SetupFlow = () => {
           backdrop-blur-xl
           transition-all hover:bg-white/40 hover:scale-[1.05]
         "
-      >
-        <span>Next</span>
-        <FiArrowRight className="text-indigo-600" />
-      </button>
-    </div>
-  </div>
-)}
-
+                    >
+                      <span>Next</span>
+                      <FiArrowRight className="text-indigo-600" />
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {step === 5 && (
-  <div
-    className="
+                <div
+                  className="
       flex flex-col items-center justify-between
       min-h-[600px] text-center
       p-8 sm:p-10
@@ -1547,27 +1551,27 @@ const SetupFlow = () => {
       backdrop-blur-[20px]
       transition-all duration-500 relative
     "
-    style={{ WebkitBackdropFilter: "blur(20px)" }}
-  >
-    {/* Alert */}
-    <div className="w-full min-h-[48px] flex items-center justify-center mb-2">
-      <AlertMessage />
-    </div>
+                  style={{ WebkitBackdropFilter: "blur(20px)" }}
+                >
+                  {/* Alert */}
+                  <div className="w-full min-h-[48px] flex items-center justify-center mb-2">
+                    <AlertMessage />
+                  </div>
 
-    {/* Header */}
-    <div>
-      <h2 className="text-2xl sm:text-3xl font-bold text-[#111827] mb-3">
-        Review & Go Live
-      </h2>
+                  {/* Header */}
+                  <div>
+                    <h2 className="text-2xl sm:text-3xl font-bold text-[#111827] mb-3">
+                      Review & Go Live
+                    </h2>
 
-      <p className="text-gray-700 text-sm sm:text-base mb-8 max-w-md mx-auto">
-        Confirm your setup and enable automation.
-      </p>
-    </div>
+                    <p className="text-gray-700 text-sm sm:text-base mb-8 max-w-md mx-auto">
+                      Confirm your setup and enable automation.
+                    </p>
+                  </div>
 
-    {/* Checklist Card */}
-    <div
-      className="
+                  {/* Checklist Card */}
+                  <div
+                    className="
         w-full max-w-xl text-left p-6 sm:p-8 space-y-5
         bg-white/35
         border border-white/60
@@ -1576,41 +1580,43 @@ const SetupFlow = () => {
         backdrop-blur-[14px]
         transition-all
       "
-      style={{ WebkitBackdropFilter: "blur(14px)" }}
-    >
-      <div>
-        <h3 className="font-semibold text-[#111827] mb-1">
-          Setup Checklist
-        </h3>
-        <p className="text-sm text-gray-600">
-          Here’s a summary of your setup progress:
-        </p>
-      </div>
+                    style={{ WebkitBackdropFilter: "blur(14px)" }}
+                  >
+                    <div>
+                      <h3 className="font-semibold text-[#111827] mb-1">
+                        Setup Checklist
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        Here’s a summary of your setup progress:
+                      </p>
+                    </div>
 
-      {!setupProgress ? (
-        <p className="text-gray-600 text-center py-6">Loading progress...</p>
-      ) : (
-        <ul className="space-y-3 text-sm text-[#111827]">
-          {setupProgress.steps?.map((stepItem) => (
-            <li
-              key={stepItem.step}
-              className="
+                    {!setupProgress ? (
+                      <p className="text-gray-600 text-center py-6">
+                        Loading progress...
+                      </p>
+                    ) : (
+                      <ul className="space-y-3 text-sm text-[#111827]">
+                        {setupProgress.steps?.map((stepItem) => (
+                          <li
+                            key={stepItem.step}
+                            className="
                 flex items-center justify-between
                 border-b border-white/40
                 pb-2
               "
-            >
-              <div className="flex items-center space-x-2">
-                {stepItem.status === "completed" ? (
-                  <FiCheckCircle className="text-green-600 text-lg" />
-                ) : (
-                  <FiAlertTriangle className="text-yellow-500 text-lg" />
-                )}
-                <span>{stepItem.title}</span>
-              </div>
+                          >
+                            <div className="flex items-center space-x-2">
+                              {stepItem.status === "completed" ? (
+                                <FiCheckCircle className="text-green-600 text-lg" />
+                              ) : (
+                                <FiAlertTriangle className="text-yellow-500 text-lg" />
+                              )}
+                              <span>{stepItem.title}</span>
+                            </div>
 
-              <span
-                className={`
+                            <span
+                              className={`
                   text-xs px-2 py-1 rounded-full
                   ${
                     stepItem.status === "completed"
@@ -1618,28 +1624,28 @@ const SetupFlow = () => {
                       : "bg-yellow-100 text-yellow-700 border border-yellow-300"
                   }
                 `}
-              >
-                {stepItem.status === "completed"
-                  ? "Completed"
-                  : "Skipped"}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+                            >
+                              {stepItem.status === "completed"
+                                ? "Completed"
+                                : "Skipped"}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
 
-    {/* Footer Button */}
-    <div className="flex justify-center mt-10">
-      <button
-        onClick={async () => {
-          await saveSetupProgress({
-            setupCompleted: true,
-            stepCompleted: 5,
-          });
-          navigate("/organization");
-        }}
-        className="
+                  {/* Footer Button */}
+                  <div className="flex justify-center mt-10">
+                    <button
+                      onClick={async () => {
+                        await saveSetupProgress({
+                          setupCompleted: true,
+                          stepCompleted: 5,
+                        });
+                        navigate("/organization");
+                      }}
+                      className="
           flex items-center justify-center gap-2
           px-8 py-3 rounded-full text-sm font-semibold
           text-[#111827]
@@ -1650,15 +1656,14 @@ const SetupFlow = () => {
           hover:bg-white/40 hover:scale-[1.05]
           transition-all duration-300
         "
-        style={{ WebkitBackdropFilter: "blur(14px)" }}
-      >
-        <span>Start building scenarios...</span>
-        <FiArrowRight className="text-indigo-600" />
-      </button>
-    </div>
-  </div>
-)}
-
+                      style={{ WebkitBackdropFilter: "blur(14px)" }}
+                    >
+                      <span>Start building scenarios...</span>
+                      <FiArrowRight className="text-indigo-600" />
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
           {!isExpanded && (
@@ -1837,7 +1842,6 @@ const InstructionPanel = ({
   }`}
       style={{ WebkitBackdropFilter: "blur(12px)" }}
     >
-
       {!isMobile && (
         <button
           onClick={() => setIsExpanded((prev) => !prev)}

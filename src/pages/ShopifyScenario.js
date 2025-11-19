@@ -1736,14 +1736,13 @@ const ShopifyScenariosPage = () => {
 
                     <div className="flex justify-between items-center mb-2">
                       <h4 className="font-semibold text-gray-900">
-                        Webhook Trigger
+                        Webhook Email
                       </h4>
                       <span className="text-xs text-gray-500">1/3</span>
                     </div>
 
                     <p className="text-sm text-gray-600 mb-3">
-                      This is the starting point of your automation. The
-                      workflow is triggered here.
+                      This webhook email is used to receieve the forwarded Lead emails from your email service provider.
                     </p>
 
                     <div className="flex justify-between">
@@ -1814,8 +1813,7 @@ const ShopifyScenariosPage = () => {
                     </div>
 
                     <p className="text-sm text-gray-600 mb-3">
-                      In this step, you can view your test email. It displays
-                      the actual data captured from the webhook.
+                      Router is used to view the Lead email's content, common use is while configuring the Leads email templates and Conditional email flows.
                     </p>
 
                     <div className="flex justify-between">
@@ -1873,14 +1871,14 @@ const ShopifyScenariosPage = () => {
 
                     <div className="flex justify-between items-center mb-2">
                       <h4 className="font-semibold text-gray-900">
-                        Email Templates
+                       Shopify Email Templates
                       </h4>
                       <span className="text-xs text-gray-500">3/3</span>
                     </div>
 
                     <p className="text-sm text-gray-600 mb-3">
-                      Templates define the content of your emails. You can
-                      customize your initial email and follow-ups here.
+                      Shopify email Templates are specifically Designed to manage the email templates based on the Service requested by client
+ 
                     </p>
 
                     <div className="flex justify-between">
