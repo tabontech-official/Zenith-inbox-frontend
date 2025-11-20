@@ -353,222 +353,352 @@ const OthersScenariosPage = () => {
     setShowModuleModal(false);
   };
 
-  const rebuildFlowFromScenario = (scenario) => {
-    const nodes = [];
-    const edges = [];
+  // const rebuildFlowFromScenario = (scenario) => {
+  //   const nodes = [];
+  //   const edges = [];
 
-    // ----------------------------------------------------
-    // ⭐ 1. Webhook Node (root)
-    // ----------------------------------------------------
-    nodes.push({
+
+  //   nodes.push({
+  //     id: "webhook-1",
+  //     type: "webhookNode",
+  //     position: { x: 200, y: 80 },
+  //     data: {
+  //       id: "webhook-1",
+  //       config: {},
+  //       deleteNode: () => deleteNode("webhook-1"),
+  //       openModuleModal: () => {
+  //         setEditingNode("webhook-1");
+  //         setShowModuleModal(true);
+  //       },
+  //       openWebhookModal: () => setShowWebhookModal(true),
+  //     },
+  //   });
+
+  //   scenario.routerBranches.forEach((branch) => {
+  //     let prev = "webhook-1";
+
+  //     branch.modules.forEach((mod) => {
+  //       let nodeType =
+  //         mod.type === "Condition"
+  //           ? "conditionNode"
+  //           : mod.type === "Delay"
+  //           ? "delayNode"
+  //           : mod.type === "Template"
+  //           ? "templateNode"
+  //           : "gmailNode"; // fallback = email node
+
+  //       // ==================================================
+  //       // ⭐  T E M P L A T E   N O D E
+  //       // ==================================================
+  //       if (nodeType === "templateNode") {
+  //         nodes.push({
+  //           id: mod.id,
+  //           type: "templateNode",
+  //           position: mod.position,
+  //           data: {
+  //             id: mod.id,
+  //             config: {
+  //               templateId: mod.templateId || "",
+  //               name: mod.templateName || "",
+  //               content: mod.templateContent || "",
+  //             },
+
+  //             openTemplateModal: () => {
+  //               setEditingNode({ id: mod.id, type: "templateNode" });
+  //               setShowTemplateModal(true);
+  //             },
+
+  //             confirmDeleteNode: () => {
+  //               setNodeToDelete(mod.id);
+  //               setShowDeleteConfirm(true);
+  //             },
+
+  //             openModuleModal: () => {
+  //               setEditingNode({ id: mod.id, type: "templateNode" });
+  //               setShowModuleModal(true);
+  //             },
+  //           },
+  //         });
+
+  //         edges.push({
+  //           id: `edge-${prev}-${mod.id}`,
+  //           source: prev,
+  //           target: mod.id,
+  //           type: "smoothstep",
+  //         });
+
+  //         prev = mod.id;
+  //         return;
+  //       }
+
+  //       // ==================================================
+  //       // ⭐  C O N D I T I O N   N O D E
+  //       // ==================================================
+  //       if (nodeType === "conditionNode") {
+  //         nodes.push({
+  //           id: mod.id,
+  //           type: "conditionNode",
+  //           position: mod.position,
+  //           data: {
+  //             id: mod.id,
+  //             config: mod.filter || { conditions: [] },
+
+  //             openConditionModal: () => {
+  //               setEditingNode({ id: mod.id, type: "conditionNode" });
+  //               setShowFilterModal(true);
+  //             },
+
+  //             confirmDeleteNode: () => {
+  //               setNodeToDelete(mod.id);
+  //               setShowDeleteConfirm(true);
+  //             },
+
+  //             openModuleModal: () => {
+  //               setEditingNode({ id: mod.id, type: "conditionNode" });
+  //               setShowModuleModal(true);
+  //             },
+  //           },
+  //         });
+
+  //         edges.push({
+  //           id: `edge-${prev}-${mod.id}`,
+  //           source: prev,
+  //           target: mod.id,
+  //           type: "smoothstep",
+  //         });
+
+  //         prev = mod.id;
+  //         return;
+  //       }
+
+  //       if (nodeType === "delayNode") {
+  //         nodes.push({
+  //           id: mod.id,
+  //           type: "delayNode",
+  //           position: mod.position,
+  //           data: {
+  //             id: mod.id,
+  //             config: {
+  //               delayValue: mod.delayValue,
+  //               delayUnit: mod.delayUnit,
+  //             },
+
+  //             openEditModal: () => {
+  //               setEditingNode({ id: mod.id, type: "delayNode" });
+  //               setShowDelayModal(true);
+  //             },
+
+  //             confirmDeleteNode: () => {
+  //               setNodeToDelete(mod.id);
+  //               setShowDeleteConfirm(true);
+  //             },
+
+  //             openModuleModal: () => {
+  //               setEditingNode({ id: mod.id, type: "delayNode" });
+  //               setShowModuleModal(true);
+  //             },
+  //           },
+  //         });
+
+  //         edges.push({
+  //           id: `edge-${prev}-${mod.id}`,
+  //           source: prev,
+  //           target: mod.id,
+  //           type: "smoothstep",
+  //         });
+
+  //         prev = mod.id;
+  //         return;
+  //       }
+
+  //       const isMongoId = /^[0-9a-fA-F]{24}$/.test(mod.template);
+  //       nodes.push({
+  //         id: mod.id,
+  //         type: "gmailNode",
+  //         position: mod.position,
+  //         data: {
+  //           id: mod.id,
+
+  //           config: {
+  //             appType: mod.emailType || "",
+  //             emailType: mod.emailType || "",
+  //             to: mod.to || "",
+  //             subject: mod.subject || "",
+  //             cc: mod.cc || [],
+  //             bcc: mod.bcc || [],
+  //             connectionId: mod.connectionId || "",
+
+  //             templateId: isMongoId ? mod.template : null,
+  //             body: isMongoId ? "" : mod.template || "",
+  //           },
+
+  //           openEditEmailModal: () => {
+  //             setEditingNode({ id: mod.id, type: "gmailNode" });
+  //             setShowEmailModal(true);
+  //           },
+
+  //           confirmDeleteNode: () => {
+  //             setNodeToDelete(mod.id);
+  //             setShowDeleteConfirm(true);
+  //           },
+
+  //           openModuleModal: () => {
+  //             setEditingNode({ id: mod.id, type: "gmailNode" });
+  //             setShowModuleModal(true);
+  //           },
+  //         },
+  //       });
+
+  //       edges.push({
+  //         id: `edge-${prev}-${mod.id}`,
+  //         source: prev,
+  //         target: mod.id,
+  //         type: "smoothstep",
+  //       });
+
+  //       prev = mod.id;
+  //     });
+  //   });
+
+  //   // SAVE NODES + EDGES
+  //   setRfNodes(nodes);
+  //   setRfEdges(edges);
+  // };
+
+
+const rebuildFlowFromScenario = (scenario) => {
+  const nodes = [];
+  const edges = [];
+
+  const START_X = 400;
+  const START_Y = 80;
+  const BRANCH_SPACING_X = 350;
+  const NODE_SPACING_Y = 180;
+
+  // Webhook Node (center)
+  nodes.push({
+    id: "webhook-1",
+    type: "webhookNode",
+    position: { x: START_X, y: START_Y },
+    data: {
       id: "webhook-1",
-      type: "webhookNode",
-      position: { x: 200, y: 80 },
-      data: {
-        id: "webhook-1",
-        config: {},
-        deleteNode: () => deleteNode("webhook-1"),
-        openModuleModal: () => {
-          setEditingNode("webhook-1");
-          setShowModuleModal(true);
-        },
-        openWebhookModal: () => setShowWebhookModal(true),
+      config: {},
+      deleteNode: () => deleteNode("webhook-1"),
+      openModuleModal: () => {
+        setEditingNode("webhook-1");
+        setShowModuleModal(true);
       },
-    });
+      openWebhookModal: () => setShowWebhookModal(true),
+    },
+  });
 
-    // ----------------------------------------------------
-    // ⭐ 2. Iterate all router branches
-    // ----------------------------------------------------
-    scenario.routerBranches.forEach((branch) => {
-      let prev = "webhook-1";
+  // Loop each branch separately
+  scenario.routerBranches.forEach((branch, branchIndex) => {
+    const branchX = START_X + (branchIndex === 0 ? -BRANCH_SPACING_X : BRANCH_SPACING_X);
 
-      branch.modules.forEach((mod) => {
-        let nodeType =
-          mod.type === "Condition"
-            ? "conditionNode"
-            : mod.type === "Delay"
-            ? "delayNode"
-            : mod.type === "Template"
-            ? "templateNode"
-            : "gmailNode"; // fallback = email node
+    let prevNodeId = "webhook-1";
 
-        // ==================================================
-        // ⭐  T E M P L A T E   N O D E
-        // ==================================================
-        if (nodeType === "templateNode") {
-          nodes.push({
-            id: mod.id,
-            type: "templateNode",
-            position: mod.position,
-            data: {
-              id: mod.id,
-              config: {
-                templateId: mod.templateId || "",
-                name: mod.templateName || "",
-                content: mod.templateContent || "",
-              },
+    branch.modules.forEach((mod, modIndex) => {
+      const yPos = START_Y + (modIndex + 1) * NODE_SPACING_Y;
+      const nodeType =
+        mod.type === "Condition"
+          ? "conditionNode"
+          : mod.type === "Delay"
+          ? "delayNode"
+          : mod.type === "Template"
+          ? "templateNode"
+          : "gmailNode";
 
-              openTemplateModal: () => {
-                setEditingNode({ id: mod.id, type: "templateNode" });
-                setShowTemplateModal(true);
-              },
-
-              confirmDeleteNode: () => {
-                setNodeToDelete(mod.id);
-                setShowDeleteConfirm(true);
-              },
-
-              openModuleModal: () => {
-                setEditingNode({ id: mod.id, type: "templateNode" });
-                setShowModuleModal(true);
-              },
-            },
-          });
-
-          edges.push({
-            id: `edge-${prev}-${mod.id}`,
-            source: prev,
-            target: mod.id,
-            type: "smoothstep",
-          });
-
-          prev = mod.id;
-          return;
-        }
-
-        // ==================================================
-        // ⭐  C O N D I T I O N   N O D E
-        // ==================================================
-        if (nodeType === "conditionNode") {
-          nodes.push({
-            id: mod.id,
-            type: "conditionNode",
-            position: mod.position,
-            data: {
-              id: mod.id,
-              config: mod.filter || { conditions: [] },
-
-              openConditionModal: () => {
-                setEditingNode({ id: mod.id, type: "conditionNode" });
-                setShowFilterModal(true);
-              },
-
-              confirmDeleteNode: () => {
-                setNodeToDelete(mod.id);
-                setShowDeleteConfirm(true);
-              },
-
-              openModuleModal: () => {
-                setEditingNode({ id: mod.id, type: "conditionNode" });
-                setShowModuleModal(true);
-              },
-            },
-          });
-
-          edges.push({
-            id: `edge-${prev}-${mod.id}`,
-            source: prev,
-            target: mod.id,
-            type: "smoothstep",
-          });
-
-          prev = mod.id;
-          return;
-        }
-
-        if (nodeType === "delayNode") {
-          nodes.push({
-            id: mod.id,
-            type: "delayNode",
-            position: mod.position,
-            data: {
-              id: mod.id,
-              config: {
-                delayValue: mod.delayValue,
-                delayUnit: mod.delayUnit,
-              },
-
-              openEditModal: () => {
-                setEditingNode({ id: mod.id, type: "delayNode" });
-                setShowDelayModal(true);
-              },
-
-              confirmDeleteNode: () => {
-                setNodeToDelete(mod.id);
-                setShowDeleteConfirm(true);
-              },
-
-              openModuleModal: () => {
-                setEditingNode({ id: mod.id, type: "delayNode" });
-                setShowModuleModal(true);
-              },
-            },
-          });
-
-          edges.push({
-            id: `edge-${prev}-${mod.id}`,
-            source: prev,
-            target: mod.id,
-            type: "smoothstep",
-          });
-
-          prev = mod.id;
-          return;
-        }
-
-        const isMongoId = /^[0-9a-fA-F]{24}$/.test(mod.template);
-        nodes.push({
+      const newNode = {
+        id: mod.id,
+        type: nodeType,
+        position: { x: branchX, y: yPos },
+        data: {
           id: mod.id,
-          type: "gmailNode",
-          position: mod.position,
-          data: {
-            id: mod.id,
-
-            config: {
-              appType: mod.emailType || "",
-              emailType: mod.emailType || "",
-              to: mod.to || "",
-              subject: mod.subject || "",
-              cc: mod.cc || [],
-              bcc: mod.bcc || [],
-              connectionId: mod.connectionId || "",
-
-              templateId: isMongoId ? mod.template : null,
-              body: isMongoId ? "" : mod.template || "",
-            },
-
-            openEditEmailModal: () => {
-              setEditingNode({ id: mod.id, type: "gmailNode" });
-              setShowEmailModal(true);
-            },
-
-            confirmDeleteNode: () => {
-              setNodeToDelete(mod.id);
-              setShowDeleteConfirm(true);
-            },
-
-            openModuleModal: () => {
-              setEditingNode({ id: mod.id, type: "gmailNode" });
-              setShowModuleModal(true);
-            },
+          config: mod,
+          openModuleModal: () => {
+            setEditingNode({ id: mod.id, type: nodeType });
+            setShowModuleModal(true);
           },
-        });
+          confirmDeleteNode: () => {
+            setNodeToDelete(mod.id);
+            setShowDeleteConfirm(true);
+          },
+        },
+      };
 
-        edges.push({
-          id: `edge-${prev}-${mod.id}`,
-          source: prev,
-          target: mod.id,
-          type: "smoothstep",
-        });
+      // Gmail special config
+      if (nodeType === "gmailNode") {
+        const isMongoId = /^[0-9a-fA-F]{24}$/.test(mod.template);
+        newNode.data.config = {
+          appType: mod.emailType || "",
+          emailType: mod.emailType || "",
+          to: mod.to || "",
+          subject: mod.subject || "",
+          cc: mod.cc || [],
+          bcc: mod.bcc || [],
+          connectionId: mod.connectionId || "",
+          templateId: isMongoId ? mod.template : null,
+          body: isMongoId ? "" : mod.template || "",
+        };
+        newNode.data.openEditEmailModal = () => {
+          setEditingNode({ id: mod.id, type: "gmailNode" });
+          setShowEmailModal(true);
+        };
+      }
 
-        prev = mod.id;
+      // Template config
+      if (nodeType === "templateNode") {
+        newNode.data.config = {
+          templateId: mod.templateId || "",
+          name: mod.templateName || "",
+          content: mod.templateContent || "",
+        };
+        newNode.data.openTemplateModal = () => {
+          setEditingNode({ id: mod.id, type: "templateNode" });
+          setShowTemplateModal(true);
+        };
+      }
+
+      // Condition config
+      if (nodeType === "conditionNode") {
+        newNode.data.config = mod.filter || { conditions: [] };
+        newNode.data.openConditionModal = () => {
+          setEditingNode({ id: mod.id, type: "conditionNode" });
+          setShowFilterModal(true);
+        };
+      }
+
+      // Delay config
+      if (nodeType === "delayNode") {
+        newNode.data.config = {
+          delayValue: mod.delayValue,
+          delayUnit: mod.delayUnit,
+        };
+        newNode.data.openEditModal = () => {
+          setEditingNode({ id: mod.id, type: "delayNode" });
+          setShowDelayModal(true);
+        };
+      }
+
+      nodes.push(newNode);
+
+      // Connect edge
+      edges.push({
+        id: `edge-${prevNodeId}-${mod.id}`,
+        source: prevNodeId,
+        target: mod.id,
+        type: "smoothstep",
       });
-    });
 
-    // SAVE NODES + EDGES
-    setRfNodes(nodes);
-    setRfEdges(edges);
-  };
+      prevNodeId = mod.id;
+    });
+  });
+
+  setRfNodes(nodes);
+  setRfEdges(edges);
+};
+
 
   const [isTemplateAvailable, setIsTemplateAvailable] = useState(false);
 
@@ -1417,11 +1547,16 @@ const OthersScenariosPage = () => {
             }}
           />
           {showRunTestModal && (
-            <RunTestModal
-              onClose={() => setShowRunTestModal(false)}
-              runScenarioExecutionAnimation={handleRunTest}
-            />
-          )}
+  <RunTestModal
+    onClose={() => setShowRunTestModal(false)}
+    runScenarioExecutionAnimation={runScenarioExecutionAnimation}
+    onTestSuccess={async () => {
+      await fetchTestEmail();      // fetch latest test email
+      setShowTestEmailModal(true); // open TestEmailModal
+    }}
+  />
+)}
+
 
           {showDeleteConfirm && (
             <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 backdrop-blur-sm">

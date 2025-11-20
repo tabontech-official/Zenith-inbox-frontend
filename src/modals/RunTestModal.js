@@ -2,7 +2,11 @@ import React, { useState } from "react";
 import { FiX } from "react-icons/fi";
 import toast from "react-hot-toast";
 
-const RunTestModal = ({ onClose, runScenarioExecutionAnimation }) => {
+const RunTestModal = ({
+  onClose,
+  runScenarioExecutionAnimation,
+  onTestSuccess,
+}) => {
   const [email, setEmail] = useState("");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
@@ -14,34 +18,43 @@ const RunTestModal = ({ onClose, runScenarioExecutionAnimation }) => {
       return;
     }
 
-    // 🔥 1) CLOSE MODAL IMMEDIATELY
-    onClose();
+    setLoading(true);
 
-    // 🔥 2) Run animation in background (user won't see modal)
     const ok = await runScenarioExecutionAnimation();
 
-    // If scenario invalid → stop here
-    if (!ok) return;
+    // ❗ CLOSE MODAL EVEN IF THERE ARE ERRORS
+    if (!ok) {
+      setLoading(false);
+      onClose(); // <-- close modal when nodes show errors
+      return;
+    }
 
-    // 🔥 3) Fire API AFTER closing modal
     try {
       const userId = localStorage.getItem("userid");
 
-      await fetch("https://email-syncing-backend.vercel.app/mailhook/test/custom", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId,
-          emailType: "custom",
-          senderEmail: email,
-          subject,
-          body,
-        }),
-      });
+      await fetch(
+        "https://email-syncing-backend.vercel.app/mailhook/test/custom",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId,
+            emailType: "custom",
+            senderEmail: email,
+            subject,
+            body,
+          }),
+        }
+      );
 
-      toast.success("Test email sent!");
+      toast.success("Validating Scenario");
+
+      onClose(); // close modal
+      onTestSuccess(); // open TestEmailModal
     } catch (err) {
       toast.error("Server error.");
+    } finally {
+      setLoading(false);
     }
   };
 
