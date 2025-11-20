@@ -16,6 +16,7 @@ const GmailNode = ({ data }) => {
       className={`
         relative group
         px-5 py-5 
+        bg-white 
         rounded-2xl 
         border-2 
         shadow-[0_3px_10px_rgba(0,0,0,0.05)]

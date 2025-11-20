@@ -135,11 +135,24 @@ const DelayNode = ({ data }) => {
     : "";
 
   return (
-    <div
+    // <div
+    //   className={`
+    //     relative group
+    //     px-5 py-5 
+    //     rounded-2xl 
+    //     border-2 
+    //     shadow-[0_3px_10px_rgba(0,0,0,0.05)]
+    //     w-[260px]
+    //     transition-all
+    //     ${highlightStyle}
+    //   `}
+    // >
+       <div
       className={`
         relative group
         px-5 py-5 
         rounded-2xl 
+        bg-white 
         border-2 
         shadow-[0_3px_10px_rgba(0,0,0,0.05)]
         w-[260px]
@@ -147,6 +160,7 @@ const DelayNode = ({ data }) => {
         ${highlightStyle}
       `}
     >
+
 
       {/* ---- Delete Button ---- */}
       <button
