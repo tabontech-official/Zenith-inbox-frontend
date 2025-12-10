@@ -337,7 +337,7 @@ const Sidebar = () => {
       <div className="flex items-center justify-between py-5 px-6 border-b bg-white">
         <div className="flex items-center space-x-2">
           <FiMail className="text-indigo-500 text-2xl" />
-          <span className="font-semibold text-lg">Zenith Inbox</span>
+    <span className="font-semibold text-lg">Replex Engine</span>
         </div>
         <button
           onClick={() => setIsSidebarOpen(false)}

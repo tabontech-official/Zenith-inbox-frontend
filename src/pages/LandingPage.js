@@ -170,7 +170,7 @@ const LandingPage = () => {
         <div className="flex items-center space-x-2">
           <FiMail className="text-[#4F46E5] text-2xl" />
           <span className="font-semibold text-lg text-[#111827]">
-            Zenith Inbox
+            Replex Engine
           </span>
         </div>
         <a
