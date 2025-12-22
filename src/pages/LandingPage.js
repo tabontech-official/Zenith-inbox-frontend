@@ -17,7 +17,6 @@ const LandingPage = () => {
   const navigate = useNavigate();
   const [isDemoOpen, setIsDemoOpen] = useState(false);
 
-
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: { opacity: 1, transition: { staggerChildren: 0.15 } },
@@ -41,11 +40,10 @@ const LandingPage = () => {
         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150" />
       </div>
 
-      {/* HEADER */}
       <header className="fixed top-6 inset-x-0 max-w-5xl mx-auto z-50 px-6 py-3 bg-white/[0.03] border border-white/10 backdrop-blur-xl rounded-full flex justify-between items-center shadow-2xl">
         <div className="flex items-center gap-2 group cursor-pointer">
           <div className="p-1.5 text-indigo-500  rounded-lg group-hover:rotate-12 transition-transform">
-          <FiMail className="text-indigo-500 text-2xl" />
+            <FiMail className="text-indigo-500 text-2xl" />
           </div>
           <span className="font-bold tracking-tight text-lg">
             Replex Engine
@@ -92,24 +90,23 @@ const LandingPage = () => {
               Automate Lead Responses & Follow-ups
             </motion.div>
 
-           <motion.h1
-  variants={fadeUp}
-  className="text-6xl md:text-7xl font-black leading-[1.05] tracking-tight"
->
-  Automate lead replies <br/>
-  <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-indigo-400 to-blue-400">
-    visually.
-  </span>
-</motion.h1>
+            <motion.h1
+              variants={fadeUp}
+              className="text-6xl md:text-7xl font-black leading-[1.05] tracking-tight"
+            >
+              Automate lead replies <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-indigo-400 to-blue-400">
+                visually.
+              </span>
+            </motion.h1>
 
             <motion.p
               variants={fadeUp}
               className="text-xl text-gray-400 max-w-lg leading-relaxed font-light"
             >
-            Build visual scenarios to automatically reply to leads, apply delays,
-check conditions, and send the right email template at the right time —
-without writing a single line of code.
-
+              Build visual scenarios to automatically reply to leads, apply
+              delays, check conditions, and send the right email template at the
+              right time — without writing a single line of code.
             </motion.p>
 
             <motion.div variants={fadeUp} className="flex flex-wrap gap-5">
@@ -118,12 +115,11 @@ without writing a single line of code.
                 <FiArrowRight className="group-hover:translate-x-1 transition-transform" />
               </button>
               <button
-  onClick={() => setIsDemoOpen(true)}
-  className="px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl font-bold transition-all flex items-center gap-2"
->
-  <FiPlay className="text-purple-400" /> Watch Demo
-</button>
-
+                onClick={() => setIsDemoOpen(true)}
+                className="px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl font-bold transition-all flex items-center gap-2"
+              >
+                <FiPlay className="text-purple-400" /> Watch Demo
+              </button>
             </motion.div>
           </motion.div>
 
@@ -157,11 +153,11 @@ without writing a single line of code.
           <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
             <div className="max-w-2xl">
               <h2 className="text-4xl md:text-5xl font-bold mb-4 tracking-tight">
-               Lead Automation Engine
-
+                Lead Automation Engine
               </h2>
               <p className="text-gray-400 text-lg">
-                Everything you need to capture, reply, and follow up with leads — automatically.
+                Everything you need to capture, reply, and follow up with leads
+                — automatically.
               </p>
             </div>
             <button className="text-purple-400 font-semibold hover:text-purple-300 transition flex items-center gap-2">
@@ -230,9 +226,8 @@ and where each lead is in your automation."
                   </span>
                 </h2>
                 <p className="text-gray-400 text-lg md:text-xl max-w-md leading-relaxed font-light">
-                 Build powerful lead automation flows with conditions, delays,
-and templates — and respond to every lead instantly.
-
+                  Build powerful lead automation flows with conditions, delays,
+                  and templates — and respond to every lead instantly.
                 </p>
               </div>
 
@@ -243,7 +238,10 @@ and templates — and respond to every lead instantly.
                 >
                   Get Started for Free
                 </button>
-                <button onClick={() => navigate("/talk-to-sales")} className="px-8 py-5 bg-white/5 border border-white/10 rounded-2xl font-bold hover:bg-white/10 transition-all">
+                <button
+                  onClick={() => navigate("/talk-to-sales")}
+                  className="px-8 py-5 bg-white/5 border border-white/10 rounded-2xl font-bold hover:bg-white/10 transition-all"
+                >
                   Talk to Sales
                 </button>
               </div>
@@ -295,43 +293,42 @@ and templates — and respond to every lead instantly.
 
       {/* FOOTER */}
       <footer className="relative z-10 border-t border-white/5 py-12 px-6 text-center text-gray-500 text-sm">
-        <p>© 2024 Replex Engine. Built for the future of AI.</p>
+        <p>© 2025 Replex Engine. Built for the future of AI.</p>
       </footer>
       {/* DEMO VIDEO MODAL */}
-{isDemoOpen && (
-  <motion.div
-    initial={{ opacity: 0 }}
-    animate={{ opacity: 1 }}
-    exit={{ opacity: 0 }}
-    className="fixed inset-0 z-[999] flex items-center justify-center bg-black/80 backdrop-blur-sm"
-    onClick={() => setIsDemoOpen(false)}
-  >
-    <motion.div
-      initial={{ scale: 0.9, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      transition={{ duration: 0.3, ease: "easeOut" }}
-      className="relative w-full max-w-4xl mx-4 rounded-2xl overflow-hidden bg-black border border-white/10 shadow-2xl"
-      onClick={(e) => e.stopPropagation()}
-    >
-      {/* Close Button */}
-      <button
-        onClick={() => setIsDemoOpen(false)}
-        className="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white"
-      >
-        ✕
-      </button>
+      {isDemoOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[999] flex items-center justify-center bg-black/80 backdrop-blur-sm"
+          onClick={() => setIsDemoOpen(false)}
+        >
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            className="relative w-full max-w-4xl mx-4 rounded-2xl overflow-hidden bg-black border border-white/10 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close Button */}
+            <button
+              onClick={() => setIsDemoOpen(false)}
+              className="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white"
+            >
+              ✕
+            </button>
 
-      {/* Video */}
-      <video
-        src="https://videos.ctfassets.net/un655fb9wln6/3wNElEdBiFdK2eauJB7wMp/021db93cbf76430c0b75cfb622876308/make_new_hero_animation.webm"
-        autoPlay
-        controls
-        className="w-full h-full object-cover"
-      />
-    </motion.div>
-  </motion.div>
-)}
-
+            {/* Video */}
+            <video
+              src="https://videos.ctfassets.net/un655fb9wln6/3wNElEdBiFdK2eauJB7wMp/021db93cbf76430c0b75cfb622876308/make_new_hero_animation.webm"
+              autoPlay
+              controls
+              className="w-full h-full object-cover"
+            />
+          </motion.div>
+        </motion.div>
+      )}
     </div>
   );
 };

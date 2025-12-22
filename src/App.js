@@ -98,7 +98,7 @@ function App() {
               </PublicRoute>
             }
           />
-           <Route
+          <Route
             path="/talk-to-sales"
             element={
               <PublicRoute>
@@ -114,7 +114,7 @@ function App() {
               </PublicRoute>
             }
           />
-           <Route
+          <Route
             path="/developer"
             element={
               <PublicRoute>
@@ -122,7 +122,7 @@ function App() {
               </PublicRoute>
             }
           />
-           <Route
+          <Route
             path="/product"
             element={
               <PublicRoute>
@@ -248,7 +248,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-           <Route
+          <Route
             path="/templates/general"
             element={
               <ProtectedRoute>

@@ -19,27 +19,35 @@ const Header = () => {
                  backdrop-blur-xl shadow-2xl
                  flex items-center justify-between"
     >
-      {/* LOGO */}
- <div
-          onClick={() => navigate("/")}
-          className="flex items-center gap-2 cursor-pointer"
-        >               <div className="p-1.5 text-indigo-500  rounded-lg group-hover:rotate-12 transition-transform">
-               <FiMail className="text-indigo-500 text-2xl" />
-               </div>
-               <span className="font-bold tracking-tight text-lg">
-                 Replex Engine
-               </span>
-             </div>
+      <div
+        onClick={() => navigate("/")}
+        className="flex items-center gap-2 cursor-pointer"
+      >
+        {" "}
+        <div className="p-1.5 text-indigo-500  rounded-lg group-hover:rotate-12 transition-transform">
+          <FiMail className="text-indigo-500 text-2xl" />
+        </div>
+        <span className="font-bold tracking-tight text-lg">Replex Engine</span>
+      </div>
 
       {/* NAV */}
       <nav className="hidden md:flex gap-8 text-sm font-medium">
-        <button onClick={() => navigate("/product")} className={isActive("/product")}>
+        <button
+          onClick={() => navigate("/product")}
+          className={isActive("/product")}
+        >
           Product
         </button>
-        <button onClick={() => navigate("/developer")} className={isActive("/developer")}>
+        <button
+          onClick={() => navigate("/developer")}
+          className={isActive("/developer")}
+        >
           Developers
         </button>
-        <button onClick={() => navigate("/pricing")} className={isActive("/pricing")}>
+        <button
+          onClick={() => navigate("/pricing")}
+          className={isActive("/pricing")}
+        >
           Pricing
         </button>
       </nav>
