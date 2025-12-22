@@ -78,6 +78,7 @@ import AdminTemplateUsage from "./Admin/AdminTemplateUsage";
 import AdminTemplate from "./Admin/AdminTemplate";
 import PublicRoute from "./Protection/PublicRoute";
 import Custom from "./pages/CustomTemplate";
+import TalkToSales from "./pages/TalkToSales";
 
 function App() {
   return (
@@ -91,6 +92,14 @@ function App() {
             element={
               <PublicRoute>
                 <LoginPage />
+              </PublicRoute>
+            }
+          />
+           <Route
+            path="/talk-to-sales"
+            element={
+              <PublicRoute>
+                <TalkToSales />
               </PublicRoute>
             }
           />
