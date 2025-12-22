@@ -53,10 +53,10 @@ const LandingPage = () => {
         </div>
 
         <nav className="hidden md:flex gap-8 text-sm font-medium text-gray-400">
-          <a href="#" className="hover:text-white transition">
+          <a href="/product" className="hover:text-white transition">
             Product
           </a>
-          <a href="#" className="hover:text-white transition">
+          <a href="/developer" className="hover:text-white transition">
             Developers
           </a>
           <a href="/pricing" className="hover:text-white transition">

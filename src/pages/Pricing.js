@@ -2,6 +2,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import { FiMail, FiCheck, FiArrowRight, FiStar } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
+import Header from "../component/Header";
 
 /* =======================
    Animations
@@ -29,35 +30,14 @@ const Pricing = () => {
   return (
     // Changed h-screen to min-h-screen and removed overflow-hidden to allow scrolling on mobile
     <div className="min-h-screen bg-[#030014] text-white relative selection:bg-purple-500/30 pb-20">
-      
+      <Header/>
       {/* Ambient background */}
       <div className="fixed inset-0 pointer-events-none z-0">
         <div className="absolute top-0 left-1/4 w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-purple-600/10 rounded-full blur-[120px]" />
         <div className="absolute bottom-0 right-1/4 w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-indigo-600/10 rounded-full blur-[120px]" />
       </div>
 
-      {/* HEADER - Adjusted width for mobile responsiveness */}
-      <header className="fixed top-4 md:top-6 inset-x-4 md:inset-x-0 max-w-5xl mx-auto z-50 px-4 md:px-6 py-3
-                         bg-white/[0.03] border border-white/10
-                         backdrop-blur-xl rounded-full
-                         flex justify-between items-center shadow-2xl">
-        <div
-          onClick={() => navigate("/")}
-          className="flex items-center gap-2 cursor-pointer"
-        >
-          <div className="p-1.5 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg">
-            <FiMail className="text-white text-base md:text-lg" />
-          </div>
-          <span className="font-bold text-sm md:text-lg whitespace-nowrap">Replex Engine</span>
-        </div>
-
-        <button
-          onClick={() => navigate("/login")}
-          className="px-4 py-1.5 md:px-5 md:py-2 text-xs md:text-sm font-bold bg-white text-black rounded-full hover:bg-purple-50 transition"
-        >
-          Get Started
-        </button>
-      </header>
+     
 
       {/* MAIN CONTENT */}
       <main className="relative z-10 pt-32 md:pt-40 px-6">

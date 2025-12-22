@@ -80,6 +80,8 @@ import PublicRoute from "./Protection/PublicRoute";
 import Custom from "./pages/CustomTemplate";
 import TalkToSales from "./pages/TalkToSales";
 import Pricing from "./pages/Pricing";
+import ProductPage from "./pages/ProductPage";
+import DevelopersPage from "./pages/DevelopersPage";
 
 function App() {
   return (
@@ -109,6 +111,22 @@ function App() {
             element={
               <PublicRoute>
                 <Pricing />
+              </PublicRoute>
+            }
+          />
+           <Route
+            path="/developer"
+            element={
+              <PublicRoute>
+                <DevelopersPage />
+              </PublicRoute>
+            }
+          />
+           <Route
+            path="/product"
+            element={
+              <PublicRoute>
+                <ProductPage />
               </PublicRoute>
             }
           />
