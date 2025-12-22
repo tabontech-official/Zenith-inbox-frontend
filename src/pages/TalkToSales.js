@@ -51,7 +51,7 @@ const TalkToSales = () => {
           onClick={() => navigate("/")}
           className="flex items-center gap-2 group cursor-pointer"
         >
-          <div className="p-1.5 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg group-hover:rotate-12 transition-transform">
+          <div className="p-1.5 rounded-lg group-hover:rotate-12 transition-transform">
           <FiMail className="text-indigo-500 text-2xl" />
           </div>
           <span className="font-bold tracking-tight text-lg">

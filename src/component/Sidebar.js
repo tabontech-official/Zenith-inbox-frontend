@@ -73,7 +73,7 @@
 //       replace
 //       ref={ref}
 //       onClick={() => window.innerWidth < 768 && setIsSidebarOpen(false)}
-//       className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition 
+//       className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition
 //       ${
 //         isActive(to)
 //           ? "bg-indigo-100 text-indigo-700 font-semibold"
@@ -136,7 +136,7 @@
 
 //           <button
 //             onClick={() => setIsScenariosOpen(!isScenariosOpen)}
-//             className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm 
+//             className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm
 //               ${
 //                 location.pathname.startsWith("/scenarios")
 //                   ? "bg-indigo-100 text-indigo-700"
@@ -152,7 +152,7 @@
 //           </button>
 
 //           <div
-//             className={`ml-8 mt-2 space-y-1 overflow-hidden transition-all duration-300 
+//             className={`ml-8 mt-2 space-y-1 overflow-hidden transition-all duration-300
 //             ${isScenariosOpen ? "max-h-[200px]" : "max-h-0"}`}
 //           >
 //             {renderNavLink(
@@ -210,7 +210,7 @@
 
 //       {/* Sidebar */}
 //       <aside
-//         className={`fixed top-0 left-0 z-40 h-full w-64 bg-white border-r shadow-xl transition-transform 
+//         className={`fixed top-0 left-0 z-40 h-full w-64 bg-white border-r shadow-xl transition-transform
 //           ${
 //             isSidebarOpen
 //               ? "translate-x-0"
@@ -262,7 +262,7 @@ import {
   FiGitBranch,
   FiMail,
   FiMenu,
-  FiX
+  FiX,
 } from "react-icons/fi";
 import { jwtDecode } from "jwt-decode";
 import SidebarTooltip from "./SidebarTooltip";
@@ -337,7 +337,7 @@ const Sidebar = () => {
       <div className="flex items-center justify-between py-5 px-6 border-b bg-white">
         <div className="flex items-center space-x-2">
           <FiMail className="text-indigo-500 text-2xl" />
-    <span className="font-semibold text-lg">Replex Engine</span>
+          <span className="font-semibold text-lg">Replex Engine</span>
         </div>
         <button
           onClick={() => setIsSidebarOpen(false)}
@@ -380,9 +380,27 @@ const Sidebar = () => {
             className={`ml-8 mt-2 space-y-1 overflow-hidden transition-all duration-300 
             ${isScenariosOpen ? "max-h-[200px]" : "max-h-0"}`}
           >
-            {renderNavLink("All Scenarios", FiZap, "/scenarios/all", allScenarioRef, 2)}
-            {renderNavLink("Shopify Scenario", FiGitBranch, "/scenarios/shopify", shopifyScenarioRef, 3)}
-            {renderNavLink("Custom", FiSettings, "/scenarios/others", customScenarioRef, 4)}
+            {renderNavLink(
+              "All Scenarios",
+              FiZap,
+              "/scenarios/all",
+              allScenarioRef,
+              2
+            )}
+            {renderNavLink(
+              "Shopify Scenario",
+              FiGitBranch,
+              "/scenarios/shopify",
+              shopifyScenarioRef,
+              3
+            )}
+            {renderNavLink(
+              "Custom",
+              FiSettings,
+              "/scenarios/others",
+              customScenarioRef,
+              4
+            )}
           </div>
         </div>
 
