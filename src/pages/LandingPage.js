@@ -59,7 +59,7 @@ const LandingPage = () => {
           <a href="#" className="hover:text-white transition">
             Developers
           </a>
-          <a href="#" className="hover:text-white transition">
+          <a href="/pricing" className="hover:text-white transition">
             Pricing
           </a>
         </nav>
