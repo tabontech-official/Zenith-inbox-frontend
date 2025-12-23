@@ -436,9 +436,6 @@ useEffect(() => {
   const isBlurred =
     open || openScenario || showProfileMenu || guideStep > 0;
 
-  /* ----------------------------------
-     SETUP WIZARD STATUS
-  ---------------------------------- */
   const hasSkippedStep = user?.setup?.steps?.some(
     (s) => s.status === "skipped" || s.status === "incomplete"
   );
@@ -451,9 +448,7 @@ useEffect(() => {
     navigate(skipped ? `/setup?step=${skipped.step}` : "/setup");
   };
 
-  /* ----------------------------------
-     RENDER
-  ---------------------------------- */
+
   return (
     <>
       {isBlurred && (
@@ -463,7 +458,6 @@ useEffect(() => {
       <header className="w-full bg-white px-6 py-3 flex justify-end sticky top-0 z-30 border-b">
         <div className="flex items-center gap-4">
 
-          {/* WIZARD */}
           {!loading && user && (
             <button
               onClick={handleWizardClick}
@@ -478,7 +472,6 @@ useEffect(() => {
             </button>
           )}
 
-          {/* SETTINGS */}
           <div className="relative">
             <button
               onClick={() => setOpen(true)}
@@ -498,7 +491,6 @@ useEffect(() => {
             )}
           </div>
 
-          {/* CREATE SCENARIO */}
           <div className="relative">
             <button
               onClick={() => {
@@ -521,7 +513,6 @@ useEffect(() => {
             )}
           </div>
 
-          {/* PROFILE */}
           <div className="relative" ref={profileRef}>
             <div
               onClick={() => setShowProfileMenu(!showProfileMenu)}
