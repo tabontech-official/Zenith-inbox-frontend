@@ -277,6 +277,62 @@ const Sidebar = () => {
       </div>
     </>
   );
+  const renderAdminSidebar = () => (
+    <>
+      {/* HEADER */}
+      <div className="flex items-center justify-between py-5 px-6 border-b bg-white">
+        <Link to="/admin/dashboard" className="flex items-center space-x-2">
+          <FiGrid className="text-indigo-500 text-2xl" />
+          <span className="font-semibold text-lg">Admin Panel</span>
+        </Link>
+
+        <button
+          onClick={() => setIsSidebarOpen(false)}
+          className="md:hidden text-gray-500 hover:text-indigo-600"
+        >
+          <FiX className="w-6 h-6" />
+        </button>
+      </div>
+
+      {/* NAV */}
+      <nav className="px-4 py-6 space-y-6 overflow-y-auto flex-1">
+        <div>
+          <p className="text-xs text-gray-400 uppercase mb-2">Admin</p>
+          {renderNavLink("Dashboard", FiGrid, "/admin/dashboard")}
+          {renderNavLink("Users", FiUser, "/admin/users")}
+          {renderNavLink("Connections", FiZap, "/admin/connections")}
+        </div>
+
+        <div>
+          <p className="text-xs text-gray-400 uppercase mb-2">Reports</p>
+          {renderNavLink(
+            "User Activity",
+            FiFileText,
+            "/admin/reports/user-activity"
+          )}
+          {renderNavLink(
+            "Email Tracking",
+            FiMail,
+            "/admin/reports/email-tracking"
+          )}
+          {renderNavLink("Scenarios", FiLayers, "/admin/reports/scenarios")}
+          {renderNavLink("Templates", FiFileText, "/admin/reports/templates")}
+        </div>
+      </nav>
+
+      {/* BOTTOM */}
+      <div className="border-t px-4 py-4 bg-white">
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg
+        text-sm font-medium text-red-600 hover:bg-red-50"
+        >
+          <FiLogOut className="w-5 h-5" />
+          <span>Logout</span>
+        </button>
+      </div>
+    </>
+  );
 
   return (
     <>
@@ -300,7 +356,8 @@ const Sidebar = () => {
     ${isSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
   `}
       >
-        {renderUserSidebar()}
+        {/* {renderUserSidebar()} */}
+        {role === "admin" ? renderAdminSidebar() : renderUserSidebar()}
       </aside>
 
       {guideStep > 0 && guideStep <= 4 && (
