@@ -775,7 +775,7 @@ const SetupFlow = () => {
             <div className="flex items-center gap-2 px-3 py-1.5">
               <FiMail className="text-indigo-600 text-2xl sm:text-3xl drop-shadow" />
               <span className="font-semibold text-lg sm:text-xl text-gray-900 drop-shadow">
-                Zenith Inbox
+                Replex Engine
               </span>
             </div>
           </div>
@@ -1416,7 +1416,7 @@ const SetupFlow = () => {
                     <p className="text-gray-700 text-sm sm:text-base mb-8 max-w-md mx-auto">
                       Configure how{" "}
                       <span className="font-semibold text-indigo-600">
-                        Zenith Inbox
+                        Replex Engine
                       </span>{" "}
                       will send replies from your email address.
                     </p>
@@ -1927,7 +1927,7 @@ const InstructionPanel = ({
             </div>
             <p className="text-gray-700 text-sm leading-relaxed mb-4">
               Welcome! You’re about to set up your{" "}
-              <strong className="text-indigo-700">Zenith Inbox</strong>. This
+              <strong className="text-indigo-700">Replex Engine</strong>. This
               process takes less than a minute.
             </p>
             <ul className="list-disc list-inside text-sm text-gray-700 space-y-1.5 mb-5">
@@ -2314,7 +2314,7 @@ const InstructionPanel = ({
                   icon: <FiMail className="text-indigo-600 text-lg mt-0.5" />,
                   text: (
                     <>
-                      Return to this screen. Zenith Inbox will automatically
+                      Return to this screen. Replex Engine will automatically
                       check for Gmail’s confirmation email.
                     </>
                   ),
@@ -2432,7 +2432,7 @@ const InstructionPanel = ({
             {/* Intro */}
             <p className="text-sm text-gray-700 leading-relaxed mb-5">
               Choose how{" "}
-              <strong className="text-indigo-700">Zenith Inbox</strong> will
+              <strong className="text-indigo-700">Replex Engine</strong> will
               send emails on your behalf.
             </p>
 
@@ -2633,7 +2633,7 @@ const InstructionPanel = ({
               <p>
                 <strong>Success Tip:</strong> You’re all set! Once activated,
                 all leads will automatically flow into{" "}
-                <strong className="text-indigo-700">Zenith Inbox</strong>.
+                <strong className="text-indigo-700">Replex Engine</strong>.
               </p>
             </div>
           </div>
