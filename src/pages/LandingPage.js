@@ -151,7 +151,7 @@ const LandingPage = () => {
       <section className="relative z-10 py-32 px-6">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
-            <div className="max-w-2xl">
+            <div className="max-w-2xl mt-12">
               <h2 className="text-4xl md:text-5xl font-bold mb-4 tracking-tight">
                 Lead Automation Engine
               </h2>
