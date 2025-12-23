@@ -33,7 +33,6 @@ const LandingPage = () => {
 
   return (
     <div className="min-h-screen bg-[#030014] text-white selection:bg-purple-500/30 overflow-x-hidden">
-      {/* 1. AMBIENT BACKGROUND */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[120px]" />
         <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[120px]" />
@@ -70,7 +69,6 @@ const LandingPage = () => {
         </button>
       </header>
 
-      {/* HERO SECTION */}
       <main className="relative z-10 max-w-7xl mx-auto px-6 pt-48 pb-20">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
           <motion.div
@@ -110,10 +108,14 @@ const LandingPage = () => {
             </motion.p>
 
             <motion.div variants={fadeUp} className="flex flex-wrap gap-5">
-              <button className="group px-8 py-4 bg-purple-600 hover:bg-purple-500 rounded-2xl font-bold transition-all flex items-center gap-2 shadow-xl shadow-purple-600/20">
-                Start Building Free{" "}
+              <button
+                onClick={() => navigate("/login")}
+                className="group px-8 py-4 bg-purple-600 hover:bg-purple-500 rounded-2xl font-bold transition-all flex items-center gap-2 shadow-xl shadow-purple-600/20"
+              >
+                Start Building Free
                 <FiArrowRight className="group-hover:translate-x-1 transition-transform" />
               </button>
+
               <button
                 onClick={() => setIsDemoOpen(true)}
                 className="px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl font-bold transition-all flex items-center gap-2"
@@ -123,7 +125,6 @@ const LandingPage = () => {
             </motion.div>
           </motion.div>
 
-          {/* VIDEO MOCKUP */}
           <motion.div
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
@@ -147,7 +148,6 @@ const LandingPage = () => {
         </div>
       </main>
 
-      {/* BENTO GRID FEATURES */}
       <section className="relative z-10 py-32 px-6">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
@@ -209,14 +209,11 @@ and where each lead is in your automation."
         </div>
       </section>
 
-      {/* CTA SECTION */}
       <section className="relative z-10 py-20 px-6 max-w-7xl mx-auto">
         <div className="relative rounded-[3rem] p-8 md:p-16 lg:p-20 overflow-hidden border border-white/10 bg-gradient-to-br from-white/[0.08] to-transparent shadow-2xl">
-          {/* Background Glow Effect */}
           <div className="absolute top-0 right-0 w-[50%] h-[100%] bg-purple-600/10 blur-[120px] pointer-events-none" />
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center relative z-10">
-            {/* LEFT SIDE: TEXT CONTENT */}
             <div className="text-left space-y-8">
               <div>
                 <h2 className="text-4xl md:text-6xl font-black mb-6 tracking-tight leading-tight">
@@ -246,7 +243,6 @@ and where each lead is in your automation."
                 </button>
               </div>
 
-              {/* Social Proof Mini-Tag */}
               <div className="flex items-center gap-3 text-sm text-gray-500">
                 <div className="flex -space-x-2">
                   {[1, 2, 3].map((i) => (
@@ -260,14 +256,12 @@ and where each lead is in your automation."
               </div>
             </div>
 
-            {/* RIGHT SIDE: IMAGE/VISUAL */}
             <motion.div
               initial={{ y: 20, opacity: 0 }}
               whileInView={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.8, ease: "easeOut" }}
               className="relative group"
             >
-              {/* The Image Container */}
               <div className="relative rounded-3xl overflow-hidden border border-white/10 bg-black/40 p-2 shadow-2xl rotate-2 group-hover:rotate-0 transition-transform duration-500">
                 <img
                   src="https://images.ctfassets.net/un655fb9wln6/6zii7sDfVNFq54etd22DzK/ad8a50813dffde8584d269de35c92e36/ai.png"
@@ -275,7 +269,6 @@ and where each lead is in your automation."
                   className="rounded-2xl w-full h-auto object-cover opacity-90 group-hover:opacity-100 transition-opacity"
                 />
 
-                {/* Subtle Floating Badge on Image */}
                 <div className="absolute bottom-6 left-6 right-6 p-4 bg-black/60 backdrop-blur-md border border-white/10 rounded-xl flex items-center gap-3 animate-bounce-slow">
                   <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                   <span className="text-xs font-mono text-gray-300">
@@ -284,18 +277,15 @@ and where each lead is in your automation."
                 </div>
               </div>
 
-              {/* Outer Decorative Rings */}
               <div className="absolute -z-10 -top-10 -right-10 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl opacity-50" />
             </motion.div>
           </div>
         </div>
       </section>
 
-      {/* FOOTER */}
       <footer className="relative z-10 border-t border-white/5 py-12 px-6 text-center text-gray-500 text-sm">
         <p>© 2025 Replex Engine. Built for the future of AI.</p>
       </footer>
-      {/* DEMO VIDEO MODAL */}
       {isDemoOpen && (
         <motion.div
           initial={{ opacity: 0 }}
@@ -311,7 +301,6 @@ and where each lead is in your automation."
             className="relative w-full max-w-4xl mx-4 rounded-2xl overflow-hidden bg-black border border-white/10 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Close Button */}
             <button
               onClick={() => setIsDemoOpen(false)}
               className="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white"
@@ -319,7 +308,6 @@ and where each lead is in your automation."
               ✕
             </button>
 
-            {/* Video */}
             <video
               src="https://videos.ctfassets.net/un655fb9wln6/3wNElEdBiFdK2eauJB7wMp/021db93cbf76430c0b75cfb622876308/make_new_hero_animation.webm"
               autoPlay
