@@ -162,10 +162,10 @@ window.dispatchEvent(new Event("sidebarGuideCompleted"));
   const renderUserSidebar = () => (
     <>
       <div className="flex items-center justify-between py-5 px-6 border-b bg-white">
-        <div className="flex items-center space-x-2">
-          <FiMail className="text-indigo-500 text-2xl" />
-          <span className="font-semibold text-lg">Replex Engine</span>
-        </div>
+        <Link to="/organization" className="flex items-center space-x-2">
+  <FiMail className="text-indigo-500 text-2xl" />
+  <span className="font-semibold text-lg">Replex Engine</span>
+</Link>
         <button
           onClick={() => setIsSidebarOpen(false)}
           className="md:hidden text-gray-500 hover:text-indigo-600"
