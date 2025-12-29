@@ -237,7 +237,7 @@ const LoginPage = () => {
             Create an account
           </p>
 
-          <div className="mt-6 text-sm text-gray-500 text-center space-y-1">
+          <div className="mt-1 text-sm text-gray-500 text-center space-y-1">
             <p
               onClick={() => {
                 navigate("/forgot-password");
