@@ -246,7 +246,7 @@ const LoginPage = () => {
             >
               Forgot password?
             </p>
-            <p className="hover:underline cursor-pointer">
+            {/* <p className="hover:underline cursor-pointer">
               Resend verification email
             </p>
             <p>
@@ -255,7 +255,7 @@ const LoginPage = () => {
                 Click here
               </span>
               .
-            </p>
+            </p> */}
           </div>
         </motion.div>
       </motion.div>

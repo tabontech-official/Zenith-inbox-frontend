@@ -22,8 +22,40 @@ const fadeUp = {
   },
 };
 
+
+
+
 const Pricing = () => {
+  
   const navigate = useNavigate();
+const handleProCheckout = async () => {
+  try {
+    const userId = localStorage.getItem("userid"); // ya context se
+
+    if (!userId) {
+      navigate("/login");
+      return;
+    }
+
+    const res = await fetch(
+      `https://email-syncing-backend.vercel.app/stripe/create-checkout-session/${userId}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    const data = await res.json();
+
+    if (data.url) {
+      window.location.href = data.url; // 🔥 Stripe Checkout open
+    }
+  } catch (err) {
+    console.error("Checkout error:", err);
+  }
+};
 
   return (
     <div className="min-h-screen bg-[#030014] text-white relative overflow-x-hidden">
@@ -112,7 +144,7 @@ const Pricing = () => {
                               px-4 py-1 rounded-full
                               bg-gradient-to-r from-purple-500 to-indigo-500
                               text-xs font-bold uppercase tracking-wider">
-                Coming Soon
+                 Most Popular
               </div>
 
               <div>
@@ -125,7 +157,7 @@ const Pricing = () => {
                 </p>
 
                 <div className="flex items-end gap-2 mb-6">
-                  <span className="text-4xl font-black">$9.99</span>
+                  <span className="text-4xl font-black">$29.99</span>
                   <span className="text-gray-300 mb-1">/month</span>
                 </div>
 
@@ -145,15 +177,16 @@ const Pricing = () => {
                 </ul>
               </div>
 
-              <button
-                onClick={() => navigate("/talk-to-sales")}
-                className="mt-6 w-full py-3 rounded-xl font-semibold
-                           bg-gradient-to-r from-purple-500 to-indigo-500
-                           hover:opacity-90 transition
-                           flex items-center justify-center gap-2"
-              >
-                Join Waitlist <FiArrowRight />
-              </button>
+          <button
+  onClick={handleProCheckout}
+  className="mt-6 w-full py-3 rounded-xl font-semibold
+             bg-gradient-to-r from-purple-500 to-indigo-500
+             hover:opacity-90 transition
+             flex items-center justify-center gap-2"
+>
+  Upgrade · Pro <FiArrowRight />
+</button>
+
             </motion.div>
 
           </div>
