@@ -4,7 +4,6 @@ import { FiCheck, FiArrowRight, FiStar } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import Header from "../component/Header";
 
-
 const container = {
   hidden: { opacity: 0 },
   visible: {
@@ -22,40 +21,36 @@ const fadeUp = {
   },
 };
 
-
-
-
 const Pricing = () => {
-  
   const navigate = useNavigate();
-const handleProCheckout = async () => {
-  try {
-    const userId = localStorage.getItem("userid"); // ya context se
+  const handleProCheckout = async () => {
+    try {
+      const userId = localStorage.getItem("userid"); // ya context se
 
-    if (!userId) {
-      navigate("/login");
-      return;
-    }
-
-    const res = await fetch(
-      `https://email-syncing-backend.vercel.app/stripe/create-checkout-session/${userId}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+      if (!userId) {
+        navigate("/login");
+        return;
       }
-    );
 
-    const data = await res.json();
+      const res = await fetch(
+        `https://email-syncing-backend.vercel.app/stripe/create-checkout-session/${userId}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
-    if (data.url) {
-      window.location.href = data.url; // 🔥 Stripe Checkout open
+      const data = await res.json();
+
+      if (data.url) {
+        window.location.href = data.url; // 🔥 Stripe Checkout open
+      }
+    } catch (err) {
+      console.error("Checkout error:", err);
     }
-  } catch (err) {
-    console.error("Checkout error:", err);
-  }
-};
+  };
 
   return (
     <div className="min-h-screen bg-[#030014] text-white relative overflow-x-hidden">
@@ -86,10 +81,7 @@ const handleProCheckout = async () => {
             </span>
           </motion.h1>
 
- 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-            
-          
             <motion.div
               variants={fadeUp}
               className="flex flex-col justify-between rounded-3xl p-6
@@ -132,7 +124,6 @@ const handleProCheckout = async () => {
               </button>
             </motion.div>
 
-      
             <motion.div
               variants={fadeUp}
               className="relative flex flex-col justify-between rounded-3xl p-6
@@ -140,11 +131,13 @@ const handleProCheckout = async () => {
                          border border-purple-500/50
                          shadow-[0_0_70px_rgba(139,92,246,0.35)]"
             >
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2
+              <div
+                className="absolute -top-4 left-1/2 -translate-x-1/2
                               px-4 py-1 rounded-full
                               bg-gradient-to-r from-purple-500 to-indigo-500
-                              text-xs font-bold uppercase tracking-wider">
-                 Most Popular
+                              text-xs font-bold uppercase tracking-wider"
+              >
+                Most Popular
               </div>
 
               <div>
@@ -177,18 +170,16 @@ const handleProCheckout = async () => {
                 </ul>
               </div>
 
-          <button
-  onClick={handleProCheckout}
-  className="mt-6 w-full py-3 rounded-xl font-semibold
+              <button
+                onClick={handleProCheckout}
+                className="mt-6 w-full py-3 rounded-xl font-semibold
              bg-gradient-to-r from-purple-500 to-indigo-500
              hover:opacity-90 transition
              flex items-center justify-center gap-2"
->
-  Upgrade · Pro <FiArrowRight />
-</button>
-
+              >
+                Upgrade · Pro <FiArrowRight />
+              </button>
             </motion.div>
-
           </div>
         </motion.div>
       </main>

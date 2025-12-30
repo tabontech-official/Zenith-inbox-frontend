@@ -22,7 +22,6 @@ const Sidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isScenariosOpen, setIsScenariosOpen] = useState(true);
   const [role, setRole] = useState("user");
@@ -31,22 +30,17 @@ const Sidebar = () => {
   const token = localStorage.getItem("usertoken");
   const userId = localStorage.getItem("userid");
 
-
-const UpgradeBadge = () => (
-  <Link
-    to="/pricing"
-    className="flex items-center justify-between px-3 py-2 rounded-lg
+  const UpgradeBadge = () => (
+    <Link
+      to="/pricing"
+      className="flex items-center justify-between px-3 py-2 rounded-lg
     bg-gradient-to-r from-indigo-500 to-purple-600
     text-white text-sm font-semibold hover:opacity-90 transition"
-  >
-    <span>Upgrade Plan</span>
-    <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">
-      PRO
-    </span>
-  </Link>
-);
-
-
+    >
+      <span>Upgrade Plan</span>
+      <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">PRO</span>
+    </Link>
+  );
 
   useEffect(() => {
     const fetchGuide = async () => {
@@ -62,13 +56,11 @@ const UpgradeBadge = () => (
 
         const data = await res.json();
 
-        // ❌ Already completed → don't show
         if (data.sidebar.completed) {
           setGuideStep(0);
           return;
         }
 
-        // ✅ First time / ongoing
         setGuideStep(data.sidebar.step || 1);
       } catch (err) {
         console.error("Guide fetch error", err);
@@ -271,8 +263,8 @@ const UpgradeBadge = () => (
           {renderNavLink("Connection", FiZap, "/connection")}
         </div>
       </nav>
-<div className="mt-auto border-t px-4 py-4 bg-white space-y-2">
-          <UpgradeBadge />
+      <div className="mt-auto border-t px-4 py-4 bg-white space-y-2">
+        <UpgradeBadge />
 
         <Link
           to="/profile"
@@ -300,7 +292,6 @@ const UpgradeBadge = () => (
   );
   const renderAdminSidebar = () => (
     <>
-      {/* HEADER */}
       <div className="flex items-center justify-between py-5 px-6 border-b bg-white">
         <Link to="/admin/dashboard" className="flex items-center space-x-2">
           <FiGrid className="text-indigo-500 text-2xl" />
@@ -315,7 +306,6 @@ const UpgradeBadge = () => (
         </button>
       </div>
 
-      {/* NAV */}
       <nav className="px-4 py-6 space-y-6 overflow-y-auto flex-1">
         <div>
           <p className="text-xs text-gray-400 uppercase mb-2">Admin</p>
@@ -341,7 +331,6 @@ const UpgradeBadge = () => (
         </div>
       </nav>
 
-      {/* BOTTOM */}
       <div className="border-t px-4 py-4 bg-white">
         <button
           onClick={handleLogout}

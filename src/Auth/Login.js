@@ -1,4 +1,3 @@
-
 import React, { useContext, useState } from "react";
 import { FaEye, FaEyeSlash, FaUser, FaLock } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
@@ -70,59 +69,59 @@ const LoginPage = () => {
   // };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  setError("");
-  setSuccess("");
-  setLoading(true);
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+    setLoading(true);
 
-  try {
-    const response = await axios.post(
-      "https://email-syncing-backend.vercel.app/auth/signIn",
-      { email, password }
-    );
+    try {
+      const response = await axios.post(
+        "https://email-syncing-backend.vercel.app/auth/signIn",
+        { email, password }
+      );
 
-    if (response.status === 200) {
-      const { token, data } = response.data;
-      localStorage.setItem("usertoken", token);
-      localStorage.setItem("userid", data._id);
-      setUser(data);
-      setSuccess("Login successful! Redirecting...");
-      setLoading(false);
+      if (response.status === 200) {
+        const { token, data } = response.data;
+        localStorage.setItem("usertoken", token);
+        localStorage.setItem("userid", data._id);
+        setUser(data);
+        setSuccess("Login successful! Redirecting...");
+        setLoading(false);
 
-      const userRole = data?.role || "user"; // 👈 check the role
-      const completed = data?.setup?.stepCompleted || 0;
+        const userRole = data?.role || "user"; // 👈 check the role
+        const completed = data?.setup?.stepCompleted || 0;
 
-      setTimeout(() => {
-        // 🔹 Admin goes straight to dashboard
-        if (userRole === "admin") {
-          navigate("/admin/dashboard", { replace: true });
-        }
-        // 🔹 Normal user follows setup logic
-        else if (completed >= 7) {
-          navigate("/organization", { replace: true });
-        } else {
-          const steps = data?.setup?.steps || [];
-          const nextSkippedStep = steps.find(
-            (s) => s.status === "skipped"
-          )?.step;
-
-          if (nextSkippedStep) {
-            navigate(`/setup?step=${nextSkippedStep}`, { replace: true });
-          } else if (completed > 0) {
-            navigate(`/setup?step=${completed + 1}`, { replace: true });
-          } else {
-            navigate("/setup", { replace: true });
+        setTimeout(() => {
+          // 🔹 Admin goes straight to dashboard
+          if (userRole === "admin") {
+            navigate("/admin/dashboard", { replace: true });
           }
-        }
-      }, 1500);
+          // 🔹 Normal user follows setup logic
+          else if (completed >= 7) {
+            navigate("/organization", { replace: true });
+          } else {
+            const steps = data?.setup?.steps || [];
+            const nextSkippedStep = steps.find(
+              (s) => s.status === "skipped"
+            )?.step;
+
+            if (nextSkippedStep) {
+              navigate(`/setup?step=${nextSkippedStep}`, { replace: true });
+            } else if (completed > 0) {
+              navigate(`/setup?step=${completed + 1}`, { replace: true });
+            } else {
+              navigate("/setup", { replace: true });
+            }
+          }
+        }, 1500);
+      }
+    } catch (error) {
+      setLoading(false);
+      setError(
+        error.response?.data?.error || "Login failed. Please try again."
+      );
     }
-  } catch (error) {
-    setLoading(false);
-    setError(
-      error.response?.data?.error || "Login failed. Please try again."
-    );
-  }
-};
+  };
 
   return (
     <div className="min-h-screen flex bg-gradient-to-br from-purple-600 to-fuchsia-600 relative overflow-hidden">

@@ -161,14 +161,17 @@ const SetupFlow = () => {
 
   const saveSetupProgress = async (data = {}) => {
     try {
-      const res = await fetch(`https://email-syncing-backend.vercel.app/auth/setup/${user._id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...data,
-          updatedAt: new Date(),
-        }),
-      });
+      const res = await fetch(
+        `https://email-syncing-backend.vercel.app/auth/setup/${user._id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...data,
+            updatedAt: new Date(),
+          }),
+        }
+      );
 
       const result = await res.json();
 
@@ -195,15 +198,18 @@ const SetupFlow = () => {
     const stepToUpdate = isSkipped ? step : nextStep;
 
     try {
-      const res = await fetch(`https://email-syncing-backend.vercel.app/auth/setup/${user._id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          stepCompleted: stepToUpdate,
-          stepStatus: status,
-          ...extra,
-        }),
-      });
+      const res = await fetch(
+        `https://email-syncing-backend.vercel.app/auth/setup/${user._id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            stepCompleted: stepToUpdate,
+            stepStatus: status,
+            ...extra,
+          }),
+        }
+      );
 
       const result = await res.json();
       if (result.success) {
@@ -240,11 +246,14 @@ const SetupFlow = () => {
       const userId = localStorage.getItem("userid");
       const payload = { ...smtpForm, userId, provider: "outlook" };
 
-      const res = await fetch("https://email-syncing-backend.vercel.app/auth/saveSmtpConnection", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const res = await fetch(
+        "https://email-syncing-backend.vercel.app/auth/saveSmtpConnection",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
 
       if (!res.ok) throw new Error("Failed to save SMTP connection");
       alert("SMTP connection saved successfully!");
@@ -541,7 +550,9 @@ const SetupFlow = () => {
     const fetchSetupProgress = async () => {
       try {
         if (!user?._id) return;
-        const res = await fetch(`https://email-syncing-backend.vercel.app/auth/setup/${user._id}`);
+        const res = await fetch(
+          `https://email-syncing-backend.vercel.app/auth/setup/${user._id}`
+        );
         const data = await res.json();
         if (data.success) setSetupProgress(data.data);
       } catch (err) {
@@ -1824,18 +1835,40 @@ const InstructionPanel = ({
   const { user, loading } = useContext(UserContext);
 
   return (
+    //   <div
+    //     className={`${
+    //       isMobile ? "flex" : "hidden lg:flex"
+    //     } flex-col min-h-screen justify-start
+    // backdrop-blur-[12px]
+    // bg-white/20
+    // border-l border-white/30
+    // shadow-[0_8px_40px_rgba(0,0,0,0.10)]
+    // transition-all duration-500 ease-in-out overflow-y-auto relative
+    // ${
+    //   isMobile
+    //     ? "w-full h-full p-5 text-sm"
+    //     : isExpanded
+    //     ? "w-[700px] p-8"
+    //     : "w-[450px] p-7"
+    // }`}
+    //     style={{ WebkitBackdropFilter: "blur(12px)" }}
+    //   >
     <div
-      className={`${
-        isMobile ? "flex" : "hidden lg:flex"
-      } flex-col min-h-screen justify-start 
+      className={`${isMobile ? "flex" : "hidden lg:flex"} flex-col 
+  h-screen            /* 👈 FIXED HEIGHT */
+  max-h-screen        /* 👈 ENSURE LIMIT */
+  justify-start 
   backdrop-blur-[12px]
   bg-white/20
   border-l border-white/30
   shadow-[0_8px_40px_rgba(0,0,0,0.10)]
-  transition-all duration-500 ease-in-out overflow-y-auto relative
+  transition-all duration-500 ease-in-out
+  overflow-y-auto     /* 👈 SCROLL ENABLED */
+  overflow-x-hidden
+  relative
   ${
     isMobile
-      ? "w-full h-full p-5 text-sm"
+      ? "w-full p-5 text-sm"
       : isExpanded
       ? "w-[700px] p-8"
       : "w-[450px] p-7"
