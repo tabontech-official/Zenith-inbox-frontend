@@ -12,15 +12,12 @@ export default function Template() {
   const { user } = useContext(UserContext);
   const plan = user?.subscription?.plan || "free";
   const isPro = plan === "pro";
-  const handleGenerateAI = (template) => {
-    toast.success(`AI generating template for ${template.service}`);
-    // future: call backend AI API
-  };
+  const [aiLoadingId, setAiLoadingId] = useState(null);
 
   const [templates, setTemplates] = useState([]);
   const urlParams = new URLSearchParams(location.search);
 
-  const viewType = urlParams.get("view"); // e.g. "Initial Email" or "First Follow-up"
+  const viewType = urlParams.get("view");
   const [filteredTemplates, setFilteredTemplates] = useState([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -257,6 +254,36 @@ export default function Template() {
   );
   const columnCount = isPro ? 6 : 5;
 
+  const handleGenerateAI = async (template) => {
+    if (aiLoadingId) return; // 🔒 global lock
+    if (!isPro) return toast.error("Upgrade to Pro to use AI");
+
+    try {
+      setAiLoadingId(template._id); // 🔒 lock
+      const userId = localStorage.getItem("userid");
+
+      toast.loading("Generating with AI...");
+
+      const res = await axios.post(
+        "https://email-syncing-backend.vercel.app/template/ai/generate",
+        { userId, templateId: template._id }
+      );
+
+      toast.dismiss();
+      toast.success("AI template generated!");
+
+      handleEdit(res.data.template);
+
+      // 🔄 auto re-fetch templates
+      await fetchTemplates();
+    } catch (err) {
+      toast.dismiss();
+      toast.error("AI generation failed");
+    } finally {
+      setAiLoadingId(null); // 🔓 unlock
+    }
+  };
+
   return (
     <div className="flex">
       <Sidebar />
@@ -394,11 +421,19 @@ export default function Template() {
                               <td className="p-3">
                                 <button
                                   onClick={() => handleGenerateAI(t)}
-                                  className="px-3 py-1.5 text-xs font-semibold rounded-md
-        bg-gradient-to-r from-violet-600 to-indigo-600
-        text-white hover:opacity-90 transition shadow-sm"
+                                  disabled={aiLoadingId !== null}
+                                  className={`px-3 py-1.5 text-xs font-semibold rounded-md transition shadow-sm
+    ${
+      aiLoadingId === t._id
+        ? "bg-gray-400 text-white cursor-not-allowed"
+        : aiLoadingId
+        ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+        : "bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:opacity-90"
+    }`}
                                 >
-                                  Generate with AI
+                                  {aiLoadingId === t._id
+                                    ? "Generating..."
+                                    : "Generate with AI"}
                                 </button>
                               </td>
                             )}
