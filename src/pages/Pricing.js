@@ -25,7 +25,7 @@ const Pricing = () => {
   const navigate = useNavigate();
   const handleProCheckout = async () => {
     try {
-      const userId = localStorage.getItem("userid"); // ya context se
+      const userId = localStorage.getItem("userid"); 
 
       if (!userId) {
         navigate("/login");

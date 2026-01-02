@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useContext } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   FiGrid,
@@ -17,10 +17,14 @@ import {
 } from "react-icons/fi";
 import { jwtDecode } from "jwt-decode";
 import SidebarTooltip from "./SidebarTooltip";
+import { UserContext } from "./UserContext";
 
 const Sidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user, loading } = useContext(UserContext);
+
+  const plan = user?.subscription?.plan || "free";
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isScenariosOpen, setIsScenariosOpen] = useState(true);
@@ -33,26 +37,31 @@ const Sidebar = () => {
   const UpgradeBadge = () => (
     <Link
       to="/pricing"
-      className="flex items-center justify-between px-3 py-2 rounded-lg
-    bg-gradient-to-r from-indigo-500 to-purple-600
-    text-white text-sm font-semibold hover:opacity-90 transition"
+      className="group flex items-center justify-between px-3 py-2 rounded-lg
+      border border-indigo-200 bg-indigo-50
+      text-indigo-700 text-sm font-semibold
+      hover:bg-indigo-100 transition
+      focus:outline-none focus:ring-2 focus:ring-indigo-300"
     >
       <span>Upgrade Plan</span>
-      <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">PRO</span>
+      <span
+        className="text-[11px] font-bold tracking-wide
+      bg-indigo-600 text-white
+      px-2 py-0.5 rounded-full"
+      >
+        PRO
+      </span>
     </Link>
   );
 
   useEffect(() => {
     const fetchGuide = async () => {
       try {
-        const res = await fetch(
-          `https://email-syncing-backend.vercel.app/auth/guide/${userId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const res = await fetch(`https://email-syncing-backend.vercel.app/auth/guide/${userId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
         const data = await res.json();
 
@@ -71,12 +80,9 @@ const Sidebar = () => {
   }, []);
 
   const handleLogout = async () => {
-    await fetch(
-      `https://email-syncing-backend.vercel.app/auth/logout/${userId}`,
-      {
-        method: "POST",
-      }
-    );
+    await fetch(`https://email-syncing-backend.vercel.app/auth/logout/${userId}`, {
+      method: "POST",
+    });
     localStorage.clear();
     navigate("/login", { replace: true });
     window.location.reload();
@@ -97,49 +103,7 @@ const Sidebar = () => {
     if (next > LAST_STEP) {
       setGuideStep(0);
 
-      await fetch(
-        `https://email-syncing-backend.vercel.app/auth/guide/${userId}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            type: "sidebar",
-            completed: true,
-            step: LAST_STEP + 1,
-          }),
-        }
-      );
-      window.dispatchEvent(new Event("sidebarGuideCompleted"));
-      return;
-    }
-
-    setGuideStep(next);
-
-    await fetch(
-      `https://email-syncing-backend.vercel.app/auth/guide/${userId}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          type: "sidebar",
-          step: next,
-        }),
-      }
-    );
-  };
-
-  const skipGuide = async () => {
-    setGuideStep(0);
-
-    await fetch(
-      `https://email-syncing-backend.vercel.app/auth/guide/${userId}`,
-      {
+      await fetch(`https://email-syncing-backend.vercel.app/auth/guide/${userId}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -148,9 +112,42 @@ const Sidebar = () => {
         body: JSON.stringify({
           type: "sidebar",
           completed: true,
+          step: LAST_STEP + 1,
         }),
-      }
-    );
+      });
+      window.dispatchEvent(new Event("sidebarGuideCompleted"));
+      return;
+    }
+
+    setGuideStep(next);
+
+    await fetch(`https://email-syncing-backend.vercel.app/auth/guide/${userId}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        type: "sidebar",
+        step: next,
+      }),
+    });
+  };
+
+  const skipGuide = async () => {
+    setGuideStep(0);
+
+    await fetch(`https://email-syncing-backend.vercel.app/auth/guide/${userId}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        type: "sidebar",
+        completed: true,
+      }),
+    });
     window.dispatchEvent(new Event("sidebarGuideCompleted"));
   };
 
@@ -264,7 +261,18 @@ const Sidebar = () => {
         </div>
       </nav>
       <div className="mt-auto border-t px-4 py-4 bg-white space-y-2">
-        <UpgradeBadge />
+        {!loading && plan !== "pro" && <UpgradeBadge />}
+        {!loading && plan === "pro" && (
+          <div
+            className="flex items-center justify-center gap-2 px-3 py-2 
+    rounded-lg text-xs font-semibold
+    bg-gradient-to-r from-emerald-500/10 to-teal-500/10
+    text-emerald-700 border border-emerald-200"
+          >
+            <span className="inline-block h-2 w-2 rounded-full bg-emerald-500"></span>
+            PRO plan active
+          </div>
+        )}
 
         <Link
           to="/profile"

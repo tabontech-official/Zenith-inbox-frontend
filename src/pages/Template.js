@@ -1,13 +1,21 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useContext } from "react";
 import Sidebar from "../component/Sidebar";
 import axios from "axios";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import toast from "react-hot-toast";
 import { useLocation, useNavigate } from "react-router-dom";
+import { UserContext } from "../component/UserContext";
 
 export default function Template() {
   const location = useLocation();
+  const { user } = useContext(UserContext);
+  const plan = user?.subscription?.plan || "free";
+  const isPro = plan === "pro";
+  const handleGenerateAI = (template) => {
+    toast.success(`AI generating template for ${template.service}`);
+    // future: call backend AI API
+  };
 
   const [templates, setTemplates] = useState([]);
   const urlParams = new URLSearchParams(location.search);
@@ -40,12 +48,9 @@ export default function Template() {
     try {
       setLoading(true);
       const userId = localStorage.getItem("userid");
-      const res = await axios.get(
-        "https://email-syncing-backend.vercel.app/template/all",
-        {
-          params: { userId },
-        }
-      );
+      const res = await axios.get("https://email-syncing-backend.vercel.app/template/all", {
+        params: { userId },
+      });
 
       setTemplates(res.data);
       setFilteredTemplates(res.data);
@@ -67,15 +72,12 @@ export default function Template() {
   }, []);
   const [selectedSequenceFilter, setSelectedSequenceFilter] = useState("All");
 
-  // 🟢 Filter Templates whenever dropdown changes
   useEffect(() => {
     let filtered = [...templates];
 
-    // 🟣 If "viewType" exists (like Initial Email, First Follow-up, etc.)
     if (viewType) {
       const lowerView = viewType.toLowerCase();
 
-      // Step 1: Filter by sequence (Initial / First / Second)
       filtered = filtered.filter((t) => {
         const name = t.name?.toLowerCase() || "";
         if (lowerView.includes("initial")) return name.includes("initial");
@@ -84,7 +86,6 @@ export default function Template() {
         return false;
       });
 
-      // Step 2: If user selects a service manually → filter inside same sequence
       if (selectedServiceFilter !== "All") {
         filtered = filtered.filter(
           (t) =>
@@ -96,7 +97,6 @@ export default function Template() {
       return;
     }
 
-    // 🟡 Normal filters (when not viewing a specific sequence)
     if (selectedServiceFilter === "All") {
       setFilteredTemplates(templates);
       navigate("/templates");
@@ -162,10 +162,7 @@ export default function Template() {
         );
         toast.success("Template updated successfully!");
       } else {
-        await axios.post(
-          "https://email-syncing-backend.vercel.app/template/create",
-          payload
-        );
+        await axios.post("https://email-syncing-backend.vercel.app/template/create", payload);
         toast.success("Template created successfully!");
       }
 
@@ -195,12 +192,9 @@ export default function Template() {
     );
 
     try {
-      await axios.put(
-        `https://email-syncing-backend.vercel.app/template/update/${id}`,
-        {
-          active: !currentStatus,
-        }
-      );
+      await axios.put(`https://email-syncing-backend.vercel.app/template/update/${id}`, {
+        active: !currentStatus,
+      });
       toast.success(
         `Template ${!currentStatus ? "activated" : "deactivated"} successfully`
       );
@@ -261,6 +255,7 @@ export default function Template() {
       </p>
     </div>
   );
+  const columnCount = isPro ? 6 : 5;
 
   return (
     <div className="flex">
@@ -301,41 +296,40 @@ export default function Template() {
         </header>
 
         <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between px-4 sm:px-8 py-4 bg-white border-b gap-4">
-  <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4 gap-2">
-    <div className="flex items-center gap-2">
-      <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
-        Filter by Service:
-      </label>
-      <select
-        value={selectedServiceFilter}
-        onChange={(e) => setSelectedServiceFilter(e.target.value)}
-        className="border border-gray-300 rounded-lg px-3 py-1 text-sm focus:ring-2 focus:ring-purple-500 w-36 sm:w-40"
-      >
-        <option value="All">All Services</option>
-        {[...new Set(templates.map((t) => t.service).filter(Boolean))].map(
-          (srv) => (
-            <option key={srv} value={srv}>
-              {srv}
-            </option>
-          )
-        )}
-      </select>
-    </div>
-  </div>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4 gap-2">
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
+                Filter by Service:
+              </label>
+              <select
+                value={selectedServiceFilter}
+                onChange={(e) => setSelectedServiceFilter(e.target.value)}
+                className="border border-gray-300 rounded-lg px-3 py-1 text-sm focus:ring-2 focus:ring-purple-500 w-36 sm:w-40"
+              >
+                <option value="All">All Services</option>
+                {[
+                  ...new Set(templates.map((t) => t.service).filter(Boolean)),
+                ].map((srv) => (
+                  <option key={srv} value={srv}>
+                    {srv}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
 
-  {viewType && (
-    <div className="bg-indigo-50 px-4 py-2 rounded-md text-sm text-indigo-700 border border-indigo-200 w-full sm:w-auto text-center sm:text-left">
-      Viewing all <b>{viewType}</b> templates
-      <button
-        onClick={() => navigate("/templates")}
-        className="ml-2 text-indigo-600 underline hover:text-indigo-800"
-      >
-        Clear
-      </button>
-    </div>
-  )}
-</div>
-
+          {viewType && (
+            <div className="bg-indigo-50 px-4 py-2 rounded-md text-sm text-indigo-700 border border-indigo-200 w-full sm:w-auto text-center sm:text-left">
+              Viewing all <b>{viewType}</b> templates
+              <button
+                onClick={() => navigate("/templates")}
+                className="ml-2 text-indigo-600 underline hover:text-indigo-800"
+              >
+                Clear
+              </button>
+            </div>
+          )}
+        </div>
 
         <main className="container mx-auto p-4 sm:p-6 lg:p-8">
           <div className="bg-white shadow rounded-lg overflow-hidden">
@@ -347,23 +341,26 @@ export default function Template() {
                       "Service Request",
                       "Sequence Type",
                       "Template",
+                      isPro && "AI",
                       "Status",
                       "Action",
-                    ].map((h) => (
-                      <th
-                        key={h}
-                        className="p-3 text-left text-xs sm:text-sm font-semibold text-gray-700 uppercase tracking-wide"
-                      >
-                        {h}
-                      </th>
-                    ))}
+                    ]
+                      .filter(Boolean)
+                      .map((h) => (
+                        <th
+                          key={h}
+                          className="p-3 text-left text-xs sm:text-sm font-semibold text-gray-700 uppercase tracking-wide"
+                        >
+                          {h}
+                        </th>
+                      ))}
                   </tr>
                 </thead>
 
                 <tbody>
                   {loading ? (
                     <tr>
-                      <td colSpan="5" className="text-center">
+                      <td colSpan={columnCount} className="text-center">
                         <Loader />
                       </td>
                     </tr>
@@ -372,8 +369,8 @@ export default function Template() {
                       <React.Fragment key={srv}>
                         <tr className="bg-gray-100">
                           <td
-                            colSpan="5"
-                            className="p-3 font-semibold text-gray-800 text-sm sm:text-base"
+                            colSpan={columnCount}
+                            className="p-3 font-semibold text-gray-800"
                           >
                             {srv}
                           </td>
@@ -392,6 +389,19 @@ export default function Template() {
                               {t.content.replace(/<[^>]+>/g, "").slice(0, 80)}
                               ...
                             </td>
+
+                            {isPro && (
+                              <td className="p-3">
+                                <button
+                                  onClick={() => handleGenerateAI(t)}
+                                  className="px-3 py-1.5 text-xs font-semibold rounded-md
+        bg-gradient-to-r from-violet-600 to-indigo-600
+        text-white hover:opacity-90 transition shadow-sm"
+                                >
+                                  Generate with AI
+                                </button>
+                              </td>
+                            )}
                             <td className="p-3 text-center">
                               <label className="relative inline-flex items-center cursor-pointer">
                                 <input
