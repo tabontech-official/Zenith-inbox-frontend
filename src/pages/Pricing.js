@@ -25,7 +25,7 @@ const Pricing = () => {
   const navigate = useNavigate();
   const handleProCheckout = async () => {
     try {
-      const userId = localStorage.getItem("userid"); 
+      const userId = localStorage.getItem("userid");
 
       if (!userId) {
         navigate("/login");
@@ -137,7 +137,7 @@ const Pricing = () => {
                               bg-gradient-to-r from-purple-500 to-indigo-500
                               text-xs font-bold uppercase tracking-wider"
               >
-                Most Popular
+                Awesome
               </div>
 
               <div>
@@ -177,7 +177,7 @@ const Pricing = () => {
              hover:opacity-90 transition
              flex items-center justify-center gap-2"
               >
-                Upgrade · Pro <FiArrowRight />
+                Upgrade · Awesome <FiArrowRight />
               </button>
             </motion.div>
           </div>
