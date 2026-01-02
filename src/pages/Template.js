@@ -37,7 +37,6 @@ export default function Template() {
 
   const navigate = useNavigate();
 
-  // 🟣 Extract ?service= param from URL
   const [selectedServiceFilter, setSelectedServiceFilter] = useState(
     urlParams.get("service") || "All"
   );
@@ -46,9 +45,12 @@ export default function Template() {
     try {
       setLoading(true);
       const userId = localStorage.getItem("userid");
-      const res = await axios.get("https://email-syncing-backend.vercel.app/template/all", {
-        params: { userId },
-      });
+      const res = await axios.get(
+        "https://email-syncing-backend.vercel.app/template/all",
+        {
+          params: { userId },
+        }
+      );
 
       setTemplates(res.data);
       setFilteredTemplates(res.data);
@@ -160,7 +162,10 @@ export default function Template() {
         );
         toast.success("Template updated successfully!");
       } else {
-        await axios.post("https://email-syncing-backend.vercel.app/template/create", payload);
+        await axios.post(
+          "https://email-syncing-backend.vercel.app/template/create",
+          payload
+        );
         toast.success("Template created successfully!");
       }
 
@@ -190,9 +195,12 @@ export default function Template() {
     );
 
     try {
-      await axios.put(`https://email-syncing-backend.vercel.app/template/update/${id}`, {
-        active: !currentStatus,
-      });
+      await axios.put(
+        `https://email-syncing-backend.vercel.app/template/update/${id}`,
+        {
+          active: !currentStatus,
+        }
+      );
       toast.success(
         `Template ${!currentStatus ? "activated" : "deactivated"} successfully`
       );
@@ -268,92 +276,103 @@ export default function Template() {
     <div className="flex">
       <Sidebar />
       <div className="flex-1 min-h-screen bg-gray-50 lg:ml-64">
-       <header className="flex flex-col md:flex-row md:items-center justify-between px-8 py-6 bg-white border-b border-gray-100 shadow-sm gap-4">
-  {/* Left Section: Title & Context */}
-  <div className="flex items-center gap-4">
-    <div className="hidden sm:flex w-12 h-12 bg-indigo-50 rounded-xl items-center justify-center text-indigo-600">
-      <Layout size={24} />
-    </div>
-    <div>
-      <h1 className="text-2xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
-        Service Templates
-      </h1>
-      <p className="text-sm text-gray-500 mt-0.5 max-w-xs sm:max-w-none">
-        Manage and automate your Shopify service communication
-      </p>
-    </div>
-  </div>
+        <header className="flex flex-col md:flex-row md:items-center justify-between px-8 py-6 bg-white border-b border-gray-100 shadow-sm gap-4">
+          <div className="flex items-center gap-4">
+            <div className="hidden sm:flex w-12 h-12 bg-indigo-50 rounded-xl items-center justify-center text-indigo-600">
+              <Layout size={24} />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
+                Service Templates
+              </h1>
+              <p className="text-sm text-gray-500 mt-0.5 max-w-xs sm:max-w-none">
+                Manage and automate your Shopify service communication
+              </p>
+            </div>
+          </div>
 
-  {/* Right Section: Controls Toolbar */}
-  <div className="flex items-center gap-2 bg-gray-50 p-1.5 rounded-2xl border border-gray-100">
-    
-    {/* AI Toggle Group */}
-    <div className="flex items-center gap-3 px-4 py-2 bg-white rounded-xl shadow-sm border border-gray-100">
-      <div className="flex items-center gap-2">
-        <Sparkles size={16} className={aiEnabled ? "text-indigo-500" : "text-gray-400"} />
-        <span className="text-sm font-semibold text-gray-700">Auto Response</span>
-        {!isPro && (
-          <span className="text-[10px] bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wider">
-            Pro
-          </span>
-        )}
-      </div>
+          <div className="flex items-center gap-2 bg-gray-50 p-1.5 rounded-2xl border border-gray-100">
+            <div className="flex items-center gap-3 px-4 py-2 bg-white rounded-xl shadow-sm border border-gray-100">
+              <div className="flex items-center gap-2">
+                <Sparkles
+                  size={16}
+                  className={aiEnabled ? "text-indigo-500" : "text-gray-400"}
+                />
+                <span className="text-sm font-semibold text-gray-700">
+                  Auto Response
+                </span>
+                {!isPro && (
+                  <span className="text-[10px] bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wider">
+                    Pro
+                  </span>
+                )}
+              </div>
 
-      <label className="relative inline-flex items-center cursor-pointer group">
-        <input
-          type="checkbox"
-          checked={aiEnabled}
-          onChange={async () => {
-            if (!isPro) {
-              setShowUpgradeModal(true);
-              return;
-            }
-            const userId = localStorage.getItem("userid");
-            const newValue = !aiEnabled;
-            setAiEnabled(newValue);
-            try {
-              await axios.patch("https://email-syncing-backend.vercel.app/auth/user/ai", { userId, enabled: newValue });
-              toast.success(newValue ? "Auto Response Active" : "Auto Response Paused");
-            } catch (error) {
-              setAiEnabled(!newValue);
-              toast.error("Sync failed");
-            }
-          }}
-          className="sr-only peer"
-        />
-        <div className="w-10 h-5 bg-gray-200 rounded-full peer peer-checked:bg-indigo-600 transition-all duration-300 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5"></div>
-      </label>
-    </div>
+              <label className="relative inline-flex items-center cursor-pointer group">
+                <input
+                  type="checkbox"
+                  checked={aiEnabled}
+                  onChange={async () => {
+                    if (!isPro) {
+                      setShowUpgradeModal(true);
+                      return;
+                    }
+                    const userId = localStorage.getItem("userid");
+                    const newValue = !aiEnabled;
+                    setAiEnabled(newValue);
+                    try {
+                      await axios.patch(
+                        "https://email-syncing-backend.vercel.app/auth/user/ai",
+                        { userId, enabled: newValue }
+                      );
+                      toast.success(
+                        newValue
+                          ? "Auto Response Active"
+                          : "Auto Response Paused"
+                      );
+                    } catch (error) {
+                      setAiEnabled(!newValue);
+                      toast.error("Sync failed");
+                    }
+                  }}
+                  className="sr-only peer"
+                />
+                <div className="w-10 h-5 bg-gray-200 rounded-full peer peer-checked:bg-indigo-600 transition-all duration-300 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5"></div>
+              </label>
+            </div>
 
-    {/* Vertical Divider */}
-    <div className="w-[1px] h-6 bg-gray-200 mx-1 hidden sm:block"></div>
+            <div className="w-[1px] h-6 bg-gray-200 mx-1 hidden sm:block"></div>
 
-    {/* Global Toggle Group */}
-    <div className="flex items-center gap-3 px-4 py-2">
-      <div className="flex items-center gap-2">
-        <Zap size={16} className={globalActive ? "text-amber-500" : "text-gray-400"} />
-        <span className="text-sm font-semibold text-gray-700 whitespace-nowrap">Global Status</span>
-      </div>
+            <div className="flex items-center gap-3 px-4 py-2">
+              <div className="flex items-center gap-2">
+                <Zap
+                  size={16}
+                  className={globalActive ? "text-amber-500" : "text-gray-400"}
+                />
+                <span className="text-sm font-semibold text-gray-700 whitespace-nowrap">
+                  Global Status
+                </span>
+              </div>
 
-      <label className="relative inline-flex items-center cursor-pointer">
-  <input
-    type="checkbox"
-    checked={globalActive}
-    onChange={() => {
-      if (aiEnabled) {
-        aiBlockToast();
-        return;
-      }
-      if (!isPro) {
-        setShowUpgradeModal(true);
-        return;
-      }
-      handleGlobalToggle();
-    }}
-    className="sr-only peer"
-  />
-  <div
-    className={`w-10 h-5 rounded-full transition-all duration-300 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={globalActive}
+                  onChange={() => {
+                    if (aiEnabled) {
+                      aiBlockToast();
+                      return;
+                    }
+                    if (!isPro) {
+                      setShowUpgradeModal(true);
+                      return;
+                    }
+                    handleGlobalToggle();
+                  }}
+                  className="sr-only peer"
+                />
+                <div
+                  className={`w-10 h-5 rounded-full transition-all duration-300 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all
       ${
         aiEnabled
           ? "bg-gray-200"
@@ -362,12 +381,11 @@ export default function Template() {
           : "bg-gray-200"
       }
     `}
-  ></div>
-</label>
-
-    </div>
-  </div>
-</header>
+                ></div>
+              </label>
+            </div>
+          </div>
+        </header>
 
         <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between px-4 sm:px-8 py-4 bg-white border-b gap-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4 gap-2">
@@ -431,119 +449,129 @@ export default function Template() {
                 </thead>
 
                 <tbody>
-  {loading ? (
-    <tr>
-      <td colSpan="5" className="text-center">
-        <Loader />
-      </td>
-    </tr>
-  ) : Object.keys(groupedTemplates).length > 0 ? (
-    Object.entries(groupedTemplates).map(([srv, group]) => (
-      <React.Fragment key={srv}>
-        <tr className="bg-gray-100">
-          <td colSpan="5" className="p-3 font-semibold text-gray-800">
-            {srv}
-          </td>
-        </tr>
+                  {loading ? (
+                    <tr>
+                      <td colSpan="5" className="text-center">
+                        <Loader />
+                      </td>
+                    </tr>
+                  ) : Object.keys(groupedTemplates).length > 0 ? (
+                    Object.entries(groupedTemplates).map(([srv, group]) => (
+                      <React.Fragment key={srv}>
+                        <tr className="bg-gray-100">
+                          <td
+                            colSpan="5"
+                            className="p-3 font-semibold text-gray-800"
+                          >
+                            {srv}
+                          </td>
+                        </tr>
 
-        {group.map((t) => (
-          <tr
-            key={t._id}
-            className={`border-b transition ${
-              aiEnabled
-                ? "bg-gray-50 "
-                : "hover:bg-gray-50"
-            }`}
-            onClick={() => {
-              if (aiEnabled) {
-                aiBlockToast();
-              }
-            }}
-          >
-            <td className="p-3 text-sm">{t.service}</td>
+                        {group.map((t) => (
+                          <tr
+                            key={t._id}
+                            className={`border-b transition ${
+                              aiEnabled ? "bg-gray-50 " : "hover:bg-gray-50"
+                            }`}
+                            onClick={() => {
+                              if (aiEnabled) {
+                                aiBlockToast();
+                              }
+                            }}
+                          >
+                            <td className="p-3 text-sm">{t.service}</td>
 
-            <td className="p-3 text-sm">
-              {formatSequenceName(t.name)}
-            </td>
+                            <td className="p-3 text-sm">
+                              {formatSequenceName(t.name)}
+                            </td>
 
-          <td className="p-3 text-sm max-w-[220px]">
-  {aiEnabled ? (
-    <span className="inline-flex items-center gap-2 text-indigo-600 font-semibold">
-      <BoltIcon className="w-4 h-4 text-indigo-600" />
-      Auto Reply
-      <span className="text-xs text-gray-500">(AI Enabled)</span>
-    </span>
-  ) : (
-    <span className="text-gray-600 truncate block">
-      {t.content.replace(/<[^>]+>/g, "").slice(0, 80)}...
-    </span>
-  )}
-</td>
+                            <td className="p-3 text-sm max-w-[220px]">
+                              {aiEnabled ? (
+                                <span className="inline-flex items-center gap-2 text-indigo-600 font-semibold">
+                                  <BoltIcon className="w-4 h-4 text-indigo-600" />
+                                  Auto Reply
+                                  <span className="text-xs text-gray-500">
+                                    (AI Enabled)
+                                  </span>
+                                </span>
+                              ) : (
+                                <span className="text-gray-600 truncate block">
+                                  {t.content
+                                    .replace(/<[^>]+>/g, "")
+                                    .slice(0, 80)}
+                                  ...
+                                </span>
+                              )}
+                            </td>
 
-            <td className="p-3 text-center">
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={t.active}
-                  disabled={aiEnabled}
-                  onChange={() => {
-                    if (aiEnabled) {
-                      aiBlockToast();
-                      return;
-                    }
-                    handleToggle(t._id, t.active);
-                  }}
-                  className="sr-only peer"
-                />
+                            <td className="p-3 text-center">
+                              <label className="relative inline-flex items-center cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={t.active}
+                                  disabled={aiEnabled}
+                                  onChange={() => {
+                                    if (aiEnabled) {
+                                      aiBlockToast();
+                                      return;
+                                    }
+                                    handleToggle(t._id, t.active);
+                                  }}
+                                  className="sr-only peer"
+                                />
 
-                <div
-                  className={`w-11 h-6 rounded-full transition-colors ${
-                    aiEnabled
-                      ? "bg-gray-200 "
-                      : "bg-gray-300 peer-checked:bg-green-500"
-                  }`}
-                ></div>
+                                <div
+                                  className={`w-11 h-6 rounded-full transition-colors ${
+                                    aiEnabled
+                                      ? "bg-gray-200 "
+                                      : "bg-gray-300 peer-checked:bg-green-500"
+                                  }`}
+                                ></div>
 
-                <div
-                  className={`absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full shadow-md transition-transform ${
-                    !aiEnabled && t.active ? "translate-x-5" : ""
-                  }`}
-                ></div>
-              </label>
-            </td>
+                                <div
+                                  className={`absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full shadow-md transition-transform ${
+                                    !aiEnabled && t.active
+                                      ? "translate-x-5"
+                                      : ""
+                                  }`}
+                                ></div>
+                              </label>
+                            </td>
 
-            <td className="p-3">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (aiEnabled) {
-                    aiBlockToast();
-                    return;
-                  }
-                  handleEdit(t);
-                }}
-                className={`text-sm font-medium ${
-                  aiEnabled
-                    ? "text-gray-400 "
-                    : "text-indigo-600 hover:underline"
-                }`}
-              >
-                Edit
-              </button>
-            </td>
-          </tr>
-        ))}
-      </React.Fragment>
-    ))
-  ) : (
-    <tr>
-      <td colSpan="5" className="p-6 text-center text-gray-500 text-sm">
-        No templates found
-      </td>
-    </tr>
-  )}
-</tbody>
-
+                            <td className="p-3">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (aiEnabled) {
+                                    aiBlockToast();
+                                    return;
+                                  }
+                                  handleEdit(t);
+                                }}
+                                className={`text-sm font-medium ${
+                                  aiEnabled
+                                    ? "text-gray-400 "
+                                    : "text-indigo-600 hover:underline"
+                                }`}
+                              >
+                                Edit
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </React.Fragment>
+                    ))
+                  ) : (
+                    <tr>
+                      <td
+                        colSpan="5"
+                        className="p-6 text-center text-gray-500 text-sm"
+                      >
+                        No templates found
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
               </table>
             </div>
 
@@ -679,7 +707,6 @@ export default function Template() {
                   />
                 </div>
 
-                {/* Insert Fields Section */}
                 <div className="mt-4 border rounded-lg bg-gray-50 p-3 sm:p-4">
                   <h3 className="text-sm font-semibold text-gray-600 mb-2">
                     Insert Fields
@@ -714,7 +741,6 @@ export default function Template() {
               </div>
             </div>
 
-            {/* Footer */}
             <div className="p-4 sm:p-5 border-t bg-white flex flex-col sm:flex-row justify-end gap-3">
               <button
                 onClick={() => setIsDrawerOpen(false)}
@@ -732,70 +758,72 @@ export default function Template() {
           </div>
         </div>
       </div>
-    {showUpgradeModal && (
-  <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-    <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden transition-all transform">
-      
-      {/* Top Accent Bar or Decorative Element */}
-      <div className="h-2 bg-indigo-600 w-full" />
+      {showUpgradeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden transition-all transform">
+            <div className="h-2 bg-indigo-600 w-full" />
 
-      {/* Close Button */}
-      <button 
-        onClick={() => setShowUpgradeModal(false)}
-        className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
-      >
-        <X size={20} />
-      </button>
+            <button
+              onClick={() => setShowUpgradeModal(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X size={20} />
+            </button>
 
-      <div className="p-8">
-        {/* Icon & Header */}
-        <div className="flex flex-col items-center text-center">
-          <div className="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center mb-4">
-            <Sparkles className="text-indigo-600" size={32} />
-          </div>
-          
-          <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight">
-            Unlock AI Templates
-          </h2>
-          <p className="mt-3 text-gray-500 leading-relaxed">
-            Take your productivity to the next level. Generate high-converting 
-            emails in seconds with our <strong>Pro AI engine</strong>.
-          </p>
-        </div>
+            <div className="p-8">
+              <div className="flex flex-col items-center text-center">
+                <div className="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center mb-4">
+                  <Sparkles className="text-indigo-600" size={32} />
+                </div>
 
-        {/* Feature Highlights */}
-        <div className="mt-6 space-y-3">
-          {["Unlimited AI Generations", "Custom Brand Voice", "Priority Support"].map((feature) => (
-            <div key={feature} className="flex items-center gap-3 text-sm text-gray-600">
-              <CheckCircle2 className="text-emerald-500" size={18} />
-              {feature}
+                <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight">
+                  Unlock AI Templates
+                </h2>
+                <p className="mt-3 text-gray-500 leading-relaxed">
+                  Take your productivity to the next level. Generate
+                  high-converting emails in seconds with our{" "}
+                  <strong>Pro AI engine</strong>.
+                </p>
+              </div>
+
+              <div className="mt-6 space-y-3">
+                {[
+                  "Unlimited AI Generations",
+                  "Custom Brand Voice",
+                  "Priority Support",
+                ].map((feature) => (
+                  <div
+                    key={feature}
+                    className="flex items-center gap-3 text-sm text-gray-600"
+                  >
+                    <CheckCircle2 className="text-emerald-500" size={18} />
+                    {feature}
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-8 flex flex-col gap-3">
+                <button
+                  onClick={() => {
+                    setShowUpgradeModal(false);
+                    navigate("/pricing");
+                  }}
+                  className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl shadow-lg shadow-indigo-200 transition-all active:scale-[0.98]"
+                >
+                  Upgrade to Pro
+                </button>
+
+                <button
+                  onClick={() => setShowUpgradeModal(false)}
+                  className="w-full py-2 text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors"
+                >
+                  Maybe later
+                </button>
+              </div>
             </div>
-          ))}
+          </div>
         </div>
-
-        {/* Action Buttons */}
-        <div className="mt-8 flex flex-col gap-3">
-          <button
-            onClick={() => {
-              setShowUpgradeModal(false);
-              navigate("/pricing");
-            }}
-            className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl shadow-lg shadow-indigo-200 transition-all active:scale-[0.98]"
-          >
-            Upgrade to Pro
-          </button>
-          
-          <button
-            onClick={() => setShowUpgradeModal(false)}
-            className="w-full py-2 text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors"
-          >
-            Maybe later
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
+      )}
     </div>
   );
 }
