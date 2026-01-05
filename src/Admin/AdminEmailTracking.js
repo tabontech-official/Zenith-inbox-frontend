@@ -29,7 +29,7 @@ const AdminEmailTracking = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch("https://email-syncing-backend.vercel.app/auth/email-tracking");
+        const res = await fetch("http://localhost:5000/auth/email-tracking");
         const data = await res.json();
         setSummary(data.data || []);
       } catch (err) {

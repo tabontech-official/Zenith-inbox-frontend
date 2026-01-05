@@ -27,7 +27,7 @@ const LoginPage = () => {
 
   //   try {
   //     const response = await axios.post(
-  //       "https://email-syncing-backend.vercel.app/auth/signIn",
+  //       "http://localhost:5000/auth/signIn",
   //       { email, password }
   //     );
 
@@ -76,7 +76,7 @@ const LoginPage = () => {
 
     try {
       const response = await axios.post(
-        "https://email-syncing-backend.vercel.app/auth/signIn",
+        "http://localhost:5000/auth/signIn",
         { email, password }
       );
 

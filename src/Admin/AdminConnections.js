@@ -22,7 +22,7 @@ const AdminConnections = () => {
     const fetchConnections = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch("https://email-syncing-backend.vercel.app/auth/connections", {
+        const res = await fetch("http://localhost:5000/auth/connections", {
           headers: {
             Authorization: `Bearer ${token}`,
           },

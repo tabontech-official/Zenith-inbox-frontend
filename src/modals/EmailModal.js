@@ -128,7 +128,7 @@ const EmailModal = ({
       const userId = localStorage.getItem("userid");
 
       const res = await fetch(
-        "https://email-syncing-backend.vercel.app/template/save/other",
+        "http://localhost:5000/template/save/other",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
