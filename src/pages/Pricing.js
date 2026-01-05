@@ -33,7 +33,7 @@ const Pricing = () => {
       }
 
       const res = await fetch(
-        `http://localhost:5000/stripe/create-checkout-session/${userId}`,
+        `https://email-syncing-backend.vercel.app/stripe/create-checkout-session/${userId}`,
         {
           method: "POST",
           headers: {
@@ -45,7 +45,7 @@ const Pricing = () => {
       const data = await res.json();
 
       if (data.url) {
-        window.location.href = data.url; // 🔥 Stripe Checkout open
+        window.location.href = data.url; 
       }
     } catch (err) {
       console.error("Checkout error:", err);

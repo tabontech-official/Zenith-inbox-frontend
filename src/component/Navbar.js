@@ -65,7 +65,7 @@
 //     try {
 //       if (userId) {
 //         await fetch(
-//           `http://localhost:5000/auth/logout/${userId}`,
+//           `https://email-syncing-backend.vercel.app/auth/logout/${userId}`,
 //           { method: "POST" }
 //         );
 //       }
@@ -100,7 +100,7 @@
 //   const handleSkipSetup = async () => {
 //     const userId = localStorage.getItem("userid");
 //     await axios.post(
-//       `http://localhost:5000/auth/skip-all/${userId}`
+//       `https://email-syncing-backend.vercel.app/auth/skip-all/${userId}`
 //     );
 //     alert("All setup steps skipped.");
 //   };
@@ -329,7 +329,7 @@ import ScenarioSelectModal from "./ScenarioSelectModal";
 import { UserContext } from "./UserContext";
 import axios from "axios";
 
-const API = "http://localhost:5000/auth/guide";
+const API = "https://email-syncing-backend.vercel.app/auth/guide";
 
 const Navbar = () => {
   const [open, setOpen] = useState(false);
@@ -424,7 +424,7 @@ useEffect(() => {
   }, []);
 
   const handleLogout = async () => {
-    await fetch(`http://localhost:5000/auth/logout/${userId}`, {
+    await fetch(`https://email-syncing-backend.vercel.app/auth/logout/${userId}`, {
       method: "POST",
     });
     localStorage.clear();

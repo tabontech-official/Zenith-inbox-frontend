@@ -45,12 +45,9 @@ export default function Template() {
     try {
       setLoading(true);
       const userId = localStorage.getItem("userid");
-      const res = await axios.get(
-        "http://localhost:5000/template/all",
-        {
-          params: { userId },
-        }
-      );
+      const res = await axios.get("https://email-syncing-backend.vercel.app/template/all", {
+        params: { userId },
+      });
 
       setTemplates(res.data);
       setFilteredTemplates(res.data);
@@ -157,15 +154,12 @@ export default function Template() {
 
       if (editingId) {
         await axios.put(
-          `http://localhost:5000/template/update/${editingId}`,
+          `https://email-syncing-backend.vercel.app/template/update/${editingId}`,
           payload
         );
         toast.success("Template updated successfully!");
       } else {
-        await axios.post(
-          "http://localhost:5000/template/create",
-          payload
-        );
+        await axios.post("https://email-syncing-backend.vercel.app/template/create", payload);
         toast.success("Template created successfully!");
       }
 
@@ -195,12 +189,9 @@ export default function Template() {
     );
 
     try {
-      await axios.put(
-        `http://localhost:5000/template/update/${id}`,
-        {
-          active: !currentStatus,
-        }
-      );
+      await axios.put(`https://email-syncing-backend.vercel.app/template/update/${id}`, {
+        active: !currentStatus,
+      });
       toast.success(
         `Template ${!currentStatus ? "activated" : "deactivated"} successfully`
       );
@@ -218,7 +209,7 @@ export default function Template() {
     try {
       const userId = localStorage.getItem("userid");
       const res = await axios.patch(
-        "http://localhost:5000/template/templatestatus/all",
+        "https://email-syncing-backend.vercel.app/template/templatestatus/all",
         { userId }
       );
       if (res.data.success) {
@@ -321,10 +312,10 @@ export default function Template() {
                     const newValue = !aiEnabled;
                     setAiEnabled(newValue);
                     try {
-                      await axios.patch(
-                        "http://localhost:5000/auth/user/ai",
-                        { userId, enabled: newValue }
-                      );
+                      await axios.patch("https://email-syncing-backend.vercel.app/auth/user/ai", {
+                        userId,
+                        enabled: newValue,
+                      });
                       toast.success(
                         newValue
                           ? "Auto Response Active"
