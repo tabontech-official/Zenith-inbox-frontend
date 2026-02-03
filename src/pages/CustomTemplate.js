@@ -5,9 +5,26 @@ import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import toast from "react-hot-toast";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useContext } from "react";
+import { UserContext } from "../component/UserContext";
+import { Sparkles, Zap, X, CheckCircle2, BoltIcon } from "lucide-react";
 
 export default function Template() {
   const location = useLocation();
+const { user } = useContext(UserContext);
+
+const plan = user?.subscription?.plan || "free";
+const isPro = plan === "pro";
+
+const [aiEnabled, setAiEnabled] = useState(false);
+const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+useEffect(() => {
+  if (user?.Ai !== undefined) {
+    setAiEnabled(user.Ai);
+  }
+}, [user]);
+const aiBlockToast = () =>
+  toast.error("Auto response is enabled. Switch to manual mode to edit templates.");
 
   const [templates, setTemplates] = useState([]);
   const urlParams = new URLSearchParams(location.search);
@@ -233,28 +250,74 @@ export default function Template() {
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-medium text-gray-700">
-              All Templates
-            </span>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={globalActive}
-                onChange={handleGlobalToggle}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:bg-green-500 transition-colors"></div>
-              <div className="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full shadow-md transition-transform peer-checked:translate-x-5"></div>
-            </label>
-            <span
-              className={`text-xs font-semibold ${
-                globalActive ? "text-green-600" : "text-gray-400"
-              }`}
-            >
-              {globalActive ? "ON" : "OFF"}
-            </span>
-          </div>
+        <div className="flex items-center gap-2 bg-gray-50 p-1.5 rounded-2xl border">
+  
+  {/* AI TOGGLE */}
+  <div className="flex items-center gap-3 px-4 py-2 bg-white rounded-xl shadow-sm border">
+    <div className="flex items-center gap-2">
+      <Sparkles size={16} className={aiEnabled ? "text-indigo-500" : "text-gray-400"} />
+      <span className="text-sm font-semibold text-gray-700">Auto Response</span>
+
+      {!isPro && (
+        <span className="text-[10px] bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded font-bold">
+          AWESOME
+        </span>
+      )}
+    </div>
+
+    <label className="relative inline-flex items-center cursor-pointer">
+      <input
+        type="checkbox"
+        checked={aiEnabled}
+        onChange={async () => {
+          if (!isPro) {
+            setShowUpgradeModal(true);
+            return;
+          }
+
+          const userId = localStorage.getItem("userid");
+          const newValue = !aiEnabled;
+          setAiEnabled(newValue);
+
+          try {
+            await axios.patch(
+              "https://email-syncing-backend.vercel.app/auth/user/ai",
+              { userId, enabled: newValue }
+            );
+            toast.success(newValue ? "Auto Response Active" : "Auto Response Paused");
+          } catch {
+            setAiEnabled(!newValue);
+            toast.error("Sync failed");
+          }
+        }}
+        className="sr-only peer"
+      />
+      <div className="w-10 h-5 bg-gray-200 rounded-full peer-checked:bg-indigo-600 after:absolute after:top-[2px] after:left-[2px] after:h-4 after:w-4 after:bg-white after:rounded-full peer-checked:after:translate-x-5 transition-all"></div>
+    </label>
+  </div>
+
+  {/* GLOBAL TOGGLE */}
+  <div className="flex items-center gap-3 px-4 py-2">
+    <Zap size={16} className={globalActive ? "text-amber-500" : "text-gray-400"} />
+    <span className="text-sm font-semibold text-gray-700">Global Status</span>
+
+    <label className="relative inline-flex items-center cursor-pointer">
+      <input
+        type="checkbox"
+        checked={globalActive}
+        onChange={() => {
+          if (aiEnabled) return aiBlockToast();
+          handleGlobalToggle();
+        }}
+        className="sr-only peer"
+      />
+      <div className={`w-10 h-5 rounded-full ${
+        aiEnabled ? "bg-gray-200" : globalActive ? "bg-green-500" : "bg-gray-300"
+      } after:absolute after:top-[2px] after:left-[2px] after:h-4 after:w-4 after:bg-white after:rounded-full ${globalActive && !aiEnabled ? "after:translate-x-5" : ""}`}></div>
+    </label>
+  </div>
+</div>
+
         </header>
 
         <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between px-4 sm:px-8 py-4 bg-white border-b gap-4">
@@ -293,164 +356,234 @@ export default function Template() {
           )}
         </div>
 
-        <main className="container mx-auto p-4 sm:p-6 lg:p-8">
-          <div className="bg-white shadow rounded-lg overflow-hidden">
-            <div className="hidden sm:block overflow-x-auto">
-              <table className="min-w-full border-collapse text-sm">
-                <thead className="bg-gray-100 border-b">
-                  <tr>
-                    {["Label", "Template", "Status", "Action"].map((h) => (
-                      <th
-                        key={h}
-                        className="p-3 text-left text-xs sm:text-sm font-semibold text-gray-700 uppercase tracking-wide"
-                      >
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
+      <main className="container mx-auto p-4 sm:p-6 lg:p-8">
+  <div className="bg-white shadow rounded-lg overflow-hidden">
 
-                <tbody>
-                  {loading ? (
-                    <tr>
-                      <td colSpan="5" className="text-center">
-                        <Loader />
-                      </td>
-                    </tr>
-                  ) : Object.keys(groupedTemplates).length > 0 ? (
-                    Object.entries(groupedTemplates).map(([srv, group]) => (
-                      <React.Fragment key={srv}>
-                        <tr className="bg-gray-100">
-                          <td
-                            colSpan="5"
-                            className="p-3 font-semibold text-gray-800 text-sm sm:text-base"
-                          >
-                            {srv}
-                          </td>
-                        </tr>
+    {/* ================= DESKTOP TABLE ================= */}
+    <div className="hidden sm:block overflow-x-auto">
+      <table className="min-w-full border-collapse text-sm">
+        <thead className="bg-gray-100 border-b">
+          <tr>
+            {["Label", "Template", "Status", "Action"].map((h) => (
+              <th
+                key={h}
+                className="p-3 text-left text-xs sm:text-sm font-semibold text-gray-700 uppercase tracking-wide"
+              >
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
 
-                        {group.map((t) => (
-                          <tr
-                            key={t._id}
-                            className="border-b hover:bg-gray-50 transition"
-                          >
-                            {/* <td className="p-3 text-sm">{t.service}</td> */}
-                            <td className="p-3 text-sm">{t.name}</td>
-                            <td className="p-3 text-sm text-gray-600 truncate max-w-[200px]">
-                              {t.content.replace(/<[^>]+>/g, "").slice(0, 80)}
-                              ...
-                            </td>
-                            <td className="p-3 text-center">
-                              <label className="relative inline-flex items-center cursor-pointer">
-                                <input
-                                  type="checkbox"
-                                  checked={t.active}
-                                  onChange={() => handleToggle(t._id, t.active)}
-                                  className="sr-only peer"
-                                />
-                                <div className="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:bg-green-500 transition-colors"></div>
-                                <div className="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full shadow-md transition-transform peer-checked:translate-x-5"></div>
-                              </label>
-                            </td>
-                            <td className="p-3 flex gap-3">
-                              {/* EDIT */}
-                              <button
-                                onClick={() => handleEdit(t)}
-                                className="text-indigo-600 hover:underline text-sm"
-                              >
-                                Edit
-                              </button>
-
-                              {/* DELETE */}
-                              <button
-                                onClick={() => openDeleteConfirm(t._id)}
-                                className="text-red-600 hover:underline text-sm"
-                              >
-                                Delete
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </React.Fragment>
-                    ))
-                  ) : (
-                    <tr>
-                      <td
-                        colSpan="5"
-                        className="p-6 text-center text-gray-500 text-sm"
-                      >
-                        No templates found
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="block sm:hidden divide-y divide-gray-200">
-              {loading ? (
+        <tbody>
+          {loading ? (
+            <tr>
+              <td colSpan="5" className="text-center">
                 <Loader />
-              ) : Object.keys(groupedTemplates).length > 0 ? (
-                Object.entries(groupedTemplates).map(([srv, group]) => (
-                  <div key={srv} className="bg-gray-50">
-                    <h3 className="px-4 py-2 font-semibold text-gray-800 text-sm bg-gray-100 border-b">
-                      {srv}
-                    </h3>
+              </td>
+            </tr>
+          ) : Object.keys(groupedTemplates).length > 0 ? (
+            Object.entries(groupedTemplates).map(([srv, group]) => (
+              <React.Fragment key={srv}>
+                <tr className="bg-gray-100">
+                  <td colSpan="5" className="p-3 font-semibold text-gray-800">
+                    {srv}
+                  </td>
+                </tr>
 
-                    {group.map((t) => (
-                      <div
-                        key={t._id}
-                        className="p-4 bg-white border-b hover:bg-gray-50 transition"
-                      >
-                        <div className="flex justify-between items-center mb-2">
-                          <h4 className="font-semibold text-gray-900 text-sm"></h4>
-                          <button
-                            onClick={() => handleEdit(t)}
-                            className="text-indigo-600 text-xs font-medium hover:underline"
-                          >
-                            Edit
-                          </button>
-                        </div>
+                {group.map((t) => (
+                  <tr
+                    key={t._id}
+                    className={`border-b transition ${
+                      aiEnabled ? "bg-gray-50" : "hover:bg-gray-50"
+                    }`}
+                    onClick={() => aiEnabled && aiBlockToast()}
+                  >
+                    <td className="p-3 text-sm">{t.name}</td>
 
-                        <p className="text-xs text-gray-500 mb-2">
-                          <span className="font-medium text-gray-700">
-                            Service:
-                          </span>{" "}
-                          {t.service || "N/A"}
-                        </p>
-
-                        <p className="text-xs text-gray-600 line-clamp-2 mb-3">
-                          {t.content.replace(/<[^>]+>/g, "").slice(0, 100)}...
-                        </p>
-
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-gray-500 font-medium">
-                            {t.active ? "Active" : "Inactive"}
+                    {/* TEMPLATE COLUMN */}
+                    <td className="p-3 text-sm max-w-[220px]">
+                      {aiEnabled ? (
+                        <span className="inline-flex items-center gap-2 text-indigo-600 font-semibold">
+                          <BoltIcon className="w-4 h-4" />
+                          Auto Reply
+                          <span className="text-xs text-gray-500">
+                            (AI Enabled)
                           </span>
+                        </span>
+                      ) : (
+                        <span className="text-gray-600 truncate block">
+                          {t.content
+                            .replace(/<[^>]+>/g, "")
+                            .slice(0, 80)}
+                          ...
+                        </span>
+                      )}
+                    </td>
 
-                          <label className="relative inline-flex items-center cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={t.active}
-                              onChange={() => handleToggle(t._id, t.active)}
-                              className="sr-only peer"
-                            />
-                            <div className="w-10 h-5 bg-gray-300 rounded-full peer-checked:bg-green-500 transition-colors"></div>
-                            <div className="absolute left-[2px] top-[2px] w-4 h-4 bg-white rounded-full shadow-md transition-transform peer-checked:translate-x-5"></div>
-                          </label>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ))
-              ) : (
-                <div className="p-6 text-center text-gray-500 text-sm">
-                  No templates found
+                    {/* STATUS */}
+                    <td className="p-3 text-center">
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={t.active}
+                          disabled={aiEnabled}
+                          onChange={() => {
+                            if (aiEnabled) return aiBlockToast();
+                            handleToggle(t._id, t.active);
+                          }}
+                          className="sr-only peer"
+                        />
+                        <div
+                          className={`w-11 h-6 rounded-full transition-colors ${
+                            aiEnabled
+                              ? "bg-gray-200"
+                              : "bg-gray-300 peer-checked:bg-green-500"
+                          }`}
+                        ></div>
+                        <div
+                          className={`absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full shadow-md transition-transform ${
+                            !aiEnabled && t.active ? "translate-x-5" : ""
+                          }`}
+                        ></div>
+                      </label>
+                    </td>
+
+                    {/* ACTIONS */}
+                    <td className="p-3 flex gap-3">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (aiEnabled) return aiBlockToast();
+                          handleEdit(t);
+                        }}
+                        className={`text-sm font-medium ${
+                          aiEnabled
+                            ? "text-gray-400"
+                            : "text-indigo-600 hover:underline"
+                        }`}
+                      >
+                        Edit
+                      </button>
+
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (aiEnabled) return aiBlockToast();
+                          openDeleteConfirm(t._id);
+                        }}
+                        className={`text-sm font-medium ${
+                          aiEnabled
+                            ? "text-gray-400"
+                            : "text-red-600 hover:underline"
+                        }`}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </React.Fragment>
+            ))
+          ) : (
+            <tr>
+              <td colSpan="5" className="p-6 text-center text-gray-500 text-sm">
+                No templates found
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+
+    {/* ================= MOBILE VIEW ================= */}
+    <div className="block sm:hidden divide-y divide-gray-200">
+      {loading ? (
+        <Loader />
+      ) : Object.keys(groupedTemplates).length > 0 ? (
+        Object.entries(groupedTemplates).map(([srv, group]) => (
+          <div key={srv} className="bg-gray-50">
+            <h3 className="px-4 py-2 font-semibold text-gray-800 text-sm bg-gray-100 border-b">
+              {srv}
+            </h3>
+
+            {group.map((t) => (
+              <div
+                key={t._id}
+                className={`p-4 bg-white border-b ${
+                  aiEnabled ? "opacity-70" : "hover:bg-gray-50"
+                }`}
+                onClick={() => aiEnabled && aiBlockToast()}
+              >
+                <div className="flex justify-between items-center mb-2">
+                  <h4 className="font-semibold text-gray-900 text-sm">
+                    {t.name}
+                  </h4>
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (aiEnabled) return aiBlockToast();
+                      handleEdit(t);
+                    }}
+                    className={`text-xs font-medium ${
+                      aiEnabled
+                        ? "text-gray-400"
+                        : "text-indigo-600 hover:underline"
+                    }`}
+                  >
+                    Edit
+                  </button>
                 </div>
-              )}
-            </div>
+
+                <p className="text-xs text-gray-600 mb-2">
+                  {aiEnabled ? (
+                    <span className="text-indigo-600 font-semibold">
+                      ⚡ Auto Reply (AI Enabled)
+                    </span>
+                  ) : (
+                    <>
+                      {t.content
+                        .replace(/<[^>]+>/g, "")
+                        .slice(0, 100)}
+                      ...
+                    </>
+                  )}
+                </p>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-gray-500 font-medium">
+                    {t.active ? "Active" : "Inactive"}
+                  </span>
+
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={t.active}
+                      disabled={aiEnabled}
+                      onChange={() => {
+                        if (aiEnabled) return aiBlockToast();
+                        handleToggle(t._id, t.active);
+                      }}
+                      className="sr-only peer"
+                    />
+                    <div className="w-10 h-5 bg-gray-300 rounded-full peer-checked:bg-green-500"></div>
+                    <div className="absolute left-[2px] top-[2px] w-4 h-4 bg-white rounded-full shadow-md transition-transform peer-checked:translate-x-5"></div>
+                  </label>
+                </div>
+              </div>
+            ))}
           </div>
-        </main>
+        ))
+      ) : (
+        <div className="p-6 text-center text-gray-500 text-sm">
+          No templates found
+        </div>
+      )}
+    </div>
+  </div>
+</main>
+
 
         <div className="fixed inset-0 z-50 flex pointer-events-none">
           <div
@@ -599,6 +732,72 @@ export default function Template() {
             </div>
           </div>
         )}
+         {showUpgradeModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+                  <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden transition-all transform">
+                    <div className="h-2 bg-indigo-600 w-full" />
+        
+                    <button
+                      onClick={() => setShowUpgradeModal(false)}
+                      className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                      <X size={20} />
+                    </button>
+        
+                    <div className="p-8">
+                      <div className="flex flex-col items-center text-center">
+                        <div className="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center mb-4">
+                          <Sparkles className="text-indigo-600" size={32} />
+                        </div>
+        
+                        <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight">
+                          Unlock AI Templates
+                        </h2>
+                        <p className="mt-3 text-gray-500 leading-relaxed">
+                          Take your productivity to the next level. Generate
+                          high-converting emails in seconds with our{" "}
+                          <strong>Pro AI engine</strong>.
+                        </p>
+                      </div>
+        
+                      <div className="mt-6 space-y-3">
+                        {[
+                          "Unlimited AI Generations",
+                          "Custom Brand Voice",
+                          "Priority Support",
+                        ].map((feature) => (
+                          <div
+                            key={feature}
+                            className="flex items-center gap-3 text-sm text-gray-600"
+                          >
+                            <CheckCircle2 className="text-emerald-500" size={18} />
+                            {feature}
+                          </div>
+                        ))}
+                      </div>
+        
+                      <div className="mt-8 flex flex-col gap-3">
+                        <button
+                          onClick={() => {
+                            setShowUpgradeModal(false);
+                            navigate("/pricing");
+                          }}
+                          className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl shadow-lg shadow-indigo-200 transition-all active:scale-[0.98]"
+                        >
+                          Upgrade to Pro
+                        </button>
+        
+                        <button
+                          onClick={() => setShowUpgradeModal(false)}
+                          className="w-full py-2 text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors"
+                        >
+                          Maybe later
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
       </div>
     </div>
   );

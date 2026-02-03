@@ -7,7 +7,7 @@ import ScenarioSelectModal from "./ScenarioSelectModal";
 import { UserContext } from "./UserContext";
 import axios from "axios";
 
-const API = "https://email-syncing-backend.vercel.app/auth/guide";
+const API = "http://localhost:5000/auth/guide";
 
 const Navbar = () => {
   const [open, setOpen] = useState(false);
@@ -102,7 +102,7 @@ useEffect(() => {
   }, []);
 
   const handleLogout = async () => {
-    await fetch(`https://email-syncing-backend.vercel.app/auth/logout/${userId}`, {
+    await fetch(`http://localhost:5000/auth/logout/${userId}`, {
       method: "POST",
     });
     localStorage.clear();
@@ -215,12 +215,12 @@ navigate(
                 >
                   <FiUser /> Profile
                 </button>
-                <button
+                {/* <button
                   onClick={handleLogout}
                   className="w-full px-4 py-2 hover:bg-gray-100 text-left"
                 >
                   <FiLogOut /> Logout
-                </button>
+                </button> */}
               </div>
             )}
           </div>

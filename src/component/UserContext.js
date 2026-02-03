@@ -19,7 +19,7 @@
 
 //       try {
 //         const res = await fetch(
-//           `https://email-syncing-backend.vercel.app/auth/getUsers/${userId}`
+//           `http://localhost:5000/auth/getUsers/${userId}`
 //         );
 //         const data = await res.json();
 
@@ -31,7 +31,7 @@
 //         } else {
 //           // if not nested, fetch organization manually
 //           const orgRes = await fetch(
-//             `https://email-syncing-backend.vercel.app/organization/${userId}`
+//             `http://localhost:5000/organization/${userId}`
 //           );
 //           const orgData = await orgRes.json();
 //           setOrganization(orgData.data);
@@ -89,7 +89,7 @@ export const UserProvider = ({ children }) => {
       setLoading(true);
 
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/auth/getUsers/${userId}`
+        `http://localhost:5000/auth/getUsers/${userId}`
       );
       const data = await res.json();
 
@@ -103,7 +103,7 @@ export const UserProvider = ({ children }) => {
         setOrganization(data.data.organization);
       } else {
         const orgRes = await fetch(
-          `https://email-syncing-backend.vercel.app/organization/${userId}`
+          `http://localhost:5000/organization/${userId}`
         );
         const orgData = await orgRes.json();
         setOrganization(orgData.data);
@@ -114,6 +114,13 @@ export const UserProvider = ({ children }) => {
       setLoading(false);
     }
   };
+const updateUser = (updatedUser) => {
+  setUser(updatedUser);
+};
+
+const updateOrganization = (updatedOrg) => {
+  setOrganization(updatedOrg);
+};
 
   useEffect(() => {
     refreshUser();
@@ -127,7 +134,8 @@ export const UserProvider = ({ children }) => {
         emails,
         setEmails,
         loading,
-
+updateUser,
+    updateOrganization,
         setUser,
         refreshUser,
       }}

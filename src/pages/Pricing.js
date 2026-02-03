@@ -33,7 +33,7 @@ const Pricing = () => {
       }
 
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/stripe/create-checkout-session/${userId}`,
+        `http://localhost:5000/stripe/create-checkout-session/${userId}`,
         {
           method: "POST",
           headers: {

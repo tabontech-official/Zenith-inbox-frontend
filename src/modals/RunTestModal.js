@@ -33,7 +33,7 @@ const RunTestModal = ({
       const userId = localStorage.getItem("userid");
 
       await fetch(
-        "https://email-syncing-backend.vercel.app/mailhook/test/custom",
+        "http://localhost:5000/mailhook/test/custom",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

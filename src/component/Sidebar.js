@@ -57,7 +57,7 @@ const Sidebar = () => {
   useEffect(() => {
     const fetchGuide = async () => {
       try {
-        const res = await fetch(`https://email-syncing-backend.vercel.app/auth/guide/${userId}`, {
+        const res = await fetch(`http://localhost:5000/auth/guide/${userId}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -80,7 +80,7 @@ const Sidebar = () => {
   }, []);
 
   const handleLogout = async () => {
-    await fetch(`https://email-syncing-backend.vercel.app/auth/logout/${userId}`, {
+    await fetch(`http://localhost:5000/auth/logout/${userId}`, {
       method: "POST",
     });
     localStorage.clear();
@@ -103,7 +103,7 @@ const Sidebar = () => {
     if (next > LAST_STEP) {
       setGuideStep(0);
 
-      await fetch(`https://email-syncing-backend.vercel.app/auth/guide/${userId}`, {
+      await fetch(`http://localhost:5000/auth/guide/${userId}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -121,7 +121,7 @@ const Sidebar = () => {
 
     setGuideStep(next);
 
-    await fetch(`https://email-syncing-backend.vercel.app/auth/guide/${userId}`, {
+    await fetch(`http://localhost:5000/auth/guide/${userId}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -137,7 +137,7 @@ const Sidebar = () => {
   const skipGuide = async () => {
     setGuideStep(0);
 
-    await fetch(`https://email-syncing-backend.vercel.app/auth/guide/${userId}`, {
+    await fetch(`http://localhost:5000/auth/guide/${userId}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

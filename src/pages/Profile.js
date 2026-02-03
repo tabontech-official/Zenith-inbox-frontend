@@ -77,7 +77,7 @@ const Profile = () => {
       }
 
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/auth/updateUserAndOrganization/${user._id}`,
+        `http://localhost:5000/auth/updateUserAndOrganization/${user._id}`,
         {
           method: "PUT",
           body: fd,
@@ -92,7 +92,7 @@ const Profile = () => {
 
       toast.success(
         result.imageUpdated
-          ? "Profile & image updated successfully"
+          ? "Profile  updated successfully"
           : "Profile updated successfully"
       );
 
