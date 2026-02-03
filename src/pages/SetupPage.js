@@ -40,7 +40,7 @@ import toast from "react-hot-toast";
 
 const SetupFlow = () => {
   const navigate = useNavigate();
-  const { user, loading } = useContext(UserContext);
+  const { user, loading ,setUser,refreshUser  } = useContext(UserContext);
   const location = useLocation();
   const query = new URLSearchParams(location.search);
   const stepFromURL = parseInt(query.get("step"), 10);
@@ -915,13 +915,33 @@ const SetupFlow = () => {
                   </p>
 
                   <span
-                    onClick={async () => {
-                      await saveSetupProgress({
-                        skipped: true,
-                        stepCompleted: 1,
-                      });
-                      navigate("/organization");
-                    }}
+       onClick={async () => {
+    // 1️⃣ Backend update
+    await saveSetupProgress({
+      stepCompleted: 1,
+      stepStatus: "skipped",
+      skipped: true,
+      completed: true,
+    });
+
+    // 2️⃣ Optimistic local update (optional but fine)
+    setUser((prev) => ({
+      ...prev,
+      setup: {
+        ...prev.setup,
+        completed: true,
+        steps: prev.setup.steps.map((s) =>
+          s.step === 1 ? { ...s, status: "skipped" } : s
+        ),
+      },
+    }));
+
+    // 3️⃣ 🔥 REAL FIX
+    await refreshUser();
+
+    // 4️⃣ Navigate
+    navigate("/organization", { replace: true });
+  }}
                     className="
     absolute bottom-4 left-4
     text-black
@@ -1203,8 +1223,8 @@ const SetupFlow = () => {
 
                       <button
                         disabled={
-                          !confirmations.forwardingEnabled ||
-                          !confirmations.mailhookAdded
+                          !confirmations.forwardingEnabled
+                          // !confirmations.mailhookAdded
                         }
                         onClick={() => setForwardingConfirmed(true)}
                         className="
