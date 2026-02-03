@@ -77,7 +77,6 @@ export const UserProvider = ({ children }) => {
   const [emails, setEmails] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // 🔁 CENTRAL USER FETCH FUNCTION
   const refreshUser = async () => {
     const userId = localStorage.getItem("userid");
     if (!userId) {
