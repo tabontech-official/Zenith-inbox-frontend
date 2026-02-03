@@ -268,19 +268,16 @@ const LoginPage = () => {
         const steps = data?.setup?.steps || [];
 
         setTimeout(() => {
-          // 🔐 ADMIN
           if (userRole === "admin") {
             navigate("/admin/dashboard", { replace: true });
             return;
           }
 
-          // ✅ SETUP DONE → ORGANIZATION
           if (setupCompleted) {
             navigate("/organization", { replace: true });
             return;
           }
 
-          // 🧙 SETUP NOT DONE → WIZARD
           const nextStep =
             steps.find(
               (s) => s.status === "skipped" || s.status === "incomplete"
@@ -299,7 +296,6 @@ const LoginPage = () => {
 
   return (
     <div className="min-h-screen flex bg-gradient-to-br from-purple-600 to-fuchsia-600 relative overflow-hidden">
-      {/* background blobs */}
       <motion.div
         initial={{ scale: 0 }}
         animate={{ scale: [0.8, 1.2, 1] }}
@@ -313,7 +309,6 @@ const LoginPage = () => {
         className="absolute bottom-20 right-20 w-40 h-40 bg-purple-500 rounded-full blur-xl opacity-70"
       />
 
-      {/* LEFT PANEL */}
       <motion.div
         initial={{ x: -100, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}

@@ -115,7 +115,6 @@ export const UserProvider = ({ children }) => {
     }
   };
 
-  // 👈 Initial load
   useEffect(() => {
     refreshUser();
   }, []);
@@ -129,7 +128,6 @@ export const UserProvider = ({ children }) => {
         setEmails,
         loading,
 
-        // 🔥 exposed helpers
         setUser,
         refreshUser,
       }}
