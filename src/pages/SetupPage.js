@@ -58,16 +58,16 @@ const SetupFlow = () => {
     step === 1
       ? "14%"
       : step === 2
-      ? "28%"
-      : step === 3
-      ? "42%"
-      : step === 4
-      ? "56%"
-      : step === 5
-      ? "70%"
-      : step === 6
-      ? "84%"
-      : "100%";
+        ? "28%"
+        : step === 3
+          ? "42%"
+          : step === 4
+            ? "56%"
+            : step === 5
+              ? "70%"
+              : step === 6
+                ? "84%"
+                : "100%";
 
   const [selectedTone, setSelectedTone] = useState("Friendly");
   const [selectedServices, setSelectedServices] = useState(["Store Setup"]);
@@ -84,7 +84,7 @@ const SetupFlow = () => {
     setSelectedServices((prev) =>
       prev.includes(service)
         ? prev.filter((s) => s !== service)
-        : [...prev, service]
+        : [...prev, service],
     );
   };
   // useEffect(() => {
@@ -132,7 +132,7 @@ const SetupFlow = () => {
     const redirectURL = `/setup?step=5`;
 
     const authURL = `https://email-syncing-backend.vercel.app/auth/google?userId=${userId}&redirect=${encodeURIComponent(
-      redirectURL
+      redirectURL,
     )}`;
 
     console.log("🔗 Redirecting to Gmail Auth:", authURL);
@@ -151,7 +151,7 @@ const SetupFlow = () => {
     const redirectURL = `/setup?step=5`;
 
     const authURL = `https://email-syncing-backend.vercel.app/auth/outlook?userId=${userId}&redirect=${encodeURIComponent(
-      redirectURL
+      redirectURL,
     )}`;
 
     console.log("🔗 Redirecting to Microsoft Auth:", authURL);
@@ -170,7 +170,7 @@ const SetupFlow = () => {
             ...data,
             updatedAt: new Date(),
           }),
-        }
+        },
       );
 
       const result = await res.json();
@@ -208,7 +208,7 @@ const SetupFlow = () => {
             stepStatus: status,
             ...extra,
           }),
-        }
+        },
       );
 
       const result = await res.json();
@@ -252,7 +252,7 @@ const SetupFlow = () => {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
-        }
+        },
       );
 
       if (!res.ok) throw new Error("Failed to save SMTP connection");
@@ -288,7 +288,7 @@ const SetupFlow = () => {
 
       try {
         const res = await fetch(
-          `https://email-syncing-backend.vercel.app/mailhook/verification/${user._id}`
+          `https://email-syncing-backend.vercel.app/mailhook/verification/${user._id}`,
         );
         const data = await res.json();
 
@@ -319,7 +319,7 @@ const SetupFlow = () => {
           cleanedBody = cleanedBody
             .replace(
               /(https?:\/\/[^\s<]+)/g,
-              '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:#2563eb;text-decoration:underline;">$1</a>'
+              '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:#2563eb;text-decoration:underline;">$1</a>',
             )
             .replace(/\n/g, "<br/>");
 
@@ -397,7 +397,7 @@ const SetupFlow = () => {
   const fetchValidateEmail = async () => {
     try {
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/mailhook/validateTest/${user._id}`
+        `https://email-syncing-backend.vercel.app/mailhook/validateTest/${user._id}`,
       );
       const data = await res.json();
 
@@ -450,7 +450,7 @@ const SetupFlow = () => {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ toEmail: verificationEmail.toEmail }),
-        }
+        },
       );
 
       const data = await res.json();
@@ -535,7 +535,7 @@ const SetupFlow = () => {
   useEffect(() => {
     if (!loading && user) {
       const hasSkippedStep = user?.setup?.steps?.some(
-        (s) => s.status === "skipped" || s.status === "incomplete"
+        (s) => s.status === "skipped" || s.status === "incomplete",
       );
 
       if (user?.setup?.completed && !hasSkippedStep) {
@@ -551,7 +551,7 @@ const SetupFlow = () => {
       try {
         if (!user?._id) return;
         const res = await fetch(
-          `https://email-syncing-backend.vercel.app/auth/setup/${user._id}`
+          `https://email-syncing-backend.vercel.app/auth/setup/${user._id}`,
         );
         const data = await res.json();
         if (data.success) setSetupProgress(data.data);
@@ -568,7 +568,7 @@ const SetupFlow = () => {
   const MailhookWaitingTimer = () => {
     const [seconds, setSeconds] = useState(10);
     const [message, setMessage] = useState(
-      "Waiting for email... please complete Gmail forwarding setup."
+      "Waiting for email... please complete Gmail forwarding setup.",
     );
     const [showAlert, setShowAlert] = useState(false);
 
@@ -582,7 +582,7 @@ const SetupFlow = () => {
         setMessage((prev) =>
           prev.includes("Waiting")
             ? "No email received on mailhook. Please ensure your email forwarding is active."
-            : "Waiting for forwarded email... please complete Gmail forwarding setup."
+            : "Waiting for forwarded email... please complete Gmail forwarding setup.",
         );
       }, 10000);
 
@@ -659,7 +659,7 @@ const SetupFlow = () => {
 
       try {
         const res = await fetch(
-          `https://email-syncing-backend.vercel.app/mailhook/validateTest/${user._id}`
+          `https://email-syncing-backend.vercel.app/mailhook/validateTest/${user._id}`,
         );
         const data = await res.json();
 
@@ -749,6 +749,11 @@ const SetupFlow = () => {
     const timer = setTimeout(() => setAnimate(false), 500); // stop animation after 0.5s
     return () => clearTimeout(timer);
   }, [step]);
+  const [forwardingConfirmed, setForwardingConfirmed] = useState(false);
+  const [confirmations, setConfirmations] = useState({
+    forwardingEnabled: false,
+    mailhookAdded: false,
+  });
 
   return (
     <div className="relative min-h-screen bg-[#F9FAFB] overflow-hidden">
@@ -1102,18 +1107,15 @@ const SetupFlow = () => {
     "
                   style={{ WebkitBackdropFilter: "blur(19.9px)" }}
                 >
-                  {/* ALERT FIXED AREA */}
                   <div className="w-full h-[48px] flex items-center justify-center mb-2 overflow-hidden">
                     <AlertMessage />
                   </div>
 
-                  {/* HEADER */}
                   <div className="w-full max-w-xl mx-auto">
                     <h2 className="text-2xl sm:text-3xl font-bold text-[#111827] mb-5">
                       Set up Forwarding
                     </h2>
 
-                    {/* Description / Instruction */}
                     <p className="text-sm text-gray-600 mb-4 leading-relaxed">
                       Set the following address as your{" "}
                       <strong>email forwarding destination</strong>. Once
@@ -1121,7 +1123,6 @@ const SetupFlow = () => {
                       email like the example below.
                     </p>
 
-                    {/* MAILHOOK BAR (GLASS) */}
                     <div
                       className="
     w-full bg-white/50 px-4 py-3 rounded-xl
@@ -1135,7 +1136,6 @@ const SetupFlow = () => {
                         Forward emails to:
                       </span>
 
-                      {/* FIXED WRAPPER */}
                       <div className="flex items-center gap-2 flex-nowrap">
                         <span className="text-[#4F46E5] truncate max-w-[220px]">
                           {user?.mailhook || "loading..."}
@@ -1158,10 +1158,70 @@ const SetupFlow = () => {
                       </div>
                     </div>
                   </div>
+                  {/* FORWARDING CONFIRMATION */}
+                  {!forwardingConfirmed && (
+                    <div className="w-full max-w-xl mx-auto mt-6 bg-white/40 border border-white/60 rounded-xl p-6 backdrop-blur-xl shadow">
+                      <h3 className="text-lg font-semibold text-[#111827] mb-4">
+                        Before we continue
+                      </h3>
 
-                  {/* MAIN VALIDATION CARD (Glass) */}
-                  <div
-                    className="
+                      <div className="space-y-3 text-sm text-gray-700 text-left">
+                        <label className="flex items-start gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            className="mt-1"
+                            onChange={(e) =>
+                              setConfirmations((prev) => ({
+                                ...prev,
+                                forwardingEnabled: e.target.checked,
+                              }))
+                            }
+                          />
+                          <span>
+                            I have enabled <strong>email forwarding</strong> in
+                            my email provider
+                          </span>
+                        </label>
+
+                        {/* <label className="flex items-start gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            className="mt-1"
+                            onChange={(e) =>
+                              setConfirmations((prev) => ({
+                                ...prev,
+                                mailhookAdded: e.target.checked,
+                              }))
+                            }
+                          />
+                          <span>
+                            I added the <strong>mailhook address</strong> as
+                            forwarding destination
+                          </span>
+                        </label> */}
+                      </div>
+
+                      <button
+                        disabled={
+                          !confirmations.forwardingEnabled ||
+                          !confirmations.mailhookAdded
+                        }
+                        onClick={() => setForwardingConfirmed(true)}
+                        className="
+        mt-6 w-full px-6 py-2 rounded-full text-sm font-semibold
+        bg-white/30 border border-white/50 backdrop-blur-xl
+        shadow hover:bg-white/40 transition
+        disabled:opacity-50 disabled:cursor-not-allowed
+      "
+                      >
+                        Continue
+                      </button>
+                    </div>
+                  )}
+                  {forwardingConfirmed && (
+                    <>
+                      <div
+                        className="
         relative p-6 w-full max-w-xl mx-auto text-center
         rounded-2xl
         bg-white/40
@@ -1170,108 +1230,46 @@ const SetupFlow = () => {
         backdrop-blur-[8px]
         mt-8
       "
-                  >
-                    {/* RETRY BUTTON */}
-                    {!validationPhase && !validated && showValidateButton && (
-                      <button
-                        onClick={handleRetryValidation}
-                        className="
+                      >
+                        {!validationPhase &&
+                          !validated &&
+                          showValidateButton && (
+                            <button
+                              onClick={handleRetryValidation}
+                              className="
             absolute top-4 right-4 
             flex items-center gap-1 
             text-xs font-semibold text-[#4F46E5]
             hover:text-[#3730A3] transition
           "
-                      >
-                        <FiRefreshCcw className="text-sm" /> Retry
-                      </button>
-                    )}
+                            >
+                              <FiRefreshCcw className="text-sm" /> Retry
+                            </button>
+                          )}
 
-                    <h3 className="text-lg font-semibold text-[#111827] mb-4">
-                      Email Receiving
-                    </h3>
+                        <h3 className="text-lg font-semibold text-[#111827] mb-4">
+                          Email Receiving
+                        </h3>
 
-                    {/* FIXED HEIGHT INNER AREA */}
-                    <div
-                      className="
+                        {/* FIXED HEIGHT INNER AREA */}
+                        <div
+                          className="
           relative min-h-[180px] rounded-lg p-4
           bg-white/50
           border border-white/60
           backdrop-blur-md
           shadow-inner text-gray-700
         "
-                    >
-                      {/* ERROR */}
-                      {validationFailed ? (
-                        <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4 text-center">
-                          <p className="font-semibold mb-2">
-                            Forwarding is not configured correctly.
-                          </p>
-                          <p className="text-sm">
-                            Please check your forwarding configuration or refer
-                            to our{" "}
-                            <button
-                              onClick={() => {
-                                setIsExpanded(true);
-                                setShowMobileInstructions(true);
-                              }}
-                              className="text-red-700 font-semibold underline hover:text-red-900"
-                            >
-                              Setup Guide
-                            </button>{" "}
-                            for step by step instructions.
-                          </p>
-                        </div>
-                      ) : validationPhase ? (
-                        showValidateButton ? (
-                          <div className="text-center py-6 text-gray-500 text-sm">
-                            <p>No email received.</p>
-                            <p>Please enter your email below.</p>
-                          </div>
-                        ) : (
-                          <MailhookWaitingTimer message="Waiting for validation email..." />
-                        )
-                      ) : validated ? (
-                        <div className="flex flex-col items-center justify-center py-6">
-                          <div className="bg-green-100 text-green-700 px-4 py-3 rounded-full flex items-center gap-2 shadow-sm border border-green-200">
-                            <FiCheck className="text-green-600 text-2xl" />
-                            <span className="font-semibold text-green-700">
-                              Mailhook Connected
-                            </span>
-                          </div>
-
-                          <p className="text-sm text-gray-600 mt-3">
-                            Forwarding verified successfully.
-                          </p>
-                        </div>
-                      ) : verificationEmail?.sender ? (
-                        <>
-                          <div
-                            className="pt-3 max-h-32 overflow-y-auto text-sm leading-relaxed text-gray-700"
-                            dangerouslySetInnerHTML={{
-                              __html:
-                                verificationEmail.formattedBody ||
-                                verificationEmail.textBody,
-                            }}
-                          />
-
-                          {/* Gmail Warning */}
-                          {verificationEmail.isGmailVerification && (
-                            <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 rounded-lg p-4 mt-4 text-center text-sm">
-                              Gmail confirmation detected — open Gmail and
-                              approve forwarding.
-                            </div>
-                          )}
-                        </>
-                      ) : showValidateButton ? (
-                        <div className="text-center text-sm text-gray-600">
-                          <p>No verfication email received yet.</p>
-                          <div class="bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded-lg text-sm">
-                            <p class="leading-relaxed">
-                              Please confirm that you have correctly set up
-                              email forwarding in your email provider. We
-                              recommend visiting our{" "}
-                              <strong>
-                                {" "}
+                        >
+                          {/* ERROR */}
+                          {validationFailed ? (
+                            <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4 text-center">
+                              <p className="font-semibold mb-2">
+                                Forwarding is not configured correctly.
+                              </p>
+                              <p className="text-sm">
+                                Please check your forwarding configuration or
+                                refer to our{" "}
                                 <button
                                   onClick={() => {
                                     setIsExpanded(true);
@@ -1280,59 +1278,124 @@ const SetupFlow = () => {
                                   className="text-red-700 font-semibold underline hover:text-red-900"
                                 >
                                   Setup Guide
-                                </button>
-                              </strong>{" "}
-                              for a complete step-by-step walkthrough.
-                              <br />
-                              <br />
-                              If you have already configured forwarding and want
-                              to skip the verification process, please enter
-                              your email below to validate and finalize the
-                              setup.
-                            </p>
-                          </div>
+                                </button>{" "}
+                                for step by step instructions.
+                              </p>
+                            </div>
+                          ) : validationPhase ? (
+                            showValidateButton ? (
+                              <div className="text-center py-6 text-gray-500 text-sm">
+                                <p>No email received.</p>
+                                <p>Please enter your email below.</p>
+                              </div>
+                            ) : (
+                              <MailhookWaitingTimer message="Waiting for validation email..." />
+                            )
+                          ) : validated ? (
+                            <div className="flex flex-col items-center justify-center py-6">
+                              <div className="bg-green-100 text-green-700 px-4 py-3 rounded-full flex items-center gap-2 shadow-sm border border-green-200">
+                                <FiCheck className="text-green-600 text-2xl" />
+                                <span className="font-semibold text-green-700">
+                                  Mailhook Connected
+                                </span>
+                              </div>
+
+                              <p className="text-sm text-gray-600 mt-3">
+                                Forwarding verified successfully.
+                              </p>
+                            </div>
+                          ) : verificationEmail?.sender ? (
+                            <>
+                              <div
+                                className="pt-3 max-h-32 overflow-y-auto text-sm leading-relaxed text-gray-700"
+                                dangerouslySetInnerHTML={{
+                                  __html:
+                                    verificationEmail.formattedBody ||
+                                    verificationEmail.textBody,
+                                }}
+                              />
+
+                              {/* Gmail Warning */}
+                              {verificationEmail.isGmailVerification && (
+                                <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 rounded-lg p-4 mt-4 text-center text-sm">
+                                  Gmail confirmation detected — open Gmail and
+                                  approve forwarding.
+                                </div>
+                              )}
+                            </>
+                          ) : showValidateButton ? (
+                            <div className="text-center text-sm text-gray-600">
+                              <p>No verfication email received yet.</p>
+                              <div class="bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded-lg text-sm">
+                                <p class="leading-relaxed">
+                                  Please confirm that you have correctly set up
+                                  email forwarding in your email provider. We
+                                  recommend visiting our{" "}
+                                  <strong>
+                                    {" "}
+                                    <button
+                                      onClick={() => {
+                                        setIsExpanded(true);
+                                        setShowMobileInstructions(true);
+                                      }}
+                                      className="text-red-700 font-semibold underline hover:text-red-900"
+                                    >
+                                      Setup Guide
+                                    </button>
+                                  </strong>{" "}
+                                  for a complete step-by-step walkthrough.
+                                  <br />
+                                  <br />
+                                  If you have already configured forwarding and
+                                  want to skip the verification process, please
+                                  enter your email below to validate and
+                                  finalize the setup.
+                                </p>
+                              </div>
+                            </div>
+                          ) : (
+                            <MailhookWaitingTimer />
+                          )}
                         </div>
-                      ) : (
-                        <MailhookWaitingTimer />
-                      )}
-                    </div>
 
-                    {/* EMAIL INPUT (Glass) */}
-                    <div
-                      className={`space-y-3 mt-6 transition-all duration-300 ${
-                        !validationPhase &&
-                        !validated &&
-                        (showValidateButton ||
-                          verificationEmail?.isGmailVerification)
-                          ? "opacity-100 max-h-[150px]"
-                          : "opacity-0 max-h-0 overflow-hidden"
-                      }`}
-                    >
-                      <p className="text-sm text-gray-700">
-                        Enter the email address you configured forwarding from:
-                      </p>
+                        {/* EMAIL INPUT (Glass) */}
+                        <div
+                          className={`space-y-3 mt-6 transition-all duration-300 ${
+                            !validationPhase &&
+                            !validated &&
+                            (showValidateButton ||
+                              verificationEmail?.isGmailVerification)
+                              ? "opacity-100 max-h-[150px]"
+                              : "opacity-0 max-h-0 overflow-hidden"
+                          }`}
+                        >
+                          <p className="text-sm text-gray-700">
+                            Enter the email address you configured forwarding
+                            from:
+                          </p>
 
-                      <input
-                        type="email"
-                        placeholder="Enter your email"
-                        className="
+                          <input
+                            type="email"
+                            placeholder="Enter your email"
+                            className="
             w-full px-3 py-2 rounded-lg text-sm
             bg-white/70 border border-gray-300
             text-gray-700 placeholder-gray-400
             focus:ring-2 focus:ring-indigo-400 outline-none
             backdrop-blur-md
           "
-                        value={verificationEmail?.toEmail || ""}
-                        onChange={(e) =>
-                          setVerificationEmail({
-                            ...verificationEmail,
-                            toEmail: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                  </div>
-
+                            value={verificationEmail?.toEmail || ""}
+                            onChange={(e) =>
+                              setVerificationEmail({
+                                ...verificationEmail,
+                                toEmail: e.target.value,
+                              })
+                            }
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )}
                   <div className="mt-10 pt-6 flex justify-center w-full max-w-xl  border-white/40">
                     {!validated &&
                     !validationPhase &&
@@ -1870,8 +1933,8 @@ const InstructionPanel = ({
     isMobile
       ? "w-full p-5 text-sm"
       : isExpanded
-      ? "w-[700px] p-8"
-      : "w-[450px] p-7"
+        ? "w-[700px] p-8"
+        : "w-[450px] p-7"
   }`}
       style={{ WebkitBackdropFilter: "blur(12px)" }}
     >
@@ -2609,7 +2672,7 @@ const InstructionPanel = ({
                       <strong>
                         {
                           user.setup.steps.filter(
-                            (s) => s.status === "completed"
+                            (s) => s.status === "completed",
                           ).length
                         }
                       </strong>
