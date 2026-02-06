@@ -40,7 +40,7 @@ import toast from "react-hot-toast";
 
 const SetupFlow = () => {
   const navigate = useNavigate();
-  const { user, loading ,setUser,refreshUser  } = useContext(UserContext);
+  const { user, loading, setUser, refreshUser } = useContext(UserContext);
   const location = useLocation();
   const query = new URLSearchParams(location.search);
   const stepFromURL = parseInt(query.get("step"), 10);
@@ -237,33 +237,6 @@ const SetupFlow = () => {
     port: 587,
   });
 
-  const handleSmtpChange = (e) => {
-    setSmtpForm({ ...smtpForm, [e.target.name]: e.target.value });
-  };
-
-  const handleSmtpSave = async () => {
-    try {
-      const userId = localStorage.getItem("userid");
-      const payload = { ...smtpForm, userId, provider: "outlook" };
-
-      const res = await fetch(
-        "https://email-syncing-backend.vercel.app/auth/saveSmtpConnection",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        },
-      );
-
-      if (!res.ok) throw new Error("Failed to save SMTP connection");
-      alert("SMTP connection saved successfully!");
-      setStep(5);
-    } catch (err) {
-      console.error(err);
-      alert(" Failed to save SMTP connection");
-    }
-  };
-
   const [verificationEmail, setVerificationEmail] = useState(null);
   const [retryKey, setRetryKey] = useState(0);
 
@@ -373,26 +346,6 @@ const SetupFlow = () => {
 
     return () => clearInterval(intervalId);
   }, [step, user, retryKey]);
-
-  // const fetchValidateEmail = async () => {
-  //   try {
-  //     const res = await fetch(
-  //       `https://email-syncing-backend.vercel.app/mailhook/validateTest/${user._id}`
-  //     );
-  //     const data = await res.json();
-
-  //     if (data.success) {
-  //       console.log(" Validation email found:", data.data);
-  //       setVerificationEmail(data.data);
-  //       setValidated(true);
-  //     } else {
-  //       console.log(" Not yet validated:", data.message);
-  //       setValidated(false);
-  //     }
-  //   } catch (err) {
-  //     console.error("Error fetching validation email:", err);
-  //   }
-  // };
 
   const fetchValidateEmail = async () => {
     try {
@@ -752,7 +705,7 @@ const SetupFlow = () => {
   const [forwardingConfirmed, setForwardingConfirmed] = useState(false);
   const [confirmations, setConfirmations] = useState({
     forwardingEnabled: false,
-    mailhookAdded: false,
+    provider: null,
   });
 
   return (
@@ -915,33 +868,33 @@ const SetupFlow = () => {
                   </p>
 
                   <span
-       onClick={async () => {
-    // 1️⃣ Backend update
-    await saveSetupProgress({
-      stepCompleted: 1,
-      stepStatus: "skipped",
-      skipped: true,
-      completed: true,
-    });
+                    onClick={async () => {
+                      // 1️⃣ Backend update
+                      await saveSetupProgress({
+                        stepCompleted: 1,
+                        stepStatus: "skipped",
+                        skipped: true,
+                        completed: true,
+                      });
 
-    // 2️⃣ Optimistic local update (optional but fine)
-    setUser((prev) => ({
-      ...prev,
-      setup: {
-        ...prev.setup,
-        completed: true,
-        steps: prev.setup.steps.map((s) =>
-          s.step === 1 ? { ...s, status: "skipped" } : s
-        ),
-      },
-    }));
+                      // 2️⃣ Optimistic local update (optional but fine)
+                      setUser((prev) => ({
+                        ...prev,
+                        setup: {
+                          ...prev.setup,
+                          completed: true,
+                          steps: prev.setup.steps.map((s) =>
+                            s.step === 1 ? { ...s, status: "skipped" } : s,
+                          ),
+                        },
+                      }));
 
-    // 3️⃣ 🔥 REAL FIX
-    await refreshUser();
+                      // 3️⃣ 🔥 REAL FIX
+                      await refreshUser();
 
-    // 4️⃣ Navigate
-    navigate("/organization", { replace: true });
-  }}
+                      // 4️⃣ Navigate
+                      navigate("/organization", { replace: true });
+                    }}
                     className="
     absolute bottom-4 left-4
     text-black
@@ -1186,6 +1139,7 @@ const SetupFlow = () => {
                       </h3>
 
                       <div className="space-y-3 text-sm text-gray-700 text-left">
+                        {/* Forwarding enabled */}
                         <label className="flex items-start gap-2 cursor-pointer">
                           <input
                             type="checkbox"
@@ -1198,46 +1152,121 @@ const SetupFlow = () => {
                             }
                           />
                           <span>
-                            I have enabled <strong>email forwarding</strong> in
-                            my email provider
+                            I have enabled <strong>email forwarding</strong>
                           </span>
                         </label>
 
-                        {/* <label className="flex items-start gap-2 cursor-pointer">
+                        {/* Gmail */}
+                        <label className="flex items-start gap-2 cursor-pointer">
                           <input
-                            type="checkbox"
-                            className="mt-1"
-                            onChange={(e) =>
+                            type="radio"
+                            name="provider"
+                            disabled={!confirmations.forwardingEnabled}
+                            onChange={() =>
                               setConfirmations((prev) => ({
                                 ...prev,
-                                mailhookAdded: e.target.checked,
+                                provider: "gmail",
                               }))
                             }
                           />
                           <span>
-                            I added the <strong>mailhook address</strong> as
-                            forwarding destination
+                            I set it up using <strong>Gmail / Google</strong>
                           </span>
-                        </label> */}
+                        </label>
+
+                        {/* Other providers */}
+                        <label className="flex items-start gap-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="provider"
+                            disabled={!confirmations.forwardingEnabled}
+                            onChange={() =>
+                              setConfirmations((prev) => ({
+                                ...prev,
+                                provider: "other",
+                              }))
+                            }
+                          />
+                          <span>
+                            I use{" "}
+                            <strong>Outlook / Hotmail / Other provider</strong>
+                          </span>
+                        </label>
                       </div>
 
-                      <button
-                        disabled={
-                          !confirmations.forwardingEnabled
-                          // !confirmations.mailhookAdded
-                        }
-                        onClick={() => setForwardingConfirmed(true)}
-                        className="
-        mt-6 w-full px-6 py-2 rounded-full text-sm font-semibold
-        bg-white/30 border border-white/50 backdrop-blur-xl
-        shadow hover:bg-white/40 transition
-        disabled:opacity-50 disabled:cursor-not-allowed
-      "
-                      >
-                        Continue
-                      </button>
+                      {/* CONTINUE BUTTON (ONLY FOR GMAIL) */}
+                      {confirmations.forwardingEnabled &&
+                        confirmations.provider === "gmail" && (
+                          <button
+                            onClick={() => setForwardingConfirmed(true)}
+                            className="
+            mt-6 w-full px-6 py-2 rounded-full text-sm font-semibold
+            bg-white/30 border border-white/50 backdrop-blur-xl
+            shadow hover:bg-white/40 transition
+          "
+                          >
+                            Continue
+                          </button>
+                        )}
                     </div>
                   )}
+                  {confirmations.forwardingEnabled &&
+                    confirmations.provider === "other" &&
+                    !forwardingConfirmed && (
+                      <div className="w-full max-w-xl mx-auto mt-6 bg-white/40 border border-white/60 rounded-xl p-6 backdrop-blur-xl shadow">
+                        <p className="text-sm text-gray-700 mb-3">
+                          Enter the email address you configured forwarding
+                          from:
+                        </p>
+
+                        <input
+                          type="email"
+                          placeholder="your@email.com"
+                          className="
+          w-full px-3 py-2 rounded-lg text-sm
+          bg-white/70 border border-gray-300
+          focus:ring-2 focus:ring-indigo-400 outline-none
+        "
+                          value={verificationEmail?.toEmail || ""}
+                          onChange={(e) =>
+                            setVerificationEmail({
+                              ...verificationEmail,
+                              toEmail: e.target.value,
+                            })
+                          }
+                        />
+
+                        <button
+                          disabled={validating}
+                          onClick={async () => {
+                            if (!verificationEmail?.toEmail?.trim()) {
+                              setAlert({
+                                type: "error",
+                                message: "Enter your email address!",
+                              });
+                              return;
+                            }
+                            setForwardingConfirmed(true);
+
+                            setValidating(true);
+                            setValidationFailed(false);
+                            setShowValidateButton(false);
+                            setValidationPhase(true);
+
+                            await handleValidateForwarding();
+                            startValidationLoop();
+                          }}
+                          className="
+          mt-4 w-full px-6 py-2 rounded-full text-sm font-semibold
+          bg-white/30 border border-white/50 backdrop-blur-xl
+          shadow hover:bg-white/40 transition
+        "
+                        >
+                          {validating ? "Validating..." : "Validate Forwarding"}
+                        </button>
+                      </div>
+                    )}
+
                   {forwardingConfirmed && (
                     <>
                       <div
@@ -1420,6 +1449,7 @@ const SetupFlow = () => {
                     {!validated &&
                     !validationPhase &&
                     (showValidateButton ||
+                      forwardingConfirmed ||
                       verificationEmail?.isGmailVerification) ? (
                       <button
                         disabled={validating}
@@ -1738,7 +1768,7 @@ const SetupFlow = () => {
                           stepCompleted: 5,
                           completed: true,
                         });
-                         await refreshUser();
+                        await refreshUser();
                         navigate("/organization");
                       }}
                       className="
@@ -1763,50 +1793,42 @@ const SetupFlow = () => {
             </div>
           </div>
           {!isExpanded && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 20 }}
-              transition={{ duration: 0.4 }}
-              className="
-      w-full max-w-2xl mx-auto 
-      flex justify-end pr-4 
-      pointer-events-auto
-    "
-            >
-              <motion.button
+            <div className="fixed right-0 top-1/2 -translate-y-1/2 z-50">
+              <button
                 onClick={() => setIsExpanded(true)}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
                 className="
+        font-sans
         bg-white/30
         backdrop-blur-xl
         border border-white/50
-        text-[#111827]                      /* DARK TEXT */
+        text-[#111827]
+        py-8 px-3
+        rounded-l-[20px]
         shadow-[0_8px_25px_rgba(0,0,0,0.15)]
-        hover:bg-white/40
-        px-5 py-3 rounded-full
-        flex items-center gap-2 text-sm font-semibold
         transition-all duration-300
+        hover:bg-white/40
+        hover:shadow-[0_10px_30px_rgba(0,0,0,0.2)]
+        active:scale-[0.97]
+        group
       "
-                style={{ WebkitBackdropFilter: "blur(12px)" }}
+                style={{ WebkitBackdropFilter: "blur(14px)" }}
               >
-                <motion.div
-                  animate={{ scale: [1, 1.15, 1] }}
-                  transition={{
-                    duration: 1.8,
-                    repeat: Infinity,
-                    repeatType: "mirror",
-                    ease: "easeInOut",
-                  }}
+                <span
+                  className="
+          [writing-mode:vertical-lr]
+          rotate-180
+          text-[11px]
+          font-semibold
+          tracking-[0.25em]
+          uppercase
+          flex items-center gap-2
+        "
                 >
-                  <FiInfo className="text-[#4F46E5] text-lg" />{" "}
-                  {/* Indigo icon */}
-                </motion.div>
-
-                <span className="text-[14px] font-medium">Setup Guide</span>
-              </motion.button>
-            </motion.div>
+                  <FiInfo className="text-[#4F46E5] text-sm" />
+                  Setup Guide
+                </span>
+              </button>
+            </div>
           )}
         </div>
       </div>

@@ -99,7 +99,7 @@ const LandingPage = () => {
             </motion.h1>
 
             <motion.p
-              variants={fadeUp}
+              variants={fadeUp}   
               className="text-xl text-gray-400 max-w-lg leading-relaxed font-light"
             >
               Build visual scenarios to automatically reply to leads, apply
