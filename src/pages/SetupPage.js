@@ -37,6 +37,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { UserContext } from "../component/UserContext";
 import { FaGoogle, FaMicrosoft, FaRegLightbulb } from "react-icons/fa";
 import toast from "react-hot-toast";
+import SetupOtherSMTPModal from "../component/SetupOtherSMTPModal";
 
 const SetupFlow = () => {
   const navigate = useNavigate();
@@ -45,6 +46,7 @@ const SetupFlow = () => {
   const query = new URLSearchParams(location.search);
   const stepFromURL = parseInt(query.get("step"), 10);
   const [step, setStep] = useState(stepFromURL || 1);
+  const [showOtherSMTPModal, setShowOtherSMTPModal] = useState(false);
   const [testSent, setTestSent] = useState(false);
   const [sendingMode, setSendingMode] = useState("Auto-Send");
   const [followUp1, setFollowUp1] = useState(2);
@@ -758,7 +760,7 @@ const SetupFlow = () => {
       px-5 py-2 rounded-full text-sm sm:text-base font-semibold
       flex items-center justify-center gap-1
 
-      text-[#111827]           /* DARK TEXT */
+      text-[#111827]           
       bg-white/30
       backdrop-blur-[10px]
       border border-white/40
@@ -1554,7 +1556,7 @@ const SetupFlow = () => {
         shadow-[0_4px_20px_rgba(0,0,0,0.12)]
       "
                   >
-                    {["Gmail", "Microsoft"].map((tab) => (
+                    {["Gmail", "Microsoft", "Other"].map((tab) => (
                       <button
                         key={tab}
                         onClick={() => setSelectedTab(tab)}
@@ -1634,15 +1636,44 @@ const SetupFlow = () => {
                       </button>
                     </div>
                   )}
+                  {/* Other SMTP Panel */}
+                  {selectedTab === "Other" && (
+                    <div
+                      className="
+      bg-white/40 backdrop-blur-xl
+      border border-white/60
+      rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.1)]
+      p-6 sm:p-8 text-center flex flex-col items-center
+      space-y-4 max-w-sm mx-auto
+    "
+                    >
+                      <p className="text-gray-800 text-sm sm:text-base leading-relaxed">
+                        Connect any custom SMTP provider (Outlook, Zoho, Yahoo,
+                        Private SMTP).
+                      </p>
 
+                      <button
+                        onClick={() => setShowOtherSMTPModal(true)}
+                        className="
+        flex items-center gap-2
+        px-6 py-3 rounded-full text-sm font-semibold
+        bg-indigo-600 hover:bg-indigo-700 text-white
+        shadow-[0_6px_20px_rgba(0,0,0,0.2)]
+        transition-all hover:scale-[1.05]
+      "
+                      >
+                        Connect Other SMTP
+                      </button>
+                    </div>
+                  )}
                   {/* Footer Button */}
                   <div className="flex justify-center w-full max-w-md mt-10 border-t border-white/50 pt-6">
                     <button
                       onClick={async () => {
-                        await saveSetupProgress({
-                          stepCompleted: 4,
-                          stepStatus: "completed",
-                        });
+                        // await saveSetupProgress({
+                        //   stepCompleted: 4,
+                        //   stepStatus: "completed",
+                        // });
                         setStep(5);
                       }}
                       className="
@@ -1926,6 +1957,18 @@ const SetupFlow = () => {
           </motion.div>
         )}
       </AnimatePresence>
+      <SetupOtherSMTPModal
+        isOpen={showOtherSMTPModal}
+        onClose={() => setShowOtherSMTPModal(false)}
+        onSuccess={async () => {
+          await saveSetupProgress({
+            stepCompleted: 4,
+            stepStatus: "completed",
+          });
+
+          setStep(5);
+        }}
+      />
     </div>
   );
 };

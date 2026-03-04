@@ -1442,38 +1442,70 @@ const ShopifyScenariosPage = () => {
   };
   const [serviceGroups, setServiceGroups] = useState([]);
 
-  useEffect(() => {
-    if (showServiceModal) {
-      (async () => {
-        const userId = localStorage.getItem("userid");
-        try {
-          const { data } = await axios.get(
-            `https://email-syncing-backend.vercel.app/template/all?userId=${userId}`
-          );
+  // useEffect(() => {
+  //   if (showServiceModal) {
+  //     (async () => {
+  //       const userId = localStorage.getItem("userid");
+  //       try {
+  //         const { data } = await axios.get(
+  //           `https://email-syncing-backend.vercel.app/template/all?userId=${userId}`
+  //         );
 
-          const grouped = data.reduce((acc, item) => {
-            if (!acc[item.service]) acc[item.service] = [];
-            acc[item.service].push(item);
-            return acc;
-          }, {});
+  //         const grouped = data.reduce((acc, item) => {
+  //           if (!acc[item.service]) acc[item.service] = [];
+  //           acc[item.service].push(item);
+  //           return acc;
+  //         }, {});
 
-          const top2Services = Object.keys(grouped).slice(0, 2);
+  //         const top2Services = Object.keys(grouped).slice(0, 2);
 
-          const result = top2Services.map((service) => ({
-            service,
-            templates: grouped[service],
-          }));
+  //         const result = top2Services.map((service) => ({
+  //           service,
+  //           templates: grouped[service],
+  //         }));
 
-          const allActive = data.every((t) => t.active === true);
-          setAllTemplatesActive(allActive);
+  //         const allActive = data.every((t) => t.active === true);
+  //         setAllTemplatesActive(allActive);
 
-          setServiceGroups(result);
-        } catch (err) {
-          console.error("Failed to fetch templates:", err);
-        }
-      })();
-    }
-  }, [showServiceModal]);
+  //         setServiceGroups(result);
+  //       } catch (err) {
+  //         console.error("Failed to fetch templates:", err);
+  //       }
+  //     })();
+  //   }
+  // }, [showServiceModal]);
+
+useEffect(() => {
+  if (showServiceModal) {
+    (async () => {
+      const userId = localStorage.getItem("userid");
+      try {
+        const { data } = await axios.get(
+          `https://email-syncing-backend.vercel.app/template/all?userId=${userId}`
+        );
+
+        const grouped = data.reduce((acc, item) => {
+          if (!acc[item.service]) acc[item.service] = [];
+          acc[item.service].push(item);
+          return acc;
+        }, {});
+
+        const result = Object.keys(grouped).map((service) => ({
+          service,
+          templates: grouped[service],
+        }));
+
+        const allActive = data.every((t) => t.active === true);
+        setAllTemplatesActive(allActive);
+
+        setServiceGroups(result);
+      } catch (err) {
+        console.error("Failed to fetch templates:", err);
+      }
+    })();
+  }
+}, [showServiceModal]);
+
   const [allTemplatesActive, setAllTemplatesActive] = useState(true);
 
   const [showVerifyModal, setShowVerifyModal] = useState(false);

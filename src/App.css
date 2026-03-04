@@ -5,7 +5,6 @@ body{
     filter: blur(5px);
     pointer-events: none;
   }
-  /* Container base */
 .slide-container {
   width: 100%;
   max-width: 40rem;
@@ -15,17 +14,14 @@ body{
   opacity: 1;
 }
 
-/* Slide In Right */
 .slide-in-right {
   animation: slideInRight 0.6s ease forwards;
 }
 
-/* Slide In Left */
 .slide-in-left {
   animation: slideInLeft 0.6s ease forwards;
 }
 
-/* Keyframes */
 @keyframes slideInRight {
   from {
     opacity: 0;
@@ -48,7 +44,6 @@ body{
   }
 }
 
-/* Optional shared card styles */
 .step-card {
   @apply flex flex-col items-center justify-between min-h-[560px]
   text-center border border-gray-200 rounded-2xl
@@ -57,7 +52,6 @@ body{
   p-8 sm:p-10 transition-all duration-500;
 }
 
-/* Button style */
 .btn-primary {
   @apply flex items-center justify-center gap-2 bg-[#4F46E5]
   hover:bg-[#4338CA] text-white font-semibold text-sm
