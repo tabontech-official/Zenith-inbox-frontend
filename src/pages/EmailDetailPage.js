@@ -344,7 +344,7 @@ const EmailDetailPage = () => {
         </aside>
       </main>
 
-      <style>
+      {/* <style>
         {`
           .highlight-card {
             animation: flashHighlight 1.2s ease;
@@ -354,7 +354,7 @@ const EmailDetailPage = () => {
             100% { background-color: transparent; }
           }
         `}
-      </style>
+      </style> */}
     </div>
   );
 };
