@@ -16,35 +16,7 @@ const Inbox = () => {
   const [loading, setLoading] = useState(false);
   const [readEmails, setReadEmails] = useState(new Set());
   const [isMobileView, setIsMobileView] = useState(false);
-const formatEmailBody = (html, text) => {
-  if (html) return html;
-  if (!text) return "";
 
-  let formatted = text;
-
-  // Fix cases where multiple fields are on same line
-  formatted = formatted.replace(
-    /(Full Name:|Business Email:|Country:|Service:|Budget:|Store Name:|Store URL:|Problem & Goal:)/g,
-    "<br/><strong>$1</strong>"
-  );
-
-  // URL clickable
-  formatted = formatted.replace(
-    /(https?:\/\/[^\s]+)/g,
-    '<a href="$1" target="_blank" style="color:#2563eb;text-decoration:underline">$1</a>'
-  );
-
-  // Email clickable
-  formatted = formatted.replace(
-    /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+)/g,
-    '<a href="mailto:$1" style="color:#2563eb">$1</a>'
-  );
-
-  // Line breaks fix
-  formatted = formatted.replace(/\r\n|\r|\n/g, "<br/>");
-
-  return formatted;
-};
   useEffect(() => {
     const handleResize = () => setIsMobileView(window.innerWidth < 1024);
     handleResize();
@@ -68,6 +40,7 @@ const formatEmailBody = (html, text) => {
   //     setLoading(false);
   //   }
   // };
+
   const fetchEmails = async () => {
     try {
       setLoading(true);
@@ -78,6 +51,12 @@ const formatEmailBody = (html, text) => {
 
       let data = res.data?.data?.rootEmails || [];
 
+      // Sirf woh emails jisme reply gaya ho
+      data = data.filter(
+        (email) => email.children && email.children.length > 0,
+      );
+
+      // Latest first
       data = data.sort((a, b) => new Date(b.date) - new Date(a.date));
 
       setEmails(data);
@@ -91,9 +70,41 @@ const formatEmailBody = (html, text) => {
       setLoading(false);
     }
   };
+
   useEffect(() => {
     fetchEmails();
   }, []);
+  const formatEmailBody = (html, text) => {
+    let content = html && html.trim().length > 0 ? html : text;
+
+    if (!content) return "";
+
+    content = content.replace(/disabled/g, "");
+
+    content = content.replace(
+      /(https?:\/\/[^\s<]+)/g,
+      '<a href="$1" target="_blank" style="color:#2563eb;text-decoration:underline;font-weight:500">$1</a>',
+    );
+
+    content = content.replace(
+      /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g,
+      '<a href="mailto:$1" style="color:#2563eb;text-decoration:underline">$1</a>',
+    );
+
+    content = content.replace(
+      /(Full Name:|Business Email:|Country:|Service:|Budget:|Store Name:|Store URL:|Problem & Goal:)/g,
+      '<br/><strong class="text-gray-900">$1</strong>',
+    );
+
+    content = content.replace(/\n\s*\n/g, "<br/><br/>");
+    content = content.replace(/\n/g, "<br/>");
+
+    return `
+    <div style="font-family:Segoe UI, Arial, sans-serif; line-height:1.7;">
+      ${content}
+    </div>
+  `;
+  };
 
   const handleEmailClick = (email) => {
     setSelectedEmail(email);
@@ -106,38 +117,51 @@ const formatEmailBody = (html, text) => {
     return div.innerHTML;
   };
 
-  const renderConversation = (email) => (
-    <div
-      key={email._id}
-      className="mb-6 bg-white border border-gray-200 rounded shadow-sm"
-    >
-      <div className="p-4 border-b bg-gray-50 flex justify-between items-center">
-        <div>
-          <span className="font-bold text-gray-900">{email.senderAddress}</span>
-          <span className="text-gray-500 text-sm ml-2">{`<${email.senderAddress}>`}</span>
+  const renderConversation = (email) => {
+    console.log("EMAIL OBJECT:", email);
+
+    return (
+      <div
+        key={email._id}
+        className="mb-6 bg-white border border-gray-200 rounded-sm shadow-sm overflow-hidden"
+      >
+        <div className="p-4 border-b bg-gray-50 flex justify-between items-center">
+          <div>
+            <span className="font-semibold text-gray-900">
+              {email.senderAddress.split("@")[0]}
+            </span>
+            <span className="text-gray-500 text-xs ml-2">
+              {`<${email.senderAddress}>`}
+            </span>
+          </div>
+
+          <span className="text-xs text-gray-500">
+            {new Date(email.date).toLocaleString()}
+          </span>
         </div>
-        <span className="text-xs text-gray-500">
-          {new Date(email.date).toLocaleString()}
-        </span>
+
+        <div
+          className="p-6 text-sm text-gray-800 leading-relaxed break-words"
+          dangerouslySetInnerHTML={{
+            __html: formatEmailBody(email.htmlBody, email.textBody),
+          }}
+        />
+
+        {/* Replies */}
+        {email.children?.length > 0 && (
+          <div className="border-t bg-gray-50/30">
+            {email.children.map((child) => renderConversation(child))}
+          </div>
+        )}
       </div>
-     <div
-  className="p-6 text-sm text-gray-800 prose max-w-none"
-  dangerouslySetInnerHTML={{
-    __html: sanitizeHtml(
-      formatEmailBody(email.htmlBody, email.textBody)
-    ),
-  }}
-/>
-      {email.children?.map((child) => renderConversation(child))}
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="flex bg-[#f3f2f1] h-screen overflow-hidden font-sans text-gray-900">
       <Sidebar />
 
       <main className="flex-1 flex md:ml-64 flex-col min-w-0">
-
         <header className="h-12 bg-white border-b flex items-center px-4 gap-6 text-sm text-gray-700 z-10">
           <button className="flex items-center gap-2 bg-blue-700 text-white px-3 py-1 rounded-sm hover:bg-blue-800">
             <FiMail /> Inbox
@@ -154,7 +178,6 @@ const formatEmailBody = (html, text) => {
         </header>
 
         <div className="flex-1 flex overflow-hidden">
-        
           <section
             className={`${isMobileView && selectedEmail ? "hidden" : "flex"} flex-col w-full md:w-[350px] lg:w-[400px] border-r bg-white`}
           >
@@ -211,13 +234,11 @@ const formatEmailBody = (html, text) => {
             </div>
           </section>
 
-   
           <section
             className={`${isMobileView && !selectedEmail ? "hidden" : "flex"} flex-1 flex-col bg-white overflow-hidden`}
           >
             {selectedEmail ? (
               <div className="flex-1 flex flex-col overflow-hidden">
-   
                 <div className="p-6 border-b shrink-0">
                   {isMobileView && (
                     <button
@@ -227,7 +248,7 @@ const formatEmailBody = (html, text) => {
                       <FiArrowLeft /> Back to Inbox
                     </button>
                   )}
-                  <h1 className="text-xl font-light text-gray-900 mb-4">
+                  <h1 className="text-xl font-semibold text-gray-900 mb-4">
                     {selectedEmail.subject || "No Subject"}
                   </h1>
                   <div className="flex items-center gap-3">
@@ -235,7 +256,7 @@ const formatEmailBody = (html, text) => {
                       {selectedEmail.senderAddress[0].toUpperCase()}
                     </div>
                     <div>
-                      <div className="font-bold text-sm">
+                      <div className="font-semibold text-sm">
                         {selectedEmail.senderAddress}
                       </div>
                       <div className="text-xs text-gray-500">
@@ -245,7 +266,6 @@ const formatEmailBody = (html, text) => {
                   </div>
                 </div>
 
-                
                 <div className="flex-1 overflow-y-auto p-6 bg-[#faf9f8]">
                   <div className="max-w-4xl mx-auto">
                     {renderConversation(selectedEmail)}
