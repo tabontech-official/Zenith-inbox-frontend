@@ -16,7 +16,35 @@ const Inbox = () => {
   const [loading, setLoading] = useState(false);
   const [readEmails, setReadEmails] = useState(new Set());
   const [isMobileView, setIsMobileView] = useState(false);
+const formatEmailBody = (html, text) => {
+  if (html) return html;
+  if (!text) return "";
 
+  let formatted = text;
+
+  // Fix cases where multiple fields are on same line
+  formatted = formatted.replace(
+    /(Full Name:|Business Email:|Country:|Service:|Budget:|Store Name:|Store URL:|Problem & Goal:)/g,
+    "<br/><strong>$1</strong>"
+  );
+
+  // URL clickable
+  formatted = formatted.replace(
+    /(https?:\/\/[^\s]+)/g,
+    '<a href="$1" target="_blank" style="color:#2563eb;text-decoration:underline">$1</a>'
+  );
+
+  // Email clickable
+  formatted = formatted.replace(
+    /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+)/g,
+    '<a href="mailto:$1" style="color:#2563eb">$1</a>'
+  );
+
+  // Line breaks fix
+  formatted = formatted.replace(/\r\n|\r|\n/g, "<br/>");
+
+  return formatted;
+};
   useEffect(() => {
     const handleResize = () => setIsMobileView(window.innerWidth < 1024);
     handleResize();
@@ -50,13 +78,12 @@ const Inbox = () => {
 
       let data = res.data?.data?.rootEmails || [];
 
-      // Latest emails first
       data = data.sort((a, b) => new Date(b.date) - new Date(a.date));
 
       setEmails(data);
 
       if (!isMobileView && data.length > 0 && !selectedEmail) {
-        setSelectedEmail(data[0]); // latest email automatically open
+        setSelectedEmail(data[0]);
       }
     } catch (err) {
       console.error("Error fetching inbox:", err);
@@ -93,12 +120,14 @@ const Inbox = () => {
           {new Date(email.date).toLocaleString()}
         </span>
       </div>
-      <div
-        className="p-6 text-sm text-gray-800 prose max-w-none"
-        dangerouslySetInnerHTML={{
-          __html: sanitizeHtml(email.htmlBody || email.textBody || ""),
-        }}
-      />
+     <div
+  className="p-6 text-sm text-gray-800 prose max-w-none"
+  dangerouslySetInnerHTML={{
+    __html: sanitizeHtml(
+      formatEmailBody(email.htmlBody, email.textBody)
+    ),
+  }}
+/>
       {email.children?.map((child) => renderConversation(child))}
     </div>
   );
@@ -107,9 +136,8 @@ const Inbox = () => {
     <div className="flex bg-[#f3f2f1] h-screen overflow-hidden font-sans text-gray-900">
       <Sidebar />
 
-      {/* Main Container */}
       <main className="flex-1 flex md:ml-64 flex-col min-w-0">
-        {/* Outlook Ribbon/Header */}
+
         <header className="h-12 bg-white border-b flex items-center px-4 gap-6 text-sm text-gray-700 z-10">
           <button className="flex items-center gap-2 bg-blue-700 text-white px-3 py-1 rounded-sm hover:bg-blue-800">
             <FiMail /> Inbox
@@ -126,7 +154,7 @@ const Inbox = () => {
         </header>
 
         <div className="flex-1 flex overflow-hidden">
-          {/* List Pane */}
+        
           <section
             className={`${isMobileView && selectedEmail ? "hidden" : "flex"} flex-col w-full md:w-[350px] lg:w-[400px] border-r bg-white`}
           >
@@ -183,13 +211,13 @@ const Inbox = () => {
             </div>
           </section>
 
-          {/* Reading Pane */}
+   
           <section
             className={`${isMobileView && !selectedEmail ? "hidden" : "flex"} flex-1 flex-col bg-white overflow-hidden`}
           >
             {selectedEmail ? (
               <div className="flex-1 flex flex-col overflow-hidden">
-                {/* Email Header */}
+   
                 <div className="p-6 border-b shrink-0">
                   {isMobileView && (
                     <button
@@ -217,7 +245,7 @@ const Inbox = () => {
                   </div>
                 </div>
 
-                {/* Email Body */}
+                
                 <div className="flex-1 overflow-y-auto p-6 bg-[#faf9f8]">
                   <div className="max-w-4xl mx-auto">
                     {renderConversation(selectedEmail)}
