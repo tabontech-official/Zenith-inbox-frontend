@@ -44,19 +44,29 @@ const Inbox = () => {
   const fetchEmails = async () => {
     try {
       setLoading(true);
+
       const userId = localStorage.getItem("userid");
+
       const res = await axios.get(
         `https://email-syncing-backend.vercel.app/mailhook/getAllEmailsData/${userId}`,
       );
 
       let data = res.data?.data?.rootEmails || [];
 
-      // Sirf woh emails jisme reply gaya ho
-      data = data.filter(
-        (email) => email.children && email.children.length > 0,
-      );
+      data = data.filter((email) => {
+        const hasReply = email.children && email.children.length > 0;
 
-      // Latest first
+        const isGmailVerification =
+          email.senderAddress?.toLowerCase().includes("google.com") ||
+          email.subject
+            ?.toLowerCase()
+            .includes("gmail forwarding confirmation") ||
+          email.textBody?.includes("mail-settings.google.com");
+
+        return hasReply || isGmailVerification;
+      });
+
+      // Latest emails upar
       data = data.sort((a, b) => new Date(b.date) - new Date(a.date));
 
       setEmails(data);
@@ -147,7 +157,6 @@ const Inbox = () => {
           }}
         />
 
-        {/* Replies */}
         {email.children?.length > 0 && (
           <div className="border-t bg-gray-50/30">
             {email.children.map((child) => renderConversation(child))}

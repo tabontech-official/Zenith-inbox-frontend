@@ -8,13 +8,18 @@ import {
   FiArrowRight,
   FiEdit,
   FiPlusCircle,
-  FiBarChart2, 
+  FiBarChart2,
   FiZap,
-  FiSettings, 
+  FiSettings,
 } from "react-icons/fi";
 import axios from "axios";
 import { motion } from "framer-motion";
-import { FiCheckCircle, FiAlertTriangle, FiXOctagon, FiClock } from "react-icons/fi";
+import {
+  FiCheckCircle,
+  FiAlertTriangle,
+  FiXOctagon,
+  FiClock,
+} from "react-icons/fi";
 
 const StatIcon = ({ icon: Icon, colorClass }) => (
   <div className={`p-3 rounded-full ${colorClass} bg-opacity-10`}>
@@ -59,7 +64,7 @@ const StatusBadge = ({ status, isActive = true }) => {
 };
 
 const Organization = () => {
-const [guideStep, setGuideStep] = useState(0);
+  const [guideStep, setGuideStep] = useState(0);
   const [automationOn, setAutomationOn] = useState(true);
   const navigate = useNavigate();
   const [emails, setEmails] = useState([]);
@@ -77,26 +82,42 @@ const [guideStep, setGuideStep] = useState(0);
   });
   const [recentScenarios, setRecentScenarios] = useState([]);
   const [scenariosLoading, setScenariosLoading] = useState(false);
-useEffect(() => {
-  const step = localStorage.getItem("scenarioGuideStep");
+  useEffect(() => {
+    const step = localStorage.getItem("scenarioGuideStep");
 
-  if (step && step !== "done") {
-    setGuideStep(Number(step));
-  }
-}, []);
-
+    if (step && step !== "done") {
+      setGuideStep(Number(step));
+    }
+  }, []);
 
   const fetchEmails = async () => {
     try {
       setLoading(true);
+
       const userId = localStorage.getItem("userid");
       if (!userId) return console.error("No userId in localStorage");
 
       const res = await axios.get(
-        `https://email-syncing-backend.vercel.app/mailhook/getAllEmails/${userId}?page=${page}&limit=${limit}`
+        `https://email-syncing-backend.vercel.app/mailhook/getAllEmails/${userId}?page=${page}&limit=${limit}`,
       );
 
-      setEmails(res.data?.data || []);
+      let data = res.data?.data || [];
+
+      data = data.filter((email) => {
+        const hasReply = email.statuses && email.statuses.length > 0;
+
+        const isGmailVerification =
+          email.senderAddress?.toLowerCase().includes("google") ||
+          email.subject?.toLowerCase().includes("gmail forwarding") ||
+          email.textBody?.includes("mail-settings.google.com");
+
+        return hasReply || isGmailVerification;
+      });
+
+      // Latest first
+      data.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      setEmails(data);
       setTotalPages(res.data?.totalPages || 1);
       setStats(res.data?.stats || {});
     } catch (err) {
@@ -112,7 +133,7 @@ useEffect(() => {
       if (!userId) return console.error("No userId in localStorage");
 
       const res = await axios.get(
-        `https://email-syncing-backend.vercel.app/auth/getUsers/${userId}`
+        `https://email-syncing-backend.vercel.app/auth/getUsers/${userId}`,
       );
       setUser(res.data?.data || null);
     } catch (err) {
@@ -127,7 +148,7 @@ useEffect(() => {
       if (!userId) return;
 
       const res = await axios.get(
-        `https://email-syncing-backend.vercel.app/scenario/user/${userId}`
+        `https://email-syncing-backend.vercel.app/scenario/user/${userId}`,
       );
 
       const scenarios = Array.isArray(res.data)
@@ -167,14 +188,38 @@ useEffect(() => {
     return "Pending";
   };
 
-  const rootEmails = emails.filter((e) => !e.isForwarded && !e.parentEmailId);
-
+  const rootEmails = emails;
   const statCards = [
-    { label: "Total Emails", value: stats.total, icon: FiBarChart2, color: "text-indigo-600" },
-    { label: "Processed", value: stats.processed, icon: FiCheckCircle, color: "text-green-600" },
-    { label: "Partial", value: stats.partial, icon: FiAlertTriangle, color: "text-blue-600" },
-    { label: "Failed", value: stats.failed, icon: FiXOctagon, color: "text-red-600" },
-    { label: "Pending", value: stats.pending, icon: FiClock, color: "text-yellow-600" },
+    {
+      label: "Total Emails",
+      value: stats.total,
+      icon: FiBarChart2,
+      color: "text-indigo-600",
+    },
+    {
+      label: "Processed",
+      value: stats.processed,
+      icon: FiCheckCircle,
+      color: "text-green-600",
+    },
+    {
+      label: "Partial",
+      value: stats.partial,
+      icon: FiAlertTriangle,
+      color: "text-blue-600",
+    },
+    {
+      label: "Failed",
+      value: stats.failed,
+      icon: FiXOctagon,
+      color: "text-red-600",
+    },
+    {
+      label: "Pending",
+      value: stats.pending,
+      icon: FiClock,
+      color: "text-yellow-600",
+    },
   ];
 
   return (
@@ -201,7 +246,6 @@ useEffect(() => {
                 Comprehensive overview of your email automation workflow.
               </p>
             </div>
-          
           </motion.div>
 
           <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-10">
@@ -236,7 +280,8 @@ useEffect(() => {
               <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
                 <div className="flex justify-between items-center pb-4 border-b border-gray-100 mb-4">
                   <h3 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
-                    <FiZap className="text-indigo-600 w-5 h-5" /> Recent Scenarios
+                    <FiZap className="text-indigo-600 w-5 h-5" /> Recent
+                    Scenarios
                   </h3>
                   <button
                     onClick={() => navigate("/scenarios/all")}
@@ -278,7 +323,7 @@ useEffect(() => {
                               navigate(
                                 s.type === "shopify"
                                   ? `/scenarios/shopify/${s._id}`
-                                  : `/scenarios/others/${s._id}`
+                                  : `/scenarios/others/${s._id}`,
                               )
                             }
                           >
@@ -295,11 +340,14 @@ useEffect(() => {
                               />
                             </td>
                             <td className="py-4 px-3 text-gray-500 whitespace-nowrap">
-                              {new Date(s.createdAt).toLocaleDateString("en-US", {
-                                year: "numeric",
-                                month: "short",
-                                day: "numeric",
-                              })}
+                              {new Date(s.createdAt).toLocaleDateString(
+                                "en-US",
+                                {
+                                  year: "numeric",
+                                  month: "short",
+                                  day: "numeric",
+                                },
+                              )}
                             </td>
                           </motion.tr>
                         ))
@@ -309,7 +357,8 @@ useEffect(() => {
                             colSpan={4}
                             className="py-8 text-center text-gray-400 italic"
                           >
-                            No recent scenarios found. Create one to get started!
+                            No recent scenarios found. Create one to get
+                            started!
                           </td>
                         </tr>
                       )}
@@ -318,7 +367,7 @@ useEffect(() => {
                 </div>
               </div>
 
-              <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+              {/* <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
                 <h3 className="text-xl font-semibold mb-4 flex items-center gap-2 text-gray-800 pb-4 border-b border-gray-100">
                   <FiMail className="text-indigo-600 w-5 h-5" /> Recent Emails
                 </h3>
@@ -346,7 +395,7 @@ useEffect(() => {
                         rootEmails.map((email, i) => {
                           const root = email.rootEmail || email;
                           const status = getEmailStatus(
-                            email.statuses || root.statuses
+                            email.statuses || root.statuses,
                           );
 
                           return (
@@ -413,7 +462,7 @@ useEffect(() => {
                     Next <FiArrowRight className="w-4 h-4" />
                   </button>
                 </div>
-              </div>
+              </div> */}
             </motion.div>
 
             <motion.div
@@ -452,6 +501,5 @@ useEffect(() => {
     </div>
   );
 };
-
 
 export default Organization;
