@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { FiCheckCircle, FiArrowRight } from "react-icons/fi";
 import Header from "../component/Header";
@@ -21,12 +21,69 @@ const fadeUp = {
 };
 
 const TalkToSales = () => {
+
+  const [formData, setFormData] = useState({
+    fullName: "",
+    email: "",
+    companyName: "",
+    companySize: "",
+    projectGoals: "",
+  });
+
+  const [loading,setLoading] = useState(false);
+  const [success,setSuccess] = useState("");
+
+  const handleChange = (e)=>{
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const handleSubmit = async (e)=>{
+    e.preventDefault();
+
+    setLoading(true);
+    setSuccess("");
+
+    try{
+
+      const res = await fetch(
+        "https://email-syncing-backend.vercel.app/talk/talk-to-sales",
+        {
+          method:"POST",
+          headers:{
+            "Content-Type":"application/json"
+          },
+          body:JSON.stringify(formData)
+        }
+      );
+
+      const data = await res.json();
+
+      if(res.ok){
+        setSuccess("Your request has been sent successfully!");
+        setFormData({
+          fullName:"",
+          email:"",
+          companyName:"",
+          companySize:"",
+          projectGoals:""
+        });
+      }
+
+    }catch(err){
+      console.log(err);
+    }
+
+    setLoading(false);
+  };
+
   return (
     <div className="min-h-screen bg-[#030014] text-white overflow-x-hidden relative">
 
       <Header />
 
-      {/* BACKGROUND GLOW */}
       <div className="fixed inset-0 pointer-events-none -z-10">
         <div className="absolute top-0 left-1/4 w-[380px] h-[380px] bg-purple-600/10 blur-[120px] rounded-full" />
         <div className="absolute bottom-0 right-1/4 w-[380px] h-[380px] bg-blue-600/10 blur-[120px] rounded-full" />
@@ -42,6 +99,7 @@ const TalkToSales = () => {
           <div className="grid lg:grid-cols-2 gap-16 items-center">
 
             {/* LEFT SIDE */}
+
             <motion.div variants={fadeUp} className="space-y-8">
 
               <span className="inline-flex px-4 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-xs font-semibold text-purple-400 uppercase tracking-widest">
@@ -56,12 +114,9 @@ const TalkToSales = () => {
               </h1>
 
               <p className="text-gray-400 text-lg leading-relaxed max-w-lg">
-                Work with our team to design powerful lead automation flows —
-                from email capture and conditional logic to templates and
-                automated follow-ups tailored to your business.
+                Work with our team to design powerful lead automation flows.
               </p>
 
-              {/* BENEFITS */}
               <div className="space-y-4 max-w-md">
                 {[
                   "Visual automation scenarios (no-code)",
@@ -70,7 +125,7 @@ const TalkToSales = () => {
                 ].map((item, i) => (
                   <div
                     key={i}
-                    className="flex items-center gap-3 p-4 rounded-xl bg-white/[0.03] border border-white/5 hover:border-purple-500/30 transition"
+                    className="flex items-center gap-3 p-4 rounded-xl bg-white/[0.03] border border-white/5"
                   >
                     <FiCheckCircle className="text-purple-400 w-5 h-5" />
                     <span className="text-gray-300">{item}</span>
@@ -82,6 +137,7 @@ const TalkToSales = () => {
 
 
             {/* RIGHT FORM */}
+
             <motion.div variants={fadeUp}>
 
               <div className="rounded-2xl border border-white/10 bg-black/40 backdrop-blur-xl p-8 shadow-xl">
@@ -90,50 +146,91 @@ const TalkToSales = () => {
                   Request a Sales Call
                 </h2>
 
+                {success && (
+                  <div className="mb-4 text-green-400 text-sm">
+                    {success}
+                  </div>
+                )}
+
                 <form
                   className="space-y-5"
-                  onSubmit={(e) => e.preventDefault()}
+                  onSubmit={handleSubmit}
                 >
 
                   <div className="grid sm:grid-cols-2 gap-5">
-                    <Input label="Full Name" placeholder="John Doe" />
-                    <Input label="Work Email" placeholder="john@company.com" />
+
+                    <Input
+                      label="Full Name"
+                      name="fullName"
+                      value={formData.fullName}
+                      onChange={handleChange}
+                      placeholder="John Doe"
+                    />
+
+                    <Input
+                      label="Work Email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      placeholder="john@company.com"
+                    />
+
                   </div>
 
                   <div className="grid sm:grid-cols-2 gap-5">
-                    <Input label="Company Name" placeholder="Company Inc." />
+
+                    <Input
+                      label="Company Name"
+                      name="companyName"
+                      value={formData.companyName}
+                      onChange={handleChange}
+                      placeholder="Company Inc."
+                    />
 
                     <div>
                       <label className="block text-xs font-semibold uppercase text-gray-500 mb-2">
                         Company Size
                       </label>
 
-                      <select className="w-full bg-white/[0.05] border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500/40">
-                        <option className="bg-[#030014]">1–10</option>
-                        <option className="bg-[#030014]">11–50</option>
-                        <option className="bg-[#030014]">51–200</option>
-                        <option className="bg-[#030014]">200+</option>
+                      <select
+                        name="companySize"
+                        value={formData.companySize}
+                        onChange={handleChange}
+                        className="w-full bg-white/[0.05] border border-white/10 rounded-xl px-4 py-3"
+                      >
+                        <option value="">Select</option>
+                        <option>1–10</option>
+                        <option>11–50</option>
+                        <option>51–200</option>
+                        <option>200+</option>
                       </select>
                     </div>
+
                   </div>
 
                   <div>
+
                     <label className="block text-xs font-semibold uppercase text-gray-500 mb-2">
                       Project Goals
                     </label>
 
                     <textarea
                       rows="3"
+                      name="projectGoals"
+                      value={formData.projectGoals}
+                      onChange={handleChange}
                       placeholder="Describe your use case..."
-                      className="w-full bg-white/[0.05] border border-white/10 rounded-xl px-4 py-3 resize-none focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                      className="w-full bg-white/[0.05] border border-white/10 rounded-xl px-4 py-3 resize-none"
                     />
+
                   </div>
 
                   <button
                     type="submit"
+                    disabled={loading}
                     className="w-full py-3.5 rounded-xl bg-white text-black font-semibold hover:bg-gray-200 transition flex items-center justify-center gap-2"
                   >
-                    Book Strategy Session
+                    {loading ? "Sending..." : "Book Strategy Session"}
                     <FiArrowRight />
                   </button>
 
@@ -153,17 +250,22 @@ const TalkToSales = () => {
 
 /* INPUT COMPONENT */
 
-const Input = ({ label, placeholder }) => (
+const Input = ({ label, name, value, onChange, placeholder }) => (
   <div>
+
     <label className="block text-xs font-semibold uppercase text-gray-500 mb-2">
       {label}
     </label>
 
     <input
       type="text"
+      name={name}
+      value={value}
+      onChange={onChange}
       placeholder={placeholder}
-      className="w-full bg-white/[0.05] border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+      className="w-full bg-white/[0.05] border border-white/10 rounded-xl px-4 py-3"
     />
+
   </div>
 );
 
