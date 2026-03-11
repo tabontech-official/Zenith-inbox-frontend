@@ -239,8 +239,8 @@ const Organization = () => {
             transition={{ duration: 0.5 }}
           >
             <div>
-              <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">
-                Dashboard
+              <h1 className="text-4xl  font-bold leading-tight">
+                 Dashboard
               </h1>
               <p className="text-gray-500 mt-1 text-base">
                 Comprehensive overview of your email automation workflow.
