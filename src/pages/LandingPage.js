@@ -6,7 +6,6 @@ import {
   FiSend,
   FiRepeat,
   FiBarChart2,
-  FiCheckCircle,
   FiArrowRight,
   FiPlay,
 } from "react-icons/fi";
@@ -15,322 +14,256 @@ import { useNavigate } from "react-router-dom";
 
 const LandingPage = () => {
   const navigate = useNavigate();
-  const [isDemoOpen, setIsDemoOpen] = useState(false);
+  const [demoOpen, setDemoOpen] = useState(false);
 
-  const containerVariants = {
+  const container = {
     hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { staggerChildren: 0.15 } },
+    show: {
+      opacity: 1,
+      transition: { staggerChildren: 0.12 },
+    },
   };
 
   const fadeUp = {
-    hidden: { opacity: 0, y: 30 },
-    visible: {
+    hidden: { opacity: 0, y: 25 },
+    show: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] },
+      transition: { duration: 0.6 },
     },
   };
 
   return (
-    <div className="min-h-screen bg-[#030014] text-white selection:bg-purple-500/30 overflow-x-hidden">
-      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[120px]" />
-        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[120px]" />
-        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150" />
+    <div className="min-h-screen bg-[#030014] text-white overflow-x-hidden">
+      {/* Background glow */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-0 left-1/4 w-[400px] h-[400px] bg-purple-600/10 rounded-full blur-[80px]" />
+        <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-blue-600/10 rounded-full blur-[80px]" />
       </div>
 
-      <header className="fixed top-6 inset-x-0 max-w-5xl mx-auto z-50 px-6 py-3 bg-white/[0.03] border border-white/10 backdrop-blur-xl rounded-full flex justify-between items-center shadow-2xl">
-        <div className="flex items-center gap-2 group cursor-pointer">
-          <div className="p-1.5 text-indigo-500  rounded-lg group-hover:rotate-12 transition-transform">
-            <FiMail className="text-indigo-500 text-2xl" />
-          </div>
-          <span className="font-bold tracking-tight text-lg">
-            Replex Engine
-          </span>
+      {/* Navbar */}
+      <header className="fixed top-6 inset-x-0 max-w-6xl mx-auto z-50 px-6 py-2.5 bg-white/[0.03] border border-white/10 backdrop-blur-xl rounded-xl flex justify-between items-center">
+        <div className="flex items-center gap-2 font-semibold text-lg">
+          <FiMail className="text-indigo-400 text-xl" />
+          Replex Engine
         </div>
 
-        <nav className="hidden md:flex gap-8 text-sm font-medium text-gray-400">
-          <a href="/product" className="hover:text-white transition">
+        <nav className="hidden md:flex gap-8 text-sm text-gray-400">
+          <a href="/product" className="hover:text-white">
             Product
           </a>
-          <a href="/developer" className="hover:text-white transition">
+          <a href="/developer" className="hover:text-white">
             Developers
           </a>
-          <a href="/pricing" className="hover:text-white transition">
+          <a href="/pricing" className="hover:text-white">
             Pricing
           </a>
         </nav>
 
         <button
           onClick={() => navigate("/login")}
-          className="px-5 py-2 text-sm font-bold bg-white text-black rounded-full hover:bg-gray-200 transition-all active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.2)]"
+          className="px-5 py-2 bg-white text-black rounded-xl text-sm font-semibold hover:bg-gray-200"
         >
           Get Started
         </button>
       </header>
 
-      <main className="relative z-10 max-w-7xl mx-auto px-6 pt-48 pb-20">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+      {/* HERO */}
+      <main className="relative z-10 max-w-7xl mx-auto px-6 pt-44 pb-24">
+        <div className="grid lg:grid-cols-2 gap-16 items-center">
+          {/* Left */}
           <motion.div
+            variants={container}
             initial="hidden"
-            animate="visible"
-            variants={containerVariants}
-            className="space-y-8"
+            animate="show"
+            className="space-y-7"
           >
             <motion.div
               variants={fadeUp}
-              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-xs font-semibold text-purple-400 uppercase tracking-widest"
+              className="inline-flex items-center gap-2 px-4 py-1.5 text-xs uppercase tracking-widest text-purple-400 bg-purple-500/10 border border-purple-500/20 rounded-full"
             >
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-purple-500"></span>
-              </span>
-              Automate Lead Responses & Follow-ups
+              Lead Automation
             </motion.div>
 
             <motion.h1
               variants={fadeUp}
-              className="text-6xl md:text-7xl font-black leading-[1.05] tracking-tight"
+              className="text-5xl md:text-6xl font-bold leading-tight"
             >
-              Automate lead replies <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-indigo-400 to-blue-400">
+              Automate your lead replies
+              <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">
                 visually.
               </span>
             </motion.h1>
 
             <motion.p
-              variants={fadeUp}   
-              className="text-xl text-gray-400 max-w-lg leading-relaxed font-light"
+              variants={fadeUp}
+              className="text-lg text-gray-400 leading-relaxed max-w-xl"
             >
-              Build visual scenarios to automatically reply to leads, apply
-              delays, check conditions, and send the right email template at the
-              right time — without writing a single line of code.
+              Build visual automation flows to reply to leads instantly, apply
+              delays, and send the right email at the perfect time — without
+              writing code.
             </motion.p>
 
-            <motion.div variants={fadeUp} className="flex flex-wrap gap-5">
+            <motion.div variants={fadeUp} className="flex gap-4 flex-wrap">
               <button
                 onClick={() => navigate("/login")}
-                className="group px-8 py-4 bg-purple-600 hover:bg-purple-500 rounded-2xl font-bold transition-all flex items-center gap-2 shadow-xl shadow-purple-600/20"
+                className="px-7 py-3.5 bg-purple-600 hover:bg-purple-500 rounded-xl font-semibold flex items-center gap-2"
               >
-                Start Building Free
-                <FiArrowRight className="group-hover:translate-x-1 transition-transform" />
+                Start Free
+                <FiArrowRight />
               </button>
 
               <button
-                onClick={() => setIsDemoOpen(true)}
-                className="px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl font-bold transition-all flex items-center gap-2"
+                onClick={() => setDemoOpen(true)}
+                className="px-7 py-3.5 bg-white/5 border border-white/10 rounded-xl font-semibold flex items-center gap-2 hover:bg-white/10"
               >
-                <FiPlay className="text-purple-400" /> Watch Demo
+                <FiPlay />
+                Watch Demo
               </button>
             </motion.div>
           </motion.div>
 
+          {/* Right video */}
           <motion.div
-            initial={{ opacity: 0, x: 50 }}
+            initial={{ opacity: 0, x: 40 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 1 }}
+            transition={{ duration: 0.8 }}
             className="relative"
           >
-            <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-blue-600 rounded-[2rem] blur-2xl opacity-20" />
-            <div className="relative rounded-[1.8rem] border border-white/10 bg-black/50 p-2 backdrop-blur-3xl shadow-2xl">
-              <div className="bg-[#0B061F] rounded-2xl overflow-hidden border border-white/5">
-                <video
-                  src="https://videos.ctfassets.net/un655fb9wln6/3wNElEdBiFdK2eauJB7wMp/021db93cbf76430c0b75cfb622876308/make_new_hero_animation.webm"
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  className="w-full h-full object-cover"
-                />
-              </div>
+            <div className="rounded-2xl border border-white/10 bg-black/40 p-1">
+              <video
+                src="https://videos.ctfassets.net/un655fb9wln6/3wNElEdBiFdK2eauJB7wMp/021db93cbf76430c0b75cfb622876308/make_new_hero_animation.webm"
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="rounded-xl w-full"
+              />
             </div>
           </motion.div>
         </div>
       </main>
 
-      <section className="relative z-10 py-32 px-6">
+      {/* FEATURES */}
+      <section className="py-24 px-6 relative z-10">
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
-            <div className="max-w-2xl mt-12">
-              <h2 className="text-4xl md:text-5xl font-bold mb-4 tracking-tight">
-                Lead Automation Engine
-              </h2>
-              <p className="text-gray-400 text-lg">
-                Everything you need to capture, reply, and follow up with leads
-                — automatically.
-              </p>
-            </div>
-            <button className="text-purple-400 font-semibold hover:text-purple-300 transition flex items-center gap-2">
-              Learn about our architecture <FiArrowRight />
-            </button>
+          <div className="mb-16">
+            <h2 className="text-4xl font-bold mb-3">Lead Automation Engine</h2>
+            <p className="text-gray-400 text-lg">
+              Capture leads, reply instantly, and automate follow-ups.
+            </p>
           </div>
+          <div className="space-y-6">
+            {/* Row 1 */}
+            <div className="grid md:grid-cols-3 gap-6">
+              <StepCard
+                icon={<FiZap />}
+                title="Capture"
+                desc="Automatically capture leads from email using mailhooks or forwarding."
+              />
 
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-            <StepCard
-              span="md:col-span-7"
-              icon={<FiZap />}
-              title="Capture"
-              desc="Automatically capture leads from email using a simple mailhook
-or forwarding setup — no integrations required.
-"
-            />
-            <StepCard
-              span="md:col-span-5"
-              icon={<PiRobotLight />}
-              title="Understand"
-              desc="Read incoming lead emails and evaluate conditions like intent,
-keywords, or rules you define.
-"
-            />
-            <StepCard
-              span="md:col-span-4"
-              icon={<FiSend />}
-              title="Reply"
-              desc="Send predefined or AI-assisted email templates automatically
-based on your scenario logic.
-  "
-            />
-            <StepCard
-              span="md:col-span-4"
-              icon={<FiRepeat />}
-              title="Follow-up"
-              desc="Add delays between emails and build follow-up sequences that
-stop when a lead replies
-."
-            />
-            <StepCard
-              span="md:col-span-4"
-              icon={<FiBarChart2 />}
-              title="Track"
-              desc="Track which leads were contacted, which templates were sent,
-and where each lead is in your automation."
-            />
+              <StepCard
+                icon={<PiRobotLight />}
+                title="Understand"
+                desc="Analyze incoming emails and detect intent or keywords."
+              />
+
+              <StepCard
+                icon={<FiSend />}
+                title="Reply"
+                desc="Send templates or AI-generated replies automatically."
+              />
+            </div>
+
+            {/* Row 2 */}
+            <div className="grid md:grid-cols-2 gap-6 md:max-w-4xl mx-auto">
+              <StepCard
+                icon={<FiRepeat />}
+                title="Follow-up"
+                desc="Create delayed follow-up sequences until the lead replies."
+              />
+
+              <StepCard
+                icon={<FiBarChart2 />}
+                title="Track"
+                desc="Monitor every lead and see exactly where they are in your workflow."
+              />
+            </div>
           </div>
         </div>
       </section>
 
-      <section className="relative z-10 py-20 px-6 max-w-7xl mx-auto">
-        <div className="relative rounded-[3rem] p-8 md:p-16 lg:p-20 overflow-hidden border border-white/10 bg-gradient-to-br from-white/[0.08] to-transparent shadow-2xl">
-          <div className="absolute top-0 right-0 w-[50%] h-[100%] bg-purple-600/10 blur-[120px] pointer-events-none" />
+      {/* CTA */}
+      <section className="py-20 px-6 max-w-7xl mx-auto">
+        <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-14 text-center">
+          <h2 className="text-4xl md:text-5xl font-bold mb-6">
+            Ready to automate your leads?
+          </h2>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center relative z-10">
-            <div className="text-left space-y-8">
-              <div>
-                <h2 className="text-4xl md:text-6xl font-black mb-6 tracking-tight leading-tight">
-                  Ready to <br />
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-indigo-300">
-                    automate your leads?
-                  </span>
-                </h2>
-                <p className="text-gray-400 text-lg md:text-xl max-w-md leading-relaxed font-light">
-                  Build powerful lead automation flows with conditions, delays,
-                  and templates — and respond to every lead instantly.
-                </p>
-              </div>
+          <p className="text-gray-400 mb-8 max-w-xl mx-auto">
+            Build powerful automation flows with delays, conditions, and
+            templates — and reply to every lead instantly.
+          </p>
 
-              <div className="flex flex-col sm:flex-row gap-4">
-                <button
-                  onClick={() => navigate("/login")}
-                  className="px-10 py-5 bg-white text-black rounded-2xl font-black text-lg hover:scale-105 hover:bg-purple-50 transition-all shadow-[0_20px_40px_rgba(255,255,255,0.1)]"
-                >
-                  Get Started for Free
-                </button>
-                <button
-                  onClick={() => navigate("/talk-to-sales")}
-                  className="px-8 py-5 bg-white/5 border border-white/10 rounded-2xl font-bold hover:bg-white/10 transition-all"
-                >
-                  Talk to Sales
-                </button>
-              </div>
-
-              <div className="flex items-center gap-3 text-sm text-gray-500">
-                <div className="flex -space-x-2">
-                  {[1, 2, 3].map((i) => (
-                    <div
-                      key={i}
-                      className="w-8 h-8 rounded-full border-2 border-[#0B061F] bg-gray-800"
-                    />
-                  ))}
-                </div>
-                <span>Trusted by top-tier engineering teams</span>
-              </div>
-            </div>
-
-            <motion.div
-              initial={{ y: 20, opacity: 0 }}
-              whileInView={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.8, ease: "easeOut" }}
-              className="relative group"
-            >
-              <div className="relative rounded-3xl overflow-hidden border border-white/10 bg-black/40 p-2 shadow-2xl rotate-2 group-hover:rotate-0 transition-transform duration-500">
-                <img
-                  src="https://images.ctfassets.net/un655fb9wln6/6zii7sDfVNFq54etd22DzK/ad8a50813dffde8584d269de35c92e36/ai.png"
-                  alt="AI Orchestration Dashboard"
-                  className="rounded-2xl w-full h-auto object-cover opacity-90 group-hover:opacity-100 transition-opacity"
-                />
-
-                <div className="absolute bottom-6 left-6 right-6 p-4 bg-black/60 backdrop-blur-md border border-white/10 rounded-xl flex items-center gap-3 animate-bounce-slow">
-                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                  <span className="text-xs font-mono text-gray-300">
-                    Agent Status: Optimizing Workflows...
-                  </span>
-                </div>
-              </div>
-
-              <div className="absolute -z-10 -top-10 -right-10 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl opacity-50" />
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      <footer className="relative z-10 border-t border-white/5 py-12 px-6 text-center text-gray-500 text-sm">
-        <p>© 2025 Replex Engine. Built for the future of AI.</p>
-      </footer>
-      {isDemoOpen && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[999] flex items-center justify-center bg-black/80 backdrop-blur-sm"
-          onClick={() => setIsDemoOpen(false)}
-        >
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
-            className="relative w-full max-w-4xl mx-4 rounded-2xl overflow-hidden bg-black border border-white/10 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="flex justify-center gap-4 flex-wrap">
             <button
-              onClick={() => setIsDemoOpen(false)}
-              className="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white"
+              onClick={() => navigate("/login")}
+              className="px-8 py-4 bg-white text-black rounded-xl font-semibold hover:bg-gray-200"
             >
-              ✕
+              Get Started Free
             </button>
 
+            <button
+              onClick={() => navigate("/talk-to-sales")}
+              className="px-8 py-4 border border-white/10 rounded-xl hover:bg-white/10"
+            >
+              Talk to Sales
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t border-white/10 py-10 text-center text-gray-500 text-sm">
+        © 2025 Replex Engine — AI powered lead automation
+      </footer>
+
+      {/* Demo modal */}
+      {demoOpen && (
+        <div
+          onClick={() => setDemoOpen(false)}
+          className="fixed inset-0 bg-black/80 flex items-center justify-center z-50"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="max-w-4xl w-full mx-4 bg-black rounded-xl overflow-hidden border border-white/10"
+          >
             <video
               src="https://videos.ctfassets.net/un655fb9wln6/3wNElEdBiFdK2eauJB7wMp/021db93cbf76430c0b75cfb622876308/make_new_hero_animation.webm"
-              autoPlay
               controls
-              className="w-full h-full object-cover"
+              autoPlay
+              className="w-full"
             />
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
       )}
     </div>
   );
 };
 
-const StepCard = ({ icon, title, desc, span }) => (
+const StepCard = ({ icon, title, desc, className }) => (
   <motion.div
-    whileHover={{ y: -8, transition: { duration: 0.2 } }}
-    className={`${span} group relative p-8 rounded-[2rem] bg-gradient-to-b from-white/[0.05] to-transparent border border-white/10 hover:border-purple-500/40 transition-all duration-300`}
+    whileHover={{ y: -6 }}
+    className={`p-7 rounded-2xl bg-white/[0.03] border border-white/10 hover:border-purple-500/40 transition ${className}`}
   >
-    <div className="w-14 h-14 mb-6 rounded-2xl bg-white/5 flex items-center justify-center text-2xl text-purple-400 group-hover:scale-110 group-hover:bg-purple-500 group-hover:text-white transition-all duration-500">
+    <div className="w-12 h-12 mb-5 rounded-xl bg-white/5 flex items-center justify-center text-xl text-purple-400">
       {icon}
     </div>
-    <h3 className="text-2xl font-bold mb-3 tracking-tight">{title}</h3>
-    <p className="text-gray-400 leading-relaxed font-light">{desc}</p>
+
+    <h3 className="text-xl font-semibold mb-2">{title}</h3>
+
+    <p className="text-gray-400 text-sm leading-relaxed">{desc}</p>
   </motion.div>
 );
 

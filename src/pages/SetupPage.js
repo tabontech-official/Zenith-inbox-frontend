@@ -1829,16 +1829,16 @@ const SetupFlow = () => {
                 onClick={() => setIsExpanded(true)}
                 className="
         font-sans
-        bg-white/30
+        bg-black/60
         backdrop-blur-xl
-        border border-white/50
-        text-[#111827]
+        border border-white/20
+        text-white
         py-8 px-3
         rounded-l-[20px]
-        shadow-[0_8px_25px_rgba(0,0,0,0.15)]
+        shadow-[0_10px_30px_rgba(0,0,0,0.35)]
         transition-all duration-300
-        hover:bg-white/40
-        hover:shadow-[0_10px_30px_rgba(0,0,0,0.2)]
+        hover:bg-black/70
+        hover:shadow-[0_12px_35px_rgba(0,0,0,0.45)]
         active:scale-[0.97]
         group
       "
@@ -1855,7 +1855,7 @@ const SetupFlow = () => {
           flex items-center gap-2
         "
                 >
-                  <FiInfo className="text-[#4F46E5] text-sm" />
+                  <FiInfo className="text-indigo-400 text-sm" />
                   Setup Guide
                 </span>
               </button>

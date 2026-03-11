@@ -1,3 +1,193 @@
+// import React from "react";
+// import { motion } from "framer-motion";
+// import { FiCheck, FiArrowRight, FiStar } from "react-icons/fi";
+// import { useNavigate } from "react-router-dom";
+// import Header from "../component/Header";
+
+// const container = {
+//   hidden: { opacity: 0 },
+//   visible: {
+//     opacity: 1,
+//     transition: { staggerChildren: 0.15 },
+//   },
+// };
+
+// const fadeUp = {
+//   hidden: { opacity: 0, y: 24 },
+//   visible: {
+//     opacity: 1,
+//     y: 0,
+//     transition: { duration: 0.6, ease: "easeOut" },
+//   },
+// };
+
+// const Pricing = () => {
+//   const navigate = useNavigate();
+//   const handleProCheckout = async () => {
+//     try {
+//       const userId = localStorage.getItem("userid");
+
+//       if (!userId) {
+//         navigate("/login");
+//         return;
+//       }
+
+//       const res = await fetch(
+//         `https://email-syncing-backend.vercel.app/stripe/create-checkout-session/${userId}`,
+//         {
+//           method: "POST",
+//           headers: {
+//             "Content-Type": "application/json",
+//           },
+//         }
+//       );
+
+//       const data = await res.json();
+
+//       if (data.url) {
+//         window.location.href = data.url; 
+//       }
+//     } catch (err) {
+//       console.error("Checkout error:", err);
+//     }
+//   };
+
+//   return (
+//     <div className="min-h-screen bg-[#030014] text-white relative overflow-x-hidden">
+//       <Header />
+
+//       <div className="fixed inset-0 pointer-events-none -z-10">
+//         <div className="absolute top-0 left-1/4 w-[420px] h-[420px] bg-purple-600/10 rounded-full blur-[140px]" />
+//         <div className="absolute bottom-0 right-1/4 w-[420px] h-[420px] bg-indigo-600/10 rounded-full blur-[140px]" />
+//       </div>
+
+//       <main className="relative pt-24 sm:pt-28 md:pt-32 pb-10 px-4 sm:px-6">
+//         <motion.div
+//           variants={container}
+//           initial="hidden"
+//           animate="visible"
+//           className="max-w-6xl mx-auto"
+//         >
+//           {/* TITLE */}
+//           <motion.h1
+//             variants={fadeUp}
+//             className="text-center font-black mb-10
+//                        text-[clamp(2.2rem,5vw,3.75rem)]
+//                        leading-tight"
+//           >
+//             Simple pricing for{" "}
+//             <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-indigo-400">
+//               lead automation
+//             </span>
+//           </motion.h1>
+
+//           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+//             <motion.div
+//               variants={fadeUp}
+//               className="flex flex-col justify-between rounded-3xl p-6
+//                          bg-gradient-to-b from-white/[0.04] to-white/[0.01]
+//                          border border-white/10 shadow-xl"
+//             >
+//               <div>
+//                 <h3 className="text-xl font-bold mb-2">Free</h3>
+//                 <p className="text-gray-400 mb-5 text-sm">
+//                   Everything you need to start automating leads.
+//                 </p>
+
+//                 <div className="flex items-end gap-2 mb-6">
+//                   <span className="text-4xl font-black">$0</span>
+//                   <span className="text-gray-400 mb-1">/month</span>
+//                 </div>
+
+//                 <ul className="space-y-3 text-sm">
+//                   {[
+//                     "Visual scenario builder",
+//                     "Email lead capture (mailhook)",
+//                     "Conditions & delays",
+//                     "Manual email templates",
+//                     "Basic lead tracking",
+//                   ].map((f, i) => (
+//                     <li key={i} className="flex gap-3 text-gray-300">
+//                       <FiCheck className="text-purple-400 mt-0.5" />
+//                       {f}
+//                     </li>
+//                   ))}
+//                 </ul>
+//               </div>
+
+//               <button
+//                 onClick={() => navigate("/login")}
+//                 className="mt-6 w-full py-3 rounded-xl font-semibold
+//                            bg-white text-black hover:bg-purple-50 transition"
+//               >
+//                 Start for Free
+//               </button>
+//             </motion.div>
+
+//             <motion.div
+//               variants={fadeUp}
+//               className="relative flex flex-col justify-between rounded-3xl p-6
+//                          bg-gradient-to-br from-purple-600/30 via-indigo-600/10 to-transparent
+//                          border border-purple-500/50
+//                          shadow-[0_0_70px_rgba(139,92,246,0.35)]"
+//             >
+//               <div
+//                 className="absolute -top-4 left-1/2 -translate-x-1/2
+//                               px-4 py-1 rounded-full
+//                               bg-gradient-to-r from-purple-500 to-indigo-500
+//                               text-xs font-bold uppercase tracking-wider"
+//               >
+//                 Awesome
+//               </div>
+
+//               <div>
+//                 <h3 className="text-xl font-bold mb-2 flex items-center gap-2">
+//                   Pro <FiStar className="text-yellow-400" />
+//                 </h3>
+
+//                 <p className="text-gray-300 mb-5 text-sm">
+//                   AI-powered automation for serious teams.
+//                 </p>
+
+//                 <div className="flex items-end gap-2 mb-6">
+//                   <span className="text-4xl font-black">$29.99</span>
+//                   <span className="text-gray-300 mb-1">/month</span>
+//                 </div>
+
+//                 <ul className="space-y-3 text-sm">
+//                   {[
+//                     "Everything in Free",
+//                     "AI-generated email templates",
+//                     "AI template suggestions",
+//                     "Smart conditional routing",
+//                     "Automated follow-up ideas",
+//                   ].map((f, i) => (
+//                     <li key={i} className="flex gap-3 text-gray-200">
+//                       <FiCheck className="text-purple-400 mt-0.5" />
+//                       {f}
+//                     </li>
+//                   ))}
+//                 </ul>
+//               </div>
+
+//               <button
+//                 onClick={handleProCheckout}
+//                 className="mt-6 w-full py-3 rounded-xl font-semibold
+//              bg-gradient-to-r from-purple-500 to-indigo-500
+//              hover:opacity-90 transition
+//              flex items-center justify-center gap-2"
+//               >
+//                 Upgrade · Awesome <FiArrowRight />
+//               </button>
+//             </motion.div>
+//           </div>
+//         </motion.div>
+//       </main>
+//     </div>
+//   );
+// };
+
+// export default Pricing;
 import React from "react";
 import { motion } from "framer-motion";
 import { FiCheck, FiArrowRight, FiStar } from "react-icons/fi";
@@ -17,12 +207,13 @@ const fadeUp = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.6, ease: "easeOut" },
+    transition: { duration: 0.6 },
   },
 };
 
 const Pricing = () => {
   const navigate = useNavigate();
+
   const handleProCheckout = async () => {
     try {
       const userId = localStorage.getItem("userid");
@@ -45,7 +236,7 @@ const Pricing = () => {
       const data = await res.json();
 
       if (data.url) {
-        window.location.href = data.url; 
+        window.location.href = data.url;
       }
     } catch (err) {
       console.error("Checkout error:", err);
@@ -56,55 +247,69 @@ const Pricing = () => {
     <div className="min-h-screen bg-[#030014] text-white relative overflow-x-hidden">
       <Header />
 
+      {/* Background glow */}
       <div className="fixed inset-0 pointer-events-none -z-10">
-        <div className="absolute top-0 left-1/4 w-[420px] h-[420px] bg-purple-600/10 rounded-full blur-[140px]" />
-        <div className="absolute bottom-0 right-1/4 w-[420px] h-[420px] bg-indigo-600/10 rounded-full blur-[140px]" />
+        <div className="absolute top-0 left-1/4 w-[380px] h-[380px] bg-purple-600/10 rounded-full blur-[120px]" />
+        <div className="absolute bottom-0 right-1/4 w-[380px] h-[380px] bg-indigo-600/10 rounded-full blur-[120px]" />
       </div>
 
-      <main className="relative pt-24 sm:pt-28 md:pt-32 pb-10 px-4 sm:px-6">
+      <main className="pt-36 pb-20 px-6">
+
         <motion.div
           variants={container}
           initial="hidden"
           animate="visible"
-          className="max-w-6xl mx-auto"
+          className="max-w-5xl mx-auto"
         >
-          {/* TITLE */}
-          <motion.h1
-            variants={fadeUp}
-            className="text-center font-black mb-10
-                       text-[clamp(2.2rem,5vw,3.75rem)]
-                       leading-tight"
-          >
-            Simple pricing for{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-indigo-400">
-              lead automation
-            </span>
-          </motion.h1>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+          {/* Title */}
+          <motion.div variants={fadeUp} className="text-center mb-14">
+
+            <h1 className="text-4xl md:text-5xl font-bold mb-4">
+              Simple pricing for{" "}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-indigo-400">
+                lead automation
+              </span>
+            </h1>
+
+            <p className="text-gray-400 max-w-xl mx-auto">
+              Start free and upgrade when you need AI-powered automation.
+            </p>
+
+          </motion.div>
+
+
+          {/* Pricing Cards */}
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+
+            {/* FREE PLAN */}
             <motion.div
               variants={fadeUp}
-              className="flex flex-col justify-between rounded-3xl p-6
-                         bg-gradient-to-b from-white/[0.04] to-white/[0.01]
-                         border border-white/10 shadow-xl"
+              className="flex flex-col justify-between rounded-2xl p-7
+              bg-white/[0.03] border border-white/10
+              hover:translate-y-[-4px] transition-all duration-300"
             >
+
               <div>
-                <h3 className="text-xl font-bold mb-2">Free</h3>
-                <p className="text-gray-400 mb-5 text-sm">
+
+                <h3 className="text-lg font-semibold mb-2">Free</h3>
+
+                <p className="text-gray-400 mb-6 text-sm">
                   Everything you need to start automating leads.
                 </p>
 
                 <div className="flex items-end gap-2 mb-6">
-                  <span className="text-4xl font-black">$0</span>
+                  <span className="text-4xl font-bold">$0</span>
                   <span className="text-gray-400 mb-1">/month</span>
                 </div>
 
                 <ul className="space-y-3 text-sm">
+
                   {[
                     "Visual scenario builder",
-                    "Email lead capture (mailhook)",
+                    "Email lead capture",
                     "Conditions & delays",
-                    "Manual email templates",
+                    "Manual templates",
                     "Basic lead tracking",
                   ].map((f, i) => (
                     <li key={i} className="flex gap-3 text-gray-300">
@@ -112,76 +317,91 @@ const Pricing = () => {
                       {f}
                     </li>
                   ))}
+
                 </ul>
+
               </div>
 
               <button
                 onClick={() => navigate("/login")}
-                className="mt-6 w-full py-3 rounded-xl font-semibold
-                           bg-white text-black hover:bg-purple-50 transition"
+                className="mt-8 w-full py-3 rounded-xl font-semibold
+                bg-white text-black hover:bg-gray-200 transition"
               >
                 Start for Free
               </button>
+
             </motion.div>
 
+
+            {/* PRO PLAN */}
             <motion.div
               variants={fadeUp}
-              className="relative flex flex-col justify-between rounded-3xl p-6
-                         bg-gradient-to-br from-purple-600/30 via-indigo-600/10 to-transparent
-                         border border-purple-500/50
-                         shadow-[0_0_70px_rgba(139,92,246,0.35)]"
+              className="relative flex flex-col justify-between rounded-2xl p-7
+              bg-gradient-to-br from-purple-600/20 via-indigo-600/10 to-transparent
+              border border-purple-500/40
+              shadow-[0_10px_40px_rgba(139,92,246,0.25)]
+              hover:translate-y-[-4px] transition-all duration-300"
             >
+
               <div
                 className="absolute -top-4 left-1/2 -translate-x-1/2
-                              px-4 py-1 rounded-full
-                              bg-gradient-to-r from-purple-500 to-indigo-500
-                              text-xs font-bold uppercase tracking-wider"
+                px-4 py-1 rounded-full
+                bg-gradient-to-r from-purple-500 to-indigo-500
+                text-xs font-semibold uppercase tracking-wide"
               >
-                Awesome
+                Most Popular
               </div>
 
               <div>
-                <h3 className="text-xl font-bold mb-2 flex items-center gap-2">
+
+                <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
                   Pro <FiStar className="text-yellow-400" />
                 </h3>
 
-                <p className="text-gray-300 mb-5 text-sm">
+                <p className="text-gray-300 mb-6 text-sm">
                   AI-powered automation for serious teams.
                 </p>
 
                 <div className="flex items-end gap-2 mb-6">
-                  <span className="text-4xl font-black">$29.99</span>
+                  <span className="text-4xl font-bold">$29.99</span>
                   <span className="text-gray-300 mb-1">/month</span>
                 </div>
 
                 <ul className="space-y-3 text-sm">
+
                   {[
                     "Everything in Free",
-                    "AI-generated email templates",
-                    "AI template suggestions",
+                    "AI email templates",
                     "Smart conditional routing",
-                    "Automated follow-up ideas",
+                    "AI follow-up suggestions",
+                    "Advanced lead insights",
                   ].map((f, i) => (
                     <li key={i} className="flex gap-3 text-gray-200">
                       <FiCheck className="text-purple-400 mt-0.5" />
                       {f}
                     </li>
                   ))}
+
                 </ul>
+
               </div>
 
               <button
                 onClick={handleProCheckout}
-                className="mt-6 w-full py-3 rounded-xl font-semibold
-             bg-gradient-to-r from-purple-500 to-indigo-500
-             hover:opacity-90 transition
-             flex items-center justify-center gap-2"
+                className="mt-8 w-full py-3 rounded-xl font-semibold
+                bg-gradient-to-r from-purple-500 to-indigo-500
+                hover:opacity-90 transition
+                flex items-center justify-center gap-2"
               >
-                Upgrade · Awesome <FiArrowRight />
+                Upgrade to Pro <FiArrowRight />
               </button>
+
             </motion.div>
+
           </div>
+
         </motion.div>
+
       </main>
     </div>
   );

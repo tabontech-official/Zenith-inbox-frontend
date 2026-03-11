@@ -141,6 +141,7 @@ import React, { useState, useEffect } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { motion } from "framer-motion";
 
 const RegisterPage = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -149,7 +150,7 @@ const RegisterPage = () => {
   const [password, setPassword] = useState("");
   const [alert, setAlert] = useState({ type: "", message: "" });
   const navigate = useNavigate();
-
+const [loading, setLoading] = useState(false);
   // 🕓 Automatically hide alert after 4 seconds
   useEffect(() => {
     if (alert.message) {
@@ -161,28 +162,32 @@ const RegisterPage = () => {
   const handleClick = () => {
     navigate("/login");
   };
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setLoading(true);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const response = await axios.post(
-        "https://email-syncing-backend.vercel.app/auth/signUp",
-        { fullName, email, password }
-      );
+  try {
+    const response = await axios.post(
+      "https://email-syncing-backend.vercel.app/auth/signUp",
+      { fullName, email, password }
+    );
 
-      if (response.status === 200) {
-        setAlert({
-          type: "success",
-          message: "Signup successful! Redirecting to login...",
-        });
-        setTimeout(() => navigate("/login"), 1200);
-      }
-    } catch (error) {
-      const errMsg =
-        error.response?.data?.error || "Signup failed. Please try again.";
-      setAlert({ type: "error", message: errMsg });
+    if (response.status === 200) {
+      setAlert({
+        type: "success",
+        message: "Signup successful! Redirecting to login...",
+      });
+
+      setTimeout(() => navigate("/login"), 1200);
     }
-  };
+  } catch (error) {
+    const errMsg =
+      error.response?.data?.error || "Signup failed. Please try again.";
+    setAlert({ type: "error", message: errMsg });
+  } finally {
+    setLoading(false);
+  }
+};
 
   // 🔔 Alert Message Component
   const AlertMessage = () =>
@@ -263,12 +268,19 @@ const RegisterPage = () => {
               </div>
             </div>
 
-            <button
-              type="submit"
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-lg font-semibold transition"
-            >
-              Sign up
-            </button>
+           <motion.button
+whileHover={{ scale: 1.05 }}
+whileTap={{ scale: 0.95 }}
+type="submit"
+disabled={loading}
+className={`w-full ${
+loading
+? "bg-gray-400 cursor-not-allowed"
+: "bg-gradient-to-r from-pink-500 to-purple-600"
+} text-white py-3 rounded-lg font-semibold shadow-md transition`}
+>
+{loading ? "Signing up..." : "Sign up"}
+</motion.button>
           </form>
 
           <p className="text-center text-sm text-gray-600 mt-4">

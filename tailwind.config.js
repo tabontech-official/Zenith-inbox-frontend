@@ -10,6 +10,10 @@ module.exports = {
         secondary: '#f39c12', // Yellow color for buttons
         accent: '#8e44ad', // Another shade of purple for hover
       },
+        fontFamily: {
+        heading: ["Jost", "Poltawski Nowy", "sans-serif"],
+        body: ["Poppins", "sans-serif"],
+      },
     },
   },
   plugins: [],

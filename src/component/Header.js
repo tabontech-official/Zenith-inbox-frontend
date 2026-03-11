@@ -12,13 +12,8 @@ const Header = () => {
       : "text-gray-400 hover:text-white";
 
   return (
-    <header
-      className="fixed top-6 inset-x-0 max-w-5xl mx-auto z-50
-                 px-6 py-3 rounded-full
-                 bg-white/[0.03] border border-white/10
-                 backdrop-blur-xl shadow-2xl
-                 flex items-center justify-between"
-    >
+          <header className="fixed top-6 inset-x-0 max-w-6xl mx-auto z-50 px-6 py-2.5 bg-white/[0.03] border border-white/10 backdrop-blur-xl rounded-xl flex justify-between items-center">
+
       <div
         onClick={() => navigate("/")}
         className="flex items-center gap-2 cursor-pointer"
