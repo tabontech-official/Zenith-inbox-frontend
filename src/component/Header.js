@@ -19,10 +19,10 @@ const Header = () => {
         className="flex items-center gap-2 cursor-pointer"
       >
         {" "}
-        <div className="p-1.5 text-indigo-500  rounded-lg group-hover:rotate-12 transition-transform">
-          <FiMail className="text-indigo-500 text-2xl" />
-        </div>
-        <span className="font-bold tracking-tight text-lg">Replex Engine</span>
+        <div className="flex items-center gap-2 font-semibold text-lg">
+                <FiMail className="text-indigo-400 text-xl" />
+                Replex Engine
+              </div>
       </div>
 
       {/* NAV */}
@@ -48,14 +48,12 @@ const Header = () => {
       </nav>
 
       {/* CTA */}
-      <button
-        onClick={() => navigate("/login")}
-        className="px-5 py-2 text-sm font-bold
-                   bg-white text-black rounded-full
-                   hover:bg-purple-50 transition"
-      >
-        Get Started
-      </button>
+       <button
+          onClick={() => navigate("/login")}
+          className="px-5 py-2 bg-white text-black rounded-xl text-sm font-semibold hover:bg-gray-200"
+        >
+          Get Started
+        </button>
     </header>
   );
 };
