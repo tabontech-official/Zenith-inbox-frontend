@@ -75,7 +75,7 @@ const OthersScenariosPage = () => {
         const outgoing = edges.find((e) => e.source === nodeId);
 
         let newEdges = edges.filter(
-          (e) => e.source !== nodeId && e.target !== nodeId
+          (e) => e.source !== nodeId && e.target !== nodeId,
         );
 
         // Auto-reconnect chain
@@ -151,7 +151,7 @@ const OthersScenariosPage = () => {
   const fetchTestEmail = async () => {
     try {
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/mailhook/email/latest/${userId}`
+        `https://email-syncing-backend.vercel.app/mailhook/email/latest/${userId}`,
       );
 
       const data = await res.json();
@@ -196,7 +196,7 @@ const OthersScenariosPage = () => {
   const fetchActiveTemplates = async () => {
     try {
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/template/other/active?userId=${userId}`
+        `https://email-syncing-backend.vercel.app/template/other/active?userId=${userId}`,
       );
 
       const data = await res.json();
@@ -222,7 +222,7 @@ const OthersScenariosPage = () => {
         const outgoing = edges.find((e) => e.source === nodeId);
 
         let newEdges = edges.filter(
-          (e) => e.source !== nodeId && e.target !== nodeId
+          (e) => e.source !== nodeId && e.target !== nodeId,
         );
 
         if (incoming && outgoing) {
@@ -345,8 +345,8 @@ const OthersScenariosPage = () => {
                   config: { delayValue: 5, delayUnit: "seconds" },
                 },
               }
-            : n
-        )
+            : n,
+        ),
       );
     }
 
@@ -356,7 +356,6 @@ const OthersScenariosPage = () => {
   // const rebuildFlowFromScenario = (scenario) => {
   //   const nodes = [];
   //   const edges = [];
-
 
   //   nodes.push({
   //     id: "webhook-1",
@@ -565,140 +564,139 @@ const OthersScenariosPage = () => {
   //   setRfEdges(edges);
   // };
 
+  const rebuildFlowFromScenario = (scenario) => {
+    const nodes = [];
+    const edges = [];
 
-const rebuildFlowFromScenario = (scenario) => {
-  const nodes = [];
-  const edges = [];
+    const START_X = 400;
+    const START_Y = 80;
+    const BRANCH_SPACING_X = 350;
+    const NODE_SPACING_Y = 180;
 
-  const START_X = 400;
-  const START_Y = 80;
-  const BRANCH_SPACING_X = 350;
-  const NODE_SPACING_Y = 180;
-
-  // Webhook Node (center)
-  nodes.push({
-    id: "webhook-1",
-    type: "webhookNode",
-    position: { x: START_X, y: START_Y },
-    data: {
+    // Webhook Node (center)
+    nodes.push({
       id: "webhook-1",
-      config: {},
-      deleteNode: () => deleteNode("webhook-1"),
-      openModuleModal: () => {
-        setEditingNode("webhook-1");
-        setShowModuleModal(true);
-      },
-      openWebhookModal: () => setShowWebhookModal(true),
-    },
-  });
-
-  // Loop each branch separately
-  scenario.routerBranches.forEach((branch, branchIndex) => {
-    const branchX = START_X + (branchIndex === 0 ? -BRANCH_SPACING_X : BRANCH_SPACING_X);
-
-    let prevNodeId = "webhook-1";
-
-    branch.modules.forEach((mod, modIndex) => {
-      const yPos = START_Y + (modIndex + 1) * NODE_SPACING_Y;
-      const nodeType =
-        mod.type === "Condition"
-          ? "conditionNode"
-          : mod.type === "Delay"
-          ? "delayNode"
-          : mod.type === "Template"
-          ? "templateNode"
-          : "gmailNode";
-
-      const newNode = {
-        id: mod.id,
-        type: nodeType,
-        position: { x: branchX, y: yPos },
-        data: {
-          id: mod.id,
-          config: mod,
-          openModuleModal: () => {
-            setEditingNode({ id: mod.id, type: nodeType });
-            setShowModuleModal(true);
-          },
-          confirmDeleteNode: () => {
-            setNodeToDelete(mod.id);
-            setShowDeleteConfirm(true);
-          },
+      type: "webhookNode",
+      position: { x: START_X, y: START_Y },
+      data: {
+        id: "webhook-1",
+        config: {},
+        deleteNode: () => deleteNode("webhook-1"),
+        openModuleModal: () => {
+          setEditingNode("webhook-1");
+          setShowModuleModal(true);
         },
-      };
-
-      // Gmail special config
-      if (nodeType === "gmailNode") {
-        const isMongoId = /^[0-9a-fA-F]{24}$/.test(mod.template);
-        newNode.data.config = {
-          appType: mod.emailType || "",
-          emailType: mod.emailType || "",
-          to: mod.to || "",
-          subject: mod.subject || "",
-          cc: mod.cc || [],
-          bcc: mod.bcc || [],
-          connectionId: mod.connectionId || "",
-          templateId: isMongoId ? mod.template : null,
-          body: isMongoId ? "" : mod.template || "",
-        };
-        newNode.data.openEditEmailModal = () => {
-          setEditingNode({ id: mod.id, type: "gmailNode" });
-          setShowEmailModal(true);
-        };
-      }
-
-      // Template config
-      if (nodeType === "templateNode") {
-        newNode.data.config = {
-          templateId: mod.templateId || "",
-          name: mod.templateName || "",
-          content: mod.templateContent || "",
-        };
-        newNode.data.openTemplateModal = () => {
-          setEditingNode({ id: mod.id, type: "templateNode" });
-          setShowTemplateModal(true);
-        };
-      }
-
-      // Condition config
-      if (nodeType === "conditionNode") {
-        newNode.data.config = mod.filter || { conditions: [] };
-        newNode.data.openConditionModal = () => {
-          setEditingNode({ id: mod.id, type: "conditionNode" });
-          setShowFilterModal(true);
-        };
-      }
-
-      // Delay config
-      if (nodeType === "delayNode") {
-        newNode.data.config = {
-          delayValue: mod.delayValue,
-          delayUnit: mod.delayUnit,
-        };
-        newNode.data.openEditModal = () => {
-          setEditingNode({ id: mod.id, type: "delayNode" });
-          setShowDelayModal(true);
-        };
-      }
-
-      nodes.push(newNode);
-
-      // Connect edge
-      edges.push({
-        id: `edge-${prevNodeId}-${mod.id}`,
-        source: prevNodeId,
-        target: mod.id,
-        type: "smoothstep",
-      });
-
-      prevNodeId = mod.id;
+        openWebhookModal: () => setShowWebhookModal(true),
+      },
     });
-  });
 
-  setRfNodes(nodes);
-  setRfEdges(edges);
-};
+    // Loop each branch separately
+    scenario.routerBranches.forEach((branch, branchIndex) => {
+      const branchX =
+        START_X + (branchIndex === 0 ? -BRANCH_SPACING_X : BRANCH_SPACING_X);
 
+      let prevNodeId = "webhook-1";
+
+      branch.modules.forEach((mod, modIndex) => {
+        const yPos = START_Y + (modIndex + 1) * NODE_SPACING_Y;
+        const nodeType =
+          mod.type === "Condition"
+            ? "conditionNode"
+            : mod.type === "Delay"
+              ? "delayNode"
+              : mod.type === "Template"
+                ? "templateNode"
+                : "gmailNode";
+
+        const newNode = {
+          id: mod.id,
+          type: nodeType,
+          position: { x: branchX, y: yPos },
+          data: {
+            id: mod.id,
+            config: mod,
+            openModuleModal: () => {
+              setEditingNode({ id: mod.id, type: nodeType });
+              setShowModuleModal(true);
+            },
+            confirmDeleteNode: () => {
+              setNodeToDelete(mod.id);
+              setShowDeleteConfirm(true);
+            },
+          },
+        };
+
+        // Gmail special config
+        if (nodeType === "gmailNode") {
+          const isMongoId = /^[0-9a-fA-F]{24}$/.test(mod.template);
+          newNode.data.config = {
+            appType: mod.emailType || "",
+            emailType: mod.emailType || "",
+            to: mod.to || "",
+            subject: mod.subject || "",
+            cc: mod.cc || [],
+            bcc: mod.bcc || [],
+            connectionId: mod.connectionId || "",
+            templateId: isMongoId ? mod.template : null,
+            body: isMongoId ? "" : mod.template || "",
+          };
+          newNode.data.openEditEmailModal = () => {
+            setEditingNode({ id: mod.id, type: "gmailNode" });
+            setShowEmailModal(true);
+          };
+        }
+
+        // Template config
+        if (nodeType === "templateNode") {
+          newNode.data.config = {
+            templateId: mod.templateId || "",
+            name: mod.templateName || "",
+            content: mod.templateContent || "",
+          };
+          newNode.data.openTemplateModal = () => {
+            setEditingNode({ id: mod.id, type: "templateNode" });
+            setShowTemplateModal(true);
+          };
+        }
+
+        // Condition config
+        if (nodeType === "conditionNode") {
+          newNode.data.config = mod.filter || { conditions: [] };
+          newNode.data.openConditionModal = () => {
+            setEditingNode({ id: mod.id, type: "conditionNode" });
+            setShowFilterModal(true);
+          };
+        }
+
+        // Delay config
+        if (nodeType === "delayNode") {
+          newNode.data.config = {
+            delayValue: mod.delayValue,
+            delayUnit: mod.delayUnit,
+          };
+          newNode.data.openEditModal = () => {
+            setEditingNode({ id: mod.id, type: "delayNode" });
+            setShowDelayModal(true);
+          };
+        }
+
+        nodes.push(newNode);
+
+        // Connect edge
+        edges.push({
+          id: `edge-${prevNodeId}-${mod.id}`,
+          source: prevNodeId,
+          target: mod.id,
+          type: "smoothstep",
+        });
+
+        prevNodeId = mod.id;
+      });
+    });
+
+    setRfNodes(nodes);
+    setRfEdges(edges);
+  };
 
   const [isTemplateAvailable, setIsTemplateAvailable] = useState(false);
 
@@ -714,7 +712,7 @@ const rebuildFlowFromScenario = (scenario) => {
 
       // ⭐ 3. Load scenario
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/scenario/detail/${id}`
+        `https://email-syncing-backend.vercel.app/scenario/detail/${id}`,
       );
       const data = await res.json();
 
@@ -738,8 +736,8 @@ const rebuildFlowFromScenario = (scenario) => {
     try {
       const res = await fetch(
         `https://email-syncing-backend.vercel.app/auth/getConnection/${localStorage.getItem(
-          "userid"
-        )}`
+          "userid",
+        )}`,
       );
       const data = await res.json();
       setConnections(data);
@@ -753,7 +751,7 @@ const rebuildFlowFromScenario = (scenario) => {
 
   const onConnect = useCallback(
     (params) => setRfEdges((eds) => addEdge(params, eds)),
-    []
+    [],
   );
 
   const handleNodeClick = (event, node) => {
@@ -825,7 +823,7 @@ const rebuildFlowFromScenario = (scenario) => {
 
     // Clear old errors
     setRfNodes((prev) =>
-      prev.map((n) => ({ ...n, data: { ...n.data, errorMessage: null } }))
+      prev.map((n) => ({ ...n, data: { ...n.data, errorMessage: null } })),
     );
 
     for (let i = 0; i < rfNodes.length; i++) {
@@ -863,8 +861,8 @@ const rebuildFlowFromScenario = (scenario) => {
           prev.map((n) =>
             n.id === node.id
               ? { ...n, data: { ...n.data, errorMessage: error } }
-              : n
-          )
+              : n,
+          ),
         );
       } else {
         setValidNodes((prev) => [...prev, node.id]);
@@ -1109,7 +1107,7 @@ const rebuildFlowFromScenario = (scenario) => {
             name,
             content,
           }),
-        }
+        },
       );
 
       const data = await res.json();
@@ -1140,14 +1138,13 @@ const rebuildFlowFromScenario = (scenario) => {
                   type="text"
                   value={scenarioName}
                   onChange={(e) => setScenarioName(e.target.value)}
-                                  className="text-xl sm:text-xl font-semibold text-gray-800 border-none outline-none focus:ring-0 w-full"
-
+                  className="text-xl sm:text-xl font-semibold text-gray-800 border-none outline-none focus:ring-0 w-full"
                   placeholder="Scenario Name"
                 />
 
-                 <p className="text-sm text-gray-500 mt-1">
-                Configure your automation workflow
-              </p>
+                <p className="text-sm text-gray-500 mt-1">
+                  Configure your automation workflow
+                </p>
               </div>
 
               <div className="flex items-center gap-4">
@@ -1328,7 +1325,7 @@ const rebuildFlowFromScenario = (scenario) => {
           transition-all flex items-center gap-3"
                     onClick={() => {
                       setRfEdges((edges) =>
-                        edges.filter((e) => e.id !== selectedEdge.id)
+                        edges.filter((e) => e.id !== selectedEdge.id),
                       );
                       setShowEdgeModal(false);
                     }}
@@ -1475,8 +1472,8 @@ const rebuildFlowFromScenario = (scenario) => {
                   prev.map((n) =>
                     n.id === editingNode.id
                       ? { ...n, data: { ...n.data, config: data } }
-                      : n
-                  )
+                      : n,
+                  ),
                 );
 
                 setShowEmailModal(false);
@@ -1493,8 +1490,8 @@ const rebuildFlowFromScenario = (scenario) => {
                   prev.map((n) =>
                     n.id === editingNode.id
                       ? { ...n, data: { ...n.data, config: data } }
-                      : n
-                  )
+                      : n,
+                  ),
                 );
                 setShowDelayModal(false);
               }}
@@ -1510,8 +1507,8 @@ const rebuildFlowFromScenario = (scenario) => {
                   prev.map((n) =>
                     n.id === editingNode.id
                       ? { ...n, data: { ...n.data, config: data } }
-                      : n
-                  )
+                      : n,
+                  ),
                 );
                 setShowFilterModal(false);
               }}
@@ -1543,16 +1540,15 @@ const rebuildFlowFromScenario = (scenario) => {
             }}
           />
           {showRunTestModal && (
-  <RunTestModal
-    onClose={() => setShowRunTestModal(false)}
-    runScenarioExecutionAnimation={runScenarioExecutionAnimation}
-    onTestSuccess={async () => {
-      await fetchTestEmail();      // fetch latest test email
-      setShowTestEmailModal(true); // open TestEmailModal
-    }}
-  />
-)}
-
+            <RunTestModal
+              onClose={() => setShowRunTestModal(false)}
+              runScenarioExecutionAnimation={runScenarioExecutionAnimation}
+              onTestSuccess={async () => {
+                await fetchTestEmail(); // fetch latest test email
+                setShowTestEmailModal(true); // open TestEmailModal
+              }}
+            />
+          )}
 
           {showDeleteConfirm && (
             <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 backdrop-blur-sm">

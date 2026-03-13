@@ -38,21 +38,24 @@ export default function Template() {
   const navigate = useNavigate();
 
   const [selectedServiceFilter, setSelectedServiceFilter] = useState(
-    urlParams.get("service") || "All"
+    urlParams.get("service") || "All",
   );
 
   const fetchTemplates = async () => {
     try {
       setLoading(true);
       const userId = localStorage.getItem("userid");
-      const res = await axios.get("https://email-syncing-backend.vercel.app/template/all", {
-        params: { userId },
-      });
+      const res = await axios.get(
+        "https://email-syncing-backend.vercel.app/template/all",
+        {
+          params: { userId },
+        },
+      );
 
       setTemplates(res.data);
       setFilteredTemplates(res.data);
       const nonGeneral = res.data.filter(
-        (t) => t.service?.toLowerCase() !== "general"
+        (t) => t.service?.toLowerCase() !== "general",
       );
       const allActive =
         nonGeneral.length > 0 && nonGeneral.every((t) => t.active);
@@ -86,7 +89,7 @@ export default function Template() {
       if (selectedServiceFilter !== "All") {
         filtered = filtered.filter(
           (t) =>
-            t.service?.toLowerCase() === selectedServiceFilter.toLowerCase()
+            t.service?.toLowerCase() === selectedServiceFilter.toLowerCase(),
         );
       }
 
@@ -99,11 +102,11 @@ export default function Template() {
       navigate("/templates");
     } else {
       filtered = templates.filter(
-        (t) => t.service?.toLowerCase() === selectedServiceFilter.toLowerCase()
+        (t) => t.service?.toLowerCase() === selectedServiceFilter.toLowerCase(),
       );
       setFilteredTemplates(filtered);
       navigate(
-        `/templates?service=${encodeURIComponent(selectedServiceFilter)}`
+        `/templates?service=${encodeURIComponent(selectedServiceFilter)}`,
       );
     }
   }, [selectedServiceFilter, templates, viewType]);
@@ -141,7 +144,7 @@ export default function Template() {
     setConditions(
       template.conditions?.length > 0
         ? template.conditions
-        : [{ field: "subject", operator: "contains", value: "" }]
+        : [{ field: "subject", operator: "contains", value: "" }],
     );
     setContent(template.content);
     setIsDrawerOpen(true);
@@ -155,11 +158,14 @@ export default function Template() {
       if (editingId) {
         await axios.put(
           `https://email-syncing-backend.vercel.app/template/update/${editingId}`,
-          payload
+          payload,
         );
         toast.success("Template updated successfully!");
       } else {
-        await axios.post("https://email-syncing-backend.vercel.app/template/create", payload);
+        await axios.post(
+          "https://email-syncing-backend.vercel.app/template/create",
+          payload,
+        );
         toast.success("Template created successfully!");
       }
 
@@ -184,22 +190,25 @@ export default function Template() {
 
     setTemplates((prev) =>
       prev.map((tpl) =>
-        tpl._id === id ? { ...tpl, active: !currentStatus } : tpl
-      )
+        tpl._id === id ? { ...tpl, active: !currentStatus } : tpl,
+      ),
     );
 
     try {
-      await axios.put(`https://email-syncing-backend.vercel.app/template/update/${id}`, {
-        active: !currentStatus,
-      });
+      await axios.put(
+        `https://email-syncing-backend.vercel.app/template/update/${id}`,
+        {
+          active: !currentStatus,
+        },
+      );
       toast.success(
-        `Template ${!currentStatus ? "activated" : "deactivated"} successfully`
+        `Template ${!currentStatus ? "activated" : "deactivated"} successfully`,
       );
     } catch (err) {
       setTemplates((prev) =>
         prev.map((tpl) =>
-          tpl._id === id ? { ...tpl, active: currentStatus } : tpl
-        )
+          tpl._id === id ? { ...tpl, active: currentStatus } : tpl,
+        ),
       );
       toast.error("Failed to toggle template status");
     }
@@ -210,13 +219,13 @@ export default function Template() {
       const userId = localStorage.getItem("userid");
       const res = await axios.patch(
         "https://email-syncing-backend.vercel.app/template/templatestatus/all",
-        { userId }
+        { userId },
       );
       if (res.data.success) {
         const newStatus = res.data.toggledTo;
         setGlobalActive(newStatus);
         toast.success(
-          newStatus ? "All templates activated" : "All templates deactivated"
+          newStatus ? "All templates activated" : "All templates deactivated",
         );
         fetchTemplates();
       } else {
@@ -261,7 +270,7 @@ export default function Template() {
 
   const aiBlockToast = () =>
     toast.error(
-      "Auto response is enabled. Switch to manual mode to edit templates."
+      "Auto response is enabled. Switch to manual mode to edit templates.",
     );
   return (
     <div className="flex">
@@ -312,14 +321,17 @@ export default function Template() {
                     const newValue = !aiEnabled;
                     setAiEnabled(newValue);
                     try {
-                      await axios.patch("https://email-syncing-backend.vercel.app/auth/user/ai", {
-                        userId,
-                        enabled: newValue,
-                      });
+                      await axios.patch(
+                        "https://email-syncing-backend.vercel.app/auth/user/ai",
+                        {
+                          userId,
+                          enabled: newValue,
+                        },
+                      );
                       toast.success(
                         newValue
                           ? "Auto Response Active"
-                          : "Auto Response Paused"
+                          : "Auto Response Paused",
                       );
                     } catch (error) {
                       setAiEnabled(!newValue);
@@ -368,8 +380,8 @@ export default function Template() {
         aiEnabled
           ? "bg-gray-200"
           : globalActive
-          ? "bg-emerald-500 peer-checked:after:translate-x-5"
-          : "bg-gray-200"
+            ? "bg-emerald-500 peer-checked:after:translate-x-5"
+            : "bg-gray-200"
       }
     `}
                 ></div>
