@@ -10,6 +10,7 @@ import {
   FaCheckCircle,
   FaShieldAlt,
   FaSpinner,
+  FaPlug,
 } from "react-icons/fa";
 import axios from "axios";
 import toast from "react-hot-toast";
@@ -162,39 +163,51 @@ const ConnectionsPage = () => {
     <div className="flex">
       <Sidebar />
       <div className="flex-1 flex flex-col md:ml-64 transition-all duration-300">
-        <header className="bg-white border-b border-gray-200 sticky top-0 z-10 p-4 sm:p-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-800  sm:text-left">
-              Connections
-            </h1>
+        <header className="flex flex-col md:flex-row md:items-center justify-between px-4 py-1 bg-white border-b border-gray-100 shadow-sm gap-4 sticky top-0 z-10">
 
-            <div className="flex flex-wrap sm:justify-end gap-2 sm:gap-3 w-full">
-              <button
-                onClick={() => setIsMailhookModalOpen(true)}
-                className="flex items-center justify-center px-3 sm:px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg shadow hover:from-green-600 hover:to-emerald-700 transition"
-              >
-                <FaEnvelope className="h-4 w-4 mr-1.5 sm:mr-2" />
-                Mailhook
-              </button>
+  <div className="flex items-center gap-4">
+    <div className="hidden sm:flex w-12 h-12 bg-indigo-50 rounded-xl items-center justify-center text-indigo-600">
+      <FaPlug className="w-6 h-6" />
+    </div>
 
-              <button
-                onClick={openModal}
-                className="flex items-center justify-center px-3 sm:px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-red-500 to-pink-600 rounded-lg shadow hover:from-red-600 hover:to-pink-700 transition"
-              >
-                <FaGoogle className="h-4 w-4 mr-1.5 sm:mr-2" />
-                Gmail
-              </button>
+    <div>
+      <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
+        Connections
+      </h1>
+      <p className="text-sm text-gray-500 mt-0.5">
+        Connect and manage your email providers
+      </p>
+    </div>
+  </div>
 
-              <button
-                onClick={openOutlookModal}
-                className="flex items-center justify-center px-3 sm:px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg shadow hover:from-blue-700 hover:to-indigo-700 transition"
-              >
-                <FaMicrosoft className="h-4 w-4 mr-1.5 sm:mr-2" />
-                Outlook
-              </button>
-            </div>
-          </div>
-        </header>
+  <div className="flex flex-wrap sm:justify-end gap-2 sm:gap-3 w-full md:w-auto bg-gray-50 p-1.5 rounded-2xl border border-gray-100">
+
+    <button
+      onClick={() => setIsMailhookModalOpen(true)}
+      className="flex items-center justify-center px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl shadow hover:from-green-600 hover:to-emerald-700 transition"
+    >
+      <FaEnvelope className="h-4 w-4 mr-2" />
+      Mailhook
+    </button>
+
+    <button
+      onClick={openModal}
+      className="flex items-center justify-center px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-red-500 to-pink-600 rounded-xl shadow hover:from-red-600 hover:to-pink-700 transition"
+    >
+      <FaGoogle className="h-4 w-4 mr-2" />
+      Gmail
+    </button>
+
+    <button
+      onClick={openOutlookModal}
+      className="flex items-center justify-center px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl shadow hover:from-blue-700 hover:to-indigo-700 transition"
+    >
+      <FaMicrosoft className="h-4 w-4 mr-2" />
+      Outlook
+    </button>
+
+  </div>
+</header>
 
         <main className="flex-1 p-4 sm:p-6 lg:p-8">
           {loading ? (

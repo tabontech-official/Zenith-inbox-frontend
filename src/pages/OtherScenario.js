@@ -1134,24 +1134,20 @@ const rebuildFlowFromScenario = (scenario) => {
 
         <div className="flex-1 min-h-screen bg-gray-50">
           <div className="border-b bg-white/90 backdrop-blur-sm shadow-sm">
-            <div className="px-6 py-4 flex items-center justify-between">
-              <div>
+            <div className="px-6 py-1 flex items-center justify-between">
+              <div className="mt-0.5">
                 <input
                   type="text"
                   value={scenarioName}
                   onChange={(e) => setScenarioName(e.target.value)}
-                  className="
-      text-2xl font-semibold text-gray-900
-      bg-transparent border-none p-0 m-0
-      focus:outline-none focus:ring-0
-      w-full
-    "
+                                  className="text-xl sm:text-xl font-semibold text-gray-800 border-none outline-none focus:ring-0 w-full"
+
                   placeholder="Scenario Name"
                 />
 
-                <p className="text-sm text-gray-500 -mt-1">
-                  Configure your automation workflow
-                </p>
+                 <p className="text-sm text-gray-500 mt-1">
+                Configure your automation workflow
+              </p>
               </div>
 
               <div className="flex items-center gap-4">

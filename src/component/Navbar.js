@@ -141,7 +141,7 @@ navigate(
         <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-20"></div>
       )}
 
-      <header className="w-full bg-white px-6 py-3 flex justify-end sticky top-0 z-30 border-b">
+      <header className="w-full bg-white px-4 py-3 flex justify-end sticky top-0 z-30 border-b">
         <div className="flex items-center gap-4">
 
        {!loading && user && (

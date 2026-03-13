@@ -171,13 +171,13 @@ const Inbox = () => {
       <Sidebar />
 
       <main className="flex-1 flex md:ml-64 flex-col min-w-0">
-        <header className="h-12 bg-white border-b flex items-center px-4 gap-6 text-sm text-gray-700 z-10">
+        <header className="bg-white border-b flex items-center mt-0.5 px-6 py-4 gap-6 text-sm text-gray-700 z-10">
           <button className="flex items-center gap-2 bg-blue-700 text-white px-3 py-1 rounded-sm hover:bg-blue-800">
             <FiMail /> Inbox
           </button>
+
           <div className="h-4 w-[1px] bg-gray-300" />
-          {/* <button className="flex items-center gap-2 hover:bg-gray-100 p-1 px-2 rounded"><FiTrash2 /> Delete</button>
-          <button className="flex items-center gap-2 hover:bg-gray-100 p-1 px-2 rounded"><FiArchive /> Archive</button> */}
+
           <button
             onClick={fetchEmails}
             className="flex items-center gap-2 hover:bg-gray-100 p-1 px-2 rounded"

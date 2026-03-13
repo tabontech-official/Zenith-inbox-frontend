@@ -57,11 +57,14 @@ const Sidebar = () => {
   useEffect(() => {
     const fetchGuide = async () => {
       try {
-        const res = await fetch(`https://email-syncing-backend.vercel.app/auth/guide/${userId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
+        const res = await fetch(
+          `https://email-syncing-backend.vercel.app/auth/guide/${userId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
           },
-        });
+        );
 
         const data = await res.json();
 
@@ -80,9 +83,12 @@ const Sidebar = () => {
   }, []);
 
   const handleLogout = async () => {
-    await fetch(`https://email-syncing-backend.vercel.app/auth/logout/${userId}`, {
-      method: "POST",
-    });
+    await fetch(
+      `https://email-syncing-backend.vercel.app/auth/logout/${userId}`,
+      {
+        method: "POST",
+      },
+    );
     localStorage.clear();
     navigate("/login", { replace: true });
     window.location.reload();
@@ -103,7 +109,49 @@ const Sidebar = () => {
     if (next > LAST_STEP) {
       setGuideStep(0);
 
-      await fetch(`https://email-syncing-backend.vercel.app/auth/guide/${userId}`, {
+      await fetch(
+        `https://email-syncing-backend.vercel.app/auth/guide/${userId}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            type: "sidebar",
+            completed: true,
+            step: LAST_STEP + 1,
+          }),
+        },
+      );
+      window.dispatchEvent(new Event("sidebarGuideCompleted"));
+      return;
+    }
+
+    setGuideStep(next);
+
+    await fetch(
+      `https://email-syncing-backend.vercel.app/auth/guide/${userId}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          type: "sidebar",
+          step: next,
+        }),
+      },
+    );
+  };
+
+  const skipGuide = async () => {
+    setGuideStep(0);
+
+    await fetch(
+      `https://email-syncing-backend.vercel.app/auth/guide/${userId}`,
+      {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -112,42 +160,9 @@ const Sidebar = () => {
         body: JSON.stringify({
           type: "sidebar",
           completed: true,
-          step: LAST_STEP + 1,
         }),
-      });
-      window.dispatchEvent(new Event("sidebarGuideCompleted"));
-      return;
-    }
-
-    setGuideStep(next);
-
-    await fetch(`https://email-syncing-backend.vercel.app/auth/guide/${userId}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({
-        type: "sidebar",
-        step: next,
-      }),
-    });
-  };
-
-  const skipGuide = async () => {
-    setGuideStep(0);
-
-    await fetch(`https://email-syncing-backend.vercel.app/auth/guide/${userId}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        type: "sidebar",
-        completed: true,
-      }),
-    });
+    );
     window.dispatchEvent(new Event("sidebarGuideCompleted"));
   };
 
@@ -184,9 +199,9 @@ const Sidebar = () => {
 
   const renderUserSidebar = () => (
     <>
-      <div className="flex items-center justify-between py-5 px-6 border-b bg-white">
+      <div className="flex items-center justify-between px-8 py-4 border-b bg-white">
         <Link to="/organization" className="flex items-center space-x-2">
-          <FiMail className="text-indigo-500 text-2xl" />
+          <FiMail className="text-indigo-500 text-3xl" />
           <span className="font-semibold text-lg">Replex Engine</span>
         </Link>
         <button
@@ -234,21 +249,21 @@ const Sidebar = () => {
               FiZap,
               "/scenarios/all",
               allScenarioRef,
-              2
+              2,
             )}
             {renderNavLink(
               "Shopify Scenario",
               FiGitBranch,
               "/scenarios/shopify",
               shopifyScenarioRef,
-              3
+              3,
             )}
             {renderNavLink(
               "Custom",
               FiSettings,
               "/scenarios/others",
               customScenarioRef,
-              4
+              4,
             )}
           </div>
         </div>
@@ -327,12 +342,12 @@ const Sidebar = () => {
           {renderNavLink(
             "User Activity",
             FiFileText,
-            "/admin/reports/user-activity"
+            "/admin/reports/user-activity",
           )}
           {renderNavLink(
             "Email Tracking",
             FiMail,
-            "/admin/reports/email-tracking"
+            "/admin/reports/email-tracking",
           )}
           {renderNavLink("Scenarios", FiLayers, "/admin/reports/scenarios")}
           {renderNavLink("Templates", FiFileText, "/admin/reports/templates")}

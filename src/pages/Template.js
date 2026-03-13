@@ -267,7 +267,7 @@ export default function Template() {
     <div className="flex">
       <Sidebar />
       <div className="flex-1 min-h-screen bg-gray-50 lg:ml-64">
-        <header className="flex flex-col md:flex-row md:items-center justify-between px-8 py-6 bg-white border-b border-gray-100 shadow-sm gap-4">
+        <header className="flex flex-col md:flex-row md:items-center justify-between px-4 py-1 bg-white border-b border-gray-100 shadow-sm gap-4">
           <div className="flex items-center gap-4">
             <div className="hidden sm:flex w-12 h-12 bg-indigo-50 rounded-xl items-center justify-center text-indigo-600">
               <Layout size={24} />

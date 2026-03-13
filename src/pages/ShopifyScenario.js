@@ -158,7 +158,7 @@ const ShopifyScenariosPage = () => {
       if (parsed.routerBranches?.length > 0) {
         console.log(
           "♻️ Pre-restoring routerBranches before React mounts:",
-          parsed.routerBranches
+          parsed.routerBranches,
         );
 
         routerBranches.push(...parsed.routerBranches);
@@ -206,8 +206,8 @@ const ShopifyScenariosPage = () => {
     try {
       const res = await fetch(
         `https://email-syncing-backend.vercel.app/auth/getConnection/${localStorage.getItem(
-          "userid"
-        )}`
+          "userid",
+        )}`,
       );
       const data = await res.json();
       setConnections(data);
@@ -291,7 +291,7 @@ const ShopifyScenariosPage = () => {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ userId }),
-          }
+          },
         );
 
         const existing = await checkRes.json();
@@ -327,7 +327,7 @@ const ShopifyScenariosPage = () => {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
-          }
+          },
         );
         data = await res.json();
 
@@ -358,7 +358,14 @@ const ShopifyScenariosPage = () => {
       setRouterBranches(
         data.routerBranches?.length > 0
           ? data.routerBranches
-          : [{ id: Date.now(), hasModule: false, condition: null, modules: [] }]
+          : [
+              {
+                id: Date.now(),
+                hasModule: false,
+                condition: null,
+                modules: [],
+              },
+            ],
       );
 
       if (typeof data.scenarioActive === "boolean") {
@@ -371,7 +378,7 @@ const ShopifyScenariosPage = () => {
       } else {
         console.log(
           "ℹ️ Backend didn't return scenarioActive — keeping current state:",
-          automationOn
+          automationOn,
         );
         if (automationOn) {
           localStorage.setItem("scenarioActive", "true");
@@ -386,7 +393,7 @@ const ShopifyScenariosPage = () => {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ userId: localStorage.getItem("userid") }),
-        }
+        },
       );
       const freshData = await refresh.json();
 
@@ -402,7 +409,7 @@ const ShopifyScenariosPage = () => {
                   condition: null,
                   modules: [],
                 },
-              ]
+              ],
         );
         setScenarioName(freshData.name || scenarioName);
         setScenarioDescription(freshData.description || scenarioDescription);
@@ -424,7 +431,7 @@ const ShopifyScenariosPage = () => {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ active: newStatus }),
-        }
+        },
       );
 
       const data = await res.json();
@@ -450,13 +457,13 @@ const ShopifyScenariosPage = () => {
             userId: localStorage.getItem("userid"),
             active: newStatus,
           }),
-        }
+        },
       );
 
       const data = await res.json();
       if (data.success) {
         toast.success(
-          `All templates ${newStatus ? "activated" : "deactivated"}!`
+          `All templates ${newStatus ? "activated" : "deactivated"}!`,
         );
       } else {
         toast.error(data.message || "Failed to update templates.");
@@ -495,7 +502,7 @@ const ShopifyScenariosPage = () => {
     setRouterBranches((prev) =>
       prev.length > 0
         ? prev
-        : [{ id: Date.now(), hasModule: false, condition: null, modules: [] }]
+        : [{ id: Date.now(), hasModule: false, condition: null, modules: [] }],
     );
   }, []);
 
@@ -521,7 +528,7 @@ const ShopifyScenariosPage = () => {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ userId }),
-          }
+          },
         );
 
         const data = await res.json();
@@ -546,7 +553,7 @@ const ShopifyScenariosPage = () => {
                     condition: null,
                     modules: [],
                   },
-                ]
+                ],
           );
 
           if (data.scenarioActive === true) {
@@ -561,7 +568,7 @@ const ShopifyScenariosPage = () => {
           console.log("Loaded scenario from backend:", data.routerBranches);
         } else {
           console.log(
-            "ℹ️ No existing scenario found for this user — Add mode."
+            "ℹ️ No existing scenario found for this user — Add mode.",
           );
           setEditingMode("add");
           setAutomationOn(false);
@@ -576,75 +583,6 @@ const ShopifyScenariosPage = () => {
 
   const [allActive, setAllActive] = useState(false);
 
-  // const handleSave = () => {
-  //   if (editingBranch !== null) {
-  //     const updatedBranches = [...routerBranches];
-
-  //     let type = "";
-  //     let description = "";
-
-  //     const isDelay = selectedApp?.name === "Delay";
-
-  //     if (isDelay) {
-  //       type = "Delay";
-  //       if (delayValue && delayUnit) {
-  //         description = `Wait ${delayValue} ${delayUnit}`;
-  //       } else {
-  //         description = "Delay (no duration set)";
-  //       }
-  //     } else if (
-  //       selectedApp?.name === "Email" ||
-  //       selectedApp?.name === "Gmail"
-  //     ) {
-  //       type = selectedApp.name === "Email" ? "Custom Email" : "Send an Email";
-  //       description = `Send email via ${selectedAppType || selectedApp.name}`;
-  //     }
-
-  //     const moduleData = {
-  //       id: editingModuleId || Date.now(),
-  //       app: {
-  //         ...selectedApp,
-  //         name:
-  //           selectedApp.displayName ||
-  //           selectedTemplate ||
-  //           selectedApp.defaultTemplate ||
-  //           "Unnamed Module",
-  //         color: selectedApp.color,
-  //         icon: selectedApp.icon,
-  //       },
-  //       type,
-  //       description,
-  //       connectionId: selectedConnection,
-  //       template: selectedTemplate,
-  //       cc: ccList,
-  //       bcc: bccList,
-  //       emailType: selectedAppType || selectedApp?.name || "",
-  //       ...(isDelay
-  //         ? { delayValue: delayValue || "", delayUnit: delayUnit || "" }
-  //         : {}),
-  //     };
-
-  //     if (editingModuleId) {
-  //       const moduleIndex = updatedBranches[editingBranch].modules.findIndex(
-  //         (m) => m.id === editingModuleId
-  //       );
-  //       if (moduleIndex >= 0) {
-  //         updatedBranches[editingBranch].modules[moduleIndex] = {
-  //           ...updatedBranches[editingBranch].modules[moduleIndex],
-  //           ...moduleData,
-  //         };
-  //       }
-  //     } else {
-  //       updatedBranches[editingBranch].modules.push(moduleData);
-  //     }
-
-  //     setRouterBranches(updatedBranches);
-  //     setEditingBranch(null);
-  //     setEditingModuleId(null);
-  //   }
-
-  //   resetForm();
-  // };
 
   const handleSave = () => {
     if (editingBranch !== null) {
@@ -698,12 +636,12 @@ const ShopifyScenariosPage = () => {
         updatedBranches[editingBranch].modules.splice(
           insertAtIndex,
           0,
-          moduleData
+          moduleData,
         );
         setInsertAtIndex(null);
       } else if (editingModuleId) {
         const moduleIndex = updatedBranches[editingBranch].modules.findIndex(
-          (m) => m.id === editingModuleId
+          (m) => m.id === editingModuleId,
         );
         if (moduleIndex >= 0) {
           updatedBranches[editingBranch].modules[moduleIndex] = {
@@ -1066,7 +1004,7 @@ const ShopifyScenariosPage = () => {
         if (!userId || !showRunTestModal) return;
 
         const res = await fetch(
-          `https://email-syncing-backend.vercel.app/mailhook/get-test-data/${userId}`
+          `https://email-syncing-backend.vercel.app/mailhook/get-test-data/${userId}`,
         );
         const data = await res.json();
 
@@ -1094,7 +1032,7 @@ const ShopifyScenariosPage = () => {
     const handleGoogleAuthSuccess = (event) => {
       if (event.data?.type === "google-auth-success") {
         console.log(
-          " Gmail connection success detected in ShopifyScenariosPage!"
+          " Gmail connection success detected in ShopifyScenariosPage!",
         );
 
         fetchConnections();
@@ -1129,8 +1067,8 @@ const ShopifyScenariosPage = () => {
       const userId = localStorage.getItem("userid");
       const res = await fetch(
         `https://email-syncing-backend.vercel.app/template/alltemplates/query?userId=${userId}&service=${encodeURIComponent(
-          service
-        )}`
+          service,
+        )}`,
       );
       const data = await res.json();
 
@@ -1154,7 +1092,7 @@ const ShopifyScenariosPage = () => {
               color: "#b91c1c",
               border: "1px solid #fca5a5",
             },
-          }
+          },
         );
         return;
       }
@@ -1210,7 +1148,7 @@ const ShopifyScenariosPage = () => {
 
         if (isEmailModule && connectionId) {
           const connectionData = connections.find(
-            (c) => c._id === connectionId
+            (c) => c._id === connectionId,
           );
           if (connectionData && !connectionData.verified) {
             unverifiedConnections.push(connectionData);
@@ -1232,7 +1170,7 @@ const ShopifyScenariosPage = () => {
             border: "1px solid #fca5a5",
             whiteSpace: "pre-line",
           },
-        }
+        },
       );
       console.warn(" Missing module connections:", missingModules);
       return;
@@ -1252,7 +1190,7 @@ const ShopifyScenariosPage = () => {
             color: "#b91c1c",
             border: "1px solid #fca5a5",
           },
-        }
+        },
       );
       return;
     }
@@ -1275,7 +1213,7 @@ const ShopifyScenariosPage = () => {
             budget: formData.budget,
             helpDescription: formData.description,
           }),
-        }
+        },
       );
 
       const data = await res.json();
@@ -1289,8 +1227,8 @@ const ShopifyScenariosPage = () => {
         const userId = localStorage.getItem("userid");
         const res = await fetch(
           `https://email-syncing-backend.vercel.app/template/alltemplates?userId=${userId}&service=${encodeURIComponent(
-            formData.service
-          )}`
+            formData.service,
+          )}`,
         );
         const templates = await res.json();
         setTemplateList(Array.isArray(templates.data) ? templates.data : []);
@@ -1354,7 +1292,7 @@ const ShopifyScenariosPage = () => {
                 color: "#b91c1c",
                 border: "1px solid #fca5a5",
               },
-            }
+            },
           );
         }
 
@@ -1380,7 +1318,7 @@ const ShopifyScenariosPage = () => {
       toast.loading("Fetching test email...", { id: "email" });
 
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/mailhook/get-test-email/${userId}`
+        `https://email-syncing-backend.vercel.app/mailhook/get-test-email/${userId}`,
       );
       const data = await res.json();
 
@@ -1410,7 +1348,7 @@ const ShopifyScenariosPage = () => {
       const userId = localStorage.getItem("userid");
       try {
         const res = await fetch(
-          `https://email-syncing-backend.vercel.app/template/all?userId=${userId}`
+          `https://email-syncing-backend.vercel.app/template/all?userId=${userId}`,
         );
         const data = await res.json();
 
@@ -1475,36 +1413,36 @@ const ShopifyScenariosPage = () => {
   //   }
   // }, [showServiceModal]);
 
-useEffect(() => {
-  if (showServiceModal) {
-    (async () => {
-      const userId = localStorage.getItem("userid");
-      try {
-        const { data } = await axios.get(
-          `https://email-syncing-backend.vercel.app/template/all?userId=${userId}`
-        );
+  useEffect(() => {
+    if (showServiceModal) {
+      (async () => {
+        const userId = localStorage.getItem("userid");
+        try {
+          const { data } = await axios.get(
+            `https://email-syncing-backend.vercel.app/template/all?userId=${userId}`,
+          );
 
-        const grouped = data.reduce((acc, item) => {
-          if (!acc[item.service]) acc[item.service] = [];
-          acc[item.service].push(item);
-          return acc;
-        }, {});
+          const grouped = data.reduce((acc, item) => {
+            if (!acc[item.service]) acc[item.service] = [];
+            acc[item.service].push(item);
+            return acc;
+          }, {});
 
-        const result = Object.keys(grouped).map((service) => ({
-          service,
-          templates: grouped[service],
-        }));
+          const result = Object.keys(grouped).map((service) => ({
+            service,
+            templates: grouped[service],
+          }));
 
-        const allActive = data.every((t) => t.active === true);
-        setAllTemplatesActive(allActive);
+          const allActive = data.every((t) => t.active === true);
+          setAllTemplatesActive(allActive);
 
-        setServiceGroups(result);
-      } catch (err) {
-        console.error("Failed to fetch templates:", err);
-      }
-    })();
-  }
-}, [showServiceModal]);
+          setServiceGroups(result);
+        } catch (err) {
+          console.error("Failed to fetch templates:", err);
+        }
+      })();
+    }
+  }, [showServiceModal]);
 
   const [allTemplatesActive, setAllTemplatesActive] = useState(true);
 
@@ -1514,7 +1452,7 @@ useEffect(() => {
     if (routerBranches.length > 0) {
       localStorage.setItem(
         "routerBranchesState",
-        JSON.stringify(routerBranches)
+        JSON.stringify(routerBranches),
       );
     }
   }, [routerBranches]);
@@ -1542,15 +1480,15 @@ useEffect(() => {
     <div className="flex min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 font-inter">
       <Sidebar />
 
-<div className="flex-1 flex flex-col overflow-hidden md:ml-64 ml-0 transition-all duration-300">
-        <div className="bg-white border-b px-4 sm:px-6 py-4 shadow-sm">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex-1 flex flex-col overflow-hidden md:ml-64 ml-0 transition-all duration-300">
+        <div className="bg-white border-b px-4 sm:px-6 py-1  shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-0.5">
             <div className="flex-1">
               <input
                 type="text"
                 value={scenarioName}
                 onChange={(e) => setScenarioName(e.target.value)}
-                className="text-lg sm:text-xl font-semibold text-gray-800 border-none outline-none focus:ring-0 w-full"
+                className="text-xl sm:text-xl font-semibold text-gray-800 border-none outline-none focus:ring-0 w-full"
                 placeholder="Scenario Name"
               />
               <p className="text-sm text-gray-500 mt-1">
@@ -1558,12 +1496,7 @@ useEffect(() => {
               </p>
             </div>
             <div className="flex flex-wrap justify-start gap-3">
-              {/* <button
-                onClick={handleSaveScenario}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center text-sm"
-              >
-                {scenarioId ? "Update Scenario" : "Add Scenario"}
-              </button> */}
+             
               <button
                 onClick={handleSaveScenario}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
@@ -1650,7 +1583,7 @@ useEffect(() => {
                                 border: "1px solid #fca5a5",
                                 whiteSpace: "pre-line",
                               },
-                            }
+                            },
                           );
                           setAutomationOn(false);
                           return;
@@ -1669,7 +1602,7 @@ useEffect(() => {
 
                             if (isEmailModule && m.connectionId) {
                               const data = connections.find(
-                                (c) => c._id === m.connectionId
+                                (c) => c._id === m.connectionId,
                               );
 
                               if (!data || data.verified === false) {
@@ -1698,7 +1631,7 @@ useEffect(() => {
                                 color: "#b91c1c",
                                 border: "1px solid #fca5a5",
                               },
-                            }
+                            },
                           );
 
                           return;
@@ -1774,7 +1707,8 @@ useEffect(() => {
                     </div>
 
                     <p className="text-sm text-gray-600 mb-3">
-                      This webhook email is used to receieve the forwarded Lead emails from your email service provider.
+                      This webhook email is used to receieve the forwarded Lead
+                      emails from your email service provider.
                     </p>
 
                     <div className="flex justify-between">
@@ -1804,8 +1738,8 @@ useEffect(() => {
                   isFirst={true}
                   completed={
                     showValidation
-                      ? completedSteps.find((v) => v.id === "webhook")
-                          ?.passed ?? null
+                      ? (completedSteps.find((v) => v.id === "webhook")
+                          ?.passed ?? null)
                       : null
                   }
                   isWebhook={true}
@@ -1845,7 +1779,9 @@ useEffect(() => {
                     </div>
 
                     <p className="text-sm text-gray-600 mb-3">
-                      Router is used to view the Lead email's content, common use is while configuring the Leads email templates and Conditional email flows.
+                      Router is used to view the Lead email's content, common
+                      use is while configuring the Leads email templates and
+                      Conditional email flows.
                     </p>
 
                     <div className="flex justify-between">
@@ -1875,8 +1811,8 @@ useEffect(() => {
                   isRouter={true}
                   completed={
                     showValidation
-                      ? completedSteps.find((v) => v.id === "router")?.passed ??
-                        null
+                      ? (completedSteps.find((v) => v.id === "router")
+                          ?.passed ?? null)
                       : null
                   }
                 />
@@ -1903,14 +1839,15 @@ useEffect(() => {
 
                     <div className="flex justify-between items-center mb-2">
                       <h4 className="font-semibold text-gray-900">
-                       Shopify Email Templates
+                        Shopify Email Templates
                       </h4>
                       <span className="text-xs text-gray-500">3/3</span>
                     </div>
 
                     <p className="text-sm text-gray-600 mb-3">
-                      Shopify email Templates are specifically Designed to manage the email templates based on the Service requested by client
- 
+                      Shopify email Templates are specifically Designed to
+                      manage the email templates based on the Service requested
+                      by client
                     </p>
 
                     <div className="flex justify-between">
@@ -1938,8 +1875,8 @@ useEffect(() => {
                   number={3}
                   completed={
                     showValidation
-                      ? completedSteps.find((v) => v.id === "template")
-                          ?.passed ?? null
+                      ? (completedSteps.find((v) => v.id === "template")
+                          ?.passed ?? null)
                       : null
                   }
                   module={{ app: { name: "Template" } }}
@@ -1964,7 +1901,7 @@ useEffect(() => {
                         let validationState = null;
                         if (showValidation) {
                           const match = completedSteps.find(
-                            (v) => v.id === module.id
+                            (v) => v.id === module.id,
                           );
                           validationState = match ? match.passed : null;
                         }
@@ -1977,13 +1914,13 @@ useEffect(() => {
                                 module.app.name === "First Email"
                                   ? "First Follow-up"
                                   : module.app.name === "Second Email"
-                                  ? "Second Follow-up"
-                                  : module.app.name
+                                    ? "Second Follow-up"
+                                    : module.app.name
                               }
                               subtitle={module.description}
                               color={`border-${module.app.color.replace(
                                 "bg-",
-                                ""
+                                "",
                               )}`}
                               number={3 + moduleIndex}
                               onEdit={() =>
@@ -2112,7 +2049,7 @@ useEffect(() => {
                               templateName = "Second Follow-up";
                             localStorage.setItem(
                               "activeShopifyModule",
-                              templateName
+                              templateName,
                             );
 
                             setSelectedApp({
@@ -2218,7 +2155,7 @@ useEffect(() => {
                                   setShowGmailModal(true);
                                 } else {
                                   toast.error(
-                                    "Please select an application type first."
+                                    "Please select an application type first.",
                                   );
                                 }
                               }}
@@ -2321,7 +2258,7 @@ useEffect(() => {
                                       encodeURIComponent(templateName);
                                     window.open(
                                       `/templates?view=${encodedName}`,
-                                      "_blank"
+                                      "_blank",
                                     );
                                   } else {
                                     toast.info("No template selected to view.");
@@ -2668,7 +2605,7 @@ useEffect(() => {
                           color: "#b91c1c",
                           border: "1px solid #fca5a5",
                         },
-                      }
+                      },
                     );
                     return; // ❌ Stop here — modal stays open
                   }
@@ -2735,22 +2672,22 @@ useEffect(() => {
                                       body: JSON.stringify({
                                         active: newStatus,
                                       }),
-                                    }
-                                  )
+                                    },
+                                  ),
                                 );
 
                                 await Promise.all(updates);
                                 toast.success(
                                   `All ${selectedServiceForTemplates} templates ${
                                     newStatus ? "activated" : "deactivated"
-                                  } successfully!`
+                                  } successfully!`,
                                 );
 
                                 setTemplateList((prev) =>
                                   prev.map((tpl) => ({
                                     ...tpl,
                                     active: newStatus,
-                                  }))
+                                  })),
                                 );
                               }}
                               className="sr-only peer"
@@ -2840,10 +2777,10 @@ useEffect(() => {
                                     {t.name.includes("Initial")
                                       ? "Initial Email"
                                       : t.name.includes("First")
-                                      ? "First Follow-up"
-                                      : t.name.includes("Second")
-                                      ? "Second Follow-up"
-                                      : "Template"}
+                                        ? "First Follow-up"
+                                        : t.name.includes("Second")
+                                          ? "Second Follow-up"
+                                          : "Template"}
                                   </td>
 
                                   {/* 🟢 Status Toggle */}
@@ -2858,12 +2795,12 @@ useEffect(() => {
                                             prev.map((tpl) =>
                                               tpl._id === t._id
                                                 ? { ...tpl, active: newStatus }
-                                                : tpl
-                                            )
+                                                : tpl,
+                                            ),
                                           );
                                           await handleToggleTemplate(
                                             t._id,
-                                            newStatus
+                                            newStatus,
                                           );
                                         }}
                                         className="sr-only peer"
@@ -2906,15 +2843,15 @@ useEffect(() => {
                                   color: "#b91c1c",
                                   border: "1px solid #fca5a5",
                                 },
-                              }
+                              },
                             );
                             return;
                           }
                           window.open(
                             `/templates?service=${encodeURIComponent(
-                              selectedServiceForTemplates
+                              selectedServiceForTemplates,
                             )}`,
-                            "_blank"
+                            "_blank",
                           );
                         }}
                         className="text-sm text-indigo-600 hover:underline transition"
@@ -2996,16 +2933,16 @@ useEffect(() => {
                                     if (range) {
                                       editor.insertText(
                                         range.index,
-                                        placeholder
+                                        placeholder,
                                       );
                                       editor.setSelection(
-                                        range.index + placeholder.length
+                                        range.index + placeholder.length,
                                       );
                                     } else {
                                       // If cursor not in focus, add at the end
                                       editor.insertText(
                                         editor.getLength(),
-                                        placeholder
+                                        placeholder,
                                       );
                                     }
                                   }
@@ -3040,7 +2977,7 @@ useEffect(() => {
                                   body: JSON.stringify({
                                     content: editContent,
                                   }),
-                                }
+                                },
                               );
                               const data = await res.json();
                               if (data.success) {
@@ -3049,12 +2986,12 @@ useEffect(() => {
                                   prev.map((tpl) =>
                                     tpl._id === editingTemplate._id
                                       ? { ...tpl, content: editContent }
-                                      : tpl
-                                  )
+                                      : tpl,
+                                  ),
                                 );
                               } else {
                                 toast.error(
-                                  data.message || "Failed to update template."
+                                  data.message || "Failed to update template.",
                                 );
                               }
                             } catch (err) {
@@ -3124,7 +3061,7 @@ useEffect(() => {
                                       "Content-Type": "application/json",
                                     },
                                     body: JSON.stringify({ userId }),
-                                  }
+                                  },
                                 );
 
                                 const data = await res.json();
@@ -3136,9 +3073,9 @@ useEffect(() => {
                                       templates: grp.templates.map((tpl) =>
                                         tpl.service.toLowerCase() === "general"
                                           ? { ...tpl, active: true }
-                                          : { ...tpl, active: data.toggledTo }
+                                          : { ...tpl, active: data.toggledTo },
                                       ),
-                                    }))
+                                    })),
                                   );
 
                                   setAllTemplatesActive(data.toggledTo);
@@ -3147,20 +3084,20 @@ useEffect(() => {
                                     data.toggledTo
                                       ? " All templates have been activated successfully!"
                                       : "All templates have been deactivated successfully!",
-                                    { id: toastId }
+                                    { id: toastId },
                                   );
                                 } else {
                                   toast.error(
                                     data.message ||
                                       "Failed to update templates.",
-                                    { id: toastId }
+                                    { id: toastId },
                                   );
                                 }
                               } catch (err) {
                                 console.error("Error toggling templates:", err);
                                 toast.error(
                                   "Something went wrong while updating templates.",
-                                  { id: toastId }
+                                  { id: toastId },
                                 );
                               }
                             }}
@@ -3174,14 +3111,14 @@ useEffect(() => {
                         <span
                           className={`text-xs font-semibold ${
                             serviceGroups.every((grp) =>
-                              grp.templates.every((t) => t.active)
+                              grp.templates.every((t) => t.active),
                             )
                               ? "text-green-300"
                               : "text-gray-300"
                           }`}
                         >
                           {serviceGroups.every((grp) =>
-                            grp.templates.every((t) => t.active)
+                            grp.templates.every((t) => t.active),
                           )
                             ? "ON"
                             : "OFF"}
@@ -3206,7 +3143,7 @@ useEffect(() => {
                     ) : (
                       serviceGroups
                         .filter(
-                          (group) => group.service.toLowerCase() === "general"
+                          (group) => group.service.toLowerCase() === "general",
                         ) // ✅ Only show "General"
                         .map((group, i) => {
                           const shownTemplates = group.templates.slice(0, 3); // Only 3 templates
@@ -3281,8 +3218,8 @@ useEffect(() => {
                                         {t.name.includes("Initial")
                                           ? "Initial Email"
                                           : t.name.includes("First")
-                                          ? "First Follow-up"
-                                          : "Second Follow-up"}
+                                            ? "First Follow-up"
+                                            : "Second Follow-up"}
                                       </td>
 
                                       {/* Toggle */}
@@ -3303,9 +3240,9 @@ useEffect(() => {
                                                             ...tpl,
                                                             active: newStatus,
                                                           }
-                                                        : tpl
+                                                        : tpl,
                                                   ),
-                                                }))
+                                                })),
                                               );
 
                                               await fetch(
@@ -3319,7 +3256,7 @@ useEffect(() => {
                                                   body: JSON.stringify({
                                                     active: newStatus,
                                                   }),
-                                                }
+                                                },
                                               );
                                             }}
                                             className="sr-only peer"
@@ -3340,7 +3277,7 @@ useEffect(() => {
                                             hour: "2-digit",
                                             minute: "2-digit",
                                             hour12: true,
-                                          }
+                                          },
                                         )}
                                       </td>
 
@@ -3449,13 +3386,13 @@ useEffect(() => {
                                   if (range) {
                                     editor.insertText(range.index, placeholder);
                                     editor.setSelection(
-                                      range.index + placeholder.length
+                                      range.index + placeholder.length,
                                     );
                                   } else {
                                     // If cursor not in focus, add at the end
                                     editor.insertText(
                                       editor.getLength(),
-                                      placeholder
+                                      placeholder,
                                     );
                                   }
                                 }
@@ -3489,7 +3426,7 @@ useEffect(() => {
                                 body: JSON.stringify({
                                   content: editContent,
                                 }),
-                              }
+                              },
                             );
                             const data = await res.json();
                             if (data.success) {
@@ -3498,12 +3435,12 @@ useEffect(() => {
                                 prev.map((tpl) =>
                                   tpl._id === editingTemplate._id
                                     ? { ...tpl, content: editContent }
-                                    : tpl
-                                )
+                                    : tpl,
+                                ),
                               );
                             } else {
                               toast.error(
-                                data.message || "Failed to update template."
+                                data.message || "Failed to update template.",
                               );
                             }
                           } catch (err) {
@@ -3551,7 +3488,7 @@ useEffect(() => {
                   <div className="space-y-4">
                     {[
                       ...new Map(
-                        unverifiedConnections.map((c) => [c.email, c])
+                        unverifiedConnections.map((c) => [c.email, c]),
                       ),
                     ].map(([, conn]) => (
                       <div
@@ -3583,8 +3520,8 @@ useEffect(() => {
                                 prev.map((c) =>
                                   c._id === conn._id
                                     ? { ...c, verifying: true }
-                                    : c
-                                )
+                                    : c,
+                                ),
                               );
 
                               try {
@@ -3598,13 +3535,13 @@ useEffect(() => {
                                     body: JSON.stringify({
                                       connectionId: conn._id,
                                     }),
-                                  }
+                                  },
                                 );
                                 const data = await res.json();
 
                                 if (data.success) {
                                   toast.success(
-                                    `${conn.email} verified successfully!`
+                                    `${conn.email} verified successfully!`,
                                   );
 
                                   setUnverifiedConnections((prev) =>
@@ -3615,8 +3552,8 @@ useEffect(() => {
                                             verified: true,
                                             verifying: false,
                                           }
-                                        : c
-                                    )
+                                        : c,
+                                    ),
                                   );
 
                                   await fetchConnections();
@@ -3625,7 +3562,7 @@ useEffect(() => {
                                     unverifiedConnections.every(
                                       (c) =>
                                         c._id === conn._id ||
-                                        c.verified === true
+                                        c.verified === true,
                                     );
 
                                   if (allVerified) {
@@ -3634,26 +3571,26 @@ useEffect(() => {
                                 } else {
                                   toast.error(
                                     data.message ||
-                                      `Failed to verify ${conn.email}`
+                                      `Failed to verify ${conn.email}`,
                                   );
                                   setUnverifiedConnections((prev) =>
                                     prev.map((c) =>
                                       c._id === conn._id
                                         ? { ...c, verifying: false }
-                                        : c
-                                    )
+                                        : c,
+                                    ),
                                   );
                                 }
                               } catch (err) {
                                 toast.error(
-                                  "Verification error, please try again."
+                                  "Verification error, please try again.",
                                 );
                                 setUnverifiedConnections((prev) =>
                                   prev.map((c) =>
                                     c._id === conn._id
                                       ? { ...c, verifying: false }
-                                      : c
-                                  )
+                                      : c,
+                                  ),
                                 );
                               }
                             }}
