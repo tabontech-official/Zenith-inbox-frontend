@@ -61,7 +61,7 @@ const LandingPage = () => {
         </nav>
 
         <button
-          onClick={() => navigate("/login")}
+          onClick={() => navigate("/register")}
           className="px-5 py-2 bg-white text-black rounded-xl text-sm font-semibold hover:bg-gray-200"
         >
           Get Started
@@ -107,10 +107,10 @@ const LandingPage = () => {
 
             <motion.div variants={fadeUp} className="flex gap-4 flex-wrap">
               <button
-                onClick={() => navigate("/login")}
+                onClick={() => navigate("/register")}
                 className="px-7 py-3.5 bg-purple-600 hover:bg-purple-500 rounded-xl font-semibold flex items-center gap-2"
               >
-                Start Free
+                Get Started For Free No Credit Card Required
                 <FiArrowRight />
               </button>
 

@@ -36,6 +36,8 @@ import TalkToSales from "./pages/TalkToSales";
 import Pricing from "./pages/Pricing";
 import ProductPage from "./pages/ProductPage";
 import DevelopersPage from "./pages/DevelopersPage";
+import FoldLandingPage from "./Reviews/Foldreviews";
+import AdminUserEmails from "./Admin/AdminUserEmails";
 
 function App() {
   return (
@@ -44,6 +46,8 @@ function App() {
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<LandingPage />} />
+          <Route path="/reviews" element={<FoldLandingPage />} />
+
           <Route
             path="/login"
             element={
@@ -262,7 +266,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-
+          <Route path="/admin/email/:userId" element={<AdminUserEmails />} />
           <Route
             path="/admin/reports/scenarios"
             element={
