@@ -124,7 +124,15 @@
 // export default AdminUserEmails;
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { FiMail, FiEye, FiClock, FiArrowLeft, FiChevronRight, FiMessageSquare, FiX } from "react-icons/fi";
+import {
+  FiMail,
+  FiEye,
+  FiClock,
+  FiArrowLeft,
+  FiChevronRight,
+  FiMessageSquare,
+  FiX,
+} from "react-icons/fi";
 import Sidebar from "../component/Sidebar";
 
 const AdminUserEmails = () => {
@@ -137,7 +145,7 @@ const AdminUserEmails = () => {
     const fetchUserEmails = async () => {
       try {
         const res = await fetch(
-          `https://email-syncing-backend.vercel.app/auth/email-tracking?userId=${userId}`
+          `https://email-syncing-backend.vercel.app/auth/email-tracking?userId=${userId}`,
         );
         const data = await res.json();
         const userData = data.data?.[0];
@@ -167,21 +175,34 @@ const AdminUserEmails = () => {
         {/* HEADER */}
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
           <div>
-            <div className="flex items-center gap-2 text-slate-400 mb-2 cursor-pointer hover:text-indigo-600 transition-colors" onClick={() => window.history.back()}>
-               <FiArrowLeft /> <span className="text-sm font-medium">Back to Users</span>
+            <div
+              className="flex items-center gap-2 text-slate-400 mb-2 cursor-pointer hover:text-indigo-600 transition-colors"
+              onClick={() => window.history.back()}
+            >
+              <FiArrowLeft />{" "}
+              <span className="text-sm font-medium">Back to Users</span>
             </div>
-            <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Email Timeline</h1>
-            <p className="text-slate-500 font-medium">Tracking interactions for User ID: <span className="text-indigo-600">#{userId?.slice(-6)}</span></p>
+            <h1 className="text-3xl font-bold text-slate-800 tracking-tight">
+              Email Timeline
+            </h1>
+            <p className="text-slate-500 font-medium">
+              Tracking interactions for User ID:{" "}
+              <span className="text-indigo-600">#{userId?.slice(-6)}</span>
+            </p>
           </div>
-          
+
           <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-4">
-             <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600 font-bold">
-                {emails.length}
-             </div>
-             <div>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Emails Sent</p>
-                <p className="text-sm font-bold text-slate-700">Outbound Activity</p>
-             </div>
+            <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600 font-bold">
+              {emails.length}
+            </div>
+            <div>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                Total Emails Sent
+              </p>
+              <p className="text-sm font-bold text-slate-700">
+                Outbound Activity
+              </p>
+            </div>
           </div>
         </div>
 
@@ -205,10 +226,13 @@ const AdminUserEmails = () => {
                           <FiMail size={20} />
                         </div>
                         <div>
-                          <h3 className="font-bold text-slate-800 text-lg leading-tight mb-1">{email.subject}</h3>
+                          <h3 className="font-bold text-slate-800 text-lg leading-tight mb-1">
+                            {email.subject}
+                          </h3>
                           <div className="flex flex-wrap items-center gap-3">
                             <span className="flex items-center gap-1 text-xs font-bold text-slate-400">
-                              <FiClock /> {new Date(email.date).toLocaleString()}
+                              <FiClock />{" "}
+                              {new Date(email.date).toLocaleString()}
                             </span>
                             <span className="px-2 py-0.5 rounded bg-indigo-50 text-indigo-600 text-[10px] font-black uppercase tracking-wider border border-indigo-100">
                               {email.matchedTemplate}
@@ -229,11 +253,13 @@ const AdminUserEmails = () => {
                     {email.replies?.length > 0 && (
                       <div className="mt-6 space-y-3">
                         <div className="flex items-center gap-2 text-slate-400 mb-2">
-                           <div className="h-[1px] flex-1 bg-slate-100"></div>
-                           <span className="text-[10px] font-bold uppercase tracking-widest">Conversation Thread</span>
-                           <div className="h-[1px] flex-1 bg-slate-100"></div>
+                          <div className="h-[1px] flex-1 bg-slate-100"></div>
+                          <span className="text-[10px] font-bold uppercase tracking-widest">
+                            Conversation Thread
+                          </span>
+                          <div className="h-[1px] flex-1 bg-slate-100"></div>
                         </div>
-                        
+
                         {email.replies.map((r) => (
                           <div
                             key={r.id}
@@ -242,8 +268,12 @@ const AdminUserEmails = () => {
                             <div className="flex items-center gap-3">
                               <FiMessageSquare className="text-indigo-400" />
                               <div>
-                                <p className="text-sm font-bold text-slate-700">{r.subject}</p>
-                                <p className="text-[11px] text-slate-400 font-medium">{new Date(r.date).toLocaleString()}</p>
+                                <p className="text-sm font-bold text-slate-700">
+                                  {r.subject}
+                                </p>
+                                <p className="text-[11px] text-slate-400 font-medium">
+                                  {new Date(r.date).toLocaleString()}
+                                </p>
                               </div>
                             </div>
                             <button
@@ -263,30 +293,39 @@ const AdminUserEmails = () => {
             ) : (
               <div className="ml-12 md:ml-20 bg-white p-12 rounded-3xl border-2 border-dashed border-slate-200 text-center">
                 <FiMail size={48} className="mx-auto text-slate-200 mb-4" />
-                <h3 className="text-xl font-bold text-slate-800">No Email History</h3>
-                <p className="text-slate-400">This user hasn't received any automated emails yet.</p>
+                <h3 className="text-xl font-bold text-slate-800">
+                  No Email History
+                </h3>
+                <p className="text-slate-400">
+                  This user hasn't received any automated emails yet.
+                </p>
               </div>
             )}
           </div>
         </div>
 
-        {/* MODAL (Better Implementation) */}
         {selectedEmail && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setSelectedEmail(null)}></div>
+            <div
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+              onClick={() => setSelectedEmail(null)}
+            ></div>
             <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[85vh] flex flex-col relative shadow-2xl animate-in fade-in zoom-in duration-200">
-              
               {/* Modal Header */}
               <div className="p-6 border-b border-slate-100 flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl font-bold text-slate-800">{selectedEmail.subject}</h2>
-                  <p className="text-xs text-slate-400 font-bold uppercase mt-1 tracking-wider">Email Content Preview</p>
+                  <h2 className="text-xl font-bold text-slate-800">
+                    {selectedEmail.subject}
+                  </h2>
+                  <p className="text-xs text-slate-400 font-bold uppercase mt-1 tracking-wider">
+                    Email Content Preview
+                  </p>
                 </div>
-                <button 
-                    onClick={() => setSelectedEmail(null)}
-                    className="p-2 bg-slate-50 text-slate-400 hover:text-slate-600 rounded-xl transition-colors"
+                <button
+                  onClick={() => setSelectedEmail(null)}
+                  className="p-2 bg-slate-50 text-slate-400 hover:text-slate-600 rounded-xl transition-colors"
                 >
-                    <FiX size={20} />
+                  <FiX size={20} />
                 </button>
               </div>
 
@@ -296,7 +335,9 @@ const AdminUserEmails = () => {
                   <div
                     className="prose prose-slate max-w-none text-slate-700"
                     dangerouslySetInnerHTML={{
-                      __html: selectedEmail.htmlBody || "<div class='text-center py-10 text-slate-300'>No HTML content found for this email.</div>",
+                      __html:
+                        selectedEmail.htmlBody ||
+                        "<div class='text-center py-10 text-slate-300'>No HTML content found for this email.</div>",
                     }}
                   />
                 </div>
