@@ -46,6 +46,13 @@ const SetupFlow = () => {
   const query = new URLSearchParams(location.search);
   const stepFromURL = parseInt(query.get("step"), 10);
   const [step, setStep] = useState(stepFromURL || 1);
+  useEffect(() => {
+  const query = new URLSearchParams(location.search);
+  if (query.get("step") !== step.toString()) {
+    query.set("step", step);
+    navigate(`${location.pathname}?${query.toString()}`, { replace: true });
+  }
+}, [step, navigate, location.pathname, location.search]);
   const [showOtherSMTPModal, setShowOtherSMTPModal] = useState(false);
   const [testSent, setTestSent] = useState(false);
   const [sendingMode, setSendingMode] = useState("Auto-Send");
@@ -56,6 +63,7 @@ const SetupFlow = () => {
   const [followUp2Unit, setFollowUp2Unit] = useState("days");
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [helpTab, setHelpTab] = useState("gmail");
+  const [showInboxModal, setShowInboxModal] = useState(false);
   const progressWidth =
     step === 1
       ? "14%"
@@ -89,18 +97,7 @@ const SetupFlow = () => {
         : [...prev, service],
     );
   };
-  // useEffect(() => {
-  //   //  If redirected after successful OAuth (Google/Microsoft)
-  //   if (stepFromURL === 5 && user?._id) {
-  //     console.log(" Detected OAuth redirect → marking Step 4 as completed.");
 
-  //     // Mark step 4 as completed if not already
-  //     saveSetupProgress({
-  //       stepCompleted: 4,
-  //       stepStatus: "completed",
-  //     });
-  //   }
-  // }, [stepFromURL, user]);
   useEffect(() => {
     if (!user?._id) return;
 
@@ -241,7 +238,9 @@ const SetupFlow = () => {
 
   const [verificationEmail, setVerificationEmail] = useState(null);
   const [retryKey, setRetryKey] = useState(0);
-
+  const [latestMailhookEmails, setLatestMailhookEmails] = useState([]);
+  const [loadingMailhookEmails, setLoadingMailhookEmails] = useState(false);
+  const [openedMailhookEmail, setOpenedMailhookEmail] = useState(null);
   useEffect(() => {
     if (step !== 3 || !user?._id) return;
 
@@ -348,6 +347,54 @@ const SetupFlow = () => {
 
     return () => clearInterval(intervalId);
   }, [step, user, retryKey]);
+
+
+  const linkifyEmailBody = (text = "") => {
+    return text
+      .replace(
+        /(https?:\/\/[^\s]+)/g,
+        '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-indigo-600 font-semibold underline break-all">$1</a>'
+      )
+      .replace(/\n/g, "<br />");
+  };
+
+  const fetchMailhookEmails = async () => {
+    if (!user?._id) return;
+
+    try {
+      setLoadingMailhookEmails(true);
+
+      const res = await fetch(
+        `https://email-syncing-backend.vercel.app/mailhook/verification/${user._id}`
+      );
+
+      const data = await res.json();
+
+      if (data.success && data.data) {
+        const emails = Array.isArray(data.data) ? data.data : [data.data];
+
+        setLatestMailhookEmails(emails);
+        setOpenedMailhookEmail(emails[0]);
+      } else {
+        setLatestMailhookEmails([]);
+        setOpenedMailhookEmail(null);
+      }
+    } catch (err) {
+      console.error("Error fetching mailhook emails:", err);
+      setLatestMailhookEmails([]);
+      setOpenedMailhookEmail(null);
+    } finally {
+      setLoadingMailhookEmails(false);
+    }
+  };
+  useEffect(() => {
+    if (step !== 3 || !user?._id) return;
+
+    fetchMailhookEmails();
+
+  }, [step, user]);
+
+
 
   const fetchValidateEmail = async () => {
     try {
@@ -579,9 +626,8 @@ const SetupFlow = () => {
 
         <div className="h-2 bg-gray-200 rounded-full overflow-hidden mt-2">
           <div
-            className={`h-full transition-all duration-1000 ${
-              showAlert ? "bg-red-500" : "bg-[#4F46E5]"
-            }`}
+            className={`h-full transition-all duration-1000 ${showAlert ? "bg-red-500" : "bg-[#4F46E5]"
+              }`}
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -685,11 +731,10 @@ const SetupFlow = () => {
         backdrop-blur-xl shadow-[0_4px_20px_rgba(0,0,0,0.1)]
         border
         transition-all
-        ${
-          alert.type === "success"
+        ${alert.type === "success"
             ? "bg-[rgba(209,250,229,0.7)] text-green-800 border-green-300"
             : "bg-[rgba(254,226,226,0.7)] text-red-800 border-red-300"
-        }
+          }
       `}
         style={{ WebkitBackdropFilter: "blur(10px)" }}
       >
@@ -723,11 +768,10 @@ const SetupFlow = () => {
         className={`relative flex flex-col items-center justify-center min-h-screen 
     bg-cover bg-center bg-no-repeat
     transition-all duration-700 ease-[cubic-bezier(0.4,0,0.2,1)] transform
-    ${
-      isExpanded
-        ? "lg:translate-x-[-350px] lg:scale-[0.97]"
-        : "translate-x-0 scale-100"
-    }`}
+    ${isExpanded
+            ? "lg:translate-x-[-350px] lg:scale-[0.97]"
+            : "translate-x-0 scale-100"
+          }`}
       >
         <video
           autoPlay
@@ -742,15 +786,58 @@ const SetupFlow = () => {
           />
         </video>
         <div className="flex flex-col items-center justify-center w-full max-w-3xl mx-auto ">
-          <div className="w-full flex items-center justify-center mb-4">
-            <div className="flex items-center gap-2 px-3 py-1.5">
-              <FiMail className="text-indigo-600 text-2xl sm:text-3xl drop-shadow" />
-              <span className="font-semibold text-lg sm:text-xl text-gray-900 drop-shadow">
-                Replex Engine
-              </span>
+          <div className="w-full max-w-3xl mx-auto mb-4 relative z-10 px-4">
+            <div className="w-full flex items-center justify-center relative min-h-[48px]">
+
+              {/* LEFT: Mailhook Inbox Button */}
+              {step === 3 && (
+                <button
+                  type="button"
+                  onClick={() => setShowInboxModal(true)}
+                  className="
+          absolute left-4 top-1/2 -translate-y-1/2
+          flex items-center gap-2
+          px-4 py-2.5
+          rounded-full
+          font-sans text-sm font-semibold
+          text-[#111827]
+          bg-white/55
+          border border-white/70
+          backdrop-blur-xl
+          shadow-[0_8px_24px_rgba(79,70,229,0.18)]
+          hover:bg-white/75
+          hover:shadow-[0_10px_30px_rgba(79,70,229,0.28)]
+          hover:scale-[1.03]
+          active:scale-[0.97]
+          transition-all duration-300
+          group
+        "
+                  style={{ WebkitBackdropFilter: "blur(14px)" }}
+                >
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="absolute inline-flex h-full w-full rounded-full bg-indigo-500 opacity-75 animate-ping" />
+                    <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-indigo-600 ring-2 ring-indigo-200" />
+                  </span>
+
+                  <span className="whitespace-nowrap tracking-tight">
+                    Mailhook Inbox
+                  </span>
+
+                  <span className="ml-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 border border-indigo-200 group-hover:bg-indigo-200 transition">
+                    Live
+                  </span>
+                </button>
+              )}
+
+              {/* CENTER: Replex Engine Heading */}
+              <div className="flex items-center gap-2 px-3 py-1.5">
+                <FiMail className="text-indigo-600 text-2xl sm:text-3xl drop-shadow" />
+                <span className="font-semibold text-lg sm:text-xl text-gray-900 drop-shadow">
+                  Replex Engine
+                </span>
+              </div>
             </div>
           </div>
-
           {/* Step indicator */}
 
           {/* 🔹 Step Indicator (visible everywhere) */}
@@ -812,11 +899,10 @@ const SetupFlow = () => {
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: -10 }}
                           transition={{ duration: 0.3 }}
-                          className={`px-4 py-2 rounded-md text-sm font-medium shadow-sm ${
-                            alert.type === "success"
-                              ? "bg-green-100 text-green-700 border border-green-300"
-                              : "bg-red-100 text-red-700 border border-red-300"
-                          }`}
+                          className={`px-4 py-2 rounded-md text-sm font-medium shadow-sm ${alert.type === "success"
+                            ? "bg-green-100 text-green-700 border border-green-300"
+                            : "bg-red-100 text-red-700 border border-red-300"
+                            }`}
                         >
                           {alert.message}
                         </motion.div>
@@ -938,11 +1024,10 @@ const SetupFlow = () => {
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: -10 }}
                           transition={{ duration: 0.3 }}
-                          className={`px-4 py-2 rounded-md text-sm font-medium shadow-sm ${
-                            alert.type === "success"
-                              ? "bg-green-100 text-green-700 border border-green-300"
-                              : "bg-red-100 text-red-700 border border-red-300"
-                          }`}
+                          className={`px-4 py-2 rounded-md text-sm font-medium shadow-sm ${alert.type === "success"
+                            ? "bg-green-100 text-green-700 border border-green-300"
+                            : "bg-red-100 text-red-700 border border-red-300"
+                            }`}
                         >
                           {alert.message}
                         </motion.div>
@@ -1269,6 +1354,9 @@ const SetupFlow = () => {
                       </div>
                     )}
 
+
+
+
                   {forwardingConfirmed && (
                     <>
                       <div
@@ -1411,14 +1499,13 @@ const SetupFlow = () => {
 
                         {/* EMAIL INPUT (Glass) */}
                         <div
-                          className={`space-y-3 mt-6 transition-all duration-300 ${
-                            !validationPhase &&
+                          className={`space-y-3 mt-6 transition-all duration-300 ${!validationPhase &&
                             !validated &&
                             (showValidateButton ||
                               verificationEmail?.isGmailVerification)
-                              ? "opacity-100 max-h-[150px]"
-                              : "opacity-0 max-h-0 overflow-hidden"
-                          }`}
+                            ? "opacity-100 max-h-[150px]"
+                            : "opacity-0 max-h-0 overflow-hidden"
+                            }`}
                         >
                           <p className="text-sm text-gray-700">
                             Enter the email address you configured forwarding
@@ -1448,67 +1535,64 @@ const SetupFlow = () => {
                     </>
                   )}
                   <div className="mt-10 pt-6 flex justify-center w-full max-w-xl  border-white/40">
-                    {!validated &&
-                    !validationPhase &&
-                    (showValidateButton ||
-                      forwardingConfirmed ||
-                      verificationEmail?.isGmailVerification) ? (
-                      <button
-                        disabled={validating}
-                        onClick={async () => {
-                          if (!verificationEmail?.toEmail?.trim()) {
-                            setAlert({
-                              type: "error",
-                              message: "Enter your email address!",
-                            });
-                            return;
-                          }
+                 {!validated &&
+  !validationPhase &&
+  forwardingConfirmed &&
+  (showValidateButton || verificationEmail?.isGmailVerification) ? (
+  <button
+    disabled={validating}
+    onClick={async () => {
+      if (!verificationEmail?.toEmail?.trim()) {
+        setAlert({
+          type: "error",
+          message: "Enter your email address!",
+        });
+        return;
+      }
 
-                          setValidating(true);
-                          setValidationFailed(false);
-                          setShowValidateButton(false);
-                          setValidationPhase(true);
+      setValidating(true);
+      setValidationFailed(false);
+      setShowValidateButton(false);
+      setValidationPhase(true);
 
-                          await handleValidateForwarding();
-                          startValidationLoop();
-                        }}
-                        className="
-            flex items-center gap-2 px-6 py-2 rounded-full
-            text-sm font-semibold text-[#111827]
-            bg-white/30 border border-white/50
-            backdrop-blur-xl
-            shadow-[0_8px_25px_rgba(0,0,0,0.12)]
-            hover:bg-white/40 hover:shadow-[0_10px_30px_rgba(0,0,0,0.16)]
-            transition-all
-            disabled:opacity-50 disabled:cursor-not-allowed
-          "
-                      >
-                        {validating ? "Validating..." : "Validate Forwarding"}
-                        <FiArrowRight className="text-indigo-600" />
-                      </button>
-                    ) : validated ? (
-                      <button
-                        onClick={async () => {
-                          await saveSetupProgress({
-                            stepCompleted: 3,
-                            stepStatus: "completed",
-                          });
-                          setStep(4);
-                        }}
-                        className="
-            flex items-center gap-2 px-6 py-2 rounded-full
-            text-sm font-semibold text-[#111827]
-            bg-white/30 border border-white/50
-            backdrop-blur-xl
-            shadow-[0_8px_25px_rgba(0,0,0,0.12)]
-            hover:bg-white/40 hover:shadow-[0_10px_30px_rgba(0,0,0,0.16)]
-            transition-all
-            disabled:opacity-50 disabled:cursor-not-allowed
-          "
-                      >
-                        Next <FiArrowRight />
-                      </button>
-                    ) : null}
+      await handleValidateForwarding();
+    }}
+    className="
+      flex items-center gap-2 px-6 py-2 rounded-full
+      text-sm font-semibold text-[#111827]
+      bg-white/30 border border-white/50
+      backdrop-blur-xl
+      shadow-[0_8px_25px_rgba(0,0,0,0.12)]
+      hover:bg-white/40 hover:shadow-[0_10px_30px_rgba(0,0,0,0.16)]
+      transition-all
+      disabled:opacity-50 disabled:cursor-not-allowed
+    "
+  >
+    {validating ? "Validating..." : "Validate Forwarding"}
+    <FiArrowRight className="text-indigo-600" />
+  </button>
+) : validated ? (
+  <button
+    onClick={async () => {
+      await saveSetupProgress({
+        stepCompleted: 3,
+        stepStatus: "completed",
+      });
+      setStep(4);
+    }}
+    className="
+      flex items-center gap-2 px-6 py-2 rounded-full
+      text-sm font-semibold text-[#111827]
+      bg-white/30 border border-white/50
+      backdrop-blur-xl
+      shadow-[0_8px_25px_rgba(0,0,0,0.12)]
+      hover:bg-white/40 hover:shadow-[0_10px_30px_rgba(0,0,0,0.16)]
+      transition-all
+    "
+  >
+    Next <FiArrowRight />
+  </button>
+) : null}
                   </div>
                 </div>
               )}
@@ -1562,11 +1646,10 @@ const SetupFlow = () => {
                         onClick={() => setSelectedTab(tab)}
                         className={`
             w-1/2 px-4 py-2 text-sm font-medium transition-all
-            ${
-              selectedTab === tab
-                ? "bg-indigo-600 text-white shadow-[0_4px_20px_rgba(79,70,229,0.4)]"
-                : "text-gray-700 bg-white/20 hover:bg-white/40"
-            }
+            ${selectedTab === tab
+                            ? "bg-indigo-600 text-white shadow-[0_4px_20px_rgba(79,70,229,0.4)]"
+                            : "text-gray-700 bg-white/20 hover:bg-white/40"
+                          }
           `}
                       >
                         {tab}
@@ -1773,11 +1856,10 @@ const SetupFlow = () => {
                             <span
                               className={`
                   text-xs px-2 py-1 rounded-full
-                  ${
-                    stepItem.status === "completed"
-                      ? "bg-green-100 text-green-700 border border-green-300"
-                      : "bg-yellow-100 text-yellow-700 border border-yellow-300"
-                  }
+                  ${stepItem.status === "completed"
+                                  ? "bg-green-100 text-green-700 border border-green-300"
+                                  : "bg-yellow-100 text-yellow-700 border border-yellow-300"
+                                }
                 `}
                             >
                               {stepItem.status === "completed"
@@ -1864,16 +1946,14 @@ const SetupFlow = () => {
         </div>
       </div>
       <div
-        className={`transition-all duration-500 ease-in-out ${
-          isExpanded ? "lg:mr-[700px]" : "lg:mr-0"
-        } w-full`}
+        className={`transition-all duration-500 ease-in-out ${isExpanded ? "lg:mr-[700px]" : "lg:mr-0"
+          } w-full`}
       ></div>
 
       <div className="hidden lg:block">
         <div
-          className={`fixed top-0 right-0 h-full bg-white shadow-2xl border-l border-gray-200 transform transition-transform duration-500 ease-in-out z-40 ${
-            isExpanded ? "translate-x-0" : "translate-x-full"
-          }`}
+          className={`fixed top-0 right-0 h-full bg-white shadow-2xl border-l border-gray-200 transform transition-transform duration-500 ease-in-out z-40 ${isExpanded ? "translate-x-0" : "translate-x-full"
+            }`}
           style={{ width: "700px" }}
         >
           <InstructionPanel
@@ -1949,7 +2029,7 @@ const SetupFlow = () => {
                 <InstructionPanel
                   step={step}
                   isExpanded={true}
-                  setIsExpanded={() => {}}
+                  setIsExpanded={() => { }}
                   isMobile={true}
                 />
               </div>
@@ -1969,6 +2049,193 @@ const SetupFlow = () => {
           setStep(5);
         }}
       />
+      <AnimatePresence>
+        {showInboxModal && (
+          <motion.div
+            className="
+        fixed inset-0 z-[999]
+        flex items-center justify-center
+        bg-black/45 backdrop-blur-sm
+        px-4
+      "
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="
+          w-full max-w-2xl
+          max-h-[82vh]
+          overflow-hidden
+          rounded-3xl
+          bg-white/90
+          border border-white/70
+          shadow-[0_30px_80px_rgba(0,0,0,0.28)]
+          backdrop-blur-2xl
+        "
+              initial={{ opacity: 0, scale: 0.94, y: 24 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.94, y: 24 }}
+              transition={{ duration: 0.22, ease: "easeOut" }}
+              style={{ WebkitBackdropFilter: "blur(20px)" }}
+            >
+              {/* HEADER */}
+              <div className="
+            flex items-center justify-between gap-4
+            px-6 py-5
+            border-b border-gray-200/70
+            bg-gradient-to-r from-indigo-50/90 via-white/80 to-purple-50/90
+          ">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-11 h-11 rounded-2xl flex items-center justify-center bg-indigo-100 text-indigo-600 border border-indigo-200 shadow-sm">
+                    <FiMail className="text-xl" />
+                  </div>
+                  <div className="min-w-0 text-left">
+                    <h3 className="text-lg sm:text-xl font-bold text-[#111827] leading-tight">
+                      Mailhook Inbox
+                    </h3>
+                    <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
+                      Latest received emails from your forwarding setup
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-green-100 text-green-700 border border-green-200">
+                    <span className="relative flex h-2 w-2">
+                      <span className="absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75 animate-ping" />
+                      <span className="relative inline-flex h-2 w-2 rounded-full bg-green-600" />
+                    </span>
+                    Live
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowInboxModal(false)}
+                    className="w-10 h-10 rounded-full flex items-center justify-center bg-white/80 hover:bg-gray-100 border border-gray-200 text-gray-500 hover:text-gray-900 shadow-sm transition"
+                    aria-label="Close inbox modal"
+                  >
+                    <FiX className="text-lg" />
+                  </button>
+                </div>
+              </div>
+
+              {/* BODY */}
+              <div className="px-6 py-5">
+
+
+                <div className="flex justify-end mb-2">
+                  <button
+                    onClick={() => {
+                      if (user?._id) fetchMailhookEmails(); // function defined in useEffect
+                    }}
+                    className="px-3 py-1 text-xs rounded-full bg-indigo-100 text-indigo-700 border border-indigo-200 hover:bg-indigo-200 transition"
+                  >
+                    Retry
+                  </button>
+                </div>
+
+                <div className="max-h-[52vh] overflow-y-auto pr-1 custom-scrollbar">
+                  {loadingMailhookEmails ? (
+                    <div className="min-h-[220px] flex flex-col items-center justify-center text-center rounded-2xl bg-gray-50/80 border border-gray-200">
+                      <div className="w-10 h-10 rounded-full border-2 border-indigo-200 border-t-indigo-600 animate-spin mb-4" />
+                      <p className="text-sm font-semibold text-gray-700">Loading emails...</p>
+                      <p className="text-xs text-gray-500 mt-1">Checking your mailhook inbox.</p>
+                    </div>
+                  ) : latestMailhookEmails.length === 0 ? (
+                    <div className="min-h-[220px] flex flex-col items-center justify-center text-center rounded-2xl bg-gray-50/80 border border-dashed border-gray-300 px-6">
+                      <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-indigo-50 text-indigo-600 border border-indigo-100 mb-4">
+                        <FiMail className="text-xl" />
+                      </div>
+                      <p className="text-sm font-semibold text-gray-800">No emails received yet.</p>
+                      <p className="text-xs text-gray-500 mt-1 max-w-sm">
+                        Once forwarding is active, incoming messages will appear here.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {latestMailhookEmails.length > 0 && (
+                        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden text-left">
+                          {/* EMAIL HEADER */}
+                          <div className="px-5 py-4 border-b border-gray-200 bg-gray-50/80">
+                            <h4 className="text-base sm:text-lg font-bold text-gray-900 leading-snug">
+                              {latestMailhookEmails[0]?.subject || "No subject"}
+                            </h4>
+
+                            <div className="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                              <div>
+                                <p className="text-xs text-gray-500">From</p>
+                                <p className="text-sm font-semibold text-gray-800 break-all">
+                                  {latestMailhookEmails[0]?.sender ||
+                                    latestMailhookEmails[0]?.from ||
+                                    "Unknown sender"}
+                                </p>
+                              </div>
+
+                              <div className="sm:text-right">
+                                <p className="text-xs text-gray-500">Received</p>
+                                <p className="text-xs font-medium text-gray-600">
+                                  {latestMailhookEmails[0]?.date
+                                    ? new Date(latestMailhookEmails[0].date).toLocaleString()
+                                    : ""}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* EMAIL BODY */}
+                          <div className="px-5 py-5 max-h-[48vh] overflow-y-auto">
+                            <div
+                              className="text-sm text-gray-700 leading-6 break-words"
+                              dangerouslySetInnerHTML={{
+                                __html: (latestMailhookEmails[0]?.textBody || "No email body available.")
+                                  .replace(
+                                    /(https?:\/\/[^\s]+)/g,
+                                    '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-indigo-600 underline break-all">$1</a>'
+                                  )
+                                  .replace(/\n/g, "<br>")
+                              }}
+                            />
+                            {latestMailhookEmails[0]?.verificationUrl && (
+                              <a
+                                href={latestMailhookEmails[0].verificationUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="
+            inline-flex items-center justify-center
+            mt-5 px-4 py-2 rounded-full
+            text-sm font-semibold
+            bg-indigo-600 text-white
+            hover:bg-indigo-700
+            transition
+          "
+                              >
+                                Open Verification Link
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* FOOTER */}
+              <div className="px-6 py-4 border-t border-gray-200/70 bg-gray-50/80 flex items-center justify-between gap-3">
+                <p className="text-xs text-gray-500 text-left">
+                  This list updates from your mailhook forwarding endpoint.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowInboxModal(false)}
+                  className="px-4 py-2 rounded-full text-sm font-semibold bg-[#111827] text-white hover:bg-black shadow-sm transition"
+                >
+                  Done
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
@@ -2016,13 +2283,12 @@ const InstructionPanel = ({
   overflow-y-auto     /* 👈 SCROLL ENABLED */
   overflow-x-hidden
   relative
-  ${
-    isMobile
-      ? "w-full p-5 text-sm"
-      : isExpanded
-        ? "w-[700px] p-8"
-        : "w-[450px] p-7"
-  }`}
+  ${isMobile
+          ? "w-full p-5 text-sm"
+          : isExpanded
+            ? "w-[700px] p-8"
+            : "w-[450px] p-7"
+        }`}
       style={{ WebkitBackdropFilter: "blur(12px)" }}
     >
       {!isMobile && (
@@ -2196,11 +2462,10 @@ const InstructionPanel = ({
                   key={id}
                   onClick={() => setActiveTab(id)}
                   className={`flex-1 min-w-[90px] sm:min-w-0 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all duration-200
-            ${
-              activeTab === id
-                ? "bg-white/90 text-indigo-700 shadow-md border border-indigo-100"
-                : "text-gray-600 hover:bg-white/50"
-            }`}
+            ${activeTab === id
+                      ? "bg-white/90 text-indigo-700 shadow-md border border-indigo-100"
+                      : "text-gray-600 hover:bg-white/50"
+                    }`}
                 >
                   <div className="flex items-center justify-center gap-2">
                     {icon}
@@ -2739,11 +3004,10 @@ const InstructionPanel = ({
                         <span>{s.title}</span>
                       </div>
                       <span
-                        className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                          s.status === "completed"
-                            ? "bg-green-100 text-green-700"
-                            : "bg-yellow-100 text-yellow-700"
-                        }`}
+                        className={`text-xs font-semibold px-2 py-0.5 rounded-full ${s.status === "completed"
+                          ? "bg-green-100 text-green-700"
+                          : "bg-yellow-100 text-yellow-700"
+                          }`}
                       >
                         {s.status.charAt(0).toUpperCase() + s.status.slice(1)}
                       </span>

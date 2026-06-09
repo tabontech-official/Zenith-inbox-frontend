@@ -1,7 +1,7 @@
 
 import React, { useState, useContext, useRef, useEffect } from "react";
 import { FiEdit3, FiLogOut, FiUser } from "react-icons/fi";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import OrganizationSettingsModal from "./OrganizationSettingsModal";
 import ScenarioSelectModal from "./ScenarioSelectModal";
 import { UserContext } from "./UserContext";
@@ -16,26 +16,28 @@ const Navbar = () => {
   const [guideStep, setGuideStep] = useState(0);
 
   const navigate = useNavigate();
+  const location = useLocation();
+  const isProfilePage = location.pathname === "/profile";
   const profileRef = useRef(null);
 
   const { user, loading } = useContext(UserContext);
   const userId = localStorage.getItem("userid");
 
-useEffect(() => {
-  if (!userId) return;
+  useEffect(() => {
+    if (!userId) return;
 
-  fetchGuide();
+    fetchGuide();
 
-  const handleSidebarDone = () => {
-    fetchGuide(); 
-  };
+    const handleSidebarDone = () => {
+      fetchGuide();
+    };
 
-  window.addEventListener("sidebarGuideCompleted", handleSidebarDone);
+    window.addEventListener("sidebarGuideCompleted", handleSidebarDone);
 
-  return () => {
-    window.removeEventListener("sidebarGuideCompleted", handleSidebarDone);
-  };
-}, [userId]);
+    return () => {
+      window.removeEventListener("sidebarGuideCompleted", handleSidebarDone);
+    };
+  }, [userId]);
 
   const fetchGuide = async () => {
     try {
@@ -110,9 +112,8 @@ useEffect(() => {
     window.location.reload();
   };
 
-
   const isBlurred =
-    open || openScenario || showProfileMenu || guideStep > 0;
+    !isProfilePage && (open || openScenario || showProfileMenu || guideStep > 0);
 
   // const hasSkippedStep = user?.setup?.steps?.some(
   //   (s) => s.status === "skipped" || s.status === "incomplete"
@@ -126,11 +127,11 @@ useEffect(() => {
     if (!user) return;
     const skipped = user?.setup?.steps?.find((s) => s.status === "skipped");
     // navigate(skipped ? `/setup?step=${skipped.step}` : "/setup");
-navigate(
-  skipped
-    ? `/setup?step=${skipped.step}&force=true`
-    : "/setup?force=true"
-);
+    navigate(
+      skipped
+        ? `/setup?step=${skipped.step}&force=true`
+        : "/setup?force=true"
+    );
 
   };
 
@@ -144,19 +145,18 @@ navigate(
       <header className="w-full bg-white px-4 py-3 flex justify-end sticky top-0 z-30 border-b">
         <div className="flex items-center gap-4">
 
-       {!loading && user && (
-  <button
-    onClick={handleWizardClick}
-    className={`hidden md:flex px-4 py-1.5 rounded-md text-sm font-medium
-      ${
-        setupCompleted
-          ? "bg-gray-100 text-gray-800"
-          : "bg-indigo-600 text-white"
-      }`}
-  >
-    {setupCompleted ? "Wizard Completed" : "Complete Wizard"}
-  </button>
-)}
+          {!loading && user && (
+            <button
+              onClick={handleWizardClick}
+              className={`hidden md:flex px-4 py-1.5 rounded-md text-sm font-medium
+      ${setupCompleted
+                  ? "bg-gray-100 text-gray-800"
+                  : "bg-indigo-600 text-white"
+                }`}
+            >
+              {setupCompleted ? "Wizard Completed" : "Complete Wizard"}
+            </button>
+          )}
 
           <div className="relative">
             <button
@@ -202,25 +202,22 @@ navigate(
           <div className="relative" ref={profileRef}>
             <div
               onClick={() => setShowProfileMenu(!showProfileMenu)}
-              className="w-9 h-9 bg-gray-800 text-white rounded-full flex items-center justify-center cursor-pointer"
+              className="w-9 h-9 bg-gray-800 text-white rounded-full flex items-center justify-center cursor-pointer text-sm font-semibold select-none"
             >
               {user?.fullName?.slice(0, 2).toUpperCase() || "U"}
             </div>
 
-            {showProfileMenu && (
-              <div className="absolute right-0 mt-2 w-44 bg-white border rounded shadow z-50">
+            {showProfileMenu && !isProfilePage && (
+              <div className="absolute right-0 mt-2 w-44 bg-white border rounded-lg shadow-lg z-50 overflow-hidden">
                 <button
-                  onClick={() => navigate("/profile")}
-                  className="w-full px-4 py-2 hover:bg-gray-100 text-left"
+                  onClick={() => {
+                    setShowProfileMenu(false);
+                    navigate("/profile");
+                  }}
+                  className="w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2 transition"
                 >
-                  <FiUser /> Profile
+                  <FiUser className="text-gray-600" /> Profile
                 </button>
-                {/* <button
-                  onClick={handleLogout}
-                  className="w-full px-4 py-2 hover:bg-gray-100 text-left"
-                >
-                  <FiLogOut /> Logout
-                </button> */}
               </div>
             )}
           </div>
