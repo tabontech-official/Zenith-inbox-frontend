@@ -125,17 +125,32 @@ export default function Template() {
     return acc;
   }, {});
 
-  const insertField = (placeholder) => {
-    const editor = quillRef.current.getEditor();
-    const range = editor.getSelection();
-    if (range) {
-      editor.insertText(range.index, placeholder);
-      editor.setSelection(range.index + placeholder.length);
-    } else {
-      editor.insertText(editor.getLength(), placeholder);
-    }
-  };
+  // const insertField = (placeholder) => {
+  //   const editor = quillRef.current.getEditor();
+  //   const range = editor.getSelection();
+  //   if (range) {
+  //     editor.insertText(range.index, placeholder);
+  //     editor.setSelection(range.index + placeholder.length);
+  //   } else {
+  //     editor.insertText(editor.getLength(), placeholder);
+  //   }
+  // };
 
+  const insertField = (placeholder) => {
+    const editor = quillRef.current?.getEditor();
+    if (!editor) return;
+
+    editor.focus();
+
+    const range = editor.getSelection(true);
+
+    const index = range
+      ? range.index
+      : Math.max(editor.getLength() - 1, 0);
+
+    editor.insertText(index, placeholder, "user");
+    editor.setSelection(index + placeholder.length, 0, "user");
+  };
   const handleEdit = (template) => {
     setEditingId(template._id);
     setPlatform(template.platform);
@@ -376,13 +391,12 @@ export default function Template() {
                 />
                 <div
                   className={`w-10 h-5 rounded-full transition-all duration-300 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all
-      ${
-        aiEnabled
-          ? "bg-gray-200"
-          : globalActive
-            ? "bg-emerald-500 peer-checked:after:translate-x-5"
-            : "bg-gray-200"
-      }
+      ${aiEnabled
+                      ? "bg-gray-200"
+                      : globalActive
+                        ? "bg-emerald-500 peer-checked:after:translate-x-5"
+                        : "bg-gray-200"
+                    }
     `}
                 ></div>
               </label>
@@ -473,9 +487,8 @@ export default function Template() {
                         {group.map((t) => (
                           <tr
                             key={t._id}
-                            className={`border-b transition ${
-                              aiEnabled ? "bg-gray-50 " : "hover:bg-gray-50"
-                            }`}
+                            className={`border-b transition ${aiEnabled ? "bg-gray-50 " : "hover:bg-gray-50"
+                              }`}
                             onClick={() => {
                               if (aiEnabled) {
                                 aiBlockToast();
@@ -524,19 +537,17 @@ export default function Template() {
                                 />
 
                                 <div
-                                  className={`w-11 h-6 rounded-full transition-colors ${
-                                    aiEnabled
+                                  className={`w-11 h-6 rounded-full transition-colors ${aiEnabled
                                       ? "bg-gray-200 "
                                       : "bg-gray-300 peer-checked:bg-green-500"
-                                  }`}
+                                    }`}
                                 ></div>
 
                                 <div
-                                  className={`absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full shadow-md transition-transform ${
-                                    !aiEnabled && t.active
+                                  className={`absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full shadow-md transition-transform ${!aiEnabled && t.active
                                       ? "translate-x-5"
                                       : ""
-                                  }`}
+                                    }`}
                                 ></div>
                               </label>
                             </td>
@@ -551,11 +562,10 @@ export default function Template() {
                                   }
                                   handleEdit(t);
                                 }}
-                                className={`text-sm font-medium ${
-                                  aiEnabled
+                                className={`text-sm font-medium ${aiEnabled
                                     ? "text-gray-400 "
                                     : "text-indigo-600 hover:underline"
-                                }`}
+                                  }`}
                               >
                                 Edit
                               </button>
@@ -647,16 +657,14 @@ export default function Template() {
 
         <div className="fixed inset-0 z-50 flex pointer-events-none">
           <div
-            className={`flex-1 bg-black transition-opacity duration-300 ${
-              isDrawerOpen ? "opacity-40 pointer-events-auto" : "opacity-0"
-            }`}
+            className={`flex-1 bg-black transition-opacity duration-300 ${isDrawerOpen ? "opacity-40 pointer-events-auto" : "opacity-0"
+              }`}
             onClick={() => setIsDrawerOpen(false)}
           ></div>
 
           <div
-            className={`w-full sm:max-w-lg lg:max-w-xl bg-white shadow-2xl h-full flex flex-col transform transition-transform duration-300 ease-in-out pointer-events-auto ${
-              isDrawerOpen ? "translate-x-0" : "translate-x-full"
-            }`}
+            className={`w-full sm:max-w-lg lg:max-w-xl bg-white shadow-2xl h-full flex flex-col transform transition-transform duration-300 ease-in-out pointer-events-auto ${isDrawerOpen ? "translate-x-0" : "translate-x-full"
+              }`}
           >
             <div className="flex justify-between items-center p-4 sm:p-6 border-b">
               <h2 className="text-lg sm:text-xl font-bold text-gray-800 truncate">
