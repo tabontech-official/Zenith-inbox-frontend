@@ -52,6 +52,8 @@ const SetupFlow = () => {
     query.set("step", step);
     navigate(`${location.pathname}?${query.toString()}`, { replace: true });
   }
+
+
 }, [step, navigate, location.pathname, location.search]);
   const [showOtherSMTPModal, setShowOtherSMTPModal] = useState(false);
   const [testSent, setTestSent] = useState(false);
@@ -64,6 +66,37 @@ const SetupFlow = () => {
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [helpTab, setHelpTab] = useState("gmail");
   const [showInboxModal, setShowInboxModal] = useState(false);
+
+const formatEmailBody = (text = "") => {
+  return text
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+
+    .replace(/@import\s+url\([^)]+\)\s*;?/gi, "")
+
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
+
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+
+    .replace(/^\s*[\w\s.#:,>*-]+\s*\{[^}]*\}\s*$/gm, "")
+
+    .replace(/\n\s*\n+/g, "\n")
+
+    .replace(/[ \t]+/g, " ")
+
+    .trim()
+
+    .replace(
+      /(https?:\/\/[^\s<]+)/g,
+      '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-indigo-600 underline break-all">$1</a>'
+    )
+
+    .replace(/\n/g, "<br />");
+};
+
+
   const progressWidth =
     step === 1
       ? "14%"
@@ -793,8 +826,10 @@ const SetupFlow = () => {
               {step === 3 && (
                 <button
                   type="button"
-                  onClick={() => setShowInboxModal(true)}
-                  className="
+onClick={async () => {
+  setShowInboxModal(true);
+  await fetchMailhookEmails();
+}}                  className="
           absolute left-4 top-1/2 -translate-y-1/2
           flex items-center gap-2
           px-4 py-2.5
@@ -2252,17 +2287,14 @@ const SetupFlow = () => {
             [&_a]:text-indigo-600 [&_a]:underline [&_a]:break-all
             [&_p]:mb-3 [&_br]:leading-6
           "
-          dangerouslySetInnerHTML={{
-            __html:
-              latestMailhookEmails[0]?.htmlBody ||
-              latestMailhookEmails[0]?.formattedBody ||
-              (latestMailhookEmails[0]?.textBody || "No email body available.")
-                .replace(
-                  /(https?:\/\/[^\s<]+)/g,
-                  '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>'
-                )
-                .replace(/\n/g, "<br />"),
-          }}
+         dangerouslySetInnerHTML={{
+  __html: formatEmailBody(
+    latestMailhookEmails[0]?.htmlBody ||
+      latestMailhookEmails[0]?.formattedBody ||
+      latestMailhookEmails[0]?.textBody ||
+      "No email body available."
+  ),
+}}
         />
 
         {latestMailhookEmails[0]?.verificationUrl && (
