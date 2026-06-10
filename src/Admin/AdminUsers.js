@@ -61,7 +61,7 @@ const AdminUsers = () => {
   //     }
 
   //     const res = await fetch(
-  //       `https://email-syncing-backend.vercel.app/auth/admin/give-pro/${proUserId}`,
+  //       `http://localhost:5000/auth/admin/give-pro/${proUserId}`,
   //       {
   //         method: "PUT",
   //         headers: {
@@ -116,7 +116,7 @@ const AdminUsers = () => {
       }
 
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/auth/admin/give-pro/${proUserId}`,
+        `http://localhost:5000/auth/admin/give-pro/${proUserId}`,
         {
           method: "PUT",
           headers: {
@@ -183,7 +183,7 @@ const AdminUsers = () => {
       const token = localStorage.getItem("token");
 
       await fetch(
-        `https://email-syncing-backend.vercel.app/auth/admin/revoke-pro/${id}`,
+        `http://localhost:5000/auth/admin/revoke-pro/${id}`,
         {
           method: "PUT",
           headers: {
@@ -218,7 +218,7 @@ const AdminUsers = () => {
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(
-        "https://email-syncing-backend.vercel.app/auth/users",
+        "http://localhost:5000/auth/users",
         {
           headers: { Authorization: `Bearer ${token}` },
         },
@@ -260,7 +260,7 @@ const AdminUsers = () => {
 
     if (deleteTarget === "single") {
       await fetch(
-        `https://email-syncing-backend.vercel.app/auth/user/${activeId}`,
+        `http://localhost:5000/auth/user/${activeId}`,
         {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
@@ -269,7 +269,7 @@ const AdminUsers = () => {
       setUsers((prev) => prev.filter((u) => u._id !== activeId));
     } else {
       await fetch(
-        `https://email-syncing-backend.vercel.app/auth/users/bulk-delete`,
+        `http://localhost:5000/auth/users/bulk-delete`,
         {
           method: "POST",
           headers: {
