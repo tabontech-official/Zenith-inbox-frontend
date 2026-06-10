@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiX } from "react-icons/fi";
+import { FiX, FiBriefcase, FiGlobe, FiClock, FiMapPin } from "react-icons/fi";
 import toast from "react-hot-toast";
 import axios from "axios";
 
@@ -24,7 +24,7 @@ const OrganizationSettingsModal = ({ open, onClose }) => {
 
     try {
       const res = await axios.get(
-        `https://email-syncing-backend.vercel.app/auth/organization/get/${userId}`
+        `https://email-syncing-backend.vercel.app/auth/organization/get/${userId}`,
       );
 
       if (res.data?.success && res.data.data) {
@@ -32,7 +32,8 @@ const OrganizationSettingsModal = ({ open, onClose }) => {
         setFormData({
           organizationName: org.organizationName || "",
           region: org.Region || "",
-          timezone: org.TimeZone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+          timezone:
+            org.TimeZone || Intl.DateTimeFormat().resolvedOptions().timeZone,
           country: org.country || "",
           partnerLink: org.PartnerLink || "",
         });
@@ -44,17 +45,23 @@ const OrganizationSettingsModal = ({ open, onClose }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     const userId = localStorage.getItem("userid");
 
     if (!userId) {
       toast.error("User ID not found — please log in again.");
       return;
     }
+
     if (!formData.organizationName.trim()) {
       toast.error("Organization name is required!");
       return;
@@ -73,7 +80,7 @@ const OrganizationSettingsModal = ({ open, onClose }) => {
           TimeZone: formData.timezone,
           country: formData.country,
           PartnerLink: formData.partnerLink,
-        }
+        },
       );
 
       toast.dismiss("org");
@@ -93,121 +100,184 @@ const OrganizationSettingsModal = ({ open, onClose }) => {
     }
   };
 
+  const inputClassName =
+    "h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400";
+
+  const labelClassName = "mb-1.5 block text-sm font-semibold text-slate-700";
+
   return (
     <AnimatePresence>
       {open && (
         <motion.div
-          className="fixed inset-0 flex items-center justify-center bg-black/40 z-50"
+          className="fixed inset-0 z-[9999] flex min-h-screen items-center justify-center overflow-y-auto bg-slate-950/45 p-4 backdrop-blur-sm"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="organization-settings-title"
         >
           <motion.div
-            className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 relative"
-            initial={{ scale: 0.95, opacity: 0, y: 20 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.95, opacity: 0, y: 20 }}
-            transition={{ duration: 0.2 }}
+            className="relative my-auto flex max-h-[90vh] w-full max-w-xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl"
+            initial={{ scale: 0.96, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.96, opacity: 0 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
           >
-            <button
-              onClick={onClose}
-              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
-            >
-              <FiX className="w-5 h-5" />
-            </button>
-
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">
-              Organization Settings
-            </h2>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Header */}
+            <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Organization Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="organizationName"
-                  value={formData.organizationName}
-                  onChange={handleChange}
-                  required
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
-                />
+                <h2
+                  id="organization-settings-title"
+                  className="text-xl font-semibold tracking-tight text-slate-950"
+                >
+                  Organization Settings
+                </h2>
+
+                <p className="mt-1 text-sm leading-6 text-slate-500">
+                  Update your organization profile and regional settings.
+                </p>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Region
-                </label>
-                <input
-                  type="text"
-                  name="region"
-                  value={formData.region}
-                  onChange={handleChange}
-                  placeholder="e.g. South Asia"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
-                />
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={loading}
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 disabled:cursor-not-allowed disabled:opacity-60"
+                aria-label="Close modal"
+              >
+                <FiX className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+              {/* Body */}
+              <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+                <div className="space-y-4">
+                  <div>
+                    <label htmlFor="organizationName" className={labelClassName}>
+                      Organization Name <span className="text-red-500">*</span>
+                    </label>
+
+                    <div className="relative">
+                      <FiBriefcase className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+
+                      <input
+                        id="organizationName"
+                        type="text"
+                        name="organizationName"
+                        value={formData.organizationName}
+                        onChange={handleChange}
+                        required
+                        disabled={loading}
+                        className={`${inputClassName} pl-10`}
+                        placeholder="Enter organization name"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="region" className={labelClassName}>
+                      Region
+                    </label>
+
+                    <div className="relative">
+                      <FiGlobe className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+
+                      <input
+                        id="region"
+                        type="text"
+                        name="region"
+                        value={formData.region}
+                        onChange={handleChange}
+                        disabled={loading}
+                        placeholder="e.g. South Asia"
+                        className={`${inputClassName} pl-10`}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="timezone" className={labelClassName}>
+                      Timezone <span className="text-red-500">*</span>
+                    </label>
+
+                    <div className="relative">
+                      <FiClock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+
+                      <input
+                        id="timezone"
+                        type="text"
+                        name="timezone"
+                        value={formData.timezone}
+                        onChange={handleChange}
+                        required
+                        disabled={loading}
+                        className={`${inputClassName} pl-10`}
+                        placeholder="Asia/Karachi"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="country" className={labelClassName}>
+                      Country <span className="text-red-500">*</span>
+                    </label>
+
+                    <div className="relative">
+                      <FiMapPin className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+
+                      <input
+                        id="country"
+                        type="text"
+                        name="country"
+                        value={formData.country}
+                        onChange={handleChange}
+                        required
+                        disabled={loading}
+                        className={`${inputClassName} pl-10`}
+                        placeholder="Pakistan"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Partner Link is intentionally kept commented, same as your original code. */}
+                  {/* <div>
+                    <label htmlFor="partnerLink" className={labelClassName}>
+                      Partner Link
+                    </label>
+
+                    <input
+                      id="partnerLink"
+                      type="url"
+                      name="partnerLink"
+                      value={formData.partnerLink}
+                      onChange={handleChange}
+                      disabled={loading}
+                      placeholder="https://partner.example.com"
+                      className={inputClassName}
+                    />
+                  </div> */}
+                </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Timezone <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="timezone"
-                  value={formData.timezone}
-                  onChange={handleChange}
-                  required
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
-                  placeholder="Asia/Karachi"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Country <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="country"
-                  value={formData.country}
-                  onChange={handleChange}
-                  required
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
-                  placeholder="Pakistan"
-                />
-              </div>
-
-              {/* <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Partner Link
-                </label>
-                <input
-                  type="url"
-                  name="partnerLink"
-                  value={formData.partnerLink}
-                  onChange={handleChange}
-                  placeholder="https://partner.example.com"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
-                />
-              </div> */}
-
-              <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 mt-6">
+              {/* Footer */}
+              <div className="flex items-center justify-end gap-3 border-t border-slate-200 bg-slate-50/60 px-6 py-4">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition"
                   disabled={loading}
+                  className="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   Cancel
                 </button>
+
                 <button
                   type="submit"
                   disabled={loading}
-                  className={`px-5 py-2 text-sm font-semibold text-white rounded-lg transition ${
+                  className={`inline-flex h-10 items-center justify-center rounded-xl px-5 text-sm font-semibold text-white transition focus:outline-none focus:ring-4 focus:ring-indigo-500/20 ${
                     loading
-                      ? "bg-gray-400 cursor-not-allowed"
+                      ? "cursor-not-allowed bg-slate-400"
                       : "bg-indigo-600 hover:bg-indigo-700"
                   }`}
                 >
@@ -223,4 +293,3 @@ const OrganizationSettingsModal = ({ open, onClose }) => {
 };
 
 export default OrganizationSettingsModal;
- 

@@ -142,16 +142,16 @@ const Navbar = () => {
         <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-20"></div>
       )}
 
-      <header className="w-full bg-white px-4 py-3 flex justify-end sticky top-0 z-30 border-b">
+      <header className="w-full sticky top-0 z-30 border-b border-slate-200 bg-white/95 px-6 py-3.5 backdrop-blur flex justify-end">
         <div className="flex items-center gap-4">
 
           {!loading && user && (
             <button
               onClick={handleWizardClick}
-              className={`hidden md:flex px-4 py-1.5 rounded-md text-sm font-medium
+              className={`hidden md:inline-flex h-10 items-center justify-center px-4 rounded-xl text-sm font-semibold shadow-sm transition duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2
       ${setupCompleted
-                  ? "bg-gray-100 text-gray-800"
-                  : "bg-indigo-600 text-white"
+                  ? "bg-slate-100 hover:bg-slate-200 text-slate-800 focus:ring-slate-300"
+                  : "bg-indigo-600 hover:bg-indigo-700 text-white focus:ring-indigo-500"
                 }`}
             >
               {setupCompleted ? "Wizard Completed" : "Complete Wizard"}
@@ -161,10 +161,11 @@ const Navbar = () => {
           <div className="relative">
             <button
               onClick={() => setOpen(true)}
-              className={`hidden md:flex items-center gap-2 border px-3 py-1.5 rounded-md
+              className={`hidden md:inline-flex h-10 items-center justify-center gap-2 border border-slate-200 bg-white px-4 rounded-xl text-sm font-semibold text-slate-700 shadow-sm transition duration-200 hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-350
               ${guideStep === 1 ? "ring-4 ring-blue-400 z-[60]" : ""}`}
             >
-              <FiEdit3 /> Settings
+              <FiEdit3 className="w-4 h-4 text-slate-500" />
+              <span>Settings</span>
             </button>
 
             {guideStep === 1 && (
@@ -183,10 +184,10 @@ const Navbar = () => {
                 setOpenScenario(true);
                 skipGuide();
               }}
-              className={`hidden md:flex bg-black text-white px-4 py-1.5 rounded-md
+              className={`hidden md:inline-flex h-10 items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 rounded-xl text-sm font-semibold shadow-sm transition duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500
               ${guideStep === 2 ? "ring-4 ring-blue-400 z-[60]" : ""}`}
             >
-              + Scenario
+              <span>+ Scenario</span>
             </button>
 
             {guideStep === 2 && (
@@ -200,12 +201,12 @@ const Navbar = () => {
           </div>
 
           <div className="relative" ref={profileRef}>
-            <div
+            <button
               onClick={() => setShowProfileMenu(!showProfileMenu)}
-              className="w-9 h-9 bg-gray-800 text-white rounded-full flex items-center justify-center cursor-pointer text-sm font-semibold select-none"
+              className="w-9 h-9 bg-indigo-100 text-indigo-700 border border-indigo-200 hover:bg-indigo-200 rounded-full flex items-center justify-center cursor-pointer text-sm font-semibold select-none transition duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-300"
             >
               {user?.fullName?.slice(0, 2).toUpperCase() || "U"}
-            </div>
+            </button>
 
             {showProfileMenu && !isProfilePage && (
               <div className="absolute right-0 mt-2 w-44 bg-white border rounded-lg shadow-lg z-50 overflow-hidden">

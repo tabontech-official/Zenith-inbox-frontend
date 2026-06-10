@@ -34,21 +34,25 @@ const Sidebar = () => {
   const token = localStorage.getItem("usertoken");
   const userId = localStorage.getItem("userid");
 
+  const leadRef = useRef(null);
+  const allScenarioRef = useRef(null);
+  const shopifyScenarioRef = useRef(null);
+  const customScenarioRef = useRef(null);
+
+  const LAST_STEP = 4;
+
+  const isActive = (path) => location.pathname === path;
+  const isScenarioActive = location.pathname.startsWith("/scenarios");
+  const isProfileActive = isActive("/profile");
+
   const UpgradeBadge = () => (
     <Link
       to="/pricing"
-      className="group flex items-center justify-between px-3 py-2 rounded-lg
-      border border-indigo-200 bg-indigo-50
-      text-indigo-700 text-sm font-semibold
-      hover:bg-indigo-100 transition
-      focus:outline-none focus:ring-2 focus:ring-indigo-300"
+      className="group flex items-center justify-between rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-semibold text-indigo-700 transition-colors hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-indigo-300"
     >
       <span>Upgrade Plan</span>
-      <span
-        className="text-[11px] font-bold tracking-wide
-      bg-indigo-600 text-white
-      px-2 py-0.5 rounded-full"
-      >
+
+      <span className="rounded-full bg-indigo-600 px-2 py-0.5 text-[11px] font-bold tracking-wide text-white">
         PRO
       </span>
     </Link>
@@ -80,6 +84,19 @@ const Sidebar = () => {
     };
 
     if (token) fetchGuide();
+  }, [token, userId]);
+
+  useEffect(() => {
+    const storedToken = localStorage.getItem("usertoken");
+
+    if (storedToken) {
+      try {
+        const decoded = jwtDecode(storedToken);
+        if (decoded?.payLoad?.role) setRole(decoded.payLoad.role);
+      } catch (_) {
+        // Keep default user role if token decode fails
+      }
+    }
   }, []);
 
   const handleLogout = async () => {
@@ -89,19 +106,11 @@ const Sidebar = () => {
         method: "POST",
       },
     );
+
     localStorage.clear();
     navigate("/login", { replace: true });
     window.location.reload();
   };
-
-  const isActive = (path) => location.pathname === path;
-
-  const leadRef = useRef(null);
-  const allScenarioRef = useRef(null);
-  const shopifyScenarioRef = useRef(null);
-  const customScenarioRef = useRef(null);
-
-  const LAST_STEP = 4;
 
   const nextGuide = async () => {
     const next = guideStep + 1;
@@ -124,6 +133,7 @@ const Sidebar = () => {
           }),
         },
       );
+
       window.dispatchEvent(new Event("sidebarGuideCompleted"));
       return;
     }
@@ -163,204 +173,247 @@ const Sidebar = () => {
         }),
       },
     );
+
     window.dispatchEvent(new Event("sidebarGuideCompleted"));
   };
 
-  useEffect(() => {
-    const token = localStorage.getItem("usertoken");
-    if (token) {
-      try {
-        const decoded = jwtDecode(token);
-        if (decoded?.payLoad?.role) setRole(decoded.payLoad.role);
-      } catch (_) {}
-    }
-  }, []);
+  const renderNavLink = (label, Icon, to, ref = null, stepMatch = null) => {
+    const active = isActive(to);
 
-  const renderNavLink = (label, Icon, to, ref = null, stepMatch = null) => (
-    <Link
-      to={to}
-      replace
-      ref={ref}
-      onClick={() => window.innerWidth < 768 && setIsSidebarOpen(false)}
-      className={`flex items-center space-x-3 px-3 py-2 rounded-lg 
-        text-sm font-medium transition
-        ${
-          isActive(to)
+    return (
+      <Link
+        to={to}
+        replace
+        ref={ref}
+        onClick={() => window.innerWidth < 768 && setIsSidebarOpen(false)}
+        className={`flex items-center space-x-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors
+          ${active
             ? "bg-indigo-100 text-indigo-700 font-semibold"
-            : "text-gray-700 hover:bg-gray-100 hover:text-indigo-600"
-        }
-        ${guideStep === stepMatch ? "sidebar-highlight" : ""}
-      `}
-    >
-      <Icon className="w-5 h-5" />
-      <span>{label}</span>
-    </Link>
-  );
+            : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+          }
+          ${guideStep === stepMatch ? "sidebar-highlight" : ""}
+        `}
+      >
+        <Icon
+          className={`h-5 w-5 shrink-0 ${active ? "text-indigo-700" : "text-gray-500"
+            }`}
+        />
+        <span>{label}</span>
+      </Link>
+    );
+  };
 
   const renderUserSidebar = () => (
     <>
-      <div className="flex items-center justify-between px-8 py-4 border-b bg-white">
-        <Link to="/organization" className="flex items-center space-x-2">
-          <FiMail className="text-indigo-500 text-3xl" />
-          <span className="font-semibold text-lg">Replex Engine</span>
-        </Link>
-        <button
-          onClick={() => setIsSidebarOpen(false)}
-          className="md:hidden text-gray-500 hover:text-indigo-600"
+      <div className="flex items-center justify-between border-b bg-white px-8 py-4">
+        <Link
+          to="/organization"
+          className="flex items-center space-x-2 text-gray-900"
         >
-          <FiX className="w-6 h-6" />
+          <FiMail className="text-3xl text-indigo-500" />
+          <span className="text-lg font-semibold">Replex Engine</span>
+        </Link>
+
+        <button
+          type="button"
+          onClick={() => setIsSidebarOpen(false)}
+          className="text-gray-500 transition-colors hover:text-gray-900 md:hidden"
+        >
+          <FiX className="h-6 w-6" />
         </button>
       </div>
 
-      <nav className="px-4 py-6 space-y-6 overflow-y-auto">
-        {/* MAIN */}
-        <div>
-          <p className="text-xs text-gray-400 uppercase mb-2">Main</p>
-          {renderNavLink("Organization", FiGrid, "/organization")}
-          {renderNavLink("Lead Conversation", FiMail, "/inbox", leadRef, 1)}
-        </div>
+      <nav className="flex-1 overflow-y-auto px-4 py-6">
+        <div className="space-y-6">
+          <div>
+            <p className="mb-2 text-xs uppercase text-gray-400">Main</p>
 
-        <div>
-          <p className="text-xs text-gray-400 uppercase mb-2">Automations</p>
-
-          <button
-            onClick={() => setIsScenariosOpen(!isScenariosOpen)}
-            className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm 
-              ${
-                location.pathname.startsWith("/scenarios")
-                  ? "bg-indigo-100 text-indigo-700"
-                  : "text-gray-700 hover:bg-gray-100"
-              }`}
-          >
-            <div className="flex items-center space-x-3">
-              <FiLayers className="w-5 h-5" />
-              <span>Scenarios</span>
+            <div className="space-y-1">
+              {renderNavLink("Organization", FiGrid, "/organization")}
+              {renderNavLink("Lead Conversation", FiMail, "/inbox", leadRef, 1)}
             </div>
+          </div>
 
-            {isScenariosOpen ? <FiChevronDown /> : <FiChevronRight />}
-          </button>
+          <div>
+            <p className="mb-2 text-xs uppercase text-gray-400">Automations</p>
 
-          <div
-            className={`ml-8 mt-2 space-y-1 overflow-hidden transition-all duration-300 
-            ${isScenariosOpen ? "max-h-[200px]" : "max-h-0"}`}
-          >
-            {renderNavLink(
-              "All Scenarios",
-              FiZap,
-              "/scenarios/all",
-              allScenarioRef,
-              2,
-            )}
-            {renderNavLink(
-              "Shopify Scenario",
-              FiGitBranch,
-              "/scenarios/shopify",
-              shopifyScenarioRef,
-              3,
-            )}
-            {renderNavLink(
-              "Custom",
-              FiSettings,
-              "/scenarios/others",
-              customScenarioRef,
-              4,
-            )}
+            <button
+              type="button"
+              onClick={() => setIsScenariosOpen(!isScenariosOpen)}
+              className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors
+                ${isScenarioActive
+                  ? "bg-indigo-100 text-indigo-700 font-semibold"
+                  : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                }
+              `}
+            >
+              <div className="flex items-center space-x-3">
+                <FiLayers
+                  className={`h-5 w-5 shrink-0 ${isScenarioActive ? "text-indigo-700" : "text-gray-500"
+                    }`}
+                />
+                <span>Scenarios</span>
+              </div>
+
+              {isScenariosOpen ? (
+                <FiChevronDown
+                  className={`h-4 w-4 ${isScenarioActive ? "text-indigo-700" : "text-gray-500"
+                    }`}
+                />
+              ) : (
+                <FiChevronRight
+                  className={`h-4 w-4 ${isScenarioActive ? "text-indigo-700" : "text-gray-500"
+                    }`}
+                />
+              )}
+            </button>
+
+            <div
+              className={`ml-8 mt-2 space-y-1 overflow-hidden transition-all duration-300 ${isScenariosOpen ? "max-h-[200px]" : "max-h-0"
+                }`}
+            >
+              {renderNavLink(
+                "All Scenarios",
+                FiZap,
+                "/scenarios/all",
+                allScenarioRef,
+                2,
+              )}
+              {renderNavLink(
+                "Shopify Scenario",
+                FiGitBranch,
+                "/scenarios/shopify",
+                shopifyScenarioRef,
+                3,
+              )}
+              {renderNavLink(
+                "Custom",
+                FiSettings,
+                "/scenarios/others",
+                customScenarioRef,
+                4,
+              )}
+            </div>
+          </div>
+
+          <div>
+            <p className="mb-2 text-xs uppercase text-gray-400">Resources</p>
+
+            <div className="space-y-1">
+              {renderNavLink("Shopify Templates", FiFileText, "/templates")}
+              {renderNavLink(
+                "General Templates",
+                FiFileText,
+                "/templates/general",
+              )}
+              {renderNavLink("Connection", FiZap, "/connection")}
+            </div>
           </div>
         </div>
-
-        <div>
-          <p className="text-xs text-gray-400 uppercase mb-2">Resources</p>
-          {renderNavLink("Shopify Templates", FiFileText, "/templates")}
-          {renderNavLink("General Templates", FiFileText, "/templates/general")}
-          {renderNavLink("Connection", FiZap, "/connection")}
-        </div>
       </nav>
-      <div className="mt-auto border-t px-4 py-4 bg-white space-y-2">
+
+      <div className="mt-auto space-y-2 border-t bg-white px-4 py-4">
         {!loading && plan !== "pro" && <UpgradeBadge />}
+
         {!loading && plan === "pro" && (
-          <div
-            className="flex items-center justify-center gap-2 px-3 py-2 
-    rounded-lg text-xs font-semibold
-    bg-gradient-to-r from-emerald-500/10 to-teal-500/10
-    text-emerald-700 border border-emerald-200"
-          >
-            <span className="inline-block h-2 w-2 rounded-full bg-emerald-500"></span>
+          <div className="flex items-center justify-center gap-2 rounded-lg border border-emerald-200 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 px-3 py-2 text-xs font-semibold text-emerald-700">
+            <span className="inline-block h-2 w-2 rounded-full bg-emerald-500" />
             PRO plan active
           </div>
         )}
 
         <Link
           to="/profile"
-          className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium
-      ${
-        isActive("/profile")
-          ? "bg-indigo-100 text-indigo-700"
-          : "text-gray-700 hover:bg-gray-100 hover:text-indigo-600"
-      }`}
+          className={`flex items-center space-x-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors
+            ${isProfileActive
+              ? "bg-indigo-100 text-indigo-700 font-semibold"
+              : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+            }
+          `}
         >
-          <FiUser className="w-5 h-5" />
+          <FiUser
+            className={`h-5 w-5 shrink-0 ${isProfileActive ? "text-indigo-700" : "text-gray-500"
+              }`}
+          />
           <span>Profile</span>
         </Link>
 
         <button
+          type="button"
           onClick={handleLogout}
-          className="mt-2 w-full flex items-center space-x-3 px-3 py-2 rounded-lg
-      text-sm font-medium text-red-600 hover:bg-red-50"
+          className="mt-2 flex w-full items-center space-x-3 rounded-lg px-3 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 hover:text-red-700"
         >
-          <FiLogOut className="w-5 h-5" />
+          <FiLogOut className="h-5 w-5 shrink-0 text-red-600" />
           <span>Logout</span>
         </button>
       </div>
     </>
   );
+
   const renderAdminSidebar = () => (
     <>
-      <div className="flex items-center justify-between py-5 px-6 border-b bg-white">
-        <Link to="/admin/dashboard" className="flex items-center space-x-2">
-          <FiGrid className="text-indigo-500 text-2xl" />
-          <span className="font-semibold text-lg">Admin Panel</span>
+      <div className="flex items-center justify-between border-b bg-white px-6 py-5">
+        <Link
+          to="/admin/dashboard"
+          className="flex items-center space-x-2 text-gray-900"
+        >
+          <FiGrid className="text-2xl text-indigo-500" />
+          <span className="text-lg font-semibold">Admin Panel</span>
         </Link>
 
         <button
+          type="button"
           onClick={() => setIsSidebarOpen(false)}
-          className="md:hidden text-gray-500 hover:text-indigo-600"
+          className="text-gray-500 transition-colors hover:text-gray-900 md:hidden"
         >
-          <FiX className="w-6 h-6" />
+          <FiX className="h-6 w-6" />
         </button>
       </div>
 
-      <nav className="px-4 py-6 space-y-6 overflow-y-auto flex-1">
-        <div>
-          <p className="text-xs text-gray-400 uppercase mb-2">Admin</p>
-          {renderNavLink("Dashboard", FiGrid, "/admin/dashboard")}
-          {renderNavLink("Users", FiUser, "/admin/users")}
-          {renderNavLink("Connections", FiZap, "/admin/connections")}
-        </div>
+      <nav className="flex-1 overflow-y-auto px-4 py-6">
+        <div className="space-y-6">
+          <div>
+            <p className="mb-2 text-xs uppercase text-gray-400">Admin</p>
 
-        <div>
-          <p className="text-xs text-gray-400 uppercase mb-2">Reports</p>
-          {renderNavLink(
-            "User Activity",
-            FiFileText,
-            "/admin/reports/user-activity",
-          )}
-          {renderNavLink(
-            "Email Tracking",
-            FiMail,
-            "/admin/reports/email-tracking",
-          )}
-          {renderNavLink("Scenarios", FiLayers, "/admin/reports/scenarios")}
-          {renderNavLink("Templates", FiFileText, "/admin/reports/templates")}
+            <div className="space-y-1">
+              {renderNavLink("Dashboard", FiGrid, "/admin/dashboard")}
+              {renderNavLink("Users", FiUser, "/admin/users")}
+              {renderNavLink("Connections", FiZap, "/admin/connections")}
+            </div>
+          </div>
+
+          <div>
+            <p className="mb-2 text-xs uppercase text-gray-400">Reports</p>
+
+            <div className="space-y-1">
+              {renderNavLink(
+                "User Activity",
+                FiFileText,
+                "/admin/reports/user-activity",
+              )}
+              {renderNavLink(
+                "Email Tracking",
+                FiMail,
+                "/admin/reports/email-tracking",
+              )}
+              {renderNavLink("Scenarios", FiLayers, "/admin/reports/scenarios")}
+              {renderNavLink(
+                "Templates",
+                FiFileText,
+                "/admin/reports/templates",
+              )}
+            </div>
+          </div>
         </div>
       </nav>
 
-      <div className="border-t px-4 py-4 bg-white">
+      <div className="border-t bg-white px-4 py-4">
         <button
+          type="button"
           onClick={handleLogout}
-          className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg
-        text-sm font-medium text-red-600 hover:bg-red-50"
+          className="flex w-full items-center space-x-3 rounded-lg px-3 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 hover:text-red-700"
         >
-          <FiLogOut className="w-5 h-5" />
+          <FiLogOut className="h-5 w-5 shrink-0 text-red-600" />
           <span>Logout</span>
         </button>
       </div>
@@ -370,26 +423,27 @@ const Sidebar = () => {
   return (
     <>
       <button
+        type="button"
         onClick={() => setIsSidebarOpen(true)}
-        className="fixed top-4 right-4 z-50 md:hidden p-2 bg-white shadow-lg rounded-full text-indigo-600"
+        className="fixed right-4 top-4 z-50 rounded-full bg-white p-2 text-indigo-600 shadow-lg md:hidden"
       >
-        <FiMenu className="w-6 h-6" />
+        <FiMenu className="h-6 w-6" />
       </button>
 
       {isSidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/40 md:hidden"
+          className="fixed inset-0 z-30 bg-black/40 md:hidden"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
-
       <aside
-        className={`fixed top-0 left-0 z-40 h-full w-64 bg-white border-r 
-    shadow-xl transition-transform flex flex-col
-    ${isSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
+        className={`sidebar fixed left-0 top-0 z-40 flex h-screen w-64 shrink-0 flex-col border-r bg-white shadow-xl transition-transform duration-300 md:shadow-none
+    ${isSidebarOpen
+            ? "translate-x-0"
+            : "-translate-x-full md:translate-x-0"
+          }
   `}
       >
-        {/* {renderUserSidebar()} */}
         {role === "admin" ? renderAdminSidebar() : renderUserSidebar()}
       </aside>
 

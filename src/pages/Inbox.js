@@ -366,32 +366,59 @@ const Inbox = () => {
     fetchEmails();
   }, []);
   const formatEmailBody = (html, text) => {
-    let content = html && html.trim().length > 0 ? html : text;
+    let isHtml = html && html.trim().length > 0;
+    let content = isHtml ? html : text;
 
     if (!content) return "";
 
+    // Normalize email body text before rendering:
+    // 1. Trim leading/trailing whitespace
+    content = content.trim();
+
     content = content.replace(/disabled/g, "");
 
-    content = content.replace(
-      /(https?:\/\/[^\s<]+)/g,
-      '<a href="$1" target="_blank" style="color:#2563eb;text-decoration:underline;font-weight:500">$1</a>',
-    );
+    if (isHtml) {
+      // 2. Replace 3 or more consecutive HTML line breaks with a maximum of 2.
+      content = content.replace(/(?:<br\s*\/?>\s*[\r\n]*\s*){3,}/gi, "<br/><br/>");
 
-    content = content.replace(
-      /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g,
-      '<a href="mailto:$1" style="color:#2563eb;text-decoration:underline">$1</a>',
-    );
+      // Replace 3 or more consecutive newlines with 2.
+      content = content.replace(/\n{3,}/g, "\n\n");
+    } else {
+      // 2. Replace 3 or more consecutive line breaks with a maximum of 2.
+      content = content.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+      content = content.replace(/\n{3,}/g, "\n\n");
 
+      // Escape HTML entities to prevent rendering issues or injection in plain text
+      content = content
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+
+      // 3. Make links and email addresses clickable
+      content = content.replace(
+        /(https?:\/\/[^\s<]+)/g,
+        '<a href="$1" target="_blank" style="color:#1a73e8;text-decoration:underline;font-weight:500">$1</a>',
+      );
+
+      content = content.replace(
+        /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g,
+        '<a href="mailto:$1" style="color:#1a73e8;text-decoration:underline">$1</a>',
+      );
+
+      // Convert newlines to breaks for HTML rendering
+      content = content.replace(/\n/g, "<br/>");
+    }
+
+    // Modern styled headers or form keys formatting (preserved from original code)
     content = content.replace(
       /(Full Name:|Business Email:|Country:|Service:|Budget:|Store Name:|Store URL:|Problem & Goal:)/g,
-      '<br/><strong class="text-gray-900">$1</strong>',
+      '<br/><strong style="color:#202124;font-weight:600">$1</strong>',
     );
 
-    content = content.replace(/\n\s*\n/g, "<br/><br/>");
-    content = content.replace(/\n/g, "<br/>");
-
     return `
-    <div style="font-family:Segoe UI, Arial, sans-serif; line-height:1.7;">
+    <div class="email-body-content" style="font-family: Roboto, RobotoDraft, Helvetica, Arial, sans-serif; font-size: 14px; line-height: 1.6; color: #202124; max-width: 100%; word-break: break-word; overflow-wrap: break-word;">
       ${content}
     </div>
   `;
@@ -412,38 +439,54 @@ const Inbox = () => {
     return (
       <div
         key={email._id}
-        className="mb-5 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
+        className="mb-5 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_1px_2px_0_rgba(60,64,67,0.15)] transition duration-200"
       >
-        <div className="flex items-start justify-between gap-4 border-b border-slate-100 bg-slate-50 px-5 py-4">
+        {/* Email Header - Gmail Style */}
+        <div className="flex items-center justify-between gap-4 border-b border-slate-100 bg-slate-50/70 px-5 py-3">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-bold uppercase text-white">
+            {/* Sender Initials Avatar */}
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-sm font-semibold uppercase text-slate-700 shadow-inner">
               {email.senderAddress?.[0]?.toUpperCase() || "?"}
             </div>
 
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-slate-900">
-                {email.senderAddress?.split("@")[0]}
-              </p>
-              <p className="truncate text-xs text-slate-500">
-                {`<${email.senderAddress}>`}
+              <div className="flex flex-wrap items-baseline gap-x-2">
+                <span className="truncate text-sm font-bold text-slate-900">
+                  {email.senderAddress?.split("@")[0]}
+                </span>
+                <span className="truncate text-xs text-slate-500 font-normal">
+                  {`<${email.senderAddress}>`}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500">
+                to {email.recipientAddress || "me"}
               </p>
             </div>
           </div>
 
-          <span className="shrink-0 text-xs font-medium text-slate-400">
-            {new Date(email.date).toLocaleString()}
+          <span className="shrink-0 text-xs font-medium text-slate-500 bg-slate-100/80 px-2 py-0.5 rounded">
+            {new Date(email.date).toLocaleString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
           </span>
         </div>
 
+        {/* Email Body - Clean Gmail Style spacing */}
         <div
-          className="prose prose-sm max-w-none px-6 py-5 text-sm leading-7 text-slate-700"
+          className="prose prose-sm max-w-4xl px-6 py-5 text-sm leading-relaxed text-slate-800"
+          style={{ fontFamily: "Roboto, Arial, sans-serif" }}
           dangerouslySetInnerHTML={{
             __html: formatEmailBody(email.htmlBody, email.textBody),
           }}
         />
 
+        {/* Children replies rendered as a clean stacked thread rather than a dark nested box */}
         {email.children?.length > 0 && (
-          <div className="border-t border-slate-100 bg-slate-50 px-4 py-4">
+          <div className="border-t border-slate-100 bg-slate-50/30 p-4 space-y-4">
             {email.children.map((child) => renderConversation(child))}
           </div>
         )}
@@ -461,7 +504,7 @@ const Inbox = () => {
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-50 text-blue-700">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
                   <FiMail size={20} />
                 </div>
 
@@ -657,7 +700,7 @@ const Inbox = () => {
                   </div>
 
                   {/* Email Body */}
-                  <div className="min-h-0 flex-1 overflow-y-auto bg-slate-50 px-5 py-6">
+                  <div className="min-h-0 flex-1 overflow-y-auto bg-slate-50 px-5 py-6 lead-conversation-view">
                     <div className="mx-auto max-w-5xl">
                       {renderConversation(selectedEmail)}
                     </div>
