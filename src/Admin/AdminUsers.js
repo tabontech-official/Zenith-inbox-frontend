@@ -102,50 +102,50 @@ const AdminUsers = () => {
 
 
   const handleGivePro = async () => {
-  try {
-    const token = localStorage.getItem("token");
+    try {
+      const token = localStorage.getItem("token");
 
-    if (!proUserId) {
-      alert("User not selected");
-      return;
-    }
+      if (!proUserId) {
+        alert("User not selected");
+        return;
+      }
 
-    if (!duration || duration <= 0) {
-      alert("Invalid duration");
-      return;
-    }
+      if (!duration || duration <= 0) {
+        alert("Invalid duration");
+        return;
+      }
 
-    const res = await fetch(
-      `https://email-syncing-backend.vercel.app/auth/admin/give-pro/${proUserId}`,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+      const res = await fetch(
+        `https://email-syncing-backend.vercel.app/auth/admin/give-pro/${proUserId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            durationInDays: duration,
+          }),
         },
-        body: JSON.stringify({
-          durationInDays: duration,
-        }),
-      },
-    );
+      );
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (!res.ok || data?.success === false) {
-      alert(data?.message || "Failed to assign pro plan");
-      return;
-    }
+      if (!res.ok || data?.success === false) {
+        alert(data?.message || "Failed to assign pro plan");
+        return;
+      }
 
-    const expiry =
-      data?.expiry ||
-      data?.data?.expiry ||
-      data?.subscription?.currentPeriodEnd ||
-      data?.data?.subscription?.currentPeriodEnd;
+      const expiry =
+        data?.expiry ||
+        data?.data?.expiry ||
+        data?.subscription?.currentPeriodEnd ||
+        data?.data?.subscription?.currentPeriodEnd;
 
-    setUsers((prev) =>
-      prev.map((u) =>
-        u._id === proUserId
-          ? {
+      setUsers((prev) =>
+        prev.map((u) =>
+          u._id === proUserId
+            ? {
               ...u,
               subscription: {
                 ...u.subscription,
@@ -154,29 +154,29 @@ const AdminUsers = () => {
                 currentPeriodEnd: expiry,
               },
             }
-          : u,
-      ),
-    );
+            : u,
+        ),
+      );
 
-    window.dispatchEvent(
-      new CustomEvent("subscriptionUpdated", {
-        detail: {
-          userId: proUserId,
-          plan: "pro",
-          status: "active",
-          currentPeriodEnd: expiry,
-        },
-      }),
-    );
+      window.dispatchEvent(
+        new CustomEvent("subscriptionUpdated", {
+          detail: {
+            userId: proUserId,
+            plan: "pro",
+            status: "active",
+            currentPeriodEnd: expiry,
+          },
+        }),
+      );
 
-    setIsProModalOpen(false);
-    setProUserId(null);
-    setDuration(30);
-  } catch (error) {
-    console.error("Give Pro Error:", error);
-    alert("Something went wrong while assigning pro plan.");
-  }
-};
+      setIsProModalOpen(false);
+      setProUserId(null);
+      setDuration(30);
+    } catch (error) {
+      console.error("Give Pro Error:", error);
+      alert("Something went wrong while assigning pro plan.");
+    }
+  };
 
   const handleRevokePro = async (id) => {
     try {
@@ -197,14 +197,14 @@ const AdminUsers = () => {
         prev.map((u) =>
           u._id === id
             ? {
-                ...u,
-                subscription: {
-                  ...u.subscription,
-                  plan: "free",
-                  status: "inactive",
-                  currentPeriodEnd: null,
-                },
-              }
+              ...u,
+              subscription: {
+                ...u.subscription,
+                plan: "free",
+                status: "inactive",
+                currentPeriodEnd: null,
+              },
+            }
             : u,
         ),
       );
@@ -213,7 +213,7 @@ const AdminUsers = () => {
     }
   };
 
-  
+
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -234,16 +234,16 @@ const AdminUsers = () => {
 
 
   useEffect(() => {
-  const handleSubscriptionUpdated = () => {
-    fetchUsers();
-  };
+    const handleSubscriptionUpdated = () => {
+      fetchUsers();
+    };
 
-  window.addEventListener("subscriptionUpdated", handleSubscriptionUpdated);
+    window.addEventListener("subscriptionUpdated", handleSubscriptionUpdated);
 
-  return () => {
-    window.removeEventListener("subscriptionUpdated", handleSubscriptionUpdated);
-  };
-}, []);
+    return () => {
+      window.removeEventListener("subscriptionUpdated", handleSubscriptionUpdated);
+    };
+  }, []);
   const openSingleDelete = (id) => {
     setDeleteTarget("single");
     setActiveId(id);
@@ -511,11 +511,10 @@ const AdminUsers = () => {
                       {/* Role */}
                       <td className="p-5">
                         <span
-                          className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${
-                            user.role === "admin"
+                          className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${user.role === "admin"
                               ? "bg-purple-100 text-purple-700"
                               : "bg-blue-100 text-blue-700"
-                          }`}
+                            }`}
                         >
                           {user.role}
                         </span>
@@ -537,11 +536,10 @@ const AdminUsers = () => {
                       {/* Plan */}
                       <td className="p-5">
                         <span
-                          className={`px-3 py-1 rounded-lg text-xs font-bold ${
-                            isPro
+                          className={`px-3 py-1 rounded-lg text-xs font-bold ${isPro
                               ? "bg-green-100 text-green-700"
                               : "bg-gray-100 text-gray-500"
-                          }`}
+                            }`}
                         >
                           {isPro ? "PRO" : "FREE"}
                         </span>
@@ -603,11 +601,10 @@ const AdminUsers = () => {
                 <button
                   key={i}
                   onClick={() => setCurrentPage(i + 1)}
-                  className={`w-10 h-10 rounded-xl text-sm font-bold transition-all ${
-                    currentPage === i + 1
+                  className={`w-10 h-10 rounded-xl text-sm font-bold transition-all ${currentPage === i + 1
                       ? "bg-indigo-600 text-white shadow-lg shadow-indigo-100"
                       : "text-slate-400 hover:bg-white hover:text-indigo-600"
-                  }`}
+                    }`}
                 >
                   {i + 1}
                 </button>
