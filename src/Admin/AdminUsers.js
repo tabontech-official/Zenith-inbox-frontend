@@ -244,6 +244,8 @@ const AdminUsers = () => {
       window.removeEventListener("subscriptionUpdated", handleSubscriptionUpdated);
     };
   }, []);
+
+  
   const openSingleDelete = (id) => {
     setDeleteTarget("single");
     setActiveId(id);
