@@ -51,54 +51,133 @@ const AdminUsers = () => {
     setCancelUserId(null);
   };
 
+  // const handleGivePro = async () => {
+  //   try {
+  //     const token = localStorage.getItem("token");
+
+  //     if (!duration || duration <= 0) {
+  //       alert("Invalid duration");
+  //       return;
+  //     }
+
+  //     const res = await fetch(
+  //       `https://email-syncing-backend.vercel.app/auth/admin/give-pro/${proUserId}`,
+  //       {
+  //         method: "PUT",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //         body: JSON.stringify({
+  //           durationInDays: duration,
+  //         }),
+  //       },
+  //     );
+
+  //     const data = await res.json();
+
+  //     setUsers((prev) =>
+  //       prev.map((u) =>
+  //         u._id === proUserId
+  //           ? {
+  //               ...u,
+  //               subscription: {
+  //                 ...u.subscription,
+  //                 plan: "pro",
+  //                 status: "active",
+  //                 currentPeriodEnd: data.expiry,
+  //               },
+  //             }
+  //           : u,
+  //       ),
+  //     );
+
+  //     setIsProModalOpen(false);
+  //     setProUserId(null);
+  //     setDuration(30);
+  //   } catch (error) {
+  //     console.error(error);
+  //   }
+  // };
+
+
   const handleGivePro = async () => {
-    try {
-      const token = localStorage.getItem("token");
+  try {
+    const token = localStorage.getItem("token");
 
-      if (!duration || duration <= 0) {
-        alert("Invalid duration");
-        return;
-      }
-
-      const res = await fetch(
-        `https://email-syncing-backend.vercel.app/auth/admin/give-pro/${proUserId}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            durationInDays: duration,
-          }),
-        },
-      );
-
-      const data = await res.json();
-
-      setUsers((prev) =>
-        prev.map((u) =>
-          u._id === proUserId
-            ? {
-                ...u,
-                subscription: {
-                  ...u.subscription,
-                  plan: "pro",
-                  status: "active",
-                  currentPeriodEnd: data.expiry,
-                },
-              }
-            : u,
-        ),
-      );
-
-      setIsProModalOpen(false);
-      setProUserId(null);
-      setDuration(30);
-    } catch (error) {
-      console.error(error);
+    if (!proUserId) {
+      alert("User not selected");
+      return;
     }
-  };
+
+    if (!duration || duration <= 0) {
+      alert("Invalid duration");
+      return;
+    }
+
+    const res = await fetch(
+      `https://email-syncing-backend.vercel.app/auth/admin/give-pro/${proUserId}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          durationInDays: duration,
+        }),
+      },
+    );
+
+    const data = await res.json();
+
+    if (!res.ok || data?.success === false) {
+      alert(data?.message || "Failed to assign pro plan");
+      return;
+    }
+
+    const expiry =
+      data?.expiry ||
+      data?.data?.expiry ||
+      data?.subscription?.currentPeriodEnd ||
+      data?.data?.subscription?.currentPeriodEnd;
+
+    setUsers((prev) =>
+      prev.map((u) =>
+        u._id === proUserId
+          ? {
+              ...u,
+              subscription: {
+                ...u.subscription,
+                plan: "pro",
+                status: "active",
+                currentPeriodEnd: expiry,
+              },
+            }
+          : u,
+      ),
+    );
+
+    window.dispatchEvent(
+      new CustomEvent("subscriptionUpdated", {
+        detail: {
+          userId: proUserId,
+          plan: "pro",
+          status: "active",
+          currentPeriodEnd: expiry,
+        },
+      }),
+    );
+
+    setIsProModalOpen(false);
+    setProUserId(null);
+    setDuration(30);
+  } catch (error) {
+    console.error("Give Pro Error:", error);
+    alert("Something went wrong while assigning pro plan.");
+  }
+};
+
   const handleRevokePro = async (id) => {
     try {
       const token = localStorage.getItem("token");
@@ -133,6 +212,8 @@ const AdminUsers = () => {
       console.error(error);
     }
   };
+
+  
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -151,6 +232,18 @@ const AdminUsers = () => {
     }
   };
 
+
+  useEffect(() => {
+  const handleSubscriptionUpdated = () => {
+    fetchUsers();
+  };
+
+  window.addEventListener("subscriptionUpdated", handleSubscriptionUpdated);
+
+  return () => {
+    window.removeEventListener("subscriptionUpdated", handleSubscriptionUpdated);
+  };
+}, []);
   const openSingleDelete = (id) => {
     setDeleteTarget("single");
     setActiveId(id);
@@ -462,7 +555,7 @@ const AdminUsers = () => {
                               onClick={() => openCancelModal(user._id)}
                               className="px-3 py-1.5 text-[10px] font-black tracking-widest text-amber-600 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl transition-all uppercase"
                             >
-                              Cancel Plan
+                              Revoke Access
                             </button>
                           ) : (
                             <button
