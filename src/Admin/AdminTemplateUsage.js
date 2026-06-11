@@ -33,7 +33,7 @@ const AdminTemplateUsage = () => {
   useEffect(() => {
     const fetchUsage = async () => {
       try {
-        const res = await fetch("http://localhost:5000/auth/template-usage");
+        const res = await fetch("https://email-syncing-backend.vercel.app/auth/template-usage");
         const data = await res.json();
         setUsageData(data.data || []);
         setGlobalStats(data.globalStats || null);

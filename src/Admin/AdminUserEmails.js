@@ -13,7 +13,7 @@
 //     const fetchUserEmails = async () => {
 //       try {
 //         const res = await fetch(
-//           `http://localhost:5000/auth/email-tracking?userId=${userId}`
+//           `https://email-syncing-backend.vercel.app/auth/email-tracking?userId=${userId}`
 //         );
 //         const data = await res.json();
 
@@ -145,7 +145,7 @@ const AdminUserEmails = () => {
     const fetchUserEmails = async () => {
       try {
         const res = await fetch(
-          `http://localhost:5000/auth/email-tracking?userId=${userId}`,
+          `https://email-syncing-backend.vercel.app/auth/email-tracking?userId=${userId}`,
         );
         const data = await res.json();
         const userData = data.data?.[0];

@@ -20,7 +20,7 @@ const AdminScenarioStats = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch("http://localhost:5000/scenario/scenario-stats");
+        const res = await fetch("https://email-syncing-backend.vercel.app/scenario/scenario-stats");
         const data = await res.json();
         setStats(data.data || []);
       } catch (err) {

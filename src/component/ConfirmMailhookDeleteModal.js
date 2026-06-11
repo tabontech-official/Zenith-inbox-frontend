@@ -17,7 +17,7 @@ const ConfirmMailhookDeleteModal = ({
     try {
       setLoading(true);
       const res = await axios.delete(
-        `http://localhost:5000/mailhookcard/mailhookcard/${mailhook._id}`
+        `https://email-syncing-backend.vercel.app/mailhookcard/mailhookcard/${mailhook._id}`
       );
 
       if (res.data.success) {

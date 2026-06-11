@@ -151,7 +151,7 @@ const OthersScenariosPage = () => {
   const fetchTestEmail = async () => {
     try {
       const res = await fetch(
-        `http://localhost:5000/mailhook/email/latest/${userId}`,
+        `https://email-syncing-backend.vercel.app/mailhook/email/latest/${userId}`,
       );
 
       const data = await res.json();
@@ -196,7 +196,7 @@ const OthersScenariosPage = () => {
   const fetchActiveTemplates = async () => {
     try {
       const res = await fetch(
-        `http://localhost:5000/template/other/active?userId=${userId}`,
+        `https://email-syncing-backend.vercel.app/template/other/active?userId=${userId}`,
       );
 
       const data = await res.json();
@@ -712,7 +712,7 @@ const OthersScenariosPage = () => {
 
       // ⭐ 3. Load scenario
       const res = await fetch(
-        `http://localhost:5000/scenario/detail/${id}`,
+        `https://email-syncing-backend.vercel.app/scenario/detail/${id}`,
       );
       const data = await res.json();
 
@@ -735,7 +735,7 @@ const OthersScenariosPage = () => {
   const fetchConnections = async () => {
     try {
       const res = await fetch(
-        `http://localhost:5000/auth/getConnection/${localStorage.getItem(
+        `https://email-syncing-backend.vercel.app/auth/getConnection/${localStorage.getItem(
           "userid",
         )}`,
       );
@@ -784,8 +784,8 @@ const OthersScenariosPage = () => {
     };
 
     const url = id
-      ? `http://localhost:5000/scenario/detail/${id}`
-      : `http://localhost:5000/scenario`;
+      ? `https://email-syncing-backend.vercel.app/scenario/detail/${id}`
+      : `https://email-syncing-backend.vercel.app/scenario`;
 
     await fetch(url, {
       method: id ? "PUT" : "POST",
@@ -1098,7 +1098,7 @@ const OthersScenariosPage = () => {
       const userId = localStorage.getItem("userid");
 
       const res = await fetch(
-        "http://localhost:5000/template/save/other",
+        "https://email-syncing-backend.vercel.app/template/save/other",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

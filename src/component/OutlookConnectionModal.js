@@ -34,7 +34,7 @@ const OutlookConnectionModal = ({ isOpen, onClose, onSuccess }) => {
       const payload = { ...form, provider: "smtp", userId };
 
       const res = await fetch(
-        "http://localhost:5000/auth/saveSmtpConnection",
+        "https://email-syncing-backend.vercel.app/auth/saveSmtpConnection",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -85,7 +85,7 @@ const OutlookConnectionModal = ({ isOpen, onClose, onSuccess }) => {
 
     const currentPath = window.location.pathname.replace(/^\//, "");
 
-    window.location.href = `http://localhost:5000/auth/outlook?userId=${userId}&redirect=${encodeURIComponent(
+    window.location.href = `https://email-syncing-backend.vercel.app/auth/outlook?userId=${userId}&redirect=${encodeURIComponent(
       currentPath
     )}`;
   };
