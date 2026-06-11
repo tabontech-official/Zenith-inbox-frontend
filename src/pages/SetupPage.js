@@ -1218,40 +1218,41 @@ onClick={async () => {
                       email like the example below.
                     </p>
 
-                    <div
-                      className="
+                   <div
+  className="
     w-full bg-white/50 px-4 py-3 rounded-xl
-    flex flex-col sm:flex-row sm:items-center sm:justify-between
+    flex flex-col sm:flex-row sm:items-start sm:justify-between
     gap-2 sm:gap-4 font-mono text-xs sm:text-sm
     border border-white/70 backdrop-blur-xl
     shadow-[0_4px_20px_rgba(0,0,0,0.1)]
   "
-                    >
-                      <span className="text-[#1A1A1A] font-medium whitespace-nowrap">
-                        Forward emails to:
-                      </span>
+>
+  <span className="text-[#1A1A1A] font-medium whitespace-nowrap">
+    Forward to:
+  </span>
 
-                      <div className="flex items-center gap-2 flex-nowrap">
-                        <span className="text-[#4F46E5] truncate max-w-[220px]">
-                          {user?.mailhook || "loading..."}
-                        </span>
+  <div className="flex items-start  min-w-0 flex-1">
+    <span className="text-[#4F46E5] break-all whitespace-normal text-left flex-1">
+      {user?.mailhook || "loading..."}
+    </span>
 
-                        <button
-                          onClick={() => {
-                            if (user?.mailhook) {
-                              navigator.clipboard.writeText(user.mailhook);
-                              setAlert({
-                                type: "success",
-                                message: "Mailhook copied successfully!",
-                              });
-                            }
-                          }}
-                          className="text-gray-600 hover:text-[#4F46E5] transition"
-                        >
-                          <FiCopy />
-                        </button>
-                      </div>
-                    </div>
+    <button
+      type="button"
+      onClick={() => {
+        if (user?.mailhook) {
+          navigator.clipboard.writeText(user.mailhook);
+          setAlert({
+            type: "success",
+            message: "Mailhook copied successfully!",
+          });
+        }
+      }}
+      className="shrink-0 text-gray-600 hover:text-[#4F46E5] transition mt-0.5"
+    >
+      <FiCopy />
+    </button>
+  </div>
+</div>
                   </div>
                   {/* FORWARDING CONFIRMATION */}
                 {/* FORWARDING CONFIRMATION */}
