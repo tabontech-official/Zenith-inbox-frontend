@@ -28,6 +28,9 @@ const AdminUsers = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [activeId, setActiveId] = useState(null);
+  const [proLoading, setProLoading] = useState(false);
+  const [revokeLoading, setRevokeLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const openProModal = (id) => {
     setProUserId(id);
     setIsProModalOpen(true);
@@ -45,15 +48,16 @@ const AdminUsers = () => {
   };
 
   const confirmRevoke = async () => {
+    if (!cancelUserId) return;
+
     await handleRevokePro(cancelUserId);
 
     setIsCancelModalOpen(false);
     setCancelUserId(null);
   };
-
   // const handleGivePro = async () => {
   //   try {
-  //     const token = localStorage.getItem("token");
+  //     const token = localStorage.getItem("usertoken");
 
   //     if (!duration || duration <= 0) {
   //       alert("Invalid duration");
@@ -61,7 +65,7 @@ const AdminUsers = () => {
   //     }
 
   //     const res = await fetch(
-  //       `https://email-syncing-backend.vercel.app/auth/admin/give-pro/${proUserId}`,
+  //       `http://localhost:5000/auth/admin/give-pro/${proUserId}`,
   //       {
   //         method: "PUT",
   //         headers: {
@@ -103,7 +107,9 @@ const AdminUsers = () => {
 
   const handleGivePro = async () => {
     try {
-      const token = localStorage.getItem("token");
+      setProLoading(true);
+
+      const token = localStorage.getItem("usertoken");
 
       if (!proUserId) {
         alert("User not selected");
@@ -116,7 +122,7 @@ const AdminUsers = () => {
       }
 
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/auth/admin/give-pro/${proUserId}`,
+        `http://localhost:5000/auth/admin/give-pro/${proUserId}`,
         {
           method: "PUT",
           headers: {
@@ -126,7 +132,7 @@ const AdminUsers = () => {
           body: JSON.stringify({
             durationInDays: duration,
           }),
-        },
+        }
       );
 
       const data = await res.json();
@@ -154,8 +160,8 @@ const AdminUsers = () => {
                 currentPeriodEnd: expiry,
               },
             }
-            : u,
-        ),
+            : u
+        )
       );
 
       window.dispatchEvent(
@@ -166,7 +172,7 @@ const AdminUsers = () => {
             status: "active",
             currentPeriodEnd: expiry,
           },
-        }),
+        })
       );
 
       setIsProModalOpen(false);
@@ -175,24 +181,30 @@ const AdminUsers = () => {
     } catch (error) {
       console.error("Give Pro Error:", error);
       alert("Something went wrong while assigning pro plan.");
+    } finally {
+      setProLoading(false);
     }
   };
-
   const handleRevokePro = async (id) => {
     try {
+      setRevokeLoading(true);
+
       const token = localStorage.getItem("token");
 
-      await fetch(
-        `https://email-syncing-backend.vercel.app/auth/admin/revoke-pro/${id}`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+      const res = await fetch(`http://localhost:5000/auth/admin/revoke-pro/${id}`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
         },
-      );
+      });
 
-      // 🔥 update UI instantly
+      const data = await res.json();
+
+      if (!res.ok || data?.success === false) {
+        alert(data?.message || "Failed to revoke pro plan");
+        return;
+      }
+
       setUsers((prev) =>
         prev.map((u) =>
           u._id === id
@@ -205,20 +217,23 @@ const AdminUsers = () => {
                 currentPeriodEnd: null,
               },
             }
-            : u,
-        ),
+            : u
+        )
       );
     } catch (error) {
-      console.error(error);
+      console.error("Revoke Pro Error:", error);
+      alert("Something went wrong while revoking pro plan.");
+    } finally {
+      setRevokeLoading(false);
     }
   };
 
 
   const fetchUsers = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("usertoken");
       const res = await fetch(
-        "https://email-syncing-backend.vercel.app/auth/users",
+        "http://localhost:5000/auth/users",
         {
           headers: { Authorization: `Bearer ${token}` },
         },
@@ -245,7 +260,7 @@ const AdminUsers = () => {
     };
   }, []);
 
-  
+
   const openSingleDelete = (id) => {
     setDeleteTarget("single");
     setActiveId(id);
@@ -256,37 +271,80 @@ const AdminUsers = () => {
     setDeleteTarget("bulk");
     setIsModalOpen(true);
   };
-
   const handleConfirmDelete = async () => {
-    const token = localStorage.getItem("token");
+    try {
+      setDeleteLoading(true);
 
-    if (deleteTarget === "single") {
-      await fetch(
-        `https://email-syncing-backend.vercel.app/auth/user/${activeId}`,
-        {
+      const token = localStorage.getItem("token");
+
+      if (deleteTarget === "single") {
+        if (!activeId) {
+          alert("User not selected");
+          return;
+        }
+
+        const res = await fetch(`http://localhost:5000/auth/user/${activeId}`, {
           method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
-      setUsers((prev) => prev.filter((u) => u._id !== activeId));
-    } else {
-      await fetch(
-        `https://email-syncing-backend.vercel.app/auth/users/bulk-delete`,
-        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        let data = {};
+        const contentType = res.headers.get("content-type");
+
+        if (contentType && contentType.includes("application/json")) {
+          data = await res.json();
+        }
+
+        if (!res.ok) {
+          alert(data?.error || data?.message || "Failed to delete user");
+          return;
+        }
+
+        setUsers((prev) => prev.filter((u) => u._id !== activeId));
+      }
+
+      if (deleteTarget === "bulk") {
+        if (!selectedUsers.length) {
+          alert("No users selected");
+          return;
+        }
+
+        const res = await fetch(`http://localhost:5000/auth/users/bulk-delete`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({ ids: selectedUsers }),
-        },
-      );
-      setUsers((prev) => prev.filter((u) => !selectedUsers.includes(u._id)));
-      setSelectedUsers([]);
-    }
+        });
 
-    setIsModalOpen(false);
-    setActiveId(null);
+        let data = {};
+        const contentType = res.headers.get("content-type");
+
+        if (contentType && contentType.includes("application/json")) {
+          data = await res.json();
+        }
+
+        if (!res.ok) {
+          alert(data?.error || data?.message || "Failed to delete selected users");
+          return;
+        }
+
+        setUsers((prev) => prev.filter((u) => !selectedUsers.includes(u._id)));
+        setSelectedUsers([]);
+      }
+
+      setIsModalOpen(false);
+      setActiveId(null);
+      setDeleteTarget(null);
+    } catch (error) {
+      console.error("Delete Error:", error);
+      alert("Something went wrong while deleting.");
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   const filteredUsers = users
@@ -333,13 +391,19 @@ const AdminUsers = () => {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div
             className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
-            onClick={() => setIsModalOpen(false)}
+            onClick={() => {
+              if (!deleteLoading) {
+                setIsModalOpen(false);
+              }
+            }}
           ></div>
 
           <div className="bg-white rounded-3xl p-8 max-w-sm w-full relative shadow-2xl transform transition-all animate-in zoom-in duration-200">
             <button
+              type="button"
               onClick={() => setIsModalOpen(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"
+              disabled={deleteLoading}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <FiX size={24} />
             </button>
@@ -351,6 +415,7 @@ const AdminUsers = () => {
             <h3 className="text-xl font-bold text-slate-800 text-center mb-2">
               Confirm Delete
             </h3>
+
             <p className="text-slate-500 text-center mb-8">
               {deleteTarget === "single"
                 ? "Are you sure you want to delete this user? This action cannot be undone."
@@ -359,16 +424,24 @@ const AdminUsers = () => {
 
             <div className="flex gap-3">
               <button
+                type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="flex-1 py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl transition-all"
+                disabled={deleteLoading}
+                className="flex-1 py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>
+
               <button
+                type="button"
                 onClick={handleConfirmDelete}
-                className="flex-1 py-3 px-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow-lg shadow-red-200 transition-all"
+                disabled={deleteLoading}
+                className="flex-1 py-3 px-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow-lg shadow-red-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                Yes, Delete
+                {deleteLoading && (
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                )}
+                {deleteLoading ? "Deleting..." : "Yes, Delete"}
               </button>
             </div>
           </div>
@@ -392,7 +465,8 @@ const AdminUsers = () => {
               {selectedUsers.length > 0 && (
                 <button
                   onClick={openBulkDelete}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-100"
+                  disabled={deleteLoading}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-100 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <FiTrash2 /> Bulk Delete ({selectedUsers.length})
                 </button>
@@ -514,8 +588,8 @@ const AdminUsers = () => {
                       <td className="p-5">
                         <span
                           className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${user.role === "admin"
-                              ? "bg-purple-100 text-purple-700"
-                              : "bg-blue-100 text-blue-700"
+                            ? "bg-purple-100 text-purple-700"
+                            : "bg-blue-100 text-blue-700"
                             }`}
                         >
                           {user.role}
@@ -539,8 +613,8 @@ const AdminUsers = () => {
                       <td className="p-5">
                         <span
                           className={`px-3 py-1 rounded-lg text-xs font-bold ${isPro
-                              ? "bg-green-100 text-green-700"
-                              : "bg-gray-100 text-gray-500"
+                            ? "bg-green-100 text-green-700"
+                            : "bg-gray-100 text-gray-500"
                             }`}
                         >
                           {isPro ? "PRO" : "FREE"}
@@ -553,9 +627,10 @@ const AdminUsers = () => {
                           {isPro ? (
                             <button
                               onClick={() => openCancelModal(user._id)}
-                              className="px-3 py-1.5 text-[10px] font-black tracking-widest text-amber-600 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl transition-all uppercase"
+                              disabled={revokeLoading}
+                              className="px-3 py-1.5 text-[10px] font-black tracking-widest text-amber-600 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl transition-all uppercase disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                              Revoke Access
+                              {revokeLoading && cancelUserId === user._id ? "Revoking..." : "Revoke Access"}
                             </button>
                           ) : (
                             <button
@@ -567,8 +642,10 @@ const AdminUsers = () => {
                           )}
 
                           <button
+                            type="button"
                             onClick={() => openSingleDelete(user._id)}
-                            className="p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                            disabled={deleteLoading}
+                            className="p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                             title="Delete User"
                           >
                             <FiTrash2 size={18} />
@@ -604,8 +681,8 @@ const AdminUsers = () => {
                   key={i}
                   onClick={() => setCurrentPage(i + 1)}
                   className={`w-10 h-10 rounded-xl text-sm font-bold transition-all ${currentPage === i + 1
-                      ? "bg-indigo-600 text-white shadow-lg shadow-indigo-100"
-                      : "text-slate-400 hover:bg-white hover:text-indigo-600"
+                    ? "bg-indigo-600 text-white shadow-lg shadow-indigo-100"
+                    : "text-slate-400 hover:bg-white hover:text-indigo-600"
                     }`}
                 >
                   {i + 1}
@@ -628,7 +705,11 @@ const AdminUsers = () => {
           {/* BACKDROP */}
           <div
             className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
-            onClick={() => setIsProModalOpen(false)}
+            onClick={() => {
+              if (!proLoading) {
+                setIsProModalOpen(false);
+              }
+            }}
           ></div>
 
           {/* MODAL */}
@@ -637,7 +718,7 @@ const AdminUsers = () => {
               Assign Pro Plan
             </h3>
 
-            {/* 🔴 DURATION INPUT */}
+            {/* DURATION INPUT */}
             <div className="mb-6">
               <label className="block text-sm font-semibold mb-2 text-slate-600">
                 Duration (Days)
@@ -647,18 +728,24 @@ const AdminUsers = () => {
                 type="number"
                 min={1}
                 value={duration}
+                disabled={proLoading}
                 onChange={(e) => setDuration(Number(e.target.value))}
                 placeholder="Enter number of days"
-                className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
+                className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
               />
 
-              {/* 🔥 QUICK SELECT BUTTONS */}
+              {/* QUICK SELECT BUTTONS */}
               <div className="flex gap-2 mt-3">
                 {[7, 30, 90].map((d) => (
                   <button
                     key={d}
+                    type="button"
+                    disabled={proLoading}
                     onClick={() => setDuration(d)}
-                    className="px-3 py-1 bg-slate-100 hover:bg-indigo-100 rounded-lg text-sm font-medium"
+                    className={`px-3 py-1 rounded-lg text-sm font-medium transition-all ${duration === d
+                        ? "bg-indigo-600 text-white"
+                        : "bg-slate-100 hover:bg-indigo-100 text-slate-700"
+                      } disabled:opacity-50 disabled:cursor-not-allowed`}
                   >
                     {d}d
                   </button>
@@ -669,18 +756,24 @@ const AdminUsers = () => {
             {/* ACTIONS */}
             <div className="flex gap-3">
               <button
+                type="button"
                 onClick={() => setIsProModalOpen(false)}
-                className="flex-1 py-3 bg-gray-200 hover:bg-gray-300 rounded-xl font-semibold"
+                disabled={proLoading}
+                className="flex-1 py-3 bg-gray-200 hover:bg-gray-300 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>
 
               <button
+                type="button"
                 onClick={handleGivePro}
-                disabled={!duration || duration <= 0}
-                className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold disabled:opacity-50"
+                disabled={proLoading || !duration || duration <= 0}
+                className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                Confirm
+                {proLoading && (
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                )}
+                {proLoading ? "Assigning..." : "Confirm"}
               </button>
             </div>
           </div>
@@ -690,7 +783,11 @@ const AdminUsers = () => {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div
             className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
-            onClick={() => setIsCancelModalOpen(false)}
+            onClick={() => {
+              if (!revokeLoading) {
+                setIsCancelModalOpen(false);
+              }
+            }}
           ></div>
 
           <div className="bg-white rounded-3xl p-8 max-w-sm w-full relative shadow-2xl">
@@ -708,17 +805,24 @@ const AdminUsers = () => {
 
             <div className="flex gap-3">
               <button
+                type="button"
                 onClick={() => setIsCancelModalOpen(false)}
-                className="flex-1 py-3 bg-gray-200 rounded-xl font-semibold"
+                disabled={revokeLoading}
+                className="flex-1 py-3 bg-gray-200 hover:bg-gray-300 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>
 
               <button
+                type="button"
                 onClick={confirmRevoke}
-                className="flex-1 py-3 bg-yellow-600 hover:bg-yellow-700 text-white rounded-xl font-semibold"
+                disabled={revokeLoading}
+                className="flex-1 py-3 bg-yellow-600 hover:bg-yellow-700 text-white rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                Yes, Revoke
+                {revokeLoading && (
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                )}
+                {revokeLoading ? "Revoking..." : "Yes, Revoke"}
               </button>
             </div>
           </div>
