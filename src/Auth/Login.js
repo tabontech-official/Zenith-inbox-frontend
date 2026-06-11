@@ -194,7 +194,7 @@
 //             >
 //               Forgot password?
 //             </p>
-            
+
 //           </div>
 //         </motion.div>
 //       </motion.div>
@@ -255,9 +255,12 @@ const LoginPage = () => {
 
       if (response.status === 200) {
         const { token, data } = response.data;
+        const TWO_DAYS = 2 * 24 * 60 * 60 * 1000;
+        const expiryTime = Date.now() + TWO_DAYS;
 
         localStorage.setItem("usertoken", token);
         localStorage.setItem("userid", data._id);
+        localStorage.setItem("loginExpiry", expiryTime.toString());
 
         setUser(data);
         setSuccess("Login successful! Redirecting...");
@@ -380,11 +383,10 @@ const LoginPage = () => {
               whileTap={{ scale: 0.95 }}
               type="submit"
               disabled={loading}
-              className={`w-full ${
-                loading
+              className={`w-full ${loading
                   ? "bg-gray-400 cursor-not-allowed"
                   : "bg-gradient-to-r from-pink-500 to-purple-600"
-              } text-white py-3 rounded-lg font-semibold shadow-md`}
+                } text-white py-3 rounded-lg font-semibold shadow-md`}
             >
               {loading ? "Logging in..." : "Log in"}
             </motion.button>

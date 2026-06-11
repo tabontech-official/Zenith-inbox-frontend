@@ -14,7 +14,7 @@ const RegisterPage = () => {
   const [loading, setLoading] = useState(false);
   const [country, setCountry] = useState("");
   const [website, setWebsite] = useState("");
-  // 🕓 Automatically hide alert after 4 seconds
+
   useEffect(() => {
     if (alert.message) {
       const timer = setTimeout(() => setAlert({ type: "", message: "" }), 4000);
@@ -25,6 +25,7 @@ const RegisterPage = () => {
   const handleClick = () => {
     navigate("/login");
   };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -58,7 +59,6 @@ const RegisterPage = () => {
     }
   };
 
-  // 🔔 Alert Message Component
   const AlertMessage = () =>
     alert.message ? (
       <div
