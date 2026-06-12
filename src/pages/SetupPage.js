@@ -47,14 +47,14 @@ const SetupFlow = () => {
   const stepFromURL = parseInt(query.get("step"), 10);
   const [step, setStep] = useState(stepFromURL || 1);
   useEffect(() => {
-  const query = new URLSearchParams(location.search);
-  if (query.get("step") !== step.toString()) {
-    query.set("step", step);
-    navigate(`${location.pathname}?${query.toString()}`, { replace: true });
-  }
+    const query = new URLSearchParams(location.search);
+    if (query.get("step") !== step.toString()) {
+      query.set("step", step);
+      navigate(`${location.pathname}?${query.toString()}`, { replace: true });
+    }
 
 
-}, [step, navigate, location.pathname, location.search]);
+  }, [step, navigate, location.pathname, location.search]);
   const [showOtherSMTPModal, setShowOtherSMTPModal] = useState(false);
   const [testSent, setTestSent] = useState(false);
   const [sendingMode, setSendingMode] = useState("Auto-Send");
@@ -67,34 +67,34 @@ const SetupFlow = () => {
   const [helpTab, setHelpTab] = useState("gmail");
   const [showInboxModal, setShowInboxModal] = useState(false);
 
-const formatEmailBody = (text = "") => {
-  return text
-    .replace(/\r\n/g, "\n")
-    .replace(/\r/g, "\n")
+  const formatEmailBody = (text = "") => {
+    return text
+      .replace(/\r\n/g, "\n")
+      .replace(/\r/g, "\n")
 
-    .replace(/@import\s+url\([^)]+\)\s*;?/gi, "")
+      .replace(/@import\s+url\([^)]+\)\s*;?/gi, "")
 
-    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
 
-    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
+      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
 
-    .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/\/\*[\s\S]*?\*\//g, "")
 
-    .replace(/^\s*[\w\s.#:,>*-]+\s*\{[^}]*\}\s*$/gm, "")
+      .replace(/^\s*[\w\s.#:,>*-]+\s*\{[^}]*\}\s*$/gm, "")
 
-    .replace(/\n\s*\n+/g, "\n")
+      .replace(/\n\s*\n+/g, "\n")
 
-    .replace(/[ \t]+/g, " ")
+      .replace(/[ \t]+/g, " ")
 
-    .trim()
+      .trim()
 
-    .replace(
-      /(https?:\/\/[^\s<]+)/g,
-      '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-indigo-600 underline break-all">$1</a>'
-    )
+      .replace(
+        /(https?:\/\/[^\s<]+)/g,
+        '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-indigo-600 underline break-all">$1</a>'
+      )
 
-    .replace(/\n/g, "<br />");
-};
+      .replace(/\n/g, "<br />");
+  };
 
 
   const progressWidth =
@@ -826,10 +826,10 @@ const formatEmailBody = (text = "") => {
               {step === 3 && (
                 <button
                   type="button"
-onClick={async () => {
-  setShowInboxModal(true);
-  await fetchMailhookEmails();
-}}                  className="
+                  onClick={async () => {
+                    setShowInboxModal(true);
+                    await fetchMailhookEmails();
+                  }} className="
           absolute left-4 top-1/2 -translate-y-1/2
           flex items-center gap-2
           px-4 py-2.5
@@ -1218,172 +1218,170 @@ onClick={async () => {
                       email like the example below.
                     </p>
 
-                   <div
-  className="
+                    <div
+                      className="
     w-full bg-white/50 px-4 py-3 rounded-xl
     flex flex-col sm:flex-row sm:items-start sm:justify-between
     gap-2 sm:gap-4 font-mono text-xs sm:text-sm
     border border-white/70 backdrop-blur-xl
     shadow-[0_4px_20px_rgba(0,0,0,0.1)]
   "
->
-  <span className="text-[#1A1A1A] font-medium whitespace-nowrap">
-    Forward to:
-  </span>
+                    >
+                      <span className="text-[#1A1A1A] font-medium whitespace-nowrap">
+                        Forward to:
+                      </span>
 
-  <div className="flex items-start  min-w-0 flex-1">
-    <span className="text-[#4F46E5] break-all whitespace-normal text-left flex-1">
-      {user?.mailhook || "loading..."}
-    </span>
+                      <div className="flex items-start  min-w-0 flex-1">
+                        <span className="text-[#4F46E5] break-all whitespace-normal text-left flex-1">
+                          {user?.mailhook || "loading..."}
+                        </span>
 
-    <button
-      type="button"
-      onClick={() => {
-        if (user?.mailhook) {
-          navigator.clipboard.writeText(user.mailhook);
-          setAlert({
-            type: "success",
-            message: "Mailhook copied successfully!",
-          });
-        }
-      }}
-      className="shrink-0 text-gray-600 hover:text-[#4F46E5] transition mt-0.5"
-    >
-      <FiCopy />
-    </button>
-  </div>
-</div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (user?.mailhook) {
+                              navigator.clipboard.writeText(user.mailhook);
+                              setAlert({
+                                type: "success",
+                                message: "Mailhook copied successfully!",
+                              });
+                            }
+                          }}
+                          className="shrink-0 text-gray-600 hover:text-[#4F46E5] transition mt-0.5"
+                        >
+                          <FiCopy />
+                        </button>
+                      </div>
+                    </div>
                   </div>
                   {/* FORWARDING CONFIRMATION */}
-                {/* FORWARDING CONFIRMATION */}
-{!forwardingConfirmed && (
-  <div className="w-full max-w-xl mx-auto mt-6 bg-white/40 border border-white/60 rounded-xl p-6 backdrop-blur-xl shadow">
-    <h3 className="text-lg font-semibold text-[#111827] mb-3">
-      Before we continue
-    </h3>
+                  {/* FORWARDING CONFIRMATION */}
+                  {!forwardingConfirmed && (
+                    <div className="w-full max-w-xl mx-auto mt-6 bg-white/40 border border-white/60 rounded-xl p-6 backdrop-blur-xl shadow">
+                      <h3 className="text-lg font-semibold text-[#111827] mb-3">
+                        Before we continue
+                      </h3>
 
-    {/* TIP 1 */}
-    {!confirmations.forwardingEnabled && (
-      <div className="mb-4 rounded-lg border border-indigo-200 bg-indigo-50/80 px-4 py-3 text-left">
-        <p className="text-sm text-indigo-800 leading-relaxed">
-          <strong>Tip:</strong> If you have enabled email forwarding in your email provider,
-          please check the box below.
-        </p>
-      </div>
-    )}
+                      {/* TIP 1 */}
+                      {!confirmations.forwardingEnabled && (
+                        <div className="mb-4 rounded-lg border border-indigo-200 bg-indigo-50/80 px-4 py-3 text-left">
+                          <p className="text-sm text-indigo-800 leading-relaxed">
+                            <strong>Tip:</strong> If you have enabled email forwarding in your email provider,
+                            please check the box below.
+                          </p>
+                        </div>
+                      )}
 
-    {/* TIP 2 */}
-    {confirmations.forwardingEnabled && !confirmations.provider && (
-      <div className="mb-4 rounded-lg border border-yellow-200 bg-yellow-50/90 px-4 py-3 text-left">
-        <p className="text-sm text-yellow-800 leading-relaxed">
-          <strong>Next:</strong> Now select which provider you used for forwarding.
-          Choose either Gmail / Google or Outlook / Hotmail / Other provider to continue.
-        </p>
-      </div>
-    )}
+                      {/* TIP 2 */}
+                      {confirmations.forwardingEnabled && !confirmations.provider && (
+                        <div className="mb-4 rounded-lg border border-yellow-200 bg-yellow-50/90 px-4 py-3 text-left">
+                          <p className="text-sm text-yellow-800 leading-relaxed">
+                            <strong>Next:</strong> Now select which provider you used for forwarding.
+                            Choose either Gmail / Google or Outlook / Hotmail / Other provider to continue.
+                          </p>
+                        </div>
+                      )}
 
-    {/* SUCCESS TIP */}
-    {confirmations.forwardingEnabled && confirmations.provider && (
-      <div className="mb-4 rounded-lg border border-green-200 bg-green-50/90 px-4 py-3 text-left">
-        <p className="text-sm text-green-800 leading-relaxed">
-          <strong>Ready:</strong> Email forwarding is enabled and your provider is selected.
-          You can move to the next step now.
-        </p>
-      </div>
-    )}
+                      {/* SUCCESS TIP */}
+                      {confirmations.forwardingEnabled && confirmations.provider && (
+                        <div className="mb-4 rounded-lg border border-green-200 bg-green-50/90 px-4 py-3 text-left">
+                          <p className="text-sm text-green-800 leading-relaxed">
+                            <strong>Ready:</strong> Email forwarding is enabled and your provider is selected.
+                            You can move to the next step now.
+                          </p>
+                        </div>
+                      )}
 
-    <div className="space-y-3 text-sm text-gray-700 text-left">
-      {/* Forwarding enabled */}
-      <label className="flex items-start gap-2 cursor-pointer">
-        <input
-          type="checkbox"
-          className="mt-1"
-          checked={confirmations.forwardingEnabled}
-          onChange={(e) =>
-            setConfirmations((prev) => ({
-              forwardingEnabled: e.target.checked,
-              provider: e.target.checked ? prev.provider : null,
-            }))
-          }
-        />
-        <span>
-          I have enabled <strong>email forwarding</strong>
-        </span>
-      </label>
+                      <div className="space-y-3 text-sm text-gray-700 text-left">
+                        {/* Forwarding enabled */}
+                        <label className="flex items-start gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            className="mt-1"
+                            checked={confirmations.forwardingEnabled}
+                            onChange={(e) =>
+                              setConfirmations((prev) => ({
+                                forwardingEnabled: e.target.checked,
+                                provider: e.target.checked ? prev.provider : null,
+                              }))
+                            }
+                          />
+                          <span>
+                            I have enabled <strong>email forwarding</strong>
+                          </span>
+                        </label>
 
-      {/* Gmail */}
-      <label
-        className={`flex items-start gap-2 ${
-          confirmations.forwardingEnabled
-            ? "cursor-pointer"
-            : "cursor-not-allowed opacity-50"
-        }`}
-      >
-        <input
-          type="radio"
-          name="provider"
-          disabled={!confirmations.forwardingEnabled}
-          checked={confirmations.provider === "gmail"}
-          onChange={() =>
-            setConfirmations((prev) => ({
-              ...prev,
-              provider: "gmail",
-            }))
-          }
-        />
-        <span>
-          I set it up using <strong>Gmail / Google</strong>
-        </span>
-      </label>
+                        {/* Gmail */}
+                        <label
+                          className={`flex items-start gap-2 ${confirmations.forwardingEnabled
+                            ? "cursor-pointer"
+                            : "cursor-not-allowed opacity-50"
+                            }`}
+                        >
+                          <input
+                            type="radio"
+                            name="provider"
+                            disabled={!confirmations.forwardingEnabled}
+                            checked={confirmations.provider === "gmail"}
+                            onChange={() =>
+                              setConfirmations((prev) => ({
+                                ...prev,
+                                provider: "gmail",
+                              }))
+                            }
+                          />
+                          <span>
+                            I set it up using <strong>Gmail / Google</strong>
+                          </span>
+                        </label>
 
-      {/* Other providers */}
-      <label
-        className={`flex items-start gap-2 ${
-          confirmations.forwardingEnabled
-            ? "cursor-pointer"
-            : "cursor-not-allowed opacity-50"
-        }`}
-      >
-        <input
-          type="radio"
-          name="provider"
-          disabled={!confirmations.forwardingEnabled}
-          checked={confirmations.provider === "other"}
-          onChange={() =>
-            setConfirmations((prev) => ({
-              ...prev,
-              provider: "other",
-            }))
-          }
-        />
-        <span>
-          I use <strong>Outlook / Hotmail / Other provider</strong>
-        </span>
-      </label>
-    </div>
+                        {/* Other providers */}
+                        <label
+                          className={`flex items-start gap-2 ${confirmations.forwardingEnabled
+                            ? "cursor-pointer"
+                            : "cursor-not-allowed opacity-50"
+                            }`}
+                        >
+                          <input
+                            type="radio"
+                            name="provider"
+                            disabled={!confirmations.forwardingEnabled}
+                            checked={confirmations.provider === "other"}
+                            onChange={() =>
+                              setConfirmations((prev) => ({
+                                ...prev,
+                                provider: "other",
+                              }))
+                            }
+                          />
+                          <span>
+                            I use <strong>Outlook / Hotmail / Other provider</strong>
+                          </span>
+                        </label>
+                      </div>
 
-    {/* PROVIDER REQUIRED MESSAGE */}
-    {confirmations.forwardingEnabled && !confirmations.provider && (
-      <p className="mt-4 text-xs text-red-600 font-medium text-left">
-        Please select one provider option to continue.
-      </p>
-    )}
+                      {/* PROVIDER REQUIRED MESSAGE */}
+                      {confirmations.forwardingEnabled && !confirmations.provider && (
+                        <p className="mt-4 text-xs text-red-600 font-medium text-left">
+                          Please select one provider option to continue.
+                        </p>
+                      )}
 
-    {/* CONTINUE BUTTON - ONLY GMAIL */}
-    {confirmations.forwardingEnabled && confirmations.provider === "gmail" && (
-      <button
-        onClick={() => setForwardingConfirmed(true)}
-        className="
+                      {/* CONTINUE BUTTON - ONLY GMAIL */}
+                      {confirmations.forwardingEnabled && confirmations.provider === "gmail" && (
+                        <button
+                          onClick={() => setForwardingConfirmed(true)}
+                          className="
           mt-6 w-full px-6 py-2 rounded-full text-sm font-semibold
           bg-white/30 border border-white/50 backdrop-blur-xl
           shadow hover:bg-white/40 transition
         "
-      >
-        Continue
-      </button>
-    )}
-  </div>
-)}
+                        >
+                          Continue
+                        </button>
+                      )}
+                    </div>
+                  )}
                   {confirmations.forwardingEnabled &&
                     confirmations.provider === "other" &&
                     !forwardingConfirmed && (
@@ -1622,29 +1620,29 @@ onClick={async () => {
                     </>
                   )}
                   <div className="mt-10 pt-6 flex justify-center w-full max-w-xl  border-white/40">
-                 {!validated &&
-  !validationPhase &&
-  forwardingConfirmed &&
-  (showValidateButton || verificationEmail?.isGmailVerification) ? (
-  <button
-    disabled={validating}
-    onClick={async () => {
-      if (!verificationEmail?.toEmail?.trim()) {
-        setAlert({
-          type: "error",
-          message: "Enter your email address!",
-        });
-        return;
-      }
+                    {!validated &&
+                      !validationPhase &&
+                      forwardingConfirmed &&
+                      (showValidateButton || verificationEmail?.isGmailVerification) ? (
+                      <button
+                        disabled={validating}
+                        onClick={async () => {
+                          if (!verificationEmail?.toEmail?.trim()) {
+                            setAlert({
+                              type: "error",
+                              message: "Enter your email address!",
+                            });
+                            return;
+                          }
 
-      setValidating(true);
-      setValidationFailed(false);
-      setShowValidateButton(false);
-      setValidationPhase(true);
+                          setValidating(true);
+                          setValidationFailed(false);
+                          setShowValidateButton(false);
+                          setValidationPhase(true);
 
-      await handleValidateForwarding();
-    }}
-    className="
+                          await handleValidateForwarding();
+                        }}
+                        className="
       flex items-center gap-2 px-6 py-2 rounded-full
       text-sm font-semibold text-[#111827]
       bg-white/30 border border-white/50
@@ -1654,20 +1652,20 @@ onClick={async () => {
       transition-all
       disabled:opacity-50 disabled:cursor-not-allowed
     "
-  >
-    {validating ? "Validating..." : "Validate Forwarding"}
-    <FiArrowRight className="text-indigo-600" />
-  </button>
-) : validated ? (
-  <button
-    onClick={async () => {
-      await saveSetupProgress({
-        stepCompleted: 3,
-        stepStatus: "completed",
-      });
-      setStep(4);
-    }}
-    className="
+                      >
+                        {validating ? "Validating..." : "Validate Forwarding"}
+                        <FiArrowRight className="text-indigo-600" />
+                      </button>
+                    ) : validated ? (
+                      <button
+                        onClick={async () => {
+                          await saveSetupProgress({
+                            stepCompleted: 3,
+                            stepStatus: "completed",
+                          });
+                          setStep(4);
+                        }}
+                        className="
       flex items-center gap-2 px-6 py-2 rounded-full
       text-sm font-semibold text-[#111827]
       bg-white/30 border border-white/50
@@ -1676,10 +1674,10 @@ onClick={async () => {
       hover:bg-white/40 hover:shadow-[0_10px_30px_rgba(0,0,0,0.16)]
       transition-all
     "
-  >
-    Next <FiArrowRight />
-  </button>
-) : null}
+                      >
+                        Next <FiArrowRight />
+                      </button>
+                    ) : null}
                   </div>
                 </div>
               )}
@@ -1711,11 +1709,11 @@ onClick={async () => {
                     </h2>
 
                     <p className="text-gray-700 text-sm sm:text-base mb-8 max-w-md mx-auto">
-                      Configure how{" "}
+                      Configure {" "}
                       <span className="font-semibold text-indigo-600">
                         Replex Engine
                       </span>{" "}
-                      will send replies from your email address.
+                      to reply from your email.
                     </p>
                   </div>
 
@@ -2206,118 +2204,118 @@ onClick={async () => {
               </div>
 
               {/* BODY */}
-             {/* BODY */}
-<div className="px-6 py-5 overflow-y-auto max-h-[58vh] custom-scrollbar">
-  <div className="flex justify-end mb-4">
-    <button
-      onClick={() => {
-        if (user?._id) fetchMailhookEmails();
-      }}
-      disabled={loadingMailhookEmails}
-      className="
+              {/* BODY */}
+              <div className="px-6 py-5 overflow-y-auto max-h-[58vh] custom-scrollbar">
+                <div className="flex justify-end mb-4">
+                  <button
+                    onClick={() => {
+                      if (user?._id) fetchMailhookEmails();
+                    }}
+                    disabled={loadingMailhookEmails}
+                    className="
         px-3 py-1.5 text-xs rounded-full
         bg-indigo-100 text-indigo-700
         border border-indigo-200
         hover:bg-indigo-200 transition
         disabled:opacity-50 disabled:cursor-not-allowed
       "
-    >
-      {loadingMailhookEmails ? "Checking..." : "Retry"}
-    </button>
-  </div>
+                  >
+                    {loadingMailhookEmails ? "Checking..." : "Retry"}
+                  </button>
+                </div>
 
-  {loadingMailhookEmails ? (
-    <div className="flex flex-col items-center justify-center text-center rounded-2xl bg-gray-50/80 border border-gray-200 py-12">
-      <div className="w-10 h-10 rounded-full border-2 border-indigo-200 border-t-indigo-600 animate-spin mb-4" />
-      <p className="text-sm font-semibold text-gray-700">
-        Loading emails...
-      </p>
-      <p className="text-xs text-gray-500 mt-1">
-        Checking your mailhook inbox.
-      </p>
-    </div>
-  ) : latestMailhookEmails.length === 0 ? (
-    <div className="flex flex-col items-center justify-center text-center rounded-2xl bg-gray-50/80 border border-dashed border-gray-300 px-6 py-12">
-      <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-indigo-50 text-indigo-600 border border-indigo-100 mb-4">
-        <FiMail className="text-xl" />
-      </div>
+                {loadingMailhookEmails ? (
+                  <div className="flex flex-col items-center justify-center text-center rounded-2xl bg-gray-50/80 border border-gray-200 py-12">
+                    <div className="w-10 h-10 rounded-full border-2 border-indigo-200 border-t-indigo-600 animate-spin mb-4" />
+                    <p className="text-sm font-semibold text-gray-700">
+                      Loading emails...
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Checking your mailhook inbox.
+                    </p>
+                  </div>
+                ) : latestMailhookEmails.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center text-center rounded-2xl bg-gray-50/80 border border-dashed border-gray-300 px-6 py-12">
+                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-indigo-50 text-indigo-600 border border-indigo-100 mb-4">
+                      <FiMail className="text-xl" />
+                    </div>
 
-      <p className="text-sm font-semibold text-gray-800">
-        No emails received yet.
-      </p>
+                    <p className="text-sm font-semibold text-gray-800">
+                      No emails received yet.
+                    </p>
 
-      <p className="text-xs text-gray-500 mt-1 max-w-sm">
-        Once forwarding is active, incoming messages will appear here.
-      </p>
-    </div>
-  ) : (
-    <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden text-left">
-      {/* EMAIL HEADER */}
-      <div className="px-5 py-4 border-b border-gray-200 bg-gray-50/80">
-        <h4 className="text-base sm:text-lg font-bold text-gray-900 leading-snug break-words">
-          {latestMailhookEmails[0]?.subject || "No subject"}
-        </h4>
+                    <p className="text-xs text-gray-500 mt-1 max-w-sm">
+                      Once forwarding is active, incoming messages will appear here.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden text-left">
+                    {/* EMAIL HEADER */}
+                    <div className="px-5 py-4 border-b border-gray-200 bg-gray-50/80">
+                      <h4 className="text-base sm:text-lg font-bold text-gray-900 leading-snug break-words">
+                        {latestMailhookEmails[0]?.subject || "No subject"}
+                      </h4>
 
-        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <p className="text-xs text-gray-500">From</p>
-            <p className="text-sm font-semibold text-gray-800 break-all">
-              {latestMailhookEmails[0]?.sender ||
-                latestMailhookEmails[0]?.from ||
-                "Unknown sender"}
-            </p>
-          </div>
+                      <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <p className="text-xs text-gray-500">From</p>
+                          <p className="text-sm font-semibold text-gray-800 break-all">
+                            {latestMailhookEmails[0]?.sender ||
+                              latestMailhookEmails[0]?.from ||
+                              "Unknown sender"}
+                          </p>
+                        </div>
 
-          <div className="sm:text-right">
-            <p className="text-xs text-gray-500">Received</p>
-            <p className="text-xs font-medium text-gray-600">
-              {latestMailhookEmails[0]?.date
-                ? new Date(latestMailhookEmails[0].date).toLocaleString()
-                : "Unknown date"}
-            </p>
-          </div>
-        </div>
-      </div>
+                        <div className="sm:text-right">
+                          <p className="text-xs text-gray-500">Received</p>
+                          <p className="text-xs font-medium text-gray-600">
+                            {latestMailhookEmails[0]?.date
+                              ? new Date(latestMailhookEmails[0].date).toLocaleString()
+                              : "Unknown date"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
 
-      {/* EMAIL BODY - no inner scrollbar */}
-      <div className="px-5 py-5">
-        <div
-          className="
+                    {/* EMAIL BODY - no inner scrollbar */}
+                    <div className="px-5 py-5">
+                      <div
+                        className="
             prose prose-sm max-w-none
             text-gray-700 leading-6 break-words
             [&_a]:text-indigo-600 [&_a]:underline [&_a]:break-all
             [&_p]:mb-3 [&_br]:leading-6
           "
-         dangerouslySetInnerHTML={{
-  __html: formatEmailBody(
-    latestMailhookEmails[0]?.htmlBody ||
-      latestMailhookEmails[0]?.formattedBody ||
-      latestMailhookEmails[0]?.textBody ||
-      "No email body available."
-  ),
-}}
-        />
+                        dangerouslySetInnerHTML={{
+                          __html: formatEmailBody(
+                            latestMailhookEmails[0]?.htmlBody ||
+                            latestMailhookEmails[0]?.formattedBody ||
+                            latestMailhookEmails[0]?.textBody ||
+                            "No email body available."
+                          ),
+                        }}
+                      />
 
-        {latestMailhookEmails[0]?.verificationUrl && (
-          <a
-            href={latestMailhookEmails[0].verificationUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="
+                      {latestMailhookEmails[0]?.verificationUrl && (
+                        <a
+                          href={latestMailhookEmails[0].verificationUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="
               inline-flex items-center justify-center
               mt-5 px-4 py-2 rounded-full
               text-sm font-semibold
               bg-indigo-600 text-white
               hover:bg-indigo-700 transition
             "
-          >
-            Open Verification Link
-          </a>
-        )}
-      </div>
-    </div>
-  )}
-</div>
+                        >
+                          Open Verification Link
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
               {/* FOOTER */}
               <div className="px-6 py-4 border-t border-gray-200/70 bg-gray-50/80 flex items-center justify-between gap-3">
                 <p className="text-xs text-gray-500 text-left">

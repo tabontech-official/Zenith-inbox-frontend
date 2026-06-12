@@ -25,10 +25,25 @@ const RegisterPage = () => {
   const handleClick = () => {
     navigate("/login");
   };
+  const normalizeWebsite = (url) => {
+    if (!url) return "";
+
+    const trimmedUrl = url.trim();
+
+    if (
+      trimmedUrl.startsWith("http://") ||
+      trimmedUrl.startsWith("https://")
+    ) {
+      return trimmedUrl;
+    }
+
+    return `https://${trimmedUrl}`;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    const finalWebsite = normalizeWebsite(website);
 
     try {
       const response = await axios.post(
@@ -38,7 +53,7 @@ const RegisterPage = () => {
           email,
           password,
           country,
-          website,
+          website: finalWebsite,
         },
       );
 
@@ -62,11 +77,10 @@ const RegisterPage = () => {
   const AlertMessage = () =>
     alert.message ? (
       <div
-        className={`my-4 p-3 rounded-md text-sm text-center font-medium ${
-          alert.type === "success"
+        className={`my-4 p-3 rounded-md text-sm text-center font-medium ${alert.type === "success"
             ? "bg-green-100 text-green-700 border border-green-300"
             : "bg-red-100 text-red-700 border border-red-300"
-        }`}
+          }`}
       >
         {alert.message}
       </div>
@@ -138,7 +152,7 @@ const RegisterPage = () => {
                   Website
                 </label>
                 <input
-                  type="url"
+                  type="text"
                   className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
                   placeholder="https://yourwebsite.com"
                   value={website}
@@ -173,11 +187,10 @@ const RegisterPage = () => {
               whileTap={{ scale: 0.95 }}
               type="submit"
               disabled={loading}
-              className={`w-full ${
-                loading
+              className={`w-full ${loading
                   ? "bg-gray-400 cursor-not-allowed"
                   : "bg-gradient-to-r from-pink-500 to-purple-600"
-              } text-white py-3 rounded-lg font-semibold shadow-md transition`}
+                } text-white py-3 rounded-lg font-semibold shadow-md transition`}
             >
               {loading ? "Signing up..." : "Sign up"}
             </motion.button>
