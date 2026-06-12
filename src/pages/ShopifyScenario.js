@@ -359,13 +359,13 @@ const ShopifyScenariosPage = () => {
         data.routerBranches?.length > 0
           ? data.routerBranches
           : [
-              {
-                id: Date.now(),
-                hasModule: false,
-                condition: null,
-                modules: [],
-              },
-            ],
+            {
+              id: Date.now(),
+              hasModule: false,
+              condition: null,
+              modules: [],
+            },
+          ],
       );
 
       if (typeof data.scenarioActive === "boolean") {
@@ -403,13 +403,13 @@ const ShopifyScenariosPage = () => {
           freshData.routerBranches?.length > 0
             ? freshData.routerBranches
             : [
-                {
-                  id: Date.now(),
-                  hasModule: false,
-                  condition: null,
-                  modules: [],
-                },
-              ],
+              {
+                id: Date.now(),
+                hasModule: false,
+                condition: null,
+                modules: [],
+              },
+            ],
         );
         setScenarioName(freshData.name || scenarioName);
         setScenarioDescription(freshData.description || scenarioDescription);
@@ -547,13 +547,13 @@ const ShopifyScenariosPage = () => {
             Array.isArray(data.routerBranches) && data.routerBranches.length > 0
               ? data.routerBranches
               : [
-                  {
-                    id: Date.now(),
-                    hasModule: false,
-                    condition: null,
-                    modules: [],
-                  },
-                ],
+                {
+                  id: Date.now(),
+                  hasModule: false,
+                  condition: null,
+                  modules: [],
+                },
+              ],
           );
 
           if (data.scenarioActive === true) {
@@ -575,7 +575,7 @@ const ShopifyScenariosPage = () => {
           localStorage.removeItem("scenarioId");
           localStorage.removeItem("scenarioActive");
         }
-      } catch (err) {}
+      } catch (err) { }
     };
 
     fetchScenario();
@@ -605,23 +605,30 @@ const ShopifyScenariosPage = () => {
         selectedApp?.name === "Gmail"
       ) {
         type = selectedApp.name === "Email" ? "Custom Email" : "Send an Email";
-        description = `Send email via ${selectedAppType || selectedApp.name}`;
       }
+
+      const moduleName =
+        selectedApp?.displayName ||
+        selectedTemplate ||
+        selectedApp?.defaultTemplate ||
+        selectedApp?.name ||
+        "Initial Email";
+
+      const moduleDescription =
+        selectedApp?.name === "Delay"
+          ? description
+          : `Send email via ${selectedAppType || selectedApp?.name || "Gmail"}`;
 
       const moduleData = {
         id: editingModuleId || Date.now(),
         app: {
           ...selectedApp,
-          name:
-            selectedApp.displayName ||
-            selectedTemplate ||
-            selectedApp.defaultTemplate ||
-            "Unnamed Module",
-          color: selectedApp.color,
-          icon: selectedApp.icon,
+          name: moduleName,
+          color: selectedApp?.color || "bg-red-500",
+          icon: selectedApp?.icon || "Gmail",
         },
         type,
-        description,
+        description: moduleDescription,
         connectionId: selectedConnection,
         template: selectedTemplate,
         cc: ccList,
@@ -702,10 +709,28 @@ const ShopifyScenariosPage = () => {
       setDelayUnit(module.delayUnit || "seconds");
       setSelectedAppType("Delay");
     } else {
-      setSelectedApp(module.app || {});
-      setSelectedAppType(module.emailType || module.app?.name || "");
+      const fixedTitle = getModuleTitle(module);
+      const fixedEmailType =
+        module.emailType ||
+        (module.app?.name === "Email" ? "Email" : "") ||
+        (module.app?.name === "Gmail" ? "Gmail" : "") ||
+        "Gmail";
+
+      setSelectedApp({
+        ...(module.app || {}),
+        name:
+          fixedEmailType === "Email"
+            ? "Email"
+            : "Gmail",
+        displayName: fixedTitle,
+        defaultTemplate: module.template || fixedTitle,
+        color: module.app?.color || "bg-red-500",
+        icon: module.app?.icon || "Gmail",
+      });
+
+      setSelectedAppType(fixedEmailType);
       setSelectedConnection(module.connectionId || "");
-      setSelectedTemplate(module.template || "");
+      setSelectedTemplate(module.template || fixedTitle);
       setSubject(module.subject || "");
       setCcList(module.cc || []);
       setBccList(module.bcc || []);
@@ -735,7 +760,7 @@ const ShopifyScenariosPage = () => {
             localStorage.setItem("skipScenarioFetch", "true");
           } else {
           }
-        } catch (err) {}
+        } catch (err) { }
         localStorage.removeItem("shopifyScenarioState");
       }
 
@@ -837,17 +862,15 @@ const ShopifyScenariosPage = () => {
             onEdit && onEdit();
           }
         }}
-        className={`bg-white rounded-xl shadow-lg border-2 ${color} p-6 w-64 hover:shadow-xl transition-all duration-200 relative cursor-pointer ${
-          completed
-            ? "ring-2 ring-green-400 border-green-500"
-            : "ring-2 ring-red-200"
-        }`}
+        className={`bg-white rounded-xl shadow-lg border-2 ${color} p-6 w-64 hover:shadow-xl transition-all duration-200 relative cursor-pointer ${completed
+          ? "ring-2 ring-green-400 border-green-500"
+          : "ring-2 ring-red-200"
+          }`}
       >
         {completed !== null && (
           <div
-            className={`absolute -top-3 -left-3 w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md transition-all duration-300 ${
-              completed ? "bg-green-500" : "bg-red-500"
-            }`}
+            className={`absolute -top-3 -left-3 w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md transition-all duration-300 ${completed ? "bg-green-500" : "bg-red-500"
+              }`}
           >
             {completed ? "✓" : "✗"}
           </div>
@@ -864,11 +887,10 @@ const ShopifyScenariosPage = () => {
               }
             }}
             title={isWebhook ? "View Webhook Info" : "View Test Email"}
-            className={`absolute top-2 right-2 p-1.5 border ${
-              isWebhook
-                ? "border-red-500 text-red-600 hover:bg-red-50"
-                : "border-green-500 text-green-600 hover:bg-green-50"
-            } rounded-lg transition-colors shadow-sm`}
+            className={`absolute top-2 right-2 p-1.5 border ${isWebhook
+              ? "border-red-500 text-red-600 hover:bg-red-50"
+              : "border-green-500 text-green-600 hover:bg-green-50"
+              } rounded-lg transition-colors shadow-sm`}
           >
             <Eye className="w-4 h-4" />
           </button>
@@ -881,16 +903,14 @@ const ShopifyScenariosPage = () => {
               .replace("-500", "-100")} p-3 rounded-lg`}
           >
             <Icon
-              className={`w-6 h-6 ${
-                completed ? "text-green-500" : color.replace("border-", "text-")
-              }`}
+              className={`w-6 h-6 ${completed ? "text-green-500" : color.replace("border-", "text-")
+                }`}
             />
           </div>
           <div className="flex-1">
             <h3
-              className={`font-semibold text-sm ${
-                completed ? "text-green-600" : "text-gray-800"
-              }`}
+              className={`font-semibold text-sm ${completed ? "text-green-600" : "text-gray-800"
+                }`}
             >
               {title}
             </h3>
@@ -1020,7 +1040,7 @@ const ShopifyScenariosPage = () => {
           });
         } else {
         }
-      } catch (err) {}
+      } catch (err) { }
     };
 
     if (showRunTestModal) {
@@ -1221,6 +1241,8 @@ const ShopifyScenariosPage = () => {
 
       if (data.success) {
         toast.success("Test completed successfully!");
+        setHighlightRunTest(false);
+        setTestEmailGenerated(true);
         setShowValidation(true);
         setSelectedServiceForTemplates(formData.service);
 
@@ -1311,6 +1333,20 @@ const ShopifyScenariosPage = () => {
   const [emailFields, setEmailFields] = useState({});
   const [selectedField, setSelectedField] = useState(null);
   const [automationOn, setAutomationOn] = useState(false);
+  const [highlightRunTest, setHighlightRunTest] = useState(false);
+  const [testEmailGenerated, setTestEmailGenerated] = useState(false);
+  const runTestButtonRef = useRef(null);
+  const webhookNodeRef = useRef(null);
+  const routerNodeRef = useRef(null);
+  const saveScenarioButtonRef = useRef(null);
+  const activateScenarioRef = useRef(null);
+
+  const scrollToRef = (ref) => {
+    ref.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+  };
 
   const handleViewEmailData = async () => {
     try {
@@ -1323,11 +1359,15 @@ const ShopifyScenariosPage = () => {
       const data = await res.json();
 
       if (!data.success || !data.email) {
-        toast.error("No test email found.", { id: "email" });
+        toast.error("No test email found. Please generate a test email first.", { id: "email" });
+        setHighlightRunTest(true);
+        setTestEmailGenerated(false);
         return;
       }
 
       toast.success("Test email fetched successfully!", { id: "email" });
+      setHighlightRunTest(false);
+      setTestEmailGenerated(true);
 
       setEmailFields(data.email);
       setShowEmailPreview(true);
@@ -1476,12 +1516,292 @@ const ShopifyScenariosPage = () => {
     }
   }, [showServiceModal, showEditTemplateModal, showEmailPreview]);
 
+  const getEmailModules = () => {
+    return routerBranches.flatMap((branch) =>
+      (branch.modules || []).filter((m) => {
+        const name = (m.app?.name || "").toLowerCase();
+
+        return (
+          name.includes("gmail") ||
+          name.includes("email") ||
+          name.includes("follow") ||
+          name.includes("initial")
+        );
+      })
+    );
+  };
+
+  const findFirstMissingEmailModule = () => {
+    for (let branchIndex = 0; branchIndex < routerBranches.length; branchIndex++) {
+      const branch = routerBranches[branchIndex];
+
+      for (const module of branch.modules || []) {
+        const name = (module.app?.name || "").toLowerCase();
+
+        const isEmailModule =
+          name.includes("gmail") ||
+          name.includes("email") ||
+          name.includes("follow") ||
+          name.includes("initial");
+
+        const connectionId = (module.connectionId || "").toString().trim();
+
+        const missing =
+          isEmailModule &&
+          (!connectionId ||
+            connectionId === "null" ||
+            connectionId === "undefined" ||
+            connectionId === "(empty)");
+
+        if (missing) {
+          return { branchIndex, module };
+        }
+      }
+    }
+
+    return null;
+  };
+
+  const isModuleCompleted = (module) => {
+    const name = (module.app?.name || "").toLowerCase();
+    const type = (module.type || "").toLowerCase();
+
+    const isDelay = name.includes("delay") || type === "delay";
+
+    if (isDelay) {
+      return Boolean(module.delayValue && module.delayUnit);
+    }
+
+    const isEmailModule =
+      name.includes("gmail") ||
+      name.includes("email") ||
+      name.includes("follow") ||
+      name.includes("initial");
+
+    if (isEmailModule) {
+      const connectionId = (module.connectionId || "").toString().trim();
+
+      return (
+        connectionId &&
+        connectionId !== "null" &&
+        connectionId !== "undefined" &&
+        connectionId !== "(empty)"
+      );
+    }
+
+    return false;
+  };
+
+  const emailModules = getEmailModules();
+
+  const allEmailModulesConfigured =
+    emailModules.length > 0 &&
+    emailModules.every((m) => {
+      const connectionId = (m.connectionId || "").toString().trim();
+      return (
+        connectionId &&
+        connectionId !== "null" &&
+        connectionId !== "undefined" &&
+        connectionId !== "(empty)"
+      );
+    });
+
+  const selectedConnections = emailModules
+    .map((m) => connections.find((c) => c._id === m.connectionId))
+    .filter(Boolean);
+
+  const allSelectedConnectionsVerified =
+    selectedConnections.length > 0 &&
+    selectedConnections.every((c) => c.verified === true);
+
+  const hasTestEmail =
+    Boolean(emailFields && Object.keys(emailFields).length > 0) ||
+    showValidation ||
+    testEmailGenerated;
+
+  const setupSteps = [
+    {
+      key: "webhook",
+      label: "Webhook ready",
+      completed: Boolean(user?.mailhook),
+    },
+    {
+      key: "router",
+      label: "Router configured",
+      completed: Array.isArray(routerBranches) && routerBranches.length > 0,
+    },
+    {
+      key: "testEmail",
+      label: "Test email generated",
+      completed: hasTestEmail,
+    },
+    {
+      key: "emailModules",
+      label: "Email modules configured",
+      completed: allEmailModulesConfigured,
+    },
+    {
+      key: "connections",
+      label: "Connections verified",
+      completed: allSelectedConnectionsVerified,
+    },
+    {
+      key: "templates",
+      label: "Templates active",
+      completed: showValidation || allTemplatesActive,
+    },
+    {
+      key: "scenarioSaved",
+      label: "Scenario saved",
+      completed: Boolean(scenarioId) && isScenarioUpdated,
+    },
+    {
+      key: "scenarioActivated",
+      label: "Scenario activated",
+      completed: automationOn,
+    },
+  ];
+
+  const handleSetupStepClick = (stepKey) => {
+    switch (stepKey) {
+      case "webhook":
+        scrollToRef(webhookNodeRef);
+        setShowWebhookInfo(true);
+        break;
+
+      case "router":
+        scrollToRef(routerNodeRef);
+        handleViewEmailData();
+        break;
+
+      case "testEmail":
+        scrollToRef(runTestButtonRef);
+        setHighlightRunTest(true);
+        break;
+
+      case "emailModules": {
+        const firstMissing = findFirstMissingEmailModule();
+
+        if (firstMissing) {
+          handleEditModule(firstMissing.branchIndex, firstMissing.module);
+        } else {
+          toast.success("All email modules are configured.");
+        }
+
+        break;
+      }
+
+      case "connections": {
+        const unverified = selectedConnections.filter((c) => !c.verified);
+
+        if (unverified.length > 0) {
+          setUnverifiedConnections(unverified);
+          setShowVerifyModal(true);
+        } else {
+          toast.success("All selected connections are verified.");
+        }
+
+        break;
+      }
+
+      case "templates":
+        setShowServiceModal(true);
+        break;
+
+      case "scenarioSaved":
+        scrollToRef(saveScenarioButtonRef);
+        break;
+
+      case "scenarioActivated":
+        scrollToRef(activateScenarioRef);
+        break;
+
+      default:
+        break;
+    }
+  };
+
+  const getModuleTitle = (module) => {
+    const rawName = module?.app?.name || "";
+    const template = module?.template || module?.app?.defaultTemplate || "";
+    const emailType = module?.emailType || "";
+
+    if (rawName === "First Email") return "First Follow-up";
+    if (rawName === "Second Email") return "Second Follow-up";
+
+    if (
+      !rawName ||
+      rawName === "Unnamed Module" ||
+      rawName.toLowerCase() === "gmail" ||
+      rawName.toLowerCase() === "email"
+    ) {
+      if (template) return template;
+
+      if (emailType === "Gmail" || emailType === "Email") {
+        return "Initial Email";
+      }
+
+      return "Initial Email";
+    }
+
+    return rawName;
+  };
+
+  const SetupProgressCard = () => {
+    const completedCount = setupSteps.filter((s) => s.completed).length;
+
+    return (
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 w-full lg:w-72">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-bold text-gray-800">Setup Progress</h3>
+          <span className="text-xs text-gray-500">
+            {completedCount}/{setupSteps.length}
+          </span>
+        </div>
+
+        <div className="space-y-2">
+          {setupSteps.map((step) => (
+            <button
+              key={step.key}
+              type="button"
+              onClick={() => handleSetupStepClick(step.key)}
+              className={`w-full flex items-center justify-between gap-3 rounded-lg border px-3 py-2 text-xs text-left transition ${step.completed
+                ? "bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+                : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-yellow-50 hover:border-yellow-300"
+                }`}
+            >
+              <div className="flex items-center gap-2">
+                <span
+                  className={`w-4 h-4 rounded border flex items-center justify-center text-[10px] ${step.completed
+                    ? "bg-green-500 border-green-500 text-white"
+                    : "bg-white border-gray-300"
+                    }`}
+                >
+                  {step.completed ? "✓" : ""}
+                </span>
+
+                <span className="font-medium">{step.label}</span>
+              </div>
+
+              <span
+                className={`font-semibold ${step.completed ? "text-green-600" : "text-gray-400"
+                  }`}
+              >
+                {step.completed ? "Done" : "Pending"}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 font-inter">
       <Sidebar />
 
       <div className="flex-1 flex flex-col overflow-hidden md:ml-64 ml-0 transition-all duration-300">
-        <div className="bg-white border-b px-4 sm:px-6 py-1  shadow-sm">
+        <div className="sticky top-0 z-30 bg-white border-b px-4 sm:px-6 py-1 shadow-sm">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-0.5">
             <div className="flex-1">
               <input
@@ -1496,25 +1816,42 @@ const ShopifyScenariosPage = () => {
               </p>
             </div>
             <div className="flex flex-wrap justify-start gap-3">
-             
-              <button
-                onClick={handleSaveScenario}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
-              >
-                {editingMode === "update" || scenarioId
-                  ? "Update Scenario"
-                  : "Add Scenario"}
-              </button>
 
-              <button
-                onClick={() => setShowRunTestModal(true)}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center text-sm"
-              >
-                <Zap className="w-4 h-4 mr-2" />
-                Run Test
-              </button>
+              <div ref={saveScenarioButtonRef} className="relative">
+                <button
+                  onClick={handleSaveScenario}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+                >
+                  {editingMode === "update" || scenarioId
+                    ? "Update Scenario"
+                    : "Add Scenario"}
+                </button>
+              </div>
 
-              <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-full shadow-sm border">
+              <div ref={runTestButtonRef} className="relative">
+                <button
+                  onClick={() => {
+                    setHighlightRunTest(false);
+                    setShowRunTestModal(true);
+                  }}
+                  className={`px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center text-sm ${highlightRunTest
+                    ? "animate-pulse ring-4 ring-yellow-400 shadow-lg shadow-yellow-300"
+                    : ""
+                    }`}
+                >
+                  <Zap className="w-4 h-4 mr-2" />
+                  Run Test
+                </button>
+
+                {highlightRunTest && (
+                  <div className="absolute right-0 top-full mt-3 w-72 bg-yellow-50 border border-yellow-300 text-yellow-900 text-sm rounded-lg shadow-xl p-3 z-50">
+                    <div className="absolute -top-2 right-8 w-4 h-4 bg-yellow-50 border-l border-t border-yellow-300 rotate-45"></div>
+                    Click this button to generate a test email. After that, the Router will show the email data.
+                  </div>
+                )}
+              </div>
+
+              <div ref={activateScenarioRef} className="flex items-center gap-2 bg-white px-3 py-2 rounded-full shadow-sm border">
                 <span className="text-xs sm:text-sm font-medium text-gray-700">
                   Activate Scenario
                 </span>
@@ -1548,7 +1885,7 @@ const ShopifyScenariosPage = () => {
 
                             const connection =
                               m.connectionId &&
-                              typeof m.connectionId === "string"
+                                typeof m.connectionId === "string"
                                 ? m.connectionId.trim()
                                 : (m.connectionId ?? "").toString().trim();
 
@@ -1655,9 +1992,8 @@ const ShopifyScenariosPage = () => {
                 </label>
 
                 <span
-                  className={`text-xs font-semibold ${
-                    automationOn ? "text-green-600" : "text-gray-400"
-                  }`}
+                  className={`text-xs font-semibold ${automationOn ? "text-green-600" : "text-gray-400"
+                    }`}
                 >
                   {automationOn ? "ON" : "OFF"}
                 </span>
@@ -1666,7 +2002,7 @@ const ShopifyScenariosPage = () => {
           </div>
         </div>
 
-        <div className="flex-1 overflow-auto p-8">
+        <div className="flex-1 overflow-auto p-4 lg:p-8">
           {guideStep > 0 && (
             <div
               className="
@@ -1678,540 +2014,540 @@ const ShopifyScenariosPage = () => {
             ></div>
           )}
 
-          <div className="max-w-5xl mx-auto">
-            <div className="flex flex-col items-center mb-8">
-              <div className={guideStep === 1 ? "relative z-[70]" : "relative"}>
-                {/* GUIDE STEP 1 */}
-                {guideStep === 1 && (
-                  <div
-                    className="
-      absolute top-1/2 left-full -translate-y-1/2 ml-4
-      w-72 bg-white shadow-xl border border-gray-200 
-      rounded-lg p-4 z-[80]
-    "
-                  >
-                    {/* ARROW pointing left */}
-                    <div
-                      className="
-          absolute top-1/2 -left-2 -translate-y-1/2
-          w-4 h-4 bg-white rotate-45
-          border-b border-r border-gray-200
+          <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-6">
+            <aside className="w-full lg:w-72 lg:sticky lg:top-24 self-start z-20">
+              <SetupProgressCard />
+            </aside>
+            <div className="flex-1">
+              <div className="max-w-5xl mx-auto">
+                <div className="flex flex-col items-center mb-8">
+                  <div ref={webhookNodeRef} className={guideStep === 1 ? "relative z-[70]" : "relative"}>
+                    {/* GUIDE STEP 1 */}
+                    {guideStep === 1 && (
+                      <div
+                        className="
+          absolute top-1/2 left-full -translate-y-1/2 ml-4
+          w-72 bg-white shadow-xl border border-gray-200 
+          rounded-lg p-4 z-[80]
         "
-                    ></div>
-
-                    <div className="flex justify-between items-center mb-2">
-                      <h4 className="font-semibold text-gray-900">
-                        Webhook Email
-                      </h4>
-                      <span className="text-xs text-gray-500">1/3</span>
-                    </div>
-
-                    <p className="text-sm text-gray-600 mb-3">
-                      This webhook email is used to receieve the forwarded Lead
-                      emails from your email service provider.
-                    </p>
-
-                    <div className="flex justify-between">
-                      <button
-                        onClick={skipGuide}
-                        className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-100"
                       >
-                        Skip
-                      </button>
-
-                      <button
-                        onClick={nextGuide}
-                        className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                      >
-                        Next
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                <FlowNode
-                  icon={Cloud}
-                  title="Webhooks"
-                  subtitle="Custom mailhook"
-                  color="border-red-500"
-                  number={1}
-                  isFirst={true}
-                  completed={
-                    showValidation
-                      ? (completedSteps.find((v) => v.id === "webhook")
-                          ?.passed ?? null)
-                      : null
-                  }
-                  isWebhook={true}
-                  onEdit={() => setShowWebhookInfo(true)}
-                />
-              </div>
-              <div className="w-0.5 h-12 bg-gray-300 relative">
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                  <Zap className="w-4 h-4 text-gray-400" />
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-col items-center mb-8">
-              <div className={guideStep === 2 ? "relative z-[70]" : "relative"}>
-                {/* GUIDE STEP 2 */}
-                {guideStep === 2 && (
-                  <div
-                    className="
-        absolute top-1/2 left-full -translate-y-1/2 ml-4
-        w-72 bg-white shadow-xl border border-gray-200
-        rounded-lg p-4 z-[80]
-      "
-                  >
-                    {/* ARROW pointing left */}
-                    <div
-                      className="
-          absolute top-1/2 -left-2 -translate-y-1/2
-          w-4 h-4 bg-white rotate-45
-          border-b border-r border-gray-200
-        "
-                    ></div>
-
-                    <div className="flex justify-between items-center mb-2">
-                      <h4 className="font-semibold text-gray-900">Router</h4>
-                      <span className="text-xs text-gray-500">2/3</span>
-                    </div>
-
-                    <p className="text-sm text-gray-600 mb-3">
-                      Router is used to view the Lead email's content, common
-                      use is while configuring the Leads email templates and
-                      Conditional email flows.
-                    </p>
-
-                    <div className="flex justify-between">
-                      <button
-                        onClick={skipGuide}
-                        className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-100"
-                      >
-                        Skip
-                      </button>
-
-                      <button
-                        onClick={nextGuide}
-                        className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                      >
-                        Next
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                <FlowNode
-                  icon={GitBranch}
-                  title="Router"
-                  subtitle="Route to different paths"
-                  color="border-green-500"
-                  number={2}
-                  isRouter={true}
-                  completed={
-                    showValidation
-                      ? (completedSteps.find((v) => v.id === "router")
-                          ?.passed ?? null)
-                      : null
-                  }
-                />
-              </div>
-              <div className="w-0.5 h-12 bg-gray-300"></div>
-              <div className={guideStep === 3 ? "relative z-[70]" : "relative"}>
-                {/* GUIDE STEP 3 */}
-                {guideStep === 3 && (
-                  <div
-                    className="
-        absolute top-1/2 left-full -translate-y-1/2 ml-4
-        w-72 bg-white shadow-xl border border-gray-200
-        rounded-lg p-4 z-[80]
-      "
-                  >
-                    {/* ARROW pointing left */}
-                    <div
-                      className="
-          absolute top-1/2 -left-2 -translate-y-1/2
-          w-4 h-4 bg-white rotate-45
-          border-b border-r border-gray-200
-        "
-                    ></div>
-
-                    <div className="flex justify-between items-center mb-2">
-                      <h4 className="font-semibold text-gray-900">
-                        Shopify Email Templates
-                      </h4>
-                      <span className="text-xs text-gray-500">3/3</span>
-                    </div>
-
-                    <p className="text-sm text-gray-600 mb-3">
-                      Shopify email Templates are specifically Designed to
-                      manage the email templates based on the Service requested
-                      by client
-                    </p>
-
-                    <div className="flex justify-between">
-                      <button
-                        onClick={skipGuide}
-                        className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-100"
-                      >
-                        Skip
-                      </button>
-
-                      <button
-                        onClick={nextGuide}
-                        className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                      >
-                        Finish
-                      </button>
-                    </div>
-                  </div>
-                )}
-                <FlowNode
-                  icon={FiFileText}
-                  title="Template"
-                  subtitle="Define message structure and content"
-                  color="border-blue-500"
-                  number={3}
-                  completed={
-                    showValidation
-                      ? (completedSteps.find((v) => v.id === "template")
-                          ?.passed ?? null)
-                      : null
-                  }
-                  module={{ app: { name: "Template" } }}
-                  onEdit={handleEdit}
-                />
-              </div>
-
-              <div className="w-0.5 h-12 bg-gray-300"></div>
-            </div>
-
-            <div className="space-y-16">
-              {routerBranches.map((branch, branchIndex) => (
-                <div
-                  key={branch.id}
-                  className="flex flex-col items-center space-y-8"
-                >
-                  {branch.modules.length > 0
-                    ? branch.modules.map((module, moduleIndex) => {
-                        const Icon = iconMap[module.app.icon];
-                        const shouldShowState = showValidation;
-
-                        let validationState = null;
-                        if (showValidation) {
-                          const match = completedSteps.find(
-                            (v) => v.id === module.id,
-                          );
-                          validationState = match ? match.passed : null;
-                        }
-
-                        return (
-                          <React.Fragment key={module.id}>
-                            <FlowNode
-                              icon={Icon}
-                              title={
-                                module.app.name === "First Email"
-                                  ? "First Follow-up"
-                                  : module.app.name === "Second Email"
-                                    ? "Second Follow-up"
-                                    : module.app.name
-                              }
-                              subtitle={module.description}
-                              color={`border-${module.app.color.replace(
-                                "bg-",
-                                "",
-                              )}`}
-                              number={3 + moduleIndex}
-                              onEdit={() =>
-                                handleEditModule(branchIndex, module)
-                              }
-                              onDelete={() =>
-                                handleRemoveModule(branchIndex, module.id)
-                              }
-                              isLast={moduleIndex === branch.modules.length - 1}
-                              completed={
-                                shouldShowState ? validationState : null
-                              }
-                              module={module}
-                            />
-                            {showValidation &&
-                              validationState === false &&
-                              (module.app.name === "Delay" ? (
-                                <p className="text-sm text-orange-500 mt-2 text-center max-w-xs">
-                                  This delay was skipped because the previous
-                                  step failed.
-                                </p>
-                              ) : (
-                                <p className="text-sm text-red-500 mt-2 text-center max-w-xs">
-                                  This module failed due to missing connection
-                                </p>
-                              ))}
-
-                            {moduleIndex < branch.modules.length - 1 && (
-                              <div className="relative flex flex-col items-center">
-                                {/* vertical line */}
-                                <div className="w-0.5 h-12 bg-gray-300"></div>
-
-                                {/* PLUS BUTTON BETWEEN NODES */}
-                                <AddBetweenButton
-                                  onClick={() => {
-                                    setEditingBranch(branchIndex);
-                                    setEditingModuleId(null);
-
-                                    // NEW: store position so module adds EXACT here
-                                    setInsertAtIndex(moduleIndex + 1);
-
-                                    setOpen(true);
-                                  }}
-                                  className="top-1/2"
-                                />
-                              </div>
-                            )}
-                          </React.Fragment>
-                        );
-                      })
-                    : null}
-
-                  {branch.modules.length === 0 || branch.modules.length > 0 ? (
-                    <>
-                      {branch.modules.length > 0 && (
-                        <div className="w-0.5 h-8 bg-gray-300"></div>
-                      )}
-                      <AddModuleButton
-                        onClick={() => {
-                          setEditingBranch(branchIndex);
-                          setOpen(true);
-                        }}
-                      />
-                    </>
-                  ) : null}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {open && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div
-              ref={modalRef}
-              className="bg-white rounded-xl shadow-2xl w-[500px] max-h-[80vh] overflow-hidden"
-            >
-              {!selectedApp ? (
-                <>
-                  <div className="p-6 border-b bg-gradient-to-r from-purple-600 to-purple-500 text-white">
-                    <h2 className="text-lg font-semibold">
-                      Select Application
-                    </h2>
-                    <p className="text-sm text-purple-100 mt-1">
-                      Choose an app to add to your workflow
-                    </p>
-                  </div>
-                  <div className="p-4 max-h-96 overflow-y-auto space-y-3">
-                    {[
-                      {
-                        name: "Initial Email",
-                        base: "Gmail",
-                        color: "bg-red-500",
-                        icon: "Gmail",
-                      },
-                      {
-                        name: "First Follow-up",
-                        base: "Gmail",
-                        color: "bg-red-500",
-                        icon: "Gmail",
-                      },
-                      {
-                        name: "Second Follow-up",
-                        base: "Gmail",
-                        color: "bg-red-500",
-                        icon: "Gmail",
-                      },
-                      {
-                        name: "Delay",
-                        base: "Delay",
-                        color: "bg-blue-500",
-                        icon: "Delay",
-                      },
-                    ].map((item, idx) => {
-                      const Icon = iconMap[item.icon];
-                      return (
+                        {/* ARROW pointing left */}
                         <div
-                          key={idx}
-                          onClick={() => {
-                            let templateName = "";
-                            if (item.name === "Initial Email")
-                              templateName = "Initial Email";
-                            else if (item.name === "First Follow-up")
-                              templateName = "First Follow-up";
-                            else if (item.name === "Second Follow-up")
-                              templateName = "Second Follow-up";
-                            localStorage.setItem(
-                              "activeShopifyModule",
-                              templateName,
-                            );
+                          className="
+          absolute top-1/2 -left-2 -translate-y-1/2
+          w-4 h-4 bg-white rotate-45
+          border-b border-r border-gray-200
+        "
+                        ></div>
 
-                            setSelectedApp({
-                              name: item.base,
-                              displayName: item.name,
-                              color: item.color,
-                              icon: item.icon,
-                              defaultTemplate: templateName,
-                            });
-
-                            setSelectedTemplate(templateName);
-                          }}
-                          className="flex items-center p-4 rounded-lg border border-gray-200 hover:border-purple-500 hover:bg-purple-50 cursor-pointer transition-colors"
-                        >
-                          <div
-                            className={`w-12 h-12 ${item.color} rounded-lg flex items-center justify-center text-white`}
-                          >
-                            <Icon className="w-6 h-6" />
-                          </div>
-                          <div className="ml-4">
-                            <p className="font-medium text-gray-800 text-sm">
-                              {item.name}
-                            </p>
-                            <p className="text-xs text-gray-500">{item.base}</p>
-                          </div>
+                        <div className="flex justify-between items-center mb-2">
+                          <h4 className="font-semibold text-gray-900">
+                            Webhook Email
+                          </h4>
+                          <span className="text-xs text-gray-500">1/3</span>
                         </div>
-                      );
-                    })}
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="p-6 border-b bg-gradient-to-r from-purple-600 to-purple-500 text-white flex justify-between items-center">
-                    <h3 className="font-semibold text-lg">
-                      {selectedApp.displayName || selectedApp.name}
-                    </h3>
 
-                    <button
-                      onClick={resetForm}
-                      className="hover:bg-white hover:bg-opacity-20 p-1 rounded"
-                    >
-                      <X className="w-5 h-5" />
-                    </button>
-                  </div>
+                        <p className="text-sm text-gray-600 mb-3">
+                          This webhook email is used to receive the forwarded Lead
+                          emails from your email service provider.
+                        </p>
 
-                  <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
-                    {selectedApp?.name === "Delay" ||
-                    selectedApp?.type === "Delay" ? (
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Delay Duration <span className="text-red-500">*</span>
-                        </label>
-                        <div className="flex space-x-3">
-                          <input
-                            type="number"
-                            value={delayValue}
-                            onChange={(e) => setDelayValue(e.target.value)}
-                            className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                          />
-                          <select
-                            value={delayUnit}
-                            onChange={(e) => setDelayUnit(e.target.value)}
-                            className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        <div className="flex justify-between">
+                          <button
+                            onClick={skipGuide}
+                            className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-100"
                           >
-                            <option value="seconds">Seconds</option>
-                            <option value="minutes">Minutes</option>
-                            <option value="hours">Hours</option>
-                          </select>
+                            Skip
+                          </button>
+
+                          <button
+                            onClick={nextGuide}
+                            className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                          >
+                            Next
+                          </button>
                         </div>
                       </div>
-                    ) : (
-                      <>
-                        <div className="relative">
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Select Application{" "}
-                            <span className="text-red-500">*</span>
-                          </label>
+                    )}
 
-                          <div className="relative">
-                            <select
-                              value={selectedAppType}
-                              onChange={(e) => {
-                                const value = e.target.value;
-                                setSelectedAppType(value);
-                                fetchConnections();
-                              }}
-                              className="w-full border border-gray-300 rounded-lg px-4 py-2 pr-20 focus:ring-2 focus:ring-purple-500 focus:border-transparent appearance-none"
-                            >
-                              <option value="">-- Choose App Type --</option>
-                              <option value="Gmail">Gmail</option>
-                              <option value="Email">
-                                Email (SMTP/Outlook)
-                              </option>
-                            </select>
+                    <FlowNode
+                      icon={Cloud}
+                      title="Webhooks"
+                      subtitle="Custom mailhook"
+                      color="border-red-500"
+                      number={1}
+                      isFirst={true}
+                      completed={
+                        showValidation
+                          ? (completedSteps.find((v) => v.id === "webhook")
+                            ?.passed ?? null)
+                          : Boolean(user?.mailhook)
+                      }
+                      isWebhook={true}
+                      onEdit={() => setShowWebhookInfo(true)}
+                    />
+                  </div>
+                  <div className="w-0.5 h-12 bg-gray-300 relative">
+                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                      <Zap className="w-4 h-4 text-gray-400" />
+                    </div>
+                  </div>
+                </div>
 
-                            {/* Add button INSIDE the select box (to the right) */}
-                            <button
-                              disabled={!selectedAppType}
-                              onClick={() => {
-                                if (selectedAppType === "Email") {
-                                  setShowOutlookModal(true);
-                                } else if (selectedAppType === "Gmail") {
-                                  setShowGmailModal(true);
-                                } else {
-                                  toast.error(
-                                    "Please select an application type first.",
-                                  );
-                                }
-                              }}
-                              className={`absolute right-0 top-0 bottom-0 px-4 text-sm font-medium rounded-r-lg border-l transition-all duration-200 ${
-                                selectedAppType
-                                  ? "bg-purple-600 text-white border-l-gray-300 hover:bg-purple-700"
-                                  : "bg-gray-200 text-gray-400 border-l-gray-300 cursor-not-allowed"
-                              }`}
-                            >
-                              Add
-                            </button>
-                          </div>
+                <div className="flex flex-col items-center mb-8">
+                  <div ref={routerNodeRef} className={guideStep === 2 ? "relative z-[70]" : "relative"}>
+                    {/* GUIDE STEP 2 */}
+                    {guideStep === 2 && (
+                      <div
+                        className="
+        absolute top-1/2 left-full -translate-y-1/2 ml-4
+        w-72 bg-white shadow-xl border border-gray-200
+        rounded-lg p-4 z-[80]
+      "
+                      >
+                        {/* ARROW pointing left */}
+                        <div
+                          className="
+          absolute top-1/2 -left-2 -translate-y-1/2
+          w-4 h-4 bg-white rotate-45
+          border-b border-r border-gray-200
+        "
+                        ></div>
 
-                          <p className="text-xs text-gray-500 mt-2">
-                            Choose the application type and click <b>Add</b> to
-                            connect a new account.
-                          </p>
+                        <div className="flex justify-between items-center mb-2">
+                          <h4 className="font-semibold text-gray-900">Router</h4>
+                          <span className="text-xs text-gray-500">2/3</span>
                         </div>
 
-                        {selectedAppType && (
+                        <p className="text-sm text-gray-600 mb-3">
+                          Router is used to view the Lead email's content, common
+                          use is while configuring the Leads email templates and
+                          Conditional email flows.
+                        </p>
+
+                        <div className="flex justify-between">
+                          <button
+                            onClick={skipGuide}
+                            className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-100"
+                          >
+                            Skip
+                          </button>
+
+                          <button
+                            onClick={nextGuide}
+                            className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                          >
+                            Next
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    <FlowNode
+                      icon={GitBranch}
+                      title="Router"
+                      subtitle="Route to different paths"
+                      color="border-green-500"
+                      number={2}
+                      isRouter={true}
+                      completed={
+                        showValidation
+                          ? (completedSteps.find((v) => v.id === "router")
+                            ?.passed ?? null)
+                          : Array.isArray(routerBranches) && routerBranches.length > 0
+                      }
+                    />
+                  </div>
+                  <div className="w-0.5 h-12 bg-gray-300"></div>
+                  <div className={guideStep === 3 ? "relative z-[70]" : "relative"}>
+                    {/* GUIDE STEP 3 */}
+                    {guideStep === 3 && (
+                      <div
+                        className="
+        absolute top-1/2 left-full -translate-y-1/2 ml-4
+        w-72 bg-white shadow-xl border border-gray-200
+        rounded-lg p-4 z-[80]
+      "
+                      >
+                        {/* ARROW pointing left */}
+                        <div
+                          className="
+          absolute top-1/2 -left-2 -translate-y-1/2
+          w-4 h-4 bg-white rotate-45
+          border-b border-r border-gray-200
+        "
+                        ></div>
+
+                        <div className="flex justify-between items-center mb-2">
+                          <h4 className="font-semibold text-gray-900">
+                            Shopify Email Templates
+                          </h4>
+                          <span className="text-xs text-gray-500">3/3</span>
+                        </div>
+
+                        <p className="text-sm text-gray-600 mb-3">
+                          Shopify email Templates are specifically Designed to
+                          manage the email templates based on the Service requested
+                          by client
+                        </p>
+
+                        <div className="flex justify-between">
+                          <button
+                            onClick={skipGuide}
+                            className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-100"
+                          >
+                            Skip
+                          </button>
+
+                          <button
+                            onClick={nextGuide}
+                            className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                          >
+                            Finish
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    <FlowNode
+                      icon={FiFileText}
+                      title="Template"
+                      subtitle="Define message structure and content"
+                      color="border-blue-500"
+                      number={3}
+                      completed={
+                        showValidation
+                          ? (completedSteps.find((v) => v.id === "template")
+                            ?.passed ?? null)
+                          : allTemplatesActive
+                      }
+                      module={{ app: { name: "Template" } }}
+                      onEdit={handleEdit}
+                    />
+                  </div>
+
+                  <div className="w-0.5 h-12 bg-gray-300"></div>
+                </div>
+
+                <div className="space-y-16">
+                  {routerBranches.map((branch, branchIndex) => (
+                    <div
+                      key={branch.id}
+                      className="flex flex-col items-center space-y-8"
+                    >
+                      {branch.modules.length > 0
+                        ? branch.modules.map((module, moduleIndex) => {
+                          const Icon = iconMap[module.app.icon];
+                          const shouldShowState = showValidation;
+
+                          let validationState = null;
+                          if (showValidation) {
+                            const match = completedSteps.find(
+                              (v) => v.id === module.id,
+                            );
+                            validationState = match ? match.passed : null;
+                          }
+
+                          return (
+                            <React.Fragment key={module.id}>
+                              <FlowNode
+                                icon={Icon}
+                                title={getModuleTitle(module)}
+                                subtitle={module.description}
+                                color={`border-${module.app.color.replace(
+                                  "bg-",
+                                  "",
+                                )}`}
+                                number={3 + moduleIndex}
+                                onEdit={() =>
+                                  handleEditModule(branchIndex, module)
+                                }
+                                onDelete={() =>
+                                  handleRemoveModule(branchIndex, module.id)
+                                }
+                                isLast={moduleIndex === branch.modules.length - 1}
+                                completed={
+                                  shouldShowState
+                                    ? validationState
+                                    : isModuleCompleted(module)
+                                }
+                                module={module}
+                              />
+                              {showValidation &&
+                                validationState === false &&
+                                (module.app.name === "Delay" ? (
+                                  <p className="text-sm text-orange-500 mt-2 text-center max-w-xs">
+                                    This delay was skipped because the previous
+                                    step failed.
+                                  </p>
+                                ) : (
+                                  <p className="text-sm text-red-500 mt-2 text-center max-w-xs">
+                                    This module failed due to missing connection
+                                  </p>
+                                ))}
+
+                              {moduleIndex < branch.modules.length - 1 && (
+                                <div className="relative flex flex-col items-center">
+                                  {/* vertical line */}
+                                  <div className="w-0.5 h-12 bg-gray-300"></div>
+
+                                  {/* PLUS BUTTON BETWEEN NODES */}
+                                  <AddBetweenButton
+                                    onClick={() => {
+                                      setEditingBranch(branchIndex);
+                                      setEditingModuleId(null);
+
+                                      // NEW: store position so module adds EXACT here
+                                      setInsertAtIndex(moduleIndex + 1);
+
+                                      setOpen(true);
+                                    }}
+                                    className="top-1/2"
+                                  />
+                                </div>
+                              )}
+                            </React.Fragment>
+                          );
+                        })
+                        : null}
+
+                      {branch.modules.length === 0 || branch.modules.length > 0 ? (
+                        <>
+                          {branch.modules.length > 0 && (
+                            <div className="w-0.5 h-8 bg-gray-300"></div>
+                          )}
+                          <AddModuleButton
+                            onClick={() => {
+                              setEditingBranch(branchIndex);
+                              setOpen(true);
+                            }}
+                          />
+                        </>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {open && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div
+                  ref={modalRef}
+                  className="bg-white rounded-xl shadow-2xl w-[500px] max-h-[80vh] overflow-hidden"
+                >
+                  {!selectedApp ? (
+                    <>
+                      <div className="p-6 border-b bg-gradient-to-r from-purple-600 to-purple-500 text-white">
+                        <h2 className="text-lg font-semibold">
+                          Select Application
+                        </h2>
+                        <p className="text-sm text-purple-100 mt-1">
+                          Choose an app to add to your workflow
+                        </p>
+                      </div>
+                      <div className="p-4 max-h-96 overflow-y-auto space-y-3">
+                        {[
+                          {
+                            name: "Initial Email",
+                            base: "Gmail",
+                            color: "bg-red-500",
+                            icon: "Gmail",
+                          },
+                          {
+                            name: "First Follow-up",
+                            base: "Gmail",
+                            color: "bg-red-500",
+                            icon: "Gmail",
+                          },
+                          {
+                            name: "Second Follow-up",
+                            base: "Gmail",
+                            color: "bg-red-500",
+                            icon: "Gmail",
+                          },
+                          {
+                            name: "Delay",
+                            base: "Delay",
+                            color: "bg-blue-500",
+                            icon: "Delay",
+                          },
+                        ].map((item, idx) => {
+                          const Icon = iconMap[item.icon];
+                          return (
+                            <div
+                              key={idx}
+                              onClick={() => {
+                                let templateName = "";
+                                if (item.name === "Initial Email")
+                                  templateName = "Initial Email";
+                                else if (item.name === "First Follow-up")
+                                  templateName = "First Follow-up";
+                                else if (item.name === "Second Follow-up")
+                                  templateName = "Second Follow-up";
+                                localStorage.setItem(
+                                  "activeShopifyModule",
+                                  templateName,
+                                );
+
+                                setSelectedApp({
+                                  name: item.base,
+                                  displayName: item.name,
+                                  color: item.color,
+                                  icon: item.icon,
+                                  defaultTemplate: templateName,
+                                });
+
+                                setSelectedTemplate(templateName);
+                              }}
+                              className="flex items-center p-4 rounded-lg border border-gray-200 hover:border-purple-500 hover:bg-purple-50 cursor-pointer transition-colors"
+                            >
+                              <div
+                                className={`w-12 h-12 ${item.color} rounded-lg flex items-center justify-center text-white`}
+                              >
+                                <Icon className="w-6 h-6" />
+                              </div>
+                              <div className="ml-4">
+                                <p className="font-medium text-gray-800 text-sm">
+                                  {item.name}
+                                </p>
+                                <p className="text-xs text-gray-500">{item.base}</p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="p-6 border-b bg-gradient-to-r from-purple-600 to-purple-500 text-white flex justify-between items-center">
+                        <h3 className="font-semibold text-lg">
+                          {selectedApp.displayName || selectedApp.name}
+                        </h3>
+
+                        <button
+                          onClick={resetForm}
+                          className="hover:bg-white hover:bg-opacity-20 p-1 rounded"
+                        >
+                          <X className="w-5 h-5" />
+                        </button>
+                      </div>
+
+                      <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+                        {selectedApp?.name === "Delay" ||
+                          selectedApp?.type === "Delay" ? (
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                              Connection <span className="text-red-500">*</span>
+                              Delay Duration <span className="text-red-500">*</span>
                             </label>
-
-                            <div className="flex items-center border border-gray-300 rounded-lg px-2 py-2 focus-within:ring-2 focus-within:ring-purple-500">
+                            <div className="flex space-x-3">
+                              <input
+                                type="number"
+                                value={delayValue}
+                                onChange={(e) => setDelayValue(e.target.value)}
+                                className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                              />
                               <select
-                                value={selectedConnection}
-                                onChange={(e) => {
-                                  setSelectedConnection(e.target.value);
-                                  setIsScenarioUpdated(false);
-                                }}
-                                className="flex-1 border-none outline-none text-sm bg-transparent"
+                                value={delayUnit}
+                                onChange={(e) => setDelayUnit(e.target.value)}
+                                className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                               >
-                                <option value="">
-                                  -- Select Connection --
-                                </option>
-                                {connections
-                                  .filter((c) => {
-                                    if (selectedAppType === "Email")
-                                      return (
-                                        c.provider === "smtp" ||
-                                        c.provider === "outlook"
-                                      );
-                                    if (selectedAppType === "Gmail")
-                                      return c.provider === "gmail";
-                                    return false;
-                                  })
-                                  .map((c) => (
-                                    <option key={c._id} value={c._id}>
-                                      {c.provider.toUpperCase()} - {c.email}
-                                    </option>
-                                  ))}
+                                <option value="seconds">Seconds</option>
+                                <option value="minutes">Minutes</option>
+                                <option value="hours">Hours</option>
                               </select>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="relative">
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Select Application{" "}
+                                <span className="text-red-500">*</span>
+                              </label>
 
-                              {/* <button
+                              <div className="relative">
+                                <select
+                                  value={selectedAppType}
+                                  onChange={(e) => {
+                                    const value = e.target.value;
+                                    setSelectedAppType(value);
+                                    fetchConnections();
+                                  }}
+                                  className="w-full border border-gray-300 rounded-lg px-4 py-2 pr-20 focus:ring-2 focus:ring-purple-500 focus:border-transparent appearance-none"
+                                >
+                                  <option value="">-- Choose App Type --</option>
+                                  <option value="Gmail">Gmail</option>
+                                  <option value="Email">
+                                    Email (SMTP/Outlook)
+                                  </option>
+                                </select>
+
+                                {/* Add button INSIDE the select box (to the right) */}
+                                <button
+                                  disabled={!selectedAppType}
+                                  onClick={() => {
+                                    if (selectedAppType === "Email") {
+                                      setShowOutlookModal(true);
+                                    } else if (selectedAppType === "Gmail") {
+                                      setShowGmailModal(true);
+                                    } else {
+                                      toast.error(
+                                        "Please select an application type first.",
+                                      );
+                                    }
+                                  }}
+                                  className={`absolute right-0 top-0 bottom-0 px-4 text-sm font-medium rounded-r-lg border-l transition-all duration-200 ${selectedAppType
+                                    ? "bg-purple-600 text-white border-l-gray-300 hover:bg-purple-700"
+                                    : "bg-gray-200 text-gray-400 border-l-gray-300 cursor-not-allowed"
+                                    }`}
+                                >
+                                  Add
+                                </button>
+                              </div>
+
+                              <p className="text-xs text-gray-500 mt-2">
+                                Choose the application type and click <b>Add</b> to
+                                connect a new account.
+                              </p>
+                            </div>
+
+                            {selectedAppType && (
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                  Connection <span className="text-red-500">*</span>
+                                </label>
+
+                                <div className="flex items-center border border-gray-300 rounded-lg px-2 py-2 focus-within:ring-2 focus-within:ring-purple-500">
+                                  <select
+                                    value={selectedConnection}
+                                    onChange={(e) => {
+                                      setSelectedConnection(e.target.value);
+                                      setIsScenarioUpdated(false);
+                                    }}
+                                    className="flex-1 border-none outline-none text-sm bg-transparent"
+                                  >
+                                    <option value="">
+                                      -- Select Connection --
+                                    </option>
+                                    {connections
+                                      .filter((c) => {
+                                        if (selectedAppType === "Email")
+                                          return (
+                                            c.provider === "smtp" ||
+                                            c.provider === "outlook"
+                                          );
+                                        if (selectedAppType === "Gmail")
+                                          return c.provider === "gmail";
+                                        return false;
+                                      })
+                                      .map((c) => (
+                                        <option key={c._id} value={c._id}>
+                                          {c.provider.toUpperCase()} - {c.email}
+                                        </option>
+                                      ))}
+                                  </select>
+
+                                  {/* <button
                                 onClick={() => {
                                   if (selectedAppType === "Email") {
                                     setShowOutlookModal(true);
@@ -2223,182 +2559,183 @@ const ShopifyScenariosPage = () => {
                               >
                                 Add
                               </button> */}
+                                </div>
+                              </div>
+                            )}
+
+                            <div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                  Template
+                                </label>
+
+                                <div className="relative">
+                                  {/* Read-only Input */}
+                                  <input
+                                    type="text"
+                                    value={
+                                      selectedApp?.defaultTemplate ||
+                                      selectedTemplate ||
+                                      "No template selected"
+                                    }
+                                    readOnly
+                                    className="w-full border border-gray-300 rounded-lg px-4 py-2 pr-20 bg-gray-100 text-gray-700 focus:outline-none cursor-not-allowed"
+                                  />
+
+                                  {/* View Button inside the input box */}
+                                  <button
+                                    onClick={() => {
+                                      const templateName =
+                                        selectedTemplate ||
+                                        selectedApp?.defaultTemplate;
+
+                                      if (templateName) {
+                                        const encodedName =
+                                          encodeURIComponent(templateName);
+                                        window.open(
+                                          `/templates?view=${encodedName}`,
+                                          "_blank",
+                                        );
+                                      } else {
+                                        toast.info("No template selected to view.");
+                                      }
+                                    }}
+                                    disabled={
+                                      !selectedTemplate &&
+                                      !selectedApp?.defaultTemplate
+                                    }
+                                    className={`absolute right-0 top-0 bottom-0 px-4 text-sm font-medium rounded-r-lg border-l transition-all duration-200 ${selectedTemplate ||
+                                      selectedApp?.defaultTemplate
+                                      ? "bg-indigo-600 text-white border-l-gray-300 hover:bg-indigo-700"
+                                      : "bg-gray-200 text-gray-400 border-l-gray-300 cursor-not-allowed"
+                                      }`}
+                                  >
+                                    View
+                                  </button>
+                                </div>
+
+                                {/* Hint Text */}
+                                <p className="text-xs text-gray-500 mt-2">
+                                  Click <b>View</b> to open and review the full
+                                  email template.
+                                </p>
+                              </div>
                             </div>
-                          </div>
+
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                To
+                              </label>
+                              <div className="border border-gray-300 rounded-lg px-3 py-2 bg-gray-50">
+                                <div className="flex flex-wrap gap-2">
+                                  <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm flex items-center">
+                                    Sender Email Address
+                                    <span className="ml-2 text-gray-400 text-xs">
+                                      (Sender)
+                                    </span>
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                CC{" "}
+                                <span className="text-xs text-gray-500">
+                                  (Optional)
+                                </span>
+                              </label>
+                              <div className="border border-gray-300 rounded-lg px-3 py-2 focus-within:ring-2 focus-within:ring-purple-500">
+                                <div className="flex flex-wrap gap-2 mb-2">
+                                  {ccList.map((email, index) => (
+                                    <span
+                                      key={index}
+                                      className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm flex items-center"
+                                    >
+                                      {email}
+                                      <button
+                                        onClick={() =>
+                                          handleRemoveEmail("cc", index)
+                                        }
+                                        className="ml-2 text-red-500 hover:text-red-700"
+                                      >
+                                        <X className="w-3 h-3" />
+                                      </button>
+                                    </span>
+                                  ))}
+                                </div>
+                                <input
+                                  type="text"
+                                  value={ccInput}
+                                  onChange={(e) => setCcInput(e.target.value)}
+                                  onKeyDown={(e) => handleAddEmail(e, "cc")}
+                                  placeholder="Type email and press Enter"
+                                  className="w-full outline-none text-sm"
+                                />
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                BCC{" "}
+                                <span className="text-xs text-gray-500">
+                                  (Optional)
+                                </span>
+                              </label>
+                              <div className="border border-gray-300 rounded-lg px-3 py-2 focus-within:ring-2 focus-within:ring-purple-500">
+                                <div className="flex flex-wrap gap-2 mb-2">
+                                  {bccList.map((email, index) => (
+                                    <span
+                                      key={index}
+                                      className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm flex items-center"
+                                    >
+                                      {email}
+                                      <button
+                                        onClick={() =>
+                                          handleRemoveEmail("bcc", index)
+                                        }
+                                        className="ml-2 text-red-500 hover:text-red-700"
+                                      >
+                                        <X className="w-3 h-3" />
+                                      </button>
+                                    </span>
+                                  ))}
+                                </div>
+                                <input
+                                  type="text"
+                                  value={bccInput}
+                                  onChange={(e) => setBccInput(e.target.value)}
+                                  onKeyDown={(e) => handleAddEmail(e, "bcc")}
+                                  placeholder="Type email and press Enter"
+                                  className="w-full outline-none text-sm"
+                                />
+                              </div>
+                            </div>
+                          </>
                         )}
+                      </div>
 
-                        <div>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                              Template
-                            </label>
-
-                            <div className="relative">
-                              {/* Read-only Input */}
-                              <input
-                                type="text"
-                                value={
-                                  selectedApp?.defaultTemplate ||
-                                  selectedTemplate ||
-                                  "No template selected"
-                                }
-                                readOnly
-                                className="w-full border border-gray-300 rounded-lg px-4 py-2 pr-20 bg-gray-100 text-gray-700 focus:outline-none cursor-not-allowed"
-                              />
-
-                              {/* View Button inside the input box */}
-                              <button
-                                onClick={() => {
-                                  const templateName =
-                                    selectedTemplate ||
-                                    selectedApp?.defaultTemplate;
-
-                                  if (templateName) {
-                                    const encodedName =
-                                      encodeURIComponent(templateName);
-                                    window.open(
-                                      `/templates?view=${encodedName}`,
-                                      "_blank",
-                                    );
-                                  } else {
-                                    toast.info("No template selected to view.");
-                                  }
-                                }}
-                                disabled={
-                                  !selectedTemplate &&
-                                  !selectedApp?.defaultTemplate
-                                }
-                                className={`absolute right-0 top-0 bottom-0 px-4 text-sm font-medium rounded-r-lg border-l transition-all duration-200 ${
-                                  selectedTemplate ||
-                                  selectedApp?.defaultTemplate
-                                    ? "bg-indigo-600 text-white border-l-gray-300 hover:bg-indigo-700"
-                                    : "bg-gray-200 text-gray-400 border-l-gray-300 cursor-not-allowed"
-                                }`}
-                              >
-                                View
-                              </button>
-                            </div>
-
-                            {/* Hint Text */}
-                            <p className="text-xs text-gray-500 mt-2">
-                              Click <b>View</b> to open and review the full
-                              email template.
-                            </p>
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            To
-                          </label>
-                          <div className="border border-gray-300 rounded-lg px-3 py-2 bg-gray-50">
-                            <div className="flex flex-wrap gap-2">
-                              <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm flex items-center">
-                                Sender Email Address
-                                <span className="ml-2 text-gray-400 text-xs">
-                                  (Sender)
-                                </span>
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            CC{" "}
-                            <span className="text-xs text-gray-500">
-                              (Optional)
-                            </span>
-                          </label>
-                          <div className="border border-gray-300 rounded-lg px-3 py-2 focus-within:ring-2 focus-within:ring-purple-500">
-                            <div className="flex flex-wrap gap-2 mb-2">
-                              {ccList.map((email, index) => (
-                                <span
-                                  key={index}
-                                  className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm flex items-center"
-                                >
-                                  {email}
-                                  <button
-                                    onClick={() =>
-                                      handleRemoveEmail("cc", index)
-                                    }
-                                    className="ml-2 text-red-500 hover:text-red-700"
-                                  >
-                                    <X className="w-3 h-3" />
-                                  </button>
-                                </span>
-                              ))}
-                            </div>
-                            <input
-                              type="text"
-                              value={ccInput}
-                              onChange={(e) => setCcInput(e.target.value)}
-                              onKeyDown={(e) => handleAddEmail(e, "cc")}
-                              placeholder="Type email and press Enter"
-                              className="w-full outline-none text-sm"
-                            />
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            BCC{" "}
-                            <span className="text-xs text-gray-500">
-                              (Optional)
-                            </span>
-                          </label>
-                          <div className="border border-gray-300 rounded-lg px-3 py-2 focus-within:ring-2 focus-within:ring-purple-500">
-                            <div className="flex flex-wrap gap-2 mb-2">
-                              {bccList.map((email, index) => (
-                                <span
-                                  key={index}
-                                  className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm flex items-center"
-                                >
-                                  {email}
-                                  <button
-                                    onClick={() =>
-                                      handleRemoveEmail("bcc", index)
-                                    }
-                                    className="ml-2 text-red-500 hover:text-red-700"
-                                  >
-                                    <X className="w-3 h-3" />
-                                  </button>
-                                </span>
-                              ))}
-                            </div>
-                            <input
-                              type="text"
-                              value={bccInput}
-                              onChange={(e) => setBccInput(e.target.value)}
-                              onKeyDown={(e) => handleAddEmail(e, "bcc")}
-                              placeholder="Type email and press Enter"
-                              className="w-full outline-none text-sm"
-                            />
-                          </div>
-                        </div>
-                      </>
-                    )}
-                  </div>
-
-                  <div className="p-6 border-t bg-gray-50 flex justify-end space-x-3">
-                    <button
-                      onClick={resetForm}
-                      className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleSave}
-                      className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-                    >
-                      Save Module
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
+                      <div className="p-6 border-t bg-gray-50 flex justify-end space-x-3">
+                        <button
+                          onClick={resetForm}
+                          className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={handleSave}
+                          className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                        >
+                          Save Module
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
-        )}
+        </div>
         <OutlookConnectionModal
           isOpen={showOutlookModal}
           onClose={() => setShowOutlookModal(false)}
@@ -2628,15 +2965,13 @@ const ShopifyScenariosPage = () => {
             {showTemplateModal && (
               <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 transition-all duration-300">
                 <div
-                  className={`flex w-full max-w-6xl max-h-[90vh] p-4 transition-all duration-500 ${
-                    showEditTemplateModal ? "justify-between" : "justify-center"
-                  }`}
+                  className={`flex w-full max-w-6xl max-h-[90vh] p-4 transition-all duration-500 ${showEditTemplateModal ? "justify-between" : "justify-center"
+                    }`}
                 >
                   {/* 🟣 Templates Overview Modal */}
                   <div
-                    className={`bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden transition-all duration-500 ${
-                      showEditTemplateModal ? "max-w-[55%]" : "max-w-3xl"
-                    }`}
+                    className={`bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden transition-all duration-500 ${showEditTemplateModal ? "max-w-[55%]" : "max-w-3xl"
+                      }`}
                   >
                     <div className="flex justify-between items-center p-5 border-b bg-gradient-to-r from-purple-600 to-indigo-600 text-white">
                       <div>
@@ -2678,8 +3013,7 @@ const ShopifyScenariosPage = () => {
 
                                 await Promise.all(updates);
                                 toast.success(
-                                  `All ${selectedServiceForTemplates} templates ${
-                                    newStatus ? "activated" : "deactivated"
+                                  `All ${selectedServiceForTemplates} templates ${newStatus ? "activated" : "deactivated"
                                   } successfully!`,
                                 );
 
@@ -2697,11 +3031,10 @@ const ShopifyScenariosPage = () => {
                           </label>
 
                           <span
-                            className={`text-xs font-semibold ${
-                              templateList.every((t) => t.active)
-                                ? "text-green-300"
-                                : "text-gray-300"
-                            }`}
+                            className={`text-xs font-semibold ${templateList.every((t) => t.active)
+                              ? "text-green-300"
+                              : "text-gray-300"
+                              }`}
                           >
                             {templateList.every((t) => t.active) ? "ON" : "OFF"}
                           </span>
@@ -2744,7 +3077,7 @@ const ShopifyScenariosPage = () => {
                               <React.Fragment key={t._id || i}>
                                 {/* Group by service */}
                                 {i === 0 ||
-                                templateList[i - 1]?.service !== t.service ? (
+                                  templateList[i - 1]?.service !== t.service ? (
                                   <tr className="bg-gray-50 border-t-4 border-gray-200">
                                     <td
                                       colSpan={4}
@@ -2756,11 +3089,10 @@ const ShopifyScenariosPage = () => {
                                 ) : null}
 
                                 <tr
-                                  className={`border-b transition-colors ${
-                                    !t.active
-                                      ? "bg-red-50"
-                                      : "hover:bg-purple-50"
-                                  }`}
+                                  className={`border-b transition-colors ${!t.active
+                                    ? "bg-red-50"
+                                    : "hover:bg-purple-50"
+                                    }`}
                                 >
                                   {/* 🟢 Service Name (clean) */}
                                   <td className="p-3 font-medium text-gray-800 flex items-center">
@@ -3017,14 +3349,12 @@ const ShopifyScenariosPage = () => {
           <div className="flex gap-4 w-full max-w-6xl max-h-[90vh] p-4">
             {showServiceModal && (
               <div
-                className={`flex w-full max-w-[90rem] max-h-[90vh] p-6 transition-all duration-500 ${
-                  showEditTemplateModal ? "justify-between" : "justify-center"
-                }`}
+                className={`flex w-full max-w-[90rem] max-h-[90vh] p-6 transition-all duration-500 ${showEditTemplateModal ? "justify-between" : "justify-center"
+                  }`}
               >
                 <div
-                  className={`bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden transition-all duration-500 ${
-                    showEditTemplateModal ? "max-w-[50%]" : "max-w-[70rem]"
-                  }`}
+                  className={`bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden transition-all duration-500 ${showEditTemplateModal ? "max-w-[50%]" : "max-w-[70rem]"
+                    }`}
                 >
                   <div className="flex justify-between items-center p-5 border-b bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
                     <div>
@@ -3089,7 +3419,7 @@ const ShopifyScenariosPage = () => {
                                 } else {
                                   toast.error(
                                     data.message ||
-                                      "Failed to update templates.",
+                                    "Failed to update templates.",
                                     { id: toastId },
                                   );
                                 }
@@ -3109,13 +3439,12 @@ const ShopifyScenariosPage = () => {
                         </label>
 
                         <span
-                          className={`text-xs font-semibold ${
-                            serviceGroups.every((grp) =>
-                              grp.templates.every((t) => t.active),
-                            )
-                              ? "text-green-300"
-                              : "text-gray-300"
-                          }`}
+                          className={`text-xs font-semibold ${serviceGroups.every((grp) =>
+                            grp.templates.every((t) => t.active),
+                          )
+                            ? "text-green-300"
+                            : "text-gray-300"
+                            }`}
                         >
                           {serviceGroups.every((grp) =>
                             grp.templates.every((t) => t.active),
@@ -3208,11 +3537,10 @@ const ShopifyScenariosPage = () => {
                                   {shownTemplates.map((t) => (
                                     <tr
                                       key={t._id}
-                                      className={`border-b transition-colors ${
-                                        t.active
-                                          ? "hover:bg-blue-50"
-                                          : "bg-red-50"
-                                      }`}
+                                      className={`border-b transition-colors ${t.active
+                                        ? "hover:bg-blue-50"
+                                        : "bg-red-50"
+                                        }`}
                                     >
                                       <td className="p-3 font-medium text-gray-800">
                                         {t.name.includes("Initial")
@@ -3237,9 +3565,9 @@ const ShopifyScenariosPage = () => {
                                                     (tpl) =>
                                                       tpl._id === t._id
                                                         ? {
-                                                            ...tpl,
-                                                            active: newStatus,
-                                                          }
+                                                          ...tpl,
+                                                          active: newStatus,
+                                                        }
                                                         : tpl,
                                                   ),
                                                 })),
@@ -3548,10 +3876,10 @@ const ShopifyScenariosPage = () => {
                                     prev.map((c) =>
                                       c._id === conn._id
                                         ? {
-                                            ...c,
-                                            verified: true,
-                                            verifying: false,
-                                          }
+                                          ...c,
+                                          verified: true,
+                                          verifying: false,
+                                        }
                                         : c,
                                     ),
                                   );
@@ -3571,7 +3899,7 @@ const ShopifyScenariosPage = () => {
                                 } else {
                                   toast.error(
                                     data.message ||
-                                      `Failed to verify ${conn.email}`,
+                                    `Failed to verify ${conn.email}`,
                                   );
                                   setUnverifiedConnections((prev) =>
                                     prev.map((c) =>
