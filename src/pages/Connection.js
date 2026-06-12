@@ -11,6 +11,7 @@ import {
   FaShieldAlt,
   FaSpinner,
   FaPlug,
+  FaEdit,
 } from "react-icons/fa";
 import axios from "axios";
 import toast from "react-hot-toast";
@@ -30,7 +31,8 @@ const ConnectionsPage = () => {
 
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [connectionToDelete, setConnectionToDelete] = useState(null);
-  const [deleting, setDeleting] = useState(false);
+  const [connectionToEdit, setConnectionToEdit] = useState(null);
+  const [editProvider, setEditProvider] = useState(null);
   const [mailhookToDelete, setMailhookToDelete] = useState(null);
   const [isMailhookDeleteModalOpen, setIsMailhookDeleteModalOpen] =
     useState(false);
@@ -55,6 +57,15 @@ const ConnectionsPage = () => {
     }
   };
 
+  const openEditModal = (conn) => {
+    setConnectionToEdit(conn);
+    setEditProvider(conn.provider);
+    if (conn.provider === "gmail") {
+      setIsModalOpen(true);
+    } else if (conn.provider === "outlook" || conn.provider === "smtp") {
+      setIsOutlookModalOpen(true);
+    }
+  };
   const fetchConnections = async () => {
     try {
       const userId = localStorage.getItem("userid");
@@ -413,16 +424,26 @@ const ConnectionsPage = () => {
                           )}
                         </span>
 
-                        <button
-                          onClick={() => {
-                            setConnectionToDelete(conn);
-                            setDeleteModalOpen(true);
-                          }}
-                          className="flex items-center space-x-1 text-red-600 hover:text-red-800 transition"
-                        >
-                          <FaTrashAlt className="h-4 w-4" />
-                          <span>Delete</span>
-                        </button>
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={() => openEditModal(conn)}
+                            className="flex items-center space-x-1 text-blue-600 hover:text-blue-800 transition"
+                          >
+                            <FaEdit className="h-4 w-4" />
+                            <span>Edit</span>
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              setConnectionToDelete(conn);
+                              setDeleteModalOpen(true);
+                            }}
+                            className="flex items-center space-x-1 text-red-600 hover:text-red-800 transition"
+                          >
+                            <FaTrashAlt className="h-4 w-4" />
+                            <span>Delete</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -458,18 +479,28 @@ const ConnectionsPage = () => {
         isOpen={isModalOpen}
         onClose={() => {
           closeModal();
+          setConnectionToEdit(null);
+          setEditProvider(null);
           fetchConnections();
         }}
         onSuccess={handleConnectionAdded}
+        editMode={connectionToEdit && editProvider === "gmail"}
+        connectionData={connectionToEdit}
+        onUpdated={fetchConnections}
       />
 
       <OutlookConnectionModal
         isOpen={isOutlookModalOpen}
         onClose={() => {
           closeOutlookModal();
+          setConnectionToEdit(null);
+          setEditProvider(null);
           fetchConnections();
         }}
         onSuccess={handleConnectionAdded}
+        editMode={connectionToEdit && (editProvider === "outlook" || editProvider === "smtp")}
+        connectionData={connectionToEdit}
+        onUpdated={fetchConnections}
       />
 
       <ConfirmDeleteModal

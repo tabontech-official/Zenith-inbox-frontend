@@ -1,11 +1,37 @@
 import React, { useEffect, useState } from "react";
 import { FaGoogle, FaTimes } from "react-icons/fa";
 import { MdInfo } from "react-icons/md";
+import axios from "axios";
+import toast from "react-hot-toast";
 
-const ConnectionModal = ({ isOpen, onClose, onSuccess }) => {
+const ConnectionModal = ({
+  isOpen,
+  onClose,
+  onSuccess,
+  editMode = false,
+  connectionData = null,
+  onUpdated,
+}) => {
   const [connectionName, setConnectionName] = useState(
     "My Google Restricted Connection"
   );
+  const [status, setStatus] = useState("active");
+  const [email, setEmail] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      if (editMode && connectionData) {
+        setConnectionName(connectionData.name || "");
+        setStatus(connectionData.status || "active");
+        setEmail(connectionData.email || "");
+      } else {
+        setConnectionName("My Google Restricted Connection");
+        setStatus("active");
+        setEmail("");
+      }
+    }
+  }, [isOpen, editMode, connectionData]);
 
   const handleGoogleSignIn = () => {
     const userId = localStorage.getItem("userid");
@@ -45,6 +71,40 @@ const ConnectionModal = ({ isOpen, onClose, onSuccess }) => {
     )}`;
   };
 
+  const handleSubmit = async (e) => {
+    if (editMode) {
+      e.preventDefault();
+      if (!connectionName.trim()) {
+        toast.error("Connection name is required");
+        return;
+      }
+      try {
+        setSubmitting(true);
+        const res = await axios.put(
+          `https://email-syncing-backend.vercel.app/auth/connection/${connectionData._id}`,
+          {
+            name: connectionName.trim(),
+            status: status
+          }
+        );
+        if (res.data.success) {
+          toast.success("Gmail connection updated successfully!");
+          onUpdated?.();
+          onClose();
+        }
+      } catch (err) {
+        console.error("Error updating connection:", err);
+        toast.error(
+          err.response?.data?.error || err.response?.data?.message || "Failed to update connection"
+        );
+      } finally {
+        setSubmitting(false);
+      }
+    } else {
+      handleGoogleSignIn();
+    }
+  };
+
   useEffect(() => {
     const listener = (event) => {
       if (event.data?.type === "google-auth-success") {
@@ -71,7 +131,7 @@ const ConnectionModal = ({ isOpen, onClose, onSuccess }) => {
       <div className="bg-white rounded-lg shadow-2xl w-full max-w-lg overflow-hidden animate-fadeIn">
         <div className="bg-gradient-to-r from-[#e45341] to-[#f46654] text-white flex justify-between items-center px-5 py-3">
           <h2 className="text-sm font-semibold tracking-wide flex items-center gap-2">
-            Create a Gmail Connection
+            {editMode ? "Edit Gmail Connection" : "Create a Gmail Connection"}
           </h2>
           <button onClick={onClose} className="hover:text-gray-200">
             <FaTimes className="w-5 h-5" />
@@ -91,51 +151,93 @@ const ConnectionModal = ({ isOpen, onClose, onSuccess }) => {
             />
           </div>
 
-          <div className="flex items-start gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-gray-700">
-            <MdInfo className="text-blue-500 w-5 h-5 flex-shrink-0 mt-0.5" />
-            <p>
-              Make’s use and transfer of information received from Google APIs
-              will adhere to{" "}
-              <a
-                href="https://developers.google.com/terms/api-services-user-data-policy"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 underline hover:no-underline"
-              >
-                Google API Services User Data Policy
-              </a>
-              .
-            </p>
-          </div>
+          {editMode && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  disabled
+                  className="w-full py-2 px-3 border border-gray-300 rounded-lg text-sm bg-gray-100 text-gray-500 cursor-not-allowed focus:outline-none"
+                />
+              </div>
 
-          <p className="text-xs text-gray-600">
-            If you’re using a personal Google account (@gmail.com), please
-            follow{" "}
-            <a
-              href="https://support.google.com/mail/answer/22370"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 underline hover:no-underline"
-            >
-              this guide
-            </a>{" "}
-            for additional steps.
-          </p>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Status
+                </label>
+                <select
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                  className="w-full py-2 px-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                >
+                  <option value="active">Active</option>
+                  <option value="disconnected">Disconnected</option>
+                </select>
+              </div>
+            </>
+          )}
+
+          {!editMode && (
+            <>
+              <div className="flex items-start gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-gray-700">
+                <MdInfo className="text-blue-500 w-5 h-5 flex-shrink-0 mt-0.5" />
+                <p>
+                  Make’s use and transfer of information received from Google APIs
+                  will adhere to{" "}
+                  <a
+                    href="https://developers.google.com/terms/api-services-user-data-policy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 underline hover:no-underline"
+                  >
+                    Google API Services User Data Policy
+                  </a>
+                  .
+                </p>
+              </div>
+
+              <p className="text-xs text-gray-600">
+                If you’re using a personal Google account (@gmail.com), please
+                follow{" "}
+                <a
+                  href="https://support.google.com/mail/answer/22370"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 underline hover:no-underline"
+                >
+                  this guide
+                </a>{" "}
+                for additional steps.
+              </p>
+            </>
+          )}
         </div>
 
         <div className="flex justify-end gap-3 px-6 py-4 bg-gray-50 border-t">
           <button
             onClick={onClose}
             className="px-5 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 transition"
+            disabled={submitting}
           >
             Cancel
           </button>
           <button
-            onClick={handleGoogleSignIn}
+            onClick={handleSubmit}
+            disabled={submitting}
             className="px-5 py-2 flex items-center gap-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow transition"
           >
-            <FaGoogle className="w-5 h-5" />
-            Sign in with Google
+            {editMode ? (
+              submitting ? "Saving..." : "Save Changes"
+            ) : (
+              <>
+                <FaGoogle className="w-5 h-5" />
+                Sign in with Google
+              </>
+            )}
           </button>
         </div>
       </div>
