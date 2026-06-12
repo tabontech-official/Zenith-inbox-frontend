@@ -1630,21 +1630,21 @@ const ShopifyScenariosPage = () => {
       label: "Router configured",
       completed: Array.isArray(routerBranches) && routerBranches.length > 0,
     },
-    {
-      key: "testEmail",
-      label: "Test email generated",
-      completed: hasTestEmail,
-    },
+    // {
+    //   key: "testEmail",
+    //   label: "Test email generated",
+    //   completed: hasTestEmail,
+    // },
     {
       key: "emailModules",
       label: "Email modules configured",
       completed: allEmailModulesConfigured,
     },
-    {
-      key: "connections",
-      label: "Connections verified",
-      completed: allSelectedConnectionsVerified,
-    },
+    // {
+    //   key: "connections",
+    //   label: "Connections verified",
+    //   completed: allSelectedConnectionsVerified,
+    // },
     {
       key: "templates",
       label: "Templates active",
@@ -1800,7 +1800,7 @@ const ShopifyScenariosPage = () => {
     <div className="flex min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 font-inter">
       <Sidebar />
 
-      <div className="flex-1 flex flex-col overflow-hidden md:ml-64 ml-0 transition-all duration-300">
+      <div className="flex-1 flex flex-col md:ml-64 ml-0 transition-all duration-300">
         <div className="sticky top-0 z-30 bg-white border-b px-4 sm:px-6 py-1 shadow-sm">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-0.5">
             <div className="flex-1">
@@ -2002,7 +2002,7 @@ const ShopifyScenariosPage = () => {
           </div>
         </div>
 
-        <div className="flex-1 overflow-auto p-4 lg:p-8">
+        <div className="flex-1 overflow-hidden p-4 lg:p-8">
           {guideStep > 0 && (
             <div
               className="
@@ -2014,8 +2014,8 @@ const ShopifyScenariosPage = () => {
             ></div>
           )}
 
-          <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-6">
-            <aside className="w-full lg:w-72 lg:sticky lg:top-24 self-start z-20">
+          <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-6 h-full">
+            <aside className="w-full lg:w-72 shrink-0 self-start">
               <SetupProgressCard />
             </aside>
             <div className="flex-1">
