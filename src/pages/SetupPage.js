@@ -1990,7 +1990,7 @@ const SetupFlow = () => {
               )}
             </div>
           </div>
-          {!isExpanded && (
+          {/* {!isExpanded && (
             <div className="fixed right-0 top-1/2 -translate-y-1/2 z-50">
               <button
                 onClick={() => setIsExpanded(true)}
@@ -2027,7 +2027,7 @@ const SetupFlow = () => {
                 </span>
               </button>
             </div>
-          )}
+          )} */}
         </div>
       </div>
       <div
@@ -2036,17 +2036,38 @@ const SetupFlow = () => {
       ></div>
 
       <div className="hidden lg:block">
-        <div
-          className={`fixed top-0 right-0 h-full bg-white shadow-2xl border-l border-gray-200 transform transition-transform duration-500 ease-in-out z-40 ${isExpanded ? "translate-x-0" : "translate-x-full"
-            }`}
-          style={{ width: "700px" }}
-        >
-          <InstructionPanel
-            step={step}
-            isExpanded={isExpanded}
-            setIsExpanded={setIsExpanded}
-          />
-        </div>
+       <div
+  className={`fixed top-0 right-0 h-full bg-white shadow-2xl border-l border-gray-200 transform transition-transform duration-500 ease-in-out z-40 ${
+    isExpanded ? "translate-x-0" : "translate-x-full"
+  }`}
+  style={{ width: "700px" }}
+>
+  <button
+    onClick={() => setIsExpanded((prev) => !prev)}
+    className="
+      absolute left-[-52px] top-1/2 -translate-y-1/2
+      bg-black/60 backdrop-blur-xl
+      border border-white/20
+      text-white
+      py-8 px-3
+      rounded-l-[20px]
+      shadow-[0_10px_30px_rgba(0,0,0,0.35)]
+      transition-all duration-300
+      hover:bg-black/70
+      z-50
+    "
+  >
+    <span className="[writing-mode:vertical-lr] rotate-180 text-[11px] font-semibold tracking-[0.25em] uppercase">
+      Setup Guide
+    </span>
+  </button>
+
+  <InstructionPanel
+    step={step}
+    isExpanded={isExpanded}
+    setIsExpanded={setIsExpanded}
+  />
+</div>
       </div>
 
       <motion.button
@@ -2388,7 +2409,7 @@ const InstructionPanel = ({
         }`}
       style={{ WebkitBackdropFilter: "blur(12px)" }}
     >
-      {!isMobile && (
+      {/* {!isMobile && (
         <button
           onClick={() => setIsExpanded((prev) => !prev)}
           className={`fixed top-[46%] -translate-y-1/2 
@@ -2402,7 +2423,7 @@ const InstructionPanel = ({
         >
           {isExpanded ? <FiArrowRight size={18} /> : <FiArrowLeft size={18} />}
         </button>
-      )}
+      )} */}
       <div
         className="flex items-center gap-3 mb-5 
   border-b border-white/40 pb-3"

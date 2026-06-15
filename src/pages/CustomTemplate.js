@@ -7,8 +7,7 @@ import toast from "react-hot-toast";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useContext } from "react";
 import { UserContext } from "../component/UserContext";
-import { Sparkles, Zap, X, CheckCircle2, BoltIcon, Layout } from "lucide-react";
-
+import { Zap, X, CheckCircle2, BoltIcon, Layout, Sparkles } from "lucide-react";
 export default function Template() {
   const location = useLocation();
   const { user } = useContext(UserContext);
@@ -80,9 +79,12 @@ export default function Template() {
     }
   };
 
+
   useEffect(() => {
     fetchTemplates();
   }, []);
+
+
   const [selectedSequenceFilter, setSelectedSequenceFilter] = useState("All");
 
   // 🟢 Filter Templates whenever dropdown changes
@@ -222,7 +224,15 @@ export default function Template() {
       toast.error("Error updating all templates");
     }
   };
+  useEffect(() => {
+    let filtered = [...templates];
 
+    if (selectedSequenceFilter !== "All") {
+      filtered = filtered.filter((t) => t.name === selectedSequenceFilter);
+    }
+
+    setFilteredTemplates(filtered);
+  }, [templates, selectedSequenceFilter]);
   const Loader = () => (
     <div className="flex flex-col justify-center items-center py-10">
       <svg
@@ -259,7 +269,7 @@ export default function Template() {
               <Layout size={24} />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
+              <h1 className="text-2xl font-semibold text-gray-900 tracking-tight flex items-center gap-2">
                 Service Templates
               </h1>
               <p className="text-sm text-gray-500 mt-0.5 max-w-xs sm:max-w-none">
@@ -268,119 +278,71 @@ export default function Template() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 bg-gray-50 p-1.5 rounded-2xl border">
-            {/* AI TOGGLE */}
-            <div className="flex items-center gap-3 px-4 py-2 bg-white rounded-xl shadow-sm border">
-              <div className="flex items-center gap-2">
-                <Sparkles
-                  size={16}
-                  className={aiEnabled ? "text-indigo-500" : "text-gray-400"}
-                />
-                <span className="text-sm font-semibold text-gray-700">
-                  Auto Response
-                </span>
 
-                {!isPro && (
-                  <span className="text-[10px] bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded font-bold">
-                    AWESOME
-                  </span>
-                )}
-              </div>
-
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={aiEnabled}
-                  onChange={async () => {
-                    if (!isPro) {
-                      setShowUpgradeModal(true);
-                      return;
-                    }
-
-                    const userId = localStorage.getItem("userid");
-                    const newValue = !aiEnabled;
-                    setAiEnabled(newValue);
-
-                    try {
-                      await axios.patch(
-                        "https://email-syncing-backend.vercel.app/auth/user/ai",
-                        { userId, enabled: newValue },
-                      );
-                      toast.success(
-                        newValue
-                          ? "Auto Response Active"
-                          : "Auto Response Paused",
-                      );
-                    } catch {
-                      setAiEnabled(!newValue);
-                      toast.error("Sync failed");
-                    }
-                  }}
-                  className="sr-only peer"
-                />
-                <div className="w-10 h-5 bg-gray-200 rounded-full peer-checked:bg-indigo-600 after:absolute after:top-[2px] after:left-[2px] after:h-4 after:w-4 after:bg-white after:rounded-full peer-checked:after:translate-x-5 transition-all"></div>
-              </label>
-            </div>
-
-            {/* GLOBAL TOGGLE */}
-            <div className="flex items-center gap-3 px-4 py-2">
-              <Zap
-                size={16}
-                className={globalActive ? "text-amber-500" : "text-gray-400"}
-              />
-              <span className="text-sm font-semibold text-gray-700">
-                Global Status
-              </span>
-
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={globalActive}
-                  onChange={() => {
-                    if (aiEnabled) return aiBlockToast();
-                    handleGlobalToggle();
-                  }}
-                  className="sr-only peer"
-                />
-                <div
-                  className={`w-10 h-5 rounded-full ${
-                    aiEnabled
-                      ? "bg-gray-200"
-                      : globalActive
-                        ? "bg-green-500"
-                        : "bg-gray-300"
-                  } after:absolute after:top-[2px] after:left-[2px] after:h-4 after:w-4 after:bg-white after:rounded-full ${globalActive && !aiEnabled ? "after:translate-x-5" : ""}`}
-                ></div>
-              </label>
-            </div>
-          </div>
         </header>
 
-        <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between px-4 sm:px-8 py-4 bg-white border-b gap-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4 gap-2">
+        <div className="px-4 sm:px-8 py-4 bg-white border-b">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-2">
               <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
-                Filter by Service:
+                Filter by Template:
               </label>
+
               <select
-                value={selectedServiceFilter}
-                onChange={(e) => setSelectedServiceFilter(e.target.value)}
-                className="border border-gray-300 rounded-lg px-3 py-1 text-sm focus:ring-2 focus:ring-purple-500 w-36 sm:w-40"
+                value={selectedSequenceFilter}
+                onChange={(e) => setSelectedSequenceFilter(e.target.value)}
+                className="border border-gray-300 rounded-lg px-3 py-1 text-sm focus:ring-2 focus:ring-purple-500 w-48 sm:w-56"
               >
-                <option value="All">All Services</option>
-                {[
-                  ...new Set(templates.map((t) => t.service).filter(Boolean)),
-                ].map((srv) => (
-                  <option key={srv} value={srv}>
-                    {srv}
-                  </option>
-                ))}
+                <option value="All">All Templates</option>
+                {[...new Set(templates.map((t) => t.name).filter(Boolean))].map(
+                  (name) => (
+                    <option key={name} value={name}>
+                      {name}
+                    </option>
+                  )
+                )}
               </select>
+            </div>
+
+            <div className="flex items-center justify-end">
+              <div className="flex items-center gap-3 px-4 py-2 bg-gray-50 rounded-xl border border-gray-100">
+                <div className="flex items-center gap-2">
+                  <Zap
+                    size={16}
+                    className={globalActive ? "text-amber-500" : "text-gray-400"}
+                  />
+                  <span className="text-sm font-semibold text-gray-700 whitespace-nowrap">
+                    Template Status
+                  </span>
+                </div>
+
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={globalActive}
+                    onChange={() => {
+                      if (aiEnabled) return aiBlockToast();
+                      handleGlobalToggle();
+                    }}
+                    className="sr-only peer"
+                  />
+
+                  <div
+                    className={`w-10 h-5 rounded-full ${aiEnabled
+                        ? "bg-gray-200"
+                        : globalActive
+                          ? "bg-green-500"
+                          : "bg-gray-300"
+                      } after:absolute after:top-[2px] after:left-[2px] after:h-4 after:w-4 after:bg-white after:rounded-full ${globalActive && !aiEnabled ? "after:translate-x-5" : ""
+                      }`}
+                  ></div>
+                </label>
+              </div>
             </div>
           </div>
 
           {viewType && (
-            <div className="bg-indigo-50 px-4 py-2 rounded-md text-sm text-indigo-700 border border-indigo-200 w-full sm:w-auto text-center sm:text-left">
+            <div className="mt-4 bg-indigo-50 px-4 py-2 rounded-md text-sm text-indigo-700 border border-indigo-200 w-full sm:w-fit text-center sm:text-left">
               Viewing all <b>{viewType}</b> templates
               <button
                 onClick={() => navigate("/templates")}
@@ -432,9 +394,8 @@ export default function Template() {
                         {group.map((t) => (
                           <tr
                             key={t._id}
-                            className={`border-b transition ${
-                              aiEnabled ? "bg-gray-50" : "hover:bg-gray-50"
-                            }`}
+                            className={`border-b transition ${aiEnabled ? "bg-gray-50" : "hover:bg-gray-50"
+                              }`}
                             onClick={() => aiEnabled && aiBlockToast()}
                           >
                             <td className="p-3 text-sm">{t.name}</td>
@@ -473,18 +434,16 @@ export default function Template() {
                                   className="sr-only peer"
                                 />
                                 <div
-                                  className={`w-11 h-6 rounded-full transition-colors ${
-                                    aiEnabled
-                                      ? "bg-gray-200"
-                                      : "bg-gray-300 peer-checked:bg-green-500"
-                                  }`}
+                                  className={`w-11 h-6 rounded-full transition-colors ${aiEnabled
+                                    ? "bg-gray-200"
+                                    : "bg-gray-300 peer-checked:bg-green-500"
+                                    }`}
                                 ></div>
                                 <div
-                                  className={`absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full shadow-md transition-transform ${
-                                    !aiEnabled && t.active
-                                      ? "translate-x-5"
-                                      : ""
-                                  }`}
+                                  className={`absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full shadow-md transition-transform ${!aiEnabled && t.active
+                                    ? "translate-x-5"
+                                    : ""
+                                    }`}
                                 ></div>
                               </label>
                             </td>
@@ -497,11 +456,10 @@ export default function Template() {
                                   if (aiEnabled) return aiBlockToast();
                                   handleEdit(t);
                                 }}
-                                className={`text-sm font-medium ${
-                                  aiEnabled
-                                    ? "text-gray-400"
-                                    : "text-indigo-600 hover:underline"
-                                }`}
+                                className={`text-sm font-medium ${aiEnabled
+                                  ? "text-gray-400"
+                                  : "text-indigo-600 hover:underline"
+                                  }`}
                               >
                                 Edit
                               </button>
@@ -512,11 +470,10 @@ export default function Template() {
                                   if (aiEnabled) return aiBlockToast();
                                   openDeleteConfirm(t._id);
                                 }}
-                                className={`text-sm font-medium ${
-                                  aiEnabled
-                                    ? "text-gray-400"
-                                    : "text-red-600 hover:underline"
-                                }`}
+                                className={`text-sm font-medium ${aiEnabled
+                                  ? "text-gray-400"
+                                  : "text-red-600 hover:underline"
+                                  }`}
                               >
                                 Delete
                               </button>
@@ -553,9 +510,8 @@ export default function Template() {
                     {group.map((t) => (
                       <div
                         key={t._id}
-                        className={`p-4 bg-white border-b ${
-                          aiEnabled ? "opacity-70" : "hover:bg-gray-50"
-                        }`}
+                        className={`p-4 bg-white border-b ${aiEnabled ? "opacity-70" : "hover:bg-gray-50"
+                          }`}
                         onClick={() => aiEnabled && aiBlockToast()}
                       >
                         <div className="flex justify-between items-center mb-2">
@@ -569,11 +525,10 @@ export default function Template() {
                               if (aiEnabled) return aiBlockToast();
                               handleEdit(t);
                             }}
-                            className={`text-xs font-medium ${
-                              aiEnabled
-                                ? "text-gray-400"
-                                : "text-indigo-600 hover:underline"
-                            }`}
+                            className={`text-xs font-medium ${aiEnabled
+                              ? "text-gray-400"
+                              : "text-indigo-600 hover:underline"
+                              }`}
                           >
                             Edit
                           </button>
@@ -627,16 +582,14 @@ export default function Template() {
 
         <div className="fixed inset-0 z-50 flex pointer-events-none">
           <div
-            className={`flex-1 bg-black transition-opacity duration-300 ${
-              isDrawerOpen ? "opacity-40 pointer-events-auto" : "opacity-0"
-            }`}
+            className={`flex-1 bg-black transition-opacity duration-300 ${isDrawerOpen ? "opacity-40 pointer-events-auto" : "opacity-0"
+              }`}
             onClick={() => setIsDrawerOpen(false)}
           ></div>
 
           <div
-            className={`w-full sm:max-w-lg lg:max-w-xl bg-white shadow-2xl h-full flex flex-col transform transition-transform duration-300 ease-in-out pointer-events-auto ${
-              isDrawerOpen ? "translate-x-0" : "translate-x-full"
-            }`}
+            className={`w-full sm:max-w-lg lg:max-w-xl bg-white shadow-2xl h-full flex flex-col transform transition-transform duration-300 ease-in-out pointer-events-auto ${isDrawerOpen ? "translate-x-0" : "translate-x-full"
+              }`}
           >
             <div className="flex justify-between items-center p-4 sm:p-6 border-b">
               <h2 className="text-lg sm:text-xl font-bold text-gray-800 truncate">

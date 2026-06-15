@@ -590,7 +590,6 @@ const OthersScenariosPage = () => {
       },
     });
 
-    // Loop each branch separately
     scenario.routerBranches.forEach((branch, branchIndex) => {
       const branchX =
         START_X + (branchIndex === 0 ? -BRANCH_SPACING_X : BRANCH_SPACING_X);
@@ -626,7 +625,6 @@ const OthersScenariosPage = () => {
           },
         };
 
-        // Gmail special config
         if (nodeType === "gmailNode") {
           const isMongoId = /^[0-9a-fA-F]{24}$/.test(mod.template);
           newNode.data.config = {
@@ -704,13 +702,10 @@ const OthersScenariosPage = () => {
     if (!id) return;
 
     try {
-      // ⭐ 1. Load connections BEFORE rebuilding flow
       await fetchConnections();
 
-      // ⭐ 2. Load templates BEFORE rebuild
       await fetchActiveTemplates();
 
-      // ⭐ 3. Load scenario
       const res = await fetch(
         `https://email-syncing-backend.vercel.app/scenario/detail/${id}`,
       );
@@ -721,7 +716,6 @@ const OthersScenariosPage = () => {
       setScenarioName(data.name || "");
       setIsActive(data.scenarioActive || false);
 
-      // ⭐ 4. Now rebuild AFTER we have connections + templates
       rebuildFlowFromScenario(data);
     } catch (err) {
       console.error("Error loading scenario:", err);
@@ -821,7 +815,6 @@ const OthersScenariosPage = () => {
 
     let hasError = false;
 
-    // Clear old errors
     setRfNodes((prev) =>
       prev.map((n) => ({ ...n, data: { ...n.data, errorMessage: null } })),
     );
@@ -856,7 +849,6 @@ const OthersScenariosPage = () => {
 
         setHighlightedNodes((prev) => [...prev, node.id]);
 
-        // 🔥 Attach error message to node
         setRfNodes((prev) =>
           prev.map((n) =>
             n.id === node.id
@@ -885,7 +877,6 @@ const OthersScenariosPage = () => {
     const targetId = edge.target;
     const newNodeId = crypto.randomUUID();
 
-    // ⭐ Fetch templates BEFORE showing modal
     await fetchActiveTemplates(); // <----- ADD THIS LINE
 
     const sourceNode = rfNodes.find((n) => n.id === sourceId);
@@ -922,7 +913,6 @@ const OthersScenariosPage = () => {
       },
     ]);
 
-    // Replace original edge → two edges
     setRfEdges((prev) => {
       const filtered = prev.filter((e) => e.id !== edge.id);
 
@@ -943,23 +933,19 @@ const OthersScenariosPage = () => {
       ];
     });
 
-    // Open the template modal
     setEditingNode({ id: newNodeId, type: "templateNode" });
     setShowTemplateModal(true);
   };
   const checkIfTemplateBefore = (gmailNodeId) => {
-    // find any edge that leads into this gmail node
     const incoming = rfEdges.filter((e) => e.target === gmailNodeId);
 
     if (!incoming.length) return false;
 
-    // get parent node
     const parentId = incoming[0].source;
     const parentNode = rfNodes.find((n) => n.id === parentId);
 
     if (!parentNode) return false;
 
-    // If parent node is templateNode → show dropdown
     if (parentNode.type === "templateNode") return true;
 
     return false;
@@ -976,7 +962,6 @@ const OthersScenariosPage = () => {
     const newX = (sourceNode.position.x + targetNode.position.x) / 2;
     const newY = (sourceNode.position.y + targetNode.position.y) / 2;
 
-    // 1️⃣ Insert Delay Node in Center
     setRfNodes((prev) => [
       ...prev,
       {
@@ -1005,7 +990,6 @@ const OthersScenariosPage = () => {
       },
     ]);
 
-    // 2️⃣ Replace old edge → 2 edges
     setRfEdges((prev) => {
       const filtered = prev.filter((e) => e.id !== edge.id);
 
@@ -1026,7 +1010,6 @@ const OthersScenariosPage = () => {
       ];
     });
 
-    // 3️⃣ Auto-open Delay modal
     setEditingNode({ id: newNodeId, type: "delayNode" });
     setShowDelayModal(true);
   };

@@ -11,6 +11,10 @@ import {
   Clock,
   Zap,
   Eye,
+  Settings2,
+  RefreshCw,
+  RotateCcw,
+  Clock3,
 } from "lucide-react";
 import { CiLink } from "react-icons/ci";
 
@@ -140,8 +144,11 @@ const ShopifyScenariosPage = () => {
   const [showEditTemplateModal, setShowEditTemplateModal] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState(null);
   const [editContent, setEditContent] = useState("");
-
+  const [showInactiveTemplateConfirm, setShowInactiveTemplateConfirm] = useState(false);
+  const [inactiveTemplateService, setInactiveTemplateService] = useState("");
   const savedShopifyState = localStorage.getItem("shopifyScenarioState");
+  const [scenarioHistory, setScenarioHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
   const existingScenarioId = localStorage.getItem("scenarioId");
   let initialEditingMode = "add";
 
@@ -219,6 +226,35 @@ const ShopifyScenariosPage = () => {
   useEffect(() => {
     fetchConnections();
   }, []);
+
+
+  const fetchScenarioHistory = async () => {
+    try {
+      const activeScenarioId = scenarioId || localStorage.getItem("scenarioId");
+
+      if (!activeScenarioId) return;
+
+      setHistoryLoading(true);
+
+      const res = await fetch(
+        `https://email-syncing-backend.vercel.app/scenario-run-log/history/${activeScenarioId}`
+      );
+
+      const data = await res.json();
+
+      if (data.success) {
+        setScenarioHistory(data.logs || []);
+      }
+    } catch (err) {
+      console.error("Error fetching scenario history:", err);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+  useEffect(() => {
+    fetchScenarioHistory();
+  }, []);
+
   useEffect(() => {
     if (open) {
       fetchConnections();
@@ -1068,7 +1104,7 @@ const ShopifyScenariosPage = () => {
     return () => window.removeEventListener("message", handleGoogleAuthSuccess);
   }, []);
 
-  const handleRunTest = async () => {
+  const handleRunTest = async (skipInactiveTemplateCheck = false) => {
     const { businessEmail, service, description } = formData;
 
     if (!businessEmail?.trim() || !service?.trim() || !description?.trim()) {
@@ -1100,11 +1136,14 @@ const ShopifyScenariosPage = () => {
       const allTemplates = data.data || [];
       const hasInactiveTemplates = allTemplates.some((t) => !t.active);
 
-      if (hasInactiveTemplates) {
+      if (hasInactiveTemplates && !skipInactiveTemplateCheck) {
         setTemplateList(allTemplates);
-        setShowTemplateModal(true);
+        setSelectedServiceForTemplates(service);
+        setInactiveTemplateService(service);
+        setShowInactiveTemplateConfirm(true);
+
         toast.error(
-          "Please activate these templates before running the test.",
+          `${service} templates are not active.`,
           {
             duration: 5000,
             style: {
@@ -1114,6 +1153,7 @@ const ShopifyScenariosPage = () => {
             },
           },
         );
+
         return;
       }
     } catch (err) {
@@ -1241,6 +1281,7 @@ const ShopifyScenariosPage = () => {
 
       if (data.success) {
         toast.success("Test completed successfully!");
+        fetchScenarioHistory();
         setHighlightRunTest(false);
         setTestEmailGenerated(true);
         setShowValidation(true);
@@ -1328,7 +1369,22 @@ const ShopifyScenariosPage = () => {
       toast.error("Run Test failed.");
     }
   };
+  const handleRunTestWithGeneralTemplates = async () => {
+    const originalService = formData.service;
 
+    setFormData((prev) => ({
+      ...prev,
+      service: "General",
+    }));
+
+    setTimeout(() => {
+      handleRunTest();
+      setFormData((prev) => ({
+        ...prev,
+        service: originalService,
+      }));
+    }, 0);
+  };
   const [showEmailPreview, setShowEmailPreview] = useState(false);
   const [emailFields, setEmailFields] = useState({});
   const [selectedField, setSelectedField] = useState(null);
@@ -1796,6 +1852,92 @@ const ShopifyScenariosPage = () => {
     );
   };
 
+
+  const ScenarioHistoryPanel = () => {
+    return (
+      <div className="h-full p-4">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-xs font-bold text-gray-700 uppercase">
+            History
+          </h3>
+
+          <button
+            onClick={fetchScenarioHistory}
+            className="text-gray-500 hover:text-gray-800"
+            title="Refresh history"
+          >
+            ↻
+          </button>
+        </div>
+
+        <div className="space-y-3">
+          {historyLoading ? (
+            <p className="text-xs text-gray-500">Loading...</p>
+          ) : scenarioHistory.length === 0 ? (
+            <p className="text-xs text-gray-400">No history yet.</p>
+          ) : (
+            scenarioHistory.map((log) => (
+              <div
+                key={log._id}
+                className="bg-white border border-gray-200 rounded-sm px-4 py-3 hover:bg-gray-50 transition"
+              >
+                <div className="flex items-start justify-between">
+                  <h4 className="text-xs font-semibold text-gray-800">
+                    {new Date(log.createdAt).toLocaleString()}
+                  </h4>
+
+                  <span
+                    className={`text-[10px] px-2 py-1 rounded-md font-medium ${log.status === "success"
+                      ? "bg-green-100 text-green-700"
+                      : log.status === "failed"
+                        ? "bg-red-100 text-red-700"
+                        : "bg-yellow-100 text-yellow-700"
+                      }`}
+                  >
+                    {log.status === "failed" ? "Error" : "Success"}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-3 mt-3 text-[11px] text-gray-500">
+                  <div className="flex items-center gap-1">
+                    <RotateCcw size={12} />
+                    <span>Manual</span>
+                  </div>
+
+                  <div className="flex items-center gap-1">
+                    <Clock3 size={12} />
+                    <span>
+                      {log.startedAt && log.completedAt
+                        ? `${Math.max(
+                          1,
+                          Math.round(
+                            (new Date(log.completedAt) -
+                              new Date(log.startedAt)) /
+                            1000
+                          )
+                        )} sec`
+                        : "Less than 1 sec"}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-1">
+                    <Settings2 size={12} />
+                    <span>{log.steps?.length || 0} operations</span>
+                  </div>
+
+                  <div className="flex items-center gap-1">
+                    <RefreshCw size={12} />
+                    <span>0</span>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 font-inter">
       <Sidebar />
@@ -2002,24 +2144,23 @@ const ShopifyScenariosPage = () => {
           </div>
         </div>
 
-        <div className="flex-1 overflow-hidden p-4 lg:p-8">
-          {guideStep > 0 && (
-            <div
-              className="
+        <div className="flex-1 overflow-hidden">          {guideStep > 0 && (
+          <div
+            className="
     fixed inset-0 
     bg-black bg-opacity-20 
     backdrop-blur-sm
     z-[40]
   "
-            ></div>
-          )}
+          ></div>
+        )}
 
-          <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-6 h-full">
-            <aside className="w-full lg:w-72 shrink-0 self-start">
+          <div className="grid grid-cols-1 lg:grid-cols-[18rem_minmax(0,1fr)_20rem] h-full">
+            <aside className="w-full lg:w-72 self-start p-4">
               <SetupProgressCard />
             </aside>
-            <div className="flex-1">
-              <div className="max-w-5xl mx-auto">
+            <div className="min-w-0 flex justify-center p-4 lg:p-8">
+              <div className="w-full max-w-5xl mx-auto flex flex-col items-center">
                 <div className="flex flex-col items-center mb-8">
                   <div ref={webhookNodeRef} className={guideStep === 1 ? "relative z-[70]" : "relative"}>
                     {/* GUIDE STEP 1 */}
@@ -2329,6 +2470,9 @@ const ShopifyScenariosPage = () => {
               </div>
             </div>
 
+            <aside className="hidden lg:block border-l border-gray-200  h-full overflow-y-auto">
+              <ScenarioHistoryPanel />
+            </aside>
             {open && (
               <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                 <div
@@ -3948,6 +4092,59 @@ const ShopifyScenariosPage = () => {
                   View all connections
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {showInactiveTemplateConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div className="p-5 border-b bg-yellow-50">
+              <h2 className="text-lg font-bold text-gray-900">
+                Templates are not active
+              </h2>
+              <p className="text-sm text-gray-600 mt-1">
+                The templates for this service are currently inactive.
+              </p>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <p className="text-sm text-gray-800 leading-relaxed">
+                  <b>{inactiveTemplateService}</b> templates are not active.
+                  Do you want to continue using your <b>General templates</b> instead?
+                </p>
+              </div>
+
+              <p className="text-xs text-gray-500 leading-relaxed">
+                If you continue, the test will use your General templates. If you want
+                service-specific replies, activate the templates for this service first.
+              </p>
+            </div>
+
+            <div className="border-t p-4 bg-gray-50 flex flex-col sm:flex-row justify-end gap-3">
+              <button
+                onClick={() => {
+                  setShowInactiveTemplateConfirm(false);
+                  window.open(
+                    `/templates?service=${encodeURIComponent(inactiveTemplateService)}`,
+                    "_blank"
+                  );
+                }}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-100"
+              >
+                Activate Templates
+              </button>
+
+              <button
+                onClick={() => {
+                  setShowInactiveTemplateConfirm(false);
+                  handleRunTest(true);
+                }}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700"
+              >
+                Continue with General Templates
+              </button>
             </div>
           </div>
         </div>
