@@ -149,6 +149,7 @@ const ShopifyScenariosPage = () => {
   const savedShopifyState = localStorage.getItem("shopifyScenarioState");
   const [scenarioHistory, setScenarioHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [selectedHistoryLog, setSelectedHistoryLog] = useState(null);
   const existingScenarioId = localStorage.getItem("scenarioId");
   let initialEditingMode = "add";
 
@@ -1879,6 +1880,8 @@ const ShopifyScenariosPage = () => {
             scenarioHistory.map((log) => (
               <div
                 key={log._id}
+                  onClick={() => setSelectedHistoryLog(log)}
+
                 className="bg-white border border-gray-200 rounded-sm px-4 py-3 hover:bg-gray-50 transition"
               >
                 <div className="flex items-start justify-between">
@@ -1943,6 +1946,282 @@ const ShopifyScenariosPage = () => {
       <Sidebar />
 
       <div className="flex-1 flex flex-col md:ml-64 ml-0 transition-all duration-300">
+{selectedHistoryLog ? (
+  <div className="flex-1 bg-slate-50 p-6 overflow-y-auto">
+    <button
+      onClick={() => setSelectedHistoryLog(null)}
+      className="mb-5 inline-flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900"
+    >
+      <ArrowLeft size={16} />
+      Back to Scenario
+    </button>
+
+    <div className="max-w-6xl mx-auto space-y-6">
+      {/* Header */}
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
+        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">
+              Scenario Run History
+            </h1>
+            <p className="text-sm text-gray-500 mt-1">
+              Complete record of received email, selected template, sent reply, and execution steps.
+            </p>
+          </div>
+
+          <span
+            className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase ${
+              selectedHistoryLog.status === "success"
+                ? "bg-green-100 text-green-700"
+                : selectedHistoryLog.status === "failed"
+                ? "bg-red-100 text-red-700"
+                : "bg-yellow-100 text-yellow-700"
+            }`}
+          >
+            {selectedHistoryLog.status || "unknown"}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
+          <div className="bg-slate-50 rounded-xl p-4 border">
+            <p className="text-xs text-gray-500">Scenario</p>
+            <p className="font-semibold text-gray-900">
+              {selectedHistoryLog.scenarioName || selectedHistoryLog.name || "Shopify Scenario"}
+            </p>
+          </div>
+
+          <div className="bg-slate-50 rounded-xl p-4 border">
+            <p className="text-xs text-gray-500">Run Type</p>
+            <p className="font-semibold text-gray-900 capitalize">
+              {selectedHistoryLog.runType || "N/A"}
+            </p>
+          </div>
+
+          <div className="bg-slate-50 rounded-xl p-4 border">
+            <p className="text-xs text-gray-500">Service</p>
+            <p className="font-semibold text-gray-900">
+              {selectedHistoryLog.service || selectedHistoryLog.requestPayload?.service || "N/A"}
+            </p>
+          </div>
+
+          <div className="bg-slate-50 rounded-xl p-4 border">
+            <p className="text-xs text-gray-500">Duration</p>
+            <p className="font-semibold text-gray-900">
+              {selectedHistoryLog.startedAt && selectedHistoryLog.completedAt
+                ? `${Math.max(
+                    1,
+                    Math.round(
+                      (new Date(selectedHistoryLog.completedAt) -
+                        new Date(selectedHistoryLog.startedAt)) /
+                        1000
+                    )
+                  )} sec`
+                : "N/A"}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Email Flow */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center">
+              <Mail size={18} />
+            </div>
+            <div>
+              <h2 className="font-bold text-gray-900">Email Received</h2>
+              <p className="text-xs text-gray-500">Incoming test/customer email</p>
+            </div>
+          </div>
+
+          <div className="space-y-3 text-sm">
+            <p>
+              <span className="text-gray-500">Customer:</span>{" "}
+              <b>{selectedHistoryLog.customerName || "N/A"}</b>
+            </p>
+            <p>
+              <span className="text-gray-500">Business Email:</span>{" "}
+              <b>{selectedHistoryLog.businessEmail || "N/A"}</b>
+            </p>
+            <p>
+              <span className="text-gray-500">Parent Email ID:</span>{" "}
+              <span className="font-mono text-xs">
+                {selectedHistoryLog.parentEmailId || "N/A"}
+              </span>
+            </p>
+            <p>
+              <span className="text-gray-500">Received At:</span>{" "}
+              {selectedHistoryLog.startedAt
+                ? new Date(selectedHistoryLog.startedAt).toLocaleString()
+                : "N/A"}
+            </p>
+          </div>
+
+          {selectedHistoryLog.requestPayload && (
+            <div className="mt-5 bg-slate-50 border rounded-xl p-4">
+              <h3 className="text-sm font-bold text-gray-800 mb-3">
+                Email Details
+              </h3>
+
+              <div className="grid grid-cols-1 gap-2 text-sm">
+                <p><b>Full Name:</b> {selectedHistoryLog.requestPayload.fullName || "N/A"}</p>
+                <p><b>Store:</b> {selectedHistoryLog.requestPayload.storeName || "N/A"}</p>
+                <p><b>Country:</b> {selectedHistoryLog.requestPayload.country || "N/A"}</p>
+                <p><b>Budget:</b> {selectedHistoryLog.requestPayload.budget || "N/A"}</p>
+                <p><b>Description:</b> {selectedHistoryLog.requestPayload.helpDescription || "N/A"}</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-full bg-green-100 text-green-700 flex items-center justify-center">
+              <FiMail size={18} />
+            </div>
+            <div>
+              <h2 className="font-bold text-gray-900">Reply Sent</h2>
+              <p className="text-xs text-gray-500">Template reply sent to customer</p>
+            </div>
+          </div>
+
+          <div className="space-y-3 text-sm">
+            <p>
+              <span className="text-gray-500">Sent To:</span>{" "}
+              <b>{selectedHistoryLog.businessEmail || "N/A"}</b>
+            </p>
+            <p>
+              <span className="text-gray-500">Reply Email ID:</span>{" "}
+              <span className="font-mono text-xs">
+                {selectedHistoryLog.replyEmailId || "N/A"}
+              </span>
+            </p>
+            <p>
+              <span className="text-gray-500">Template:</span>{" "}
+              <b>{selectedHistoryLog.templateName || "N/A"}</b>
+            </p>
+            <p>
+              <span className="text-gray-500">Template Type:</span>{" "}
+              <b>
+                {selectedHistoryLog.usedGeneralTemplate
+                  ? "General Template"
+                  : "Service Specific Template"}
+              </b>
+            </p>
+            <p>
+              <span className="text-gray-500">Completed At:</span>{" "}
+              {selectedHistoryLog.completedAt
+                ? new Date(selectedHistoryLog.completedAt).toLocaleString()
+                : "N/A"}
+            </p>
+          </div>
+
+          <div className="mt-5 bg-green-50 border border-green-200 rounded-xl p-4">
+            <p className="text-sm text-green-800 font-medium">
+              {selectedHistoryLog.message || "Reply sent successfully."}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Timeline Steps */}
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
+        <h2 className="text-lg font-bold text-gray-900 mb-5">
+          Execution Timeline
+        </h2>
+
+        {(selectedHistoryLog.steps || []).length === 0 ? (
+          <p className="text-sm text-gray-500">No steps recorded.</p>
+        ) : (
+          <div className="space-y-4">
+            {selectedHistoryLog.steps.map((step, index) => (
+              <div key={index} className="flex gap-4">
+                <div className="flex flex-col items-center">
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
+                      step.status === "success"
+                        ? "bg-green-500 text-white"
+                        : step.status === "failed"
+                        ? "bg-red-500 text-white"
+                        : "bg-yellow-500 text-white"
+                    }`}
+                  >
+                    {index + 1}
+                  </div>
+
+                  {index !== selectedHistoryLog.steps.length - 1 && (
+                    <div className="w-px h-full bg-gray-200 mt-2"></div>
+                  )}
+                </div>
+
+                <div className="flex-1 border border-gray-200 rounded-xl p-4 bg-slate-50">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                    <div>
+                      <h3 className="font-semibold text-gray-900">
+                        {step.stepName || `Step ${index + 1}`}
+                      </h3>
+                      <p className="text-xs text-gray-500">
+                        {step.stepKey || "N/A"}
+                      </p>
+                    </div>
+
+                    <span
+                      className={`text-xs px-2 py-1 rounded-md font-semibold ${
+                        step.status === "success"
+                          ? "bg-green-100 text-green-700"
+                          : step.status === "failed"
+                          ? "bg-red-100 text-red-700"
+                          : "bg-yellow-100 text-yellow-700"
+                      }`}
+                    >
+                      {step.status || "pending"}
+                    </span>
+                  </div>
+
+                  {step.message && (
+                    <p className="text-sm text-gray-700 mt-3">
+                      {step.message}
+                    </p>
+                  )}
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-3 text-xs text-gray-500">
+                    <p>
+                      <b>Location:</b> {step.location || "N/A"}
+                    </p>
+                    <p>
+                      <b>Time:</b>{" "}
+                      {step.completedAt
+                        ? new Date(step.completedAt).toLocaleString()
+                        : "N/A"}
+                    </p>
+                  </div>
+
+                  {step.issue && (
+                    <p className="mt-3 text-sm text-red-600">
+                      <b>Issue:</b> {step.issue}
+                    </p>
+                  )}
+
+                  {step.suggestion && (
+                    <p className="mt-3 text-sm text-blue-600">
+                      <b>Suggestion:</b> {step.suggestion}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* IDs */}
+  
+    </div>
+  </div>
+) : (
+  <>
+
         <div className="sticky top-0 z-30 bg-white border-b px-4 sm:px-6 py-1 shadow-sm">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-0.5">
             <div className="flex-1">
@@ -2914,6 +3193,8 @@ const ShopifyScenariosPage = () => {
             }
           }}
         />
+        </>
+        )}
       </div>
       {showEmailPreview && (
         <EmailInspector
