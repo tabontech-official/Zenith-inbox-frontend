@@ -927,30 +927,25 @@ const ShopifyScenariosPage = () => {
               }
             }}
             title={isWebhook ? "View Webhook Info" : "View Test Email"}
-            className={`absolute top-2 right-2 p-1.5 border ${isWebhook
-              ? "border-red-500 text-red-600 hover:bg-red-50"
-              : "border-green-500 text-green-600 hover:bg-green-50"
-              } rounded-lg transition-colors shadow-sm`}
+           className="absolute top-2 right-2 rounded-lg border border-[#C7D2FE] bg-white p-1.5 text-[#7375E8] shadow-sm transition hover:bg-[#EEF2FF] hover:text-[#5B5FD6]"
           >
             <Eye className="w-4 h-4" />
           </button>
         )}
 
         <div className="flex items-center space-x-3 mb-3">
-          <div
-            className={`${color
-              .replace("border-", "bg-")
-              .replace("-500", "-100")} p-3 rounded-lg`}
-          >
-            <Icon
-              className={`w-6 h-6 ${completed ? "text-green-500" : color.replace("border-", "text-")
-                }`}
-            />
-          </div>
+         <div className="bg-[#EEF2FF] p-3 rounded-lg">
+  <Icon
+    className={`w-6 h-6 ${
+      completed ? "text-[#7375E8]" : "text-slate-500"
+    }`}
+  />
+</div>
           <div className="flex-1">
             <h3
-              className={`font-semibold text-sm ${completed ? "text-green-600" : "text-gray-800"
-                }`}
+             className={`font-semibold text-sm ${
+  completed ? "text-[#5B5FD6]" : "text-slate-800"
+}`}
             >
               {title}
             </h3>
@@ -966,8 +961,7 @@ const ShopifyScenariosPage = () => {
                   e.stopPropagation();
                   onEdit();
                 }}
-                className="p-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-              >
+className="rounded-lg bg-[#EEF2FF] p-1.5 text-[#5B5FD6] transition hover:bg-[#E0E7FF]"              >
                 <Settings className="w-3 h-3" />
               </button>
             )}
@@ -977,8 +971,7 @@ const ShopifyScenariosPage = () => {
                   e.stopPropagation();
                   onDelete();
                 }}
-                className="p-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-              >
+className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FECACA]"              >
                 <X className="w-3 h-3" />
               </button>
             )}
@@ -986,11 +979,11 @@ const ShopifyScenariosPage = () => {
         )}
 
         {!isLast && (
-          <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-gray-400 rounded-full border-2 border-white"></div>
+          <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-[#C7D2FE] rounded-full border-2 border-white"></div>
         )}
 
         {!isFirst && (
-          <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-gray-400 rounded-full border-2 border-white"></div>
+          <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-[#C7D2FE] rounded-full border-2 border-white"></div>
         )}
       </div>
     </div>
@@ -999,10 +992,10 @@ const ShopifyScenariosPage = () => {
   const AddModuleButton = ({ onClick }) => (
     <button
       onClick={onClick}
-      className="w-64 h-24 border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center hover:border-purple-500 hover:bg-purple-50 transition-all group"
+    className="flex h-24 w-64 items-center justify-center rounded-xl border-2 border-dashed border-[#C7D2FE] bg-white transition-all hover:border-[#8A8CF4] hover:bg-[#F5F7FF] group"
     >
-      <Plus className="w-6 h-6 text-gray-400 group-hover:text-purple-500" />
-      <span className="ml-2 text-gray-500 group-hover:text-purple-600 font-medium">
+    <Plus className="h-6 w-6 text-[#8A8CF4]" />
+    <span className="ml-2 font-medium text-[#5B5FD6]">
         Add Module
       </span>
     </button>
@@ -1010,16 +1003,10 @@ const ShopifyScenariosPage = () => {
   const AddBetweenButton = ({ onClick }) => (
     <button
       onClick={onClick}
-      className="
-      w-7 h-7 rounded-full 
-      bg-white border border-gray-300 
-      flex items-center justify-center 
-      shadow hover:bg-gray-100 transition 
-      absolute left-1/2 transform -translate-x-1/2
-      z-20
-    "
+         className="absolute left-1/2 z-20 flex h-7 w-7 -translate-x-1/2 items-center justify-center rounded-full border border-[#C7D2FE] bg-white shadow transition hover:bg-[#EEF2FF]"
+
     >
-      <Plus size={16} className="text-gray-700" />
+    <Plus size={16} className="text-[#5B5FD6]" />
     </button>
   );
 
@@ -2718,7 +2705,7 @@ const ShopifyScenariosPage = () => {
                           icon={Cloud}
                           title="Webhooks"
                           subtitle="Custom mailhook"
-                          color="border-red-500"
+                          color="border-[#8A8CF4]"
                           number={1}
                           isFirst={true}
                           completed={
@@ -2791,8 +2778,7 @@ const ShopifyScenariosPage = () => {
                           icon={GitBranch}
                           title="Router"
                           subtitle="Route to different paths"
-                          color="border-green-500"
-                          number={2}
+                          color="border-[#8A8CF4]"                          number={2}
                           isRouter={true}
                           completed={
                             showValidation
@@ -2856,7 +2842,7 @@ const ShopifyScenariosPage = () => {
                           icon={FiFileText}
                           title="Template"
                           subtitle="Define message structure and content"
-                          color="border-blue-500"
+                          color="border-[#8A8CF4]"
                           number={3}
                           completed={
                             showValidation
@@ -2897,10 +2883,7 @@ const ShopifyScenariosPage = () => {
                                     icon={Icon}
                                     title={getModuleTitle(module)}
                                     subtitle={module.description}
-                                    color={`border-${module.app.color.replace(
-                                      "bg-",
-                                      "",
-                                    )}`}
+                                    color="border-[#8A8CF4]"
                                     number={3 + moduleIndex}
                                     onEdit={() =>
                                       handleEditModule(branchIndex, module)
