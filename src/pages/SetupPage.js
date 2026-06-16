@@ -66,7 +66,8 @@ const SetupFlow = () => {
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [helpTab, setHelpTab] = useState("gmail");
   const [showInboxModal, setShowInboxModal] = useState(false);
-
+  const [lastSeenMailhookEmailId, setLastSeenMailhookEmailId] = useState(null);
+  const [autoOpenedEmailId, setAutoOpenedEmailId] = useState(null);
   const formatEmailBody = (text = "") => {
     return text
       .replace(/\r\n/g, "\n")
@@ -391,7 +392,7 @@ const SetupFlow = () => {
       .replace(/\n/g, "<br />");
   };
 
-  const fetchMailhookEmails = async () => {
+  const fetchMailhookEmails = async ({ autoOpen = false } = {}) => {
     if (!user?._id) return;
 
     try {
@@ -405,13 +406,34 @@ const SetupFlow = () => {
 
       if (data.success && data.data) {
         const emails = Array.isArray(data.data) ? data.data : [data.data];
+        const latestEmail = emails[0];
 
         setLatestMailhookEmails(emails);
-        setOpenedMailhookEmail(emails[0]);
-      } else {
-        setLatestMailhookEmails([]);
-        setOpenedMailhookEmail(null);
+        setOpenedMailhookEmail(latestEmail);
+
+        const latestEmailId =
+          latestEmail?._id ||
+          latestEmail?.messageId ||
+          latestEmail?.date ||
+          latestEmail?.subject;
+
+        if (
+          autoOpen &&
+          latestEmailId &&
+          latestEmailId !== autoOpenedEmailId
+        ) {
+          setAutoOpenedEmailId(latestEmailId);
+          setLastSeenMailhookEmailId(latestEmailId);
+          setShowInboxModal(true);
+
+          toast.success("New email received in Mailhook Inbox!");
+        }
+
+        return;
       }
+
+      setLatestMailhookEmails([]);
+      setOpenedMailhookEmail(null);
     } catch (err) {
       console.error("Error fetching mailhook emails:", err);
       setLatestMailhookEmails([]);
@@ -428,7 +450,15 @@ const SetupFlow = () => {
   }, [step, user]);
 
 
+  useEffect(() => {
+    if (step !== 3 || !user?._id) return;
 
+    const interval = setInterval(() => {
+      fetchMailhookEmails({ autoOpen: true });
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [step, user?._id, autoOpenedEmailId]);
   const fetchValidateEmail = async () => {
     try {
       const res = await fetch(
@@ -823,7 +853,7 @@ const SetupFlow = () => {
             <div className="w-full flex items-center justify-center relative min-h-[48px]">
 
               {/* LEFT: Mailhook Inbox Button */}
-              {step === 3 && (
+              {/* {step === 3 && (
                 <button
                   type="button"
                   onClick={async () => {
@@ -862,7 +892,7 @@ const SetupFlow = () => {
                     Live
                   </span>
                 </button>
-              )}
+              )} */}
 
               {/* CENTER: Replex Engine Heading */}
               <div className="flex items-center gap-2 px-3 py-1.5">
@@ -1202,6 +1232,53 @@ const SetupFlow = () => {
     "
                   style={{ WebkitBackdropFilter: "blur(19.9px)" }}
                 >
+                  {step === 3 && (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        setShowInboxModal(true);
+                        await fetchMailhookEmails();
+                      }}
+                      className="
+      absolute top-5 right-5
+      flex items-center gap-2
+      px-4 py-2.5
+      rounded-full
+      font-sans text-sm font-semibold
+      text-[#111827]
+      bg-white/70
+      border border-white/80
+      backdrop-blur-xl
+      shadow-[0_8px_24px_rgba(79,70,229,0.18)]
+      hover:bg-white/90
+      hover:shadow-[0_10px_30px_rgba(79,70,229,0.28)]
+      hover:scale-[1.03]
+      active:scale-[0.97]
+      transition-all duration-300
+      group
+    "
+                      style={{ WebkitBackdropFilter: "blur(14px)" }}
+                    >
+                      <span className="relative flex h-3 w-3 items-center justify-center">
+                        {/* blinking outer highlight */}
+                        <span className="absolute inline-flex h-5 w-5 rounded-full bg-emerald-400 opacity-40 animate-ping" />
+
+                        {/* soft glow ring */}
+                        <span className="absolute inline-flex h-4 w-4 rounded-full bg-emerald-300 opacity-60" />
+
+                        {/* main dot */}
+                        <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-emerald-100 shadow-[0_0_10px_rgba(16,185,129,0.9)]" />
+                      </span>
+
+                      <span className="whitespace-nowrap tracking-tight">
+                        Mailhook Inbox
+                      </span>
+
+                      <span className="ml-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 border border-indigo-200 group-hover:bg-indigo-200 transition">
+                        Live
+                      </span>
+                    </button>
+                  )}
                   <div className="w-full h-[48px] flex items-center justify-center mb-2 overflow-hidden">
                     <AlertMessage />
                   </div>
@@ -2036,15 +2113,14 @@ const SetupFlow = () => {
       ></div>
 
       <div className="hidden lg:block">
-       <div
-  className={`fixed top-0 right-0 h-full bg-white shadow-2xl border-l border-gray-200 transform transition-transform duration-500 ease-in-out z-40 ${
-    isExpanded ? "translate-x-0" : "translate-x-full"
-  }`}
-  style={{ width: "700px" }}
->
-  <button
-    onClick={() => setIsExpanded((prev) => !prev)}
-    className="
+        <div
+          className={`fixed top-0 right-0 h-full bg-white shadow-2xl border-l border-gray-200 transform transition-transform duration-500 ease-in-out z-40 ${isExpanded ? "translate-x-0" : "translate-x-full"
+            }`}
+          style={{ width: "700px" }}
+        >
+          <button
+            onClick={() => setIsExpanded((prev) => !prev)}
+            className="
       absolute left-[-52px] top-1/2 -translate-y-1/2
       bg-black/60 backdrop-blur-xl
       border border-white/20
@@ -2056,18 +2132,18 @@ const SetupFlow = () => {
       hover:bg-black/70
       z-50
     "
-  >
-    <span className="[writing-mode:vertical-lr] rotate-180 text-[11px] font-semibold tracking-[0.25em] uppercase">
-      Setup Guide
-    </span>
-  </button>
+          >
+            <span className="[writing-mode:vertical-lr] rotate-180 text-[11px] font-semibold tracking-[0.25em] uppercase">
+              Setup Guide
+            </span>
+          </button>
 
-  <InstructionPanel
-    step={step}
-    isExpanded={isExpanded}
-    setIsExpanded={setIsExpanded}
-  />
-</div>
+          <InstructionPanel
+            step={step}
+            isExpanded={isExpanded}
+            setIsExpanded={setIsExpanded}
+          />
+        </div>
       </div>
 
       <motion.button

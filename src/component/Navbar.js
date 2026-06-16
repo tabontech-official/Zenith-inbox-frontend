@@ -208,16 +208,25 @@ const Navbar = () => {
               {user?.fullName?.slice(0, 2).toUpperCase() || "U"}
             </button>
 
-            {showProfileMenu && !isProfilePage && (
+            {showProfileMenu && (
               <div className="absolute right-0 mt-2 w-44 bg-white border rounded-lg shadow-lg z-50 overflow-hidden">
+                {!isProfilePage && (
+                  <button
+                    onClick={() => {
+                      setShowProfileMenu(false);
+                      navigate("/profile");
+                    }}
+                    className="w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2 transition"
+                  >
+                    <FiUser className="text-gray-600" /> Profile
+                  </button>
+                )}
+
                 <button
-                  onClick={() => {
-                    setShowProfileMenu(false);
-                    navigate("/profile");
-                  }}
-                  className="w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2 transition"
+                  onClick={handleLogout}
+                  className="w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 transition border-t"
                 >
-                  <FiUser className="text-gray-600" /> Profile
+                  <FiLogOut className="text-red-500" /> Logout
                 </button>
               </div>
             )}
