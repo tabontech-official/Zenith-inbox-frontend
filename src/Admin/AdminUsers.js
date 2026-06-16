@@ -622,36 +622,41 @@ const AdminUsers = () => {
                       </td>
 
                       {/* Actions */}
-                      <td className="p-5 text-center">
-                        <div className="flex items-center justify-center gap-2">
-                          {isPro ? (
-                            <button
-                              onClick={() => openCancelModal(user._id)}
-                              disabled={revokeLoading}
-                              className="px-3 py-1.5 text-[10px] font-black tracking-widest text-amber-600 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl transition-all uppercase disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              {revokeLoading && cancelUserId === user._id ? "Revoking..." : "Revoke Access"}
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => openProModal(user._id)}
-                              className="px-3 py-1.5 text-[10px] font-black tracking-widest text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition-all uppercase"
-                            >
-                              Upgrade Pro
-                            </button>
-                          )}
+                    {/* Actions */}
+<td className="p-5 text-center">
+  {user.role !== "admin" && (
+    <div className="flex items-center justify-center gap-2">
+      {isPro ? (
+        <button
+          onClick={() => openCancelModal(user._id)}
+          disabled={revokeLoading}
+          className="px-3 py-1.5 text-[10px] font-black tracking-widest text-amber-600 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl transition-all uppercase disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {revokeLoading && cancelUserId === user._id
+            ? "Revoking..."
+            : "Revoke Access"}
+        </button>
+      ) : (
+        <button
+          onClick={() => openProModal(user._id)}
+          className="px-3 py-1.5 text-[10px] font-black tracking-widest text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition-all uppercase"
+        >
+          Upgrade Pro
+        </button>
+      )}
 
-                          <button
-                            type="button"
-                            onClick={() => openSingleDelete(user._id)}
-                            disabled={deleteLoading}
-                            className="p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                            title="Delete User"
-                          >
-                            <FiTrash2 size={18} />
-                          </button>
-                        </div>
-                      </td>
+      <button
+        type="button"
+        onClick={() => openSingleDelete(user._id)}
+        disabled={deleteLoading}
+        className="p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+        title="Delete User"
+      >
+        <FiTrash2 size={18} />
+      </button>
+    </div>
+  )}
+</td>
                     </tr>
                   );
                 })}
@@ -743,8 +748,8 @@ const AdminUsers = () => {
                     disabled={proLoading}
                     onClick={() => setDuration(d)}
                     className={`px-3 py-1 rounded-lg text-sm font-medium transition-all ${duration === d
-                        ? "bg-indigo-600 text-white"
-                        : "bg-slate-100 hover:bg-indigo-100 text-slate-700"
+                      ? "bg-indigo-600 text-white"
+                      : "bg-slate-100 hover:bg-indigo-100 text-slate-700"
                       } disabled:opacity-50 disabled:cursor-not-allowed`}
                   >
                     {d}d
