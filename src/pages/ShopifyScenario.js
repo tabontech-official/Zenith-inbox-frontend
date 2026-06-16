@@ -1880,7 +1880,7 @@ const ShopifyScenariosPage = () => {
             scenarioHistory.map((log) => (
               <div
                 key={log._id}
-                  onClick={() => setSelectedHistoryLog(log)}
+                onClick={() => setSelectedHistoryLog(log)}
 
                 className="bg-white border border-gray-200 rounded-sm px-4 py-3 hover:bg-gray-50 transition"
               >
@@ -1946,1031 +1946,891 @@ const ShopifyScenariosPage = () => {
       <Sidebar />
 
       <div className="flex-1 flex flex-col md:ml-64 ml-0 transition-all duration-300">
-{selectedHistoryLog ? (
-  <div className="flex-1 bg-slate-50 p-6 overflow-y-auto">
-    <button
-      onClick={() => setSelectedHistoryLog(null)}
-      className="mb-5 inline-flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900"
-    >
-      <ArrowLeft size={16} />
-      Back to Scenario
-    </button>
+        {selectedHistoryLog ? (() => {
+          const emailBody = selectedHistoryLog.requestPayload?.body || "";
 
-    <div className="max-w-6xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
-        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              Scenario Run History
-            </h1>
-            <p className="text-sm text-gray-500 mt-1">
-              Complete record of received email, selected template, sent reply, and execution steps.
-            </p>
-          </div>
+          const getLineValue = (label) => {
+            const regex = new RegExp(`${label}\\s*:\\s*(.+)`, "i");
+            const match = emailBody.match(regex);
+            return match?.[1]?.trim() || "";
+          };
 
-          <span
-            className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase ${
-              selectedHistoryLog.status === "success"
-                ? "bg-green-100 text-green-700"
-                : selectedHistoryLog.status === "failed"
-                ? "bg-red-100 text-red-700"
-                : "bg-yellow-100 text-yellow-700"
-            }`}
-          >
-            {selectedHistoryLog.status || "unknown"}
-          </span>
-        </div>
+          const getBusinessName = () => {
+            const match = emailBody.match(/business,\s*(.+?)\./i);
+            return match?.[1]?.trim() || "";
+          };
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
-          <div className="bg-slate-50 rounded-xl p-4 border">
-            <p className="text-xs text-gray-500">Scenario</p>
-            <p className="font-semibold text-gray-900">
-              {selectedHistoryLog.scenarioName || selectedHistoryLog.name || "Shopify Scenario"}
-            </p>
-          </div>
+          const getCustomerFromSignature = () => {
+            const match = emailBody.match(/Best regards,\s*([\s\S]+)/i);
+            return match?.[1]?.trim()?.split("\n")?.[0] || "";
+          };
 
-          <div className="bg-slate-50 rounded-xl p-4 border">
-            <p className="text-xs text-gray-500">Run Type</p>
-            <p className="font-semibold text-gray-900 capitalize">
-              {selectedHistoryLog.runType || "N/A"}
-            </p>
-          </div>
+          const duration =
+            selectedHistoryLog.startedAt && selectedHistoryLog.completedAt
+              ? `${Math.max(
+                1,
+                Math.round(
+                  (new Date(selectedHistoryLog.completedAt) -
+                    new Date(selectedHistoryLog.startedAt)) /
+                  1000
+                )
+              )} second`
+              : "Less than 1 sec";
 
-          <div className="bg-slate-50 rounded-xl p-4 border">
-            <p className="text-xs text-gray-500">Service</p>
-            <p className="font-semibold text-gray-900">
-              {selectedHistoryLog.service || selectedHistoryLog.requestPayload?.service || "N/A"}
-            </p>
-          </div>
+          const leadDetails = {
+            customerName:
+              getCustomerFromSignature() ||
+              selectedHistoryLog.customerName ||
+              "N/A",
+            businessName: getBusinessName() || "N/A",
+            service:
+              selectedHistoryLog.service ||
+              getLineValue("Service needed") ||
+              "N/A",
+            budget: getLineValue("Budget") || "N/A",
+            website: getLineValue("Website") || "N/A",
+            country: getLineValue("Country") || "N/A",
+          };
 
-          <div className="bg-slate-50 rounded-xl p-4 border">
-            <p className="text-xs text-gray-500">Duration</p>
-            <p className="font-semibold text-gray-900">
-              {selectedHistoryLog.startedAt && selectedHistoryLog.completedAt
-                ? `${Math.max(
-                    1,
-                    Math.round(
-                      (new Date(selectedHistoryLog.completedAt) -
-                        new Date(selectedHistoryLog.startedAt)) /
-                        1000
-                    )
-                  )} sec`
-                : "N/A"}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Email Flow */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center">
-              <Mail size={18} />
-            </div>
-            <div>
-              <h2 className="font-bold text-gray-900">Email Received</h2>
-              <p className="text-xs text-gray-500">Incoming test/customer email</p>
-            </div>
-          </div>
-
-          <div className="space-y-3 text-sm">
-            <p>
-              <span className="text-gray-500">Customer:</span>{" "}
-              <b>{selectedHistoryLog.customerName || "N/A"}</b>
-            </p>
-            <p>
-              <span className="text-gray-500">Business Email:</span>{" "}
-              <b>{selectedHistoryLog.businessEmail || "N/A"}</b>
-            </p>
-            <p>
-              <span className="text-gray-500">Parent Email ID:</span>{" "}
-              <span className="font-mono text-xs">
-                {selectedHistoryLog.parentEmailId || "N/A"}
-              </span>
-            </p>
-            <p>
-              <span className="text-gray-500">Received At:</span>{" "}
-              {selectedHistoryLog.startedAt
-                ? new Date(selectedHistoryLog.startedAt).toLocaleString()
-                : "N/A"}
-            </p>
-          </div>
-
-          {selectedHistoryLog.requestPayload && (
-            <div className="mt-5 bg-slate-50 border rounded-xl p-4">
-              <h3 className="text-sm font-bold text-gray-800 mb-3">
-                Email Details
-              </h3>
-
-              <div className="grid grid-cols-1 gap-2 text-sm">
-                <p><b>Full Name:</b> {selectedHistoryLog.requestPayload.fullName || "N/A"}</p>
-                <p><b>Store:</b> {selectedHistoryLog.requestPayload.storeName || "N/A"}</p>
-                <p><b>Country:</b> {selectedHistoryLog.requestPayload.country || "N/A"}</p>
-                <p><b>Budget:</b> {selectedHistoryLog.requestPayload.budget || "N/A"}</p>
-                <p><b>Description:</b> {selectedHistoryLog.requestPayload.helpDescription || "N/A"}</p>
+          return (
+            <div className="flex-1 bg-white h-screen flex flex-col overflow-hidden">
+              <div className="shrink-0 bg-white border-b border-gray-200 px-6 py-3">
+                <button
+                  onClick={() => setSelectedHistoryLog(null)}
+                  className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
+                >
+                  <ArrowLeft size={16} />
+                  Event registration
+                </button>
               </div>
-            </div>
-          )}
-        </div>
 
-        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-full bg-green-100 text-green-700 flex items-center justify-center">
-              <FiMail size={18} />
-            </div>
-            <div>
-              <h2 className="font-bold text-gray-900">Reply Sent</h2>
-              <p className="text-xs text-gray-500">Template reply sent to customer</p>
-            </div>
-          </div>
-
-          <div className="space-y-3 text-sm">
-            <p>
-              <span className="text-gray-500">Sent To:</span>{" "}
-              <b>{selectedHistoryLog.businessEmail || "N/A"}</b>
-            </p>
-            <p>
-              <span className="text-gray-500">Reply Email ID:</span>{" "}
-              <span className="font-mono text-xs">
-                {selectedHistoryLog.replyEmailId || "N/A"}
-              </span>
-            </p>
-            <p>
-              <span className="text-gray-500">Template:</span>{" "}
-              <b>{selectedHistoryLog.templateName || "N/A"}</b>
-            </p>
-            <p>
-              <span className="text-gray-500">Template Type:</span>{" "}
-              <b>
-                {selectedHistoryLog.usedGeneralTemplate
-                  ? "General Template"
-                  : "Service Specific Template"}
-              </b>
-            </p>
-            <p>
-              <span className="text-gray-500">Completed At:</span>{" "}
-              {selectedHistoryLog.completedAt
-                ? new Date(selectedHistoryLog.completedAt).toLocaleString()
-                : "N/A"}
-            </p>
-          </div>
-
-          <div className="mt-5 bg-green-50 border border-green-200 rounded-xl p-4">
-            <p className="text-sm text-green-800 font-medium">
-              {selectedHistoryLog.message || "Reply sent successfully."}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Timeline Steps */}
-      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
-        <h2 className="text-lg font-bold text-gray-900 mb-5">
-          Execution Timeline
-        </h2>
-
-        {(selectedHistoryLog.steps || []).length === 0 ? (
-          <p className="text-sm text-gray-500">No steps recorded.</p>
-        ) : (
-          <div className="space-y-4">
-            {selectedHistoryLog.steps.map((step, index) => (
-              <div key={index} className="flex gap-4">
-                <div className="flex flex-col items-center">
-                  <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
-                      step.status === "success"
-                        ? "bg-green-500 text-white"
-                        : step.status === "failed"
-                        ? "bg-red-500 text-white"
-                        : "bg-yellow-500 text-white"
-                    }`}
-                  >
-                    {index + 1}
-                  </div>
-
-                  {index !== selectedHistoryLog.steps.length - 1 && (
-                    <div className="w-px h-full bg-gray-200 mt-2"></div>
-                  )}
+              <div className="shrink-0 border-b border-gray-200 px-6 py-3">
+                <div className="flex items-center gap-6 text-xs uppercase">
+                  <span className="text-gray-900 font-medium border-b-2 border-gray-900 pb-3">
+                    History
+                  </span>
+                  <span className="text-gray-400 pb-3">
+                    Incomplete executions
+                  </span>
                 </div>
+              </div>
 
-                <div className="flex-1 border border-gray-200 rounded-xl p-4 bg-slate-50">
-                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-                    <div>
-                      <h3 className="font-semibold text-gray-900">
-                        {step.stepName || `Step ${index + 1}`}
-                      </h3>
-                      <p className="text-xs text-gray-500">
-                        {step.stepKey || "N/A"}
-                      </p>
+              <div className="flex-1 overflow-y-auto bg-white">
+                <div className="px-6 py-5">
+                  <h2 className="text-base font-medium text-gray-900 mb-4">
+                    History
+                  </h2>
+
+                  <div className="border border-gray-200 rounded-sm overflow-hidden mb-6">
+                    <div className="grid grid-cols-[1.4fr_1.4fr_1.4fr_1fr_1fr_1fr] bg-gray-100 text-[11px] text-gray-500 uppercase">
+                      <div className="px-3 py-2">Started</div>
+                      <div className="px-3 py-2">Run name</div>
+                      <div className="px-3 py-2">Trigger / Activity</div>
+                      <div className="px-3 py-2">Status</div>
+                      <div className="px-3 py-2">Duration</div>
+                      <div className="px-3 py-2">Operations</div>
                     </div>
 
-                    <span
-                      className={`text-xs px-2 py-1 rounded-md font-semibold ${
-                        step.status === "success"
-                          ? "bg-green-100 text-green-700"
-                          : step.status === "failed"
-                          ? "bg-red-100 text-red-700"
-                          : "bg-yellow-100 text-yellow-700"
-                      }`}
-                    >
-                      {step.status || "pending"}
-                    </span>
+                    <div className="grid grid-cols-[1.4fr_1.4fr_1.4fr_1fr_1fr_1fr] items-center border-t border-gray-100 text-xs">
+                      <div className="px-3 py-3 text-purple-600">
+                        {selectedHistoryLog.createdAt
+                          ? new Date(selectedHistoryLog.createdAt).toLocaleString()
+                          : "N/A"}
+                      </div>
+
+                      <div className="px-3 py-3 text-gray-700">
+                        {selectedHistoryLog.scenarioName || "Shopify Scenario"}
+                      </div>
+
+                      <div className="px-3 py-3 text-gray-600">
+                        Instant
+                      </div>
+
+                      <div className="px-3 py-3">
+                        <span
+                          className={`px-2 py-1 rounded-full text-[10px] ${selectedHistoryLog.status === "success"
+                              ? "bg-green-100 text-green-700"
+                              : selectedHistoryLog.status === "failed"
+                                ? "bg-red-100 text-red-700"
+                                : "bg-yellow-100 text-yellow-700"
+                            }`}
+                        >
+                          {selectedHistoryLog.status === "failed"
+                            ? "Error"
+                            : selectedHistoryLog.status === "partial"
+                              ? "Partial"
+                              : "Success"}
+                        </span>
+                      </div>
+
+                      <div className="px-3 py-3 text-gray-600">
+                        {duration}
+                      </div>
+
+                      <div className="px-3 py-3 text-gray-600">
+                        {selectedHistoryLog.steps?.length || 0}
+                      </div>
+                    </div>
                   </div>
 
-                  {step.message && (
-                    <p className="text-sm text-gray-700 mt-3">
-                      {step.message}
-                    </p>
-                  )}
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-3 text-xs text-gray-500">
-                    <p>
-                      <b>Location:</b> {step.location || "N/A"}
-                    </p>
-                    <p>
-                      <b>Time:</b>{" "}
-                      {step.completedAt
-                        ? new Date(step.completedAt).toLocaleString()
-                        : "N/A"}
-                    </p>
-                  </div>
 
-                  {step.issue && (
-                    <p className="mt-3 text-sm text-red-600">
-                      <b>Issue:</b> {step.issue}
-                    </p>
-                  )}
-
-                  {step.suggestion && (
-                    <p className="mt-3 text-sm text-blue-600">
-                      <b>Suggestion:</b> {step.suggestion}
-                    </p>
-                  )}
                 </div>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* IDs */}
-  
-    </div>
-  </div>
-) : (
-  <>
-
-        <div className="sticky top-0 z-30 bg-white border-b px-4 sm:px-6 py-1 shadow-sm">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-0.5">
-            <div className="flex-1">
-              <input
-                type="text"
-                value={scenarioName}
-                onChange={(e) => setScenarioName(e.target.value)}
-                className="text-xl sm:text-xl font-semibold text-gray-800 border-none outline-none focus:ring-0 w-full"
-                placeholder="Scenario Name"
-              />
-              <p className="text-sm text-gray-500 mt-1">
-                Configure your automation workflow
-              </p>
             </div>
-            <div className="flex flex-wrap justify-start gap-3">
+          );
+        })() : (
+          <>
 
-              <div ref={saveScenarioButtonRef} className="relative">
-                <button
-                  onClick={handleSaveScenario}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
-                >
-                  {editingMode === "update" || scenarioId
-                    ? "Update Scenario"
-                    : "Add Scenario"}
-                </button>
-              </div>
-
-              <div ref={runTestButtonRef} className="relative">
-                <button
-                  onClick={() => {
-                    setHighlightRunTest(false);
-                    setShowRunTestModal(true);
-                  }}
-                  className={`px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center text-sm ${highlightRunTest
-                    ? "animate-pulse ring-4 ring-yellow-400 shadow-lg shadow-yellow-300"
-                    : ""
-                    }`}
-                >
-                  <Zap className="w-4 h-4 mr-2" />
-                  Run Test
-                </button>
-
-                {highlightRunTest && (
-                  <div className="absolute right-0 top-full mt-3 w-72 bg-yellow-50 border border-yellow-300 text-yellow-900 text-sm rounded-lg shadow-xl p-3 z-50">
-                    <div className="absolute -top-2 right-8 w-4 h-4 bg-yellow-50 border-l border-t border-yellow-300 rotate-45"></div>
-                    Click this button to generate a test email. After that, the Router will show the email data.
-                  </div>
-                )}
-              </div>
-
-              <div ref={activateScenarioRef} className="flex items-center gap-2 bg-white px-3 py-2 rounded-full shadow-sm border">
-                <span className="text-xs sm:text-sm font-medium text-gray-700">
-                  Activate Scenario
-                </span>
-
-                <label className="relative inline-flex items-center cursor-pointer">
+            <div className="sticky top-0 z-30 bg-white border-b px-4 sm:px-6 py-1 shadow-sm">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-0.5">
+                <div className="flex-1">
                   <input
-                    type="checkbox"
-                    checked={automationOn}
-                    onChange={async () => {
-                      const newState = !automationOn;
-                      console.clear();
+                    type="text"
+                    value={scenarioName}
+                    onChange={(e) => setScenarioName(e.target.value)}
+                    className="text-xl sm:text-xl font-semibold text-gray-800 border-none outline-none focus:ring-0 w-full"
+                    placeholder="Scenario Name"
+                  />
+                  <p className="text-sm text-gray-500 mt-1">
+                    Configure your automation workflow
+                  </p>
+                </div>
+                <div className="flex flex-wrap justify-start gap-3">
 
-                      console.log("🧠 Current State:", {
-                        automationOn,
-                        newState,
-                        routerBranchesCount: routerBranches?.length,
-                      });
+                  <div ref={saveScenarioButtonRef} className="relative">
+                    <button
+                      onClick={handleSaveScenario}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+                    >
+                      {editingMode === "update" || scenarioId
+                        ? "Update Scenario"
+                        : "Add Scenario"}
+                    </button>
+                  </div>
 
-                      if (newState) {
-                        const missingModules = [];
+                  <div ref={runTestButtonRef} className="relative">
+                    <button
+                      onClick={() => {
+                        setHighlightRunTest(false);
+                        setShowRunTestModal(true);
+                      }}
+                      className={`px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center text-sm ${highlightRunTest
+                        ? "animate-pulse ring-4 ring-yellow-400 shadow-lg shadow-yellow-300"
+                        : ""
+                        }`}
+                    >
+                      <Zap className="w-4 h-4 mr-2" />
+                      Run Test
+                    </button>
 
-                        routerBranches.forEach((branch, i) => {
-                          branch.modules.forEach((m, j) => {
-                            const rawName = m.app?.name || "";
-                            const appName = rawName.toLowerCase();
-                            const isEmailModule =
-                              appName.includes("gmail") ||
-                              appName.includes("email") ||
-                              appName.includes("follow") ||
-                              appName.includes("initial");
+                    {highlightRunTest && (
+                      <div className="absolute right-0 top-full mt-3 w-72 bg-yellow-50 border border-yellow-300 text-yellow-900 text-sm rounded-lg shadow-xl p-3 z-50">
+                        <div className="absolute -top-2 right-8 w-4 h-4 bg-yellow-50 border-l border-t border-yellow-300 rotate-45"></div>
+                        Click this button to generate a test email. After that, the Router will show the email data.
+                      </div>
+                    )}
+                  </div>
 
-                            const connection =
-                              m.connectionId &&
-                                typeof m.connectionId === "string"
-                                ? m.connectionId.trim()
-                                : (m.connectionId ?? "").toString().trim();
+                  <div ref={activateScenarioRef} className="flex items-center gap-2 bg-white px-3 py-2 rounded-full shadow-sm border">
+                    <span className="text-xs sm:text-sm font-medium text-gray-700">
+                      Activate Scenario
+                    </span>
 
-                            const missing =
-                              isEmailModule &&
-                              (connection === "" ||
-                                connection === "(empty)" ||
-                                connection === "undefined" ||
-                                connection === "null");
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={automationOn}
+                        onChange={async () => {
+                          const newState = !automationOn;
+                          console.clear();
 
-                            if (missing) {
-                              missingModules.push({
-                                branchIndex: i + 1,
-                                moduleIndex: j + 1,
-                                moduleName: rawName,
-                                connectionId: connection || "(empty)",
-                              });
-                            }
+                          console.log("🧠 Current State:", {
+                            automationOn,
+                            newState,
+                            routerBranchesCount: routerBranches?.length,
                           });
-                        });
 
-                        if (missingModules.length > 0) {
-                          toast.error(
-                            `Scenario cannot be activated.\n\nMissing connections in:\n${missingModules
-                              .map((m) => `• ${m.moduleName} (no connection)`)
-                              .join("\n")}`,
-                            {
-                              duration: 7000,
-                              style: {
-                                background: "#fff0f0",
-                                color: "#b91c1c",
-                                border: "1px solid #fca5a5",
-                                whiteSpace: "pre-line",
-                              },
-                            },
-                          );
-                          setAutomationOn(false);
-                          return;
-                        }
+                          if (newState) {
+                            const missingModules = [];
 
-                        const unverifiedConnections = [];
+                            routerBranches.forEach((branch, i) => {
+                              branch.modules.forEach((m, j) => {
+                                const rawName = m.app?.name || "";
+                                const appName = rawName.toLowerCase();
+                                const isEmailModule =
+                                  appName.includes("gmail") ||
+                                  appName.includes("email") ||
+                                  appName.includes("follow") ||
+                                  appName.includes("initial");
 
-                        routerBranches.forEach((branch) => {
-                          branch.modules.forEach((m) => {
-                            const appName = (m.app?.name || "").toLowerCase();
-                            const isEmailModule =
-                              appName.includes("gmail") ||
-                              appName.includes("email") ||
-                              appName.includes("follow") ||
-                              appName.includes("initial");
+                                const connection =
+                                  m.connectionId &&
+                                    typeof m.connectionId === "string"
+                                    ? m.connectionId.trim()
+                                    : (m.connectionId ?? "").toString().trim();
 
-                            if (isEmailModule && m.connectionId) {
-                              const data = connections.find(
-                                (c) => c._id === m.connectionId,
+                                const missing =
+                                  isEmailModule &&
+                                  (connection === "" ||
+                                    connection === "(empty)" ||
+                                    connection === "undefined" ||
+                                    connection === "null");
+
+                                if (missing) {
+                                  missingModules.push({
+                                    branchIndex: i + 1,
+                                    moduleIndex: j + 1,
+                                    moduleName: rawName,
+                                    connectionId: connection || "(empty)",
+                                  });
+                                }
+                              });
+                            });
+
+                            if (missingModules.length > 0) {
+                              toast.error(
+                                `Scenario cannot be activated.\n\nMissing connections in:\n${missingModules
+                                  .map((m) => `• ${m.moduleName} (no connection)`)
+                                  .join("\n")}`,
+                                {
+                                  duration: 7000,
+                                  style: {
+                                    background: "#fff0f0",
+                                    color: "#b91c1c",
+                                    border: "1px solid #fca5a5",
+                                    whiteSpace: "pre-line",
+                                  },
+                                },
+                              );
+                              setAutomationOn(false);
+                              return;
+                            }
+
+                            const unverifiedConnections = [];
+
+                            routerBranches.forEach((branch) => {
+                              branch.modules.forEach((m) => {
+                                const appName = (m.app?.name || "").toLowerCase();
+                                const isEmailModule =
+                                  appName.includes("gmail") ||
+                                  appName.includes("email") ||
+                                  appName.includes("follow") ||
+                                  appName.includes("initial");
+
+                                if (isEmailModule && m.connectionId) {
+                                  const data = connections.find(
+                                    (c) => c._id === m.connectionId,
+                                  );
+
+                                  if (!data || data.verified === false) {
+                                    unverifiedConnections.push({
+                                      _id: m.connectionId,
+                                      email: data?.email,
+                                      provider: data?.provider,
+                                      verified: false,
+                                    });
+                                  }
+                                }
+                              });
+                            });
+
+                            if (unverifiedConnections.length > 0) {
+                              setShowVerifyModal(true);
+                              setUnverifiedConnections(unverifiedConnections);
+                              setAutomationOn(false);
+
+                              toast.error(
+                                "Some connections are not verified. Please verify them before activating.",
+                                {
+                                  duration: 6000,
+                                  style: {
+                                    background: "#fff0f0",
+                                    color: "#b91c1c",
+                                    border: "1px solid #fca5a5",
+                                  },
+                                },
                               );
 
-                              if (!data || data.verified === false) {
-                                unverifiedConnections.push({
-                                  _id: m.connectionId,
-                                  email: data?.email,
-                                  provider: data?.provider,
-                                  verified: false,
-                                });
-                              }
+                              return;
                             }
-                          });
-                        });
+                          }
 
-                        if (unverifiedConnections.length > 0) {
-                          setShowVerifyModal(true);
-                          setUnverifiedConnections(unverifiedConnections);
-                          setAutomationOn(false);
+                          setAutomationOn(newState);
+                          if (newState) {
+                            localStorage.setItem("scenarioActive", "true");
+                            toast.success("Automation activated!");
+                          } else {
+                            localStorage.removeItem("scenarioActive");
+                            toast.error("Automation deactivated!");
+                          }
+                        }}
+                        className="sr-only peer"
+                      />
 
-                          toast.error(
-                            "Some connections are not verified. Please verify them before activating.",
-                            {
-                              duration: 6000,
-                              style: {
-                                background: "#fff0f0",
-                                color: "#b91c1c",
-                                border: "1px solid #fca5a5",
-                              },
-                            },
-                          );
+                      <div className="w-10 h-5 bg-gray-200 peer-checked:bg-indigo-600 rounded-full transition-all"></div>
+                      <div className="absolute left-1 top-1 w-3.5 h-3.5 bg-white rounded-full shadow-sm peer-checked:translate-x-5 transition-transform"></div>
+                    </label>
 
-                          return;
-                        }
-                      }
-
-                      setAutomationOn(newState);
-                      if (newState) {
-                        localStorage.setItem("scenarioActive", "true");
-                        toast.success("Automation activated!");
-                      } else {
-                        localStorage.removeItem("scenarioActive");
-                        toast.error("Automation deactivated!");
-                      }
-                    }}
-                    className="sr-only peer"
-                  />
-
-                  <div className="w-10 h-5 bg-gray-200 peer-checked:bg-indigo-600 rounded-full transition-all"></div>
-                  <div className="absolute left-1 top-1 w-3.5 h-3.5 bg-white rounded-full shadow-sm peer-checked:translate-x-5 transition-transform"></div>
-                </label>
-
-                <span
-                  className={`text-xs font-semibold ${automationOn ? "text-green-600" : "text-gray-400"
-                    }`}
-                >
-                  {automationOn ? "ON" : "OFF"}
-                </span>
+                    <span
+                      className={`text-xs font-semibold ${automationOn ? "text-green-600" : "text-gray-400"
+                        }`}
+                    >
+                      {automationOn ? "ON" : "OFF"}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
 
-        <div className="flex-1 overflow-hidden">          {guideStep > 0 && (
-          <div
-            className="
+            <div className="flex-1 overflow-hidden">          {guideStep > 0 && (
+              <div
+                className="
     fixed inset-0 
     bg-black bg-opacity-20 
     backdrop-blur-sm
     z-[40]
   "
-          ></div>
-        )}
+              ></div>
+            )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-[18rem_minmax(0,1fr)_20rem] h-full">
-            <aside className="w-full lg:w-72 self-start p-4">
-              <SetupProgressCard />
-            </aside>
-            <div className="min-w-0 flex justify-center p-4 lg:p-8">
-              <div className="w-full max-w-5xl mx-auto flex flex-col items-center">
-                <div className="flex flex-col items-center mb-8">
-                  <div ref={webhookNodeRef} className={guideStep === 1 ? "relative z-[70]" : "relative"}>
-                    {/* GUIDE STEP 1 */}
-                    {guideStep === 1 && (
-                      <div
-                        className="
+              <div className="grid grid-cols-1 lg:grid-cols-[18rem_minmax(0,1fr)_20rem] h-full">
+                <aside className="w-full lg:w-72 self-start p-4">
+                  <SetupProgressCard />
+                </aside>
+                <div className="min-w-0 flex justify-center p-4 lg:p-8">
+                  <div className="w-full max-w-5xl mx-auto flex flex-col items-center">
+                    <div className="flex flex-col items-center mb-8">
+                      <div ref={webhookNodeRef} className={guideStep === 1 ? "relative z-[70]" : "relative"}>
+                        {/* GUIDE STEP 1 */}
+                        {guideStep === 1 && (
+                          <div
+                            className="
           absolute top-1/2 left-full -translate-y-1/2 ml-4
           w-72 bg-white shadow-xl border border-gray-200 
           rounded-lg p-4 z-[80]
         "
-                      >
-                        {/* ARROW pointing left */}
-                        <div
-                          className="
-          absolute top-1/2 -left-2 -translate-y-1/2
-          w-4 h-4 bg-white rotate-45
-          border-b border-r border-gray-200
-        "
-                        ></div>
-
-                        <div className="flex justify-between items-center mb-2">
-                          <h4 className="font-semibold text-gray-900">
-                            Webhook Email
-                          </h4>
-                          <span className="text-xs text-gray-500">1/3</span>
-                        </div>
-
-                        <p className="text-sm text-gray-600 mb-3">
-                          This webhook email is used to receive the forwarded Lead
-                          emails from your email service provider.
-                        </p>
-
-                        <div className="flex justify-between">
-                          <button
-                            onClick={skipGuide}
-                            className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-100"
                           >
-                            Skip
-                          </button>
-
-                          <button
-                            onClick={nextGuide}
-                            className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                          >
-                            Next
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    <FlowNode
-                      icon={Cloud}
-                      title="Webhooks"
-                      subtitle="Custom mailhook"
-                      color="border-red-500"
-                      number={1}
-                      isFirst={true}
-                      completed={
-                        showValidation
-                          ? (completedSteps.find((v) => v.id === "webhook")
-                            ?.passed ?? null)
-                          : Boolean(user?.mailhook)
-                      }
-                      isWebhook={true}
-                      onEdit={() => setShowWebhookInfo(true)}
-                    />
-                  </div>
-                  <div className="w-0.5 h-12 bg-gray-300 relative">
-                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                      <Zap className="w-4 h-4 text-gray-400" />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex flex-col items-center mb-8">
-                  <div ref={routerNodeRef} className={guideStep === 2 ? "relative z-[70]" : "relative"}>
-                    {/* GUIDE STEP 2 */}
-                    {guideStep === 2 && (
-                      <div
-                        className="
-        absolute top-1/2 left-full -translate-y-1/2 ml-4
-        w-72 bg-white shadow-xl border border-gray-200
-        rounded-lg p-4 z-[80]
-      "
-                      >
-                        {/* ARROW pointing left */}
-                        <div
-                          className="
-          absolute top-1/2 -left-2 -translate-y-1/2
-          w-4 h-4 bg-white rotate-45
-          border-b border-r border-gray-200
-        "
-                        ></div>
-
-                        <div className="flex justify-between items-center mb-2">
-                          <h4 className="font-semibold text-gray-900">Router</h4>
-                          <span className="text-xs text-gray-500">2/3</span>
-                        </div>
-
-                        <p className="text-sm text-gray-600 mb-3">
-                          Router is used to view the Lead email's content, common
-                          use is while configuring the Leads email templates and
-                          Conditional email flows.
-                        </p>
-
-                        <div className="flex justify-between">
-                          <button
-                            onClick={skipGuide}
-                            className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-100"
-                          >
-                            Skip
-                          </button>
-
-                          <button
-                            onClick={nextGuide}
-                            className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                          >
-                            Next
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    <FlowNode
-                      icon={GitBranch}
-                      title="Router"
-                      subtitle="Route to different paths"
-                      color="border-green-500"
-                      number={2}
-                      isRouter={true}
-                      completed={
-                        showValidation
-                          ? (completedSteps.find((v) => v.id === "router")
-                            ?.passed ?? null)
-                          : Array.isArray(routerBranches) && routerBranches.length > 0
-                      }
-                    />
-                  </div>
-                  <div className="w-0.5 h-12 bg-gray-300"></div>
-                  <div className={guideStep === 3 ? "relative z-[70]" : "relative"}>
-                    {/* GUIDE STEP 3 */}
-                    {guideStep === 3 && (
-                      <div
-                        className="
-        absolute top-1/2 left-full -translate-y-1/2 ml-4
-        w-72 bg-white shadow-xl border border-gray-200
-        rounded-lg p-4 z-[80]
-      "
-                      >
-                        {/* ARROW pointing left */}
-                        <div
-                          className="
-          absolute top-1/2 -left-2 -translate-y-1/2
-          w-4 h-4 bg-white rotate-45
-          border-b border-r border-gray-200
-        "
-                        ></div>
-
-                        <div className="flex justify-between items-center mb-2">
-                          <h4 className="font-semibold text-gray-900">
-                            Shopify Email Templates
-                          </h4>
-                          <span className="text-xs text-gray-500">3/3</span>
-                        </div>
-
-                        <p className="text-sm text-gray-600 mb-3">
-                          Shopify email Templates are specifically Designed to
-                          manage the email templates based on the Service requested
-                          by client
-                        </p>
-
-                        <div className="flex justify-between">
-                          <button
-                            onClick={skipGuide}
-                            className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-100"
-                          >
-                            Skip
-                          </button>
-
-                          <button
-                            onClick={nextGuide}
-                            className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                          >
-                            Finish
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                    <FlowNode
-                      icon={FiFileText}
-                      title="Template"
-                      subtitle="Define message structure and content"
-                      color="border-blue-500"
-                      number={3}
-                      completed={
-                        showValidation
-                          ? (completedSteps.find((v) => v.id === "template")
-                            ?.passed ?? null)
-                          : allTemplatesActive
-                      }
-                      module={{ app: { name: "Template" } }}
-                      onEdit={handleEdit}
-                    />
-                  </div>
-
-                  <div className="w-0.5 h-12 bg-gray-300"></div>
-                </div>
-
-                <div className="space-y-16">
-                  {routerBranches.map((branch, branchIndex) => (
-                    <div
-                      key={branch.id}
-                      className="flex flex-col items-center space-y-8"
-                    >
-                      {branch.modules.length > 0
-                        ? branch.modules.map((module, moduleIndex) => {
-                          const Icon = iconMap[module.app.icon];
-                          const shouldShowState = showValidation;
-
-                          let validationState = null;
-                          if (showValidation) {
-                            const match = completedSteps.find(
-                              (v) => v.id === module.id,
-                            );
-                            validationState = match ? match.passed : null;
-                          }
-
-                          return (
-                            <React.Fragment key={module.id}>
-                              <FlowNode
-                                icon={Icon}
-                                title={getModuleTitle(module)}
-                                subtitle={module.description}
-                                color={`border-${module.app.color.replace(
-                                  "bg-",
-                                  "",
-                                )}`}
-                                number={3 + moduleIndex}
-                                onEdit={() =>
-                                  handleEditModule(branchIndex, module)
-                                }
-                                onDelete={() =>
-                                  handleRemoveModule(branchIndex, module.id)
-                                }
-                                isLast={moduleIndex === branch.modules.length - 1}
-                                completed={
-                                  shouldShowState
-                                    ? validationState
-                                    : isModuleCompleted(module)
-                                }
-                                module={module}
-                              />
-                              {showValidation &&
-                                validationState === false &&
-                                (module.app.name === "Delay" ? (
-                                  <p className="text-sm text-orange-500 mt-2 text-center max-w-xs">
-                                    This delay was skipped because the previous
-                                    step failed.
-                                  </p>
-                                ) : (
-                                  <p className="text-sm text-red-500 mt-2 text-center max-w-xs">
-                                    This module failed due to missing connection
-                                  </p>
-                                ))}
-
-                              {moduleIndex < branch.modules.length - 1 && (
-                                <div className="relative flex flex-col items-center">
-                                  {/* vertical line */}
-                                  <div className="w-0.5 h-12 bg-gray-300"></div>
-
-                                  {/* PLUS BUTTON BETWEEN NODES */}
-                                  <AddBetweenButton
-                                    onClick={() => {
-                                      setEditingBranch(branchIndex);
-                                      setEditingModuleId(null);
-
-                                      // NEW: store position so module adds EXACT here
-                                      setInsertAtIndex(moduleIndex + 1);
-
-                                      setOpen(true);
-                                    }}
-                                    className="top-1/2"
-                                  />
-                                </div>
-                              )}
-                            </React.Fragment>
-                          );
-                        })
-                        : null}
-
-                      {branch.modules.length === 0 || branch.modules.length > 0 ? (
-                        <>
-                          {branch.modules.length > 0 && (
-                            <div className="w-0.5 h-8 bg-gray-300"></div>
-                          )}
-                          <AddModuleButton
-                            onClick={() => {
-                              setEditingBranch(branchIndex);
-                              setOpen(true);
-                            }}
-                          />
-                        </>
-                      ) : null}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <aside className="hidden lg:block border-l border-gray-200  h-full overflow-y-auto">
-              <ScenarioHistoryPanel />
-            </aside>
-            {open && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <div
-                  ref={modalRef}
-                  className="bg-white rounded-xl shadow-2xl w-[500px] max-h-[80vh] overflow-hidden"
-                >
-                  {!selectedApp ? (
-                    <>
-                      <div className="p-6 border-b bg-gradient-to-r from-purple-600 to-purple-500 text-white">
-                        <h2 className="text-lg font-semibold">
-                          Select Application
-                        </h2>
-                        <p className="text-sm text-purple-100 mt-1">
-                          Choose an app to add to your workflow
-                        </p>
-                      </div>
-                      <div className="p-4 max-h-96 overflow-y-auto space-y-3">
-                        {[
-                          {
-                            name: "Initial Email",
-                            base: "Gmail",
-                            color: "bg-red-500",
-                            icon: "Gmail",
-                          },
-                          {
-                            name: "First Follow-up",
-                            base: "Gmail",
-                            color: "bg-red-500",
-                            icon: "Gmail",
-                          },
-                          {
-                            name: "Second Follow-up",
-                            base: "Gmail",
-                            color: "bg-red-500",
-                            icon: "Gmail",
-                          },
-                          {
-                            name: "Delay",
-                            base: "Delay",
-                            color: "bg-blue-500",
-                            icon: "Delay",
-                          },
-                        ].map((item, idx) => {
-                          const Icon = iconMap[item.icon];
-                          return (
+                            {/* ARROW pointing left */}
                             <div
-                              key={idx}
-                              onClick={() => {
-                                let templateName = "";
-                                if (item.name === "Initial Email")
-                                  templateName = "Initial Email";
-                                else if (item.name === "First Follow-up")
-                                  templateName = "First Follow-up";
-                                else if (item.name === "Second Follow-up")
-                                  templateName = "Second Follow-up";
-                                localStorage.setItem(
-                                  "activeShopifyModule",
-                                  templateName,
-                                );
+                              className="
+          absolute top-1/2 -left-2 -translate-y-1/2
+          w-4 h-4 bg-white rotate-45
+          border-b border-r border-gray-200
+        "
+                            ></div>
 
-                                setSelectedApp({
-                                  name: item.base,
-                                  displayName: item.name,
-                                  color: item.color,
-                                  icon: item.icon,
-                                  defaultTemplate: templateName,
-                                });
-
-                                setSelectedTemplate(templateName);
-                              }}
-                              className="flex items-center p-4 rounded-lg border border-gray-200 hover:border-purple-500 hover:bg-purple-50 cursor-pointer transition-colors"
-                            >
-                              <div
-                                className={`w-12 h-12 ${item.color} rounded-lg flex items-center justify-center text-white`}
-                              >
-                                <Icon className="w-6 h-6" />
-                              </div>
-                              <div className="ml-4">
-                                <p className="font-medium text-gray-800 text-sm">
-                                  {item.name}
-                                </p>
-                                <p className="text-xs text-gray-500">{item.base}</p>
-                              </div>
+                            <div className="flex justify-between items-center mb-2">
+                              <h4 className="font-semibold text-gray-900">
+                                Webhook Email
+                              </h4>
+                              <span className="text-xs text-gray-500">1/3</span>
                             </div>
-                          );
-                        })}
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="p-6 border-b bg-gradient-to-r from-purple-600 to-purple-500 text-white flex justify-between items-center">
-                        <h3 className="font-semibold text-lg">
-                          {selectedApp.displayName || selectedApp.name}
-                        </h3>
 
-                        <button
-                          onClick={resetForm}
-                          className="hover:bg-white hover:bg-opacity-20 p-1 rounded"
-                        >
-                          <X className="w-5 h-5" />
-                        </button>
-                      </div>
+                            <p className="text-sm text-gray-600 mb-3">
+                              This webhook email is used to receive the forwarded Lead
+                              emails from your email service provider.
+                            </p>
 
-                      <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
-                        {selectedApp?.name === "Delay" ||
-                          selectedApp?.type === "Delay" ? (
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                              Delay Duration <span className="text-red-500">*</span>
-                            </label>
-                            <div className="flex space-x-3">
-                              <input
-                                type="number"
-                                value={delayValue}
-                                onChange={(e) => setDelayValue(e.target.value)}
-                                className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                              />
-                              <select
-                                value={delayUnit}
-                                onChange={(e) => setDelayUnit(e.target.value)}
-                                className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                            <div className="flex justify-between">
+                              <button
+                                onClick={skipGuide}
+                                className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-100"
                               >
-                                <option value="seconds">Seconds</option>
-                                <option value="minutes">Minutes</option>
-                                <option value="hours">Hours</option>
-                              </select>
+                                Skip
+                              </button>
+
+                              <button
+                                onClick={nextGuide}
+                                className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                              >
+                                Next
+                              </button>
                             </div>
                           </div>
-                        ) : (
-                          <>
-                            <div className="relative">
-                              <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Select Application{" "}
-                                <span className="text-red-500">*</span>
-                              </label>
+                        )}
 
-                              <div className="relative">
-                                <select
-                                  value={selectedAppType}
-                                  onChange={(e) => {
-                                    const value = e.target.value;
-                                    setSelectedAppType(value);
-                                    fetchConnections();
-                                  }}
-                                  className="w-full border border-gray-300 rounded-lg px-4 py-2 pr-20 focus:ring-2 focus:ring-purple-500 focus:border-transparent appearance-none"
-                                >
-                                  <option value="">-- Choose App Type --</option>
-                                  <option value="Gmail">Gmail</option>
-                                  <option value="Email">
-                                    Email (SMTP/Outlook)
-                                  </option>
-                                </select>
+                        <FlowNode
+                          icon={Cloud}
+                          title="Webhooks"
+                          subtitle="Custom mailhook"
+                          color="border-red-500"
+                          number={1}
+                          isFirst={true}
+                          completed={
+                            showValidation
+                              ? (completedSteps.find((v) => v.id === "webhook")
+                                ?.passed ?? null)
+                              : Boolean(user?.mailhook)
+                          }
+                          isWebhook={true}
+                          onEdit={() => setShowWebhookInfo(true)}
+                        />
+                      </div>
+                      <div className="w-0.5 h-12 bg-gray-300 relative">
+                        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                          <Zap className="w-4 h-4 text-gray-400" />
+                        </div>
+                      </div>
+                    </div>
 
-                                {/* Add button INSIDE the select box (to the right) */}
-                                <button
-                                  disabled={!selectedAppType}
-                                  onClick={() => {
-                                    if (selectedAppType === "Email") {
-                                      setShowOutlookModal(true);
-                                    } else if (selectedAppType === "Gmail") {
-                                      setShowGmailModal(true);
-                                    } else {
-                                      toast.error(
-                                        "Please select an application type first.",
-                                      );
-                                    }
-                                  }}
-                                  className={`absolute right-0 top-0 bottom-0 px-4 text-sm font-medium rounded-r-lg border-l transition-all duration-200 ${selectedAppType
-                                    ? "bg-purple-600 text-white border-l-gray-300 hover:bg-purple-700"
-                                    : "bg-gray-200 text-gray-400 border-l-gray-300 cursor-not-allowed"
-                                    }`}
-                                >
-                                  Add
-                                </button>
-                              </div>
+                    <div className="flex flex-col items-center mb-8">
+                      <div ref={routerNodeRef} className={guideStep === 2 ? "relative z-[70]" : "relative"}>
+                        {/* GUIDE STEP 2 */}
+                        {guideStep === 2 && (
+                          <div
+                            className="
+        absolute top-1/2 left-full -translate-y-1/2 ml-4
+        w-72 bg-white shadow-xl border border-gray-200
+        rounded-lg p-4 z-[80]
+      "
+                          >
+                            {/* ARROW pointing left */}
+                            <div
+                              className="
+          absolute top-1/2 -left-2 -translate-y-1/2
+          w-4 h-4 bg-white rotate-45
+          border-b border-r border-gray-200
+        "
+                            ></div>
 
-                              <p className="text-xs text-gray-500 mt-2">
-                                Choose the application type and click <b>Add</b> to
-                                connect a new account.
-                              </p>
+                            <div className="flex justify-between items-center mb-2">
+                              <h4 className="font-semibold text-gray-900">Router</h4>
+                              <span className="text-xs text-gray-500">2/3</span>
                             </div>
 
-                            {selectedAppType && (
+                            <p className="text-sm text-gray-600 mb-3">
+                              Router is used to view the Lead email's content, common
+                              use is while configuring the Leads email templates and
+                              Conditional email flows.
+                            </p>
+
+                            <div className="flex justify-between">
+                              <button
+                                onClick={skipGuide}
+                                className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-100"
+                              >
+                                Skip
+                              </button>
+
+                              <button
+                                onClick={nextGuide}
+                                className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                              >
+                                Next
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        <FlowNode
+                          icon={GitBranch}
+                          title="Router"
+                          subtitle="Route to different paths"
+                          color="border-green-500"
+                          number={2}
+                          isRouter={true}
+                          completed={
+                            showValidation
+                              ? (completedSteps.find((v) => v.id === "router")
+                                ?.passed ?? null)
+                              : Array.isArray(routerBranches) && routerBranches.length > 0
+                          }
+                        />
+                      </div>
+                      <div className="w-0.5 h-12 bg-gray-300"></div>
+                      <div className={guideStep === 3 ? "relative z-[70]" : "relative"}>
+                        {/* GUIDE STEP 3 */}
+                        {guideStep === 3 && (
+                          <div
+                            className="
+        absolute top-1/2 left-full -translate-y-1/2 ml-4
+        w-72 bg-white shadow-xl border border-gray-200
+        rounded-lg p-4 z-[80]
+      "
+                          >
+                            {/* ARROW pointing left */}
+                            <div
+                              className="
+          absolute top-1/2 -left-2 -translate-y-1/2
+          w-4 h-4 bg-white rotate-45
+          border-b border-r border-gray-200
+        "
+                            ></div>
+
+                            <div className="flex justify-between items-center mb-2">
+                              <h4 className="font-semibold text-gray-900">
+                                Shopify Email Templates
+                              </h4>
+                              <span className="text-xs text-gray-500">3/3</span>
+                            </div>
+
+                            <p className="text-sm text-gray-600 mb-3">
+                              Shopify email Templates are specifically Designed to
+                              manage the email templates based on the Service requested
+                              by client
+                            </p>
+
+                            <div className="flex justify-between">
+                              <button
+                                onClick={skipGuide}
+                                className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-100"
+                              >
+                                Skip
+                              </button>
+
+                              <button
+                                onClick={nextGuide}
+                                className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                              >
+                                Finish
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                        <FlowNode
+                          icon={FiFileText}
+                          title="Template"
+                          subtitle="Define message structure and content"
+                          color="border-blue-500"
+                          number={3}
+                          completed={
+                            showValidation
+                              ? (completedSteps.find((v) => v.id === "template")
+                                ?.passed ?? null)
+                              : allTemplatesActive
+                          }
+                          module={{ app: { name: "Template" } }}
+                          onEdit={handleEdit}
+                        />
+                      </div>
+
+                      <div className="w-0.5 h-12 bg-gray-300"></div>
+                    </div>
+
+                    <div className="space-y-16">
+                      {routerBranches.map((branch, branchIndex) => (
+                        <div
+                          key={branch.id}
+                          className="flex flex-col items-center space-y-8"
+                        >
+                          {branch.modules.length > 0
+                            ? branch.modules.map((module, moduleIndex) => {
+                              const Icon = iconMap[module.app.icon];
+                              const shouldShowState = showValidation;
+
+                              let validationState = null;
+                              if (showValidation) {
+                                const match = completedSteps.find(
+                                  (v) => v.id === module.id,
+                                );
+                                validationState = match ? match.passed : null;
+                              }
+
+                              return (
+                                <React.Fragment key={module.id}>
+                                  <FlowNode
+                                    icon={Icon}
+                                    title={getModuleTitle(module)}
+                                    subtitle={module.description}
+                                    color={`border-${module.app.color.replace(
+                                      "bg-",
+                                      "",
+                                    )}`}
+                                    number={3 + moduleIndex}
+                                    onEdit={() =>
+                                      handleEditModule(branchIndex, module)
+                                    }
+                                    onDelete={() =>
+                                      handleRemoveModule(branchIndex, module.id)
+                                    }
+                                    isLast={moduleIndex === branch.modules.length - 1}
+                                    completed={
+                                      shouldShowState
+                                        ? validationState
+                                        : isModuleCompleted(module)
+                                    }
+                                    module={module}
+                                  />
+                                  {showValidation &&
+                                    validationState === false &&
+                                    (module.app.name === "Delay" ? (
+                                      <p className="text-sm text-orange-500 mt-2 text-center max-w-xs">
+                                        This delay was skipped because the previous
+                                        step failed.
+                                      </p>
+                                    ) : (
+                                      <p className="text-sm text-red-500 mt-2 text-center max-w-xs">
+                                        This module failed due to missing connection
+                                      </p>
+                                    ))}
+
+                                  {moduleIndex < branch.modules.length - 1 && (
+                                    <div className="relative flex flex-col items-center">
+                                      {/* vertical line */}
+                                      <div className="w-0.5 h-12 bg-gray-300"></div>
+
+                                      {/* PLUS BUTTON BETWEEN NODES */}
+                                      <AddBetweenButton
+                                        onClick={() => {
+                                          setEditingBranch(branchIndex);
+                                          setEditingModuleId(null);
+
+                                          // NEW: store position so module adds EXACT here
+                                          setInsertAtIndex(moduleIndex + 1);
+
+                                          setOpen(true);
+                                        }}
+                                        className="top-1/2"
+                                      />
+                                    </div>
+                                  )}
+                                </React.Fragment>
+                              );
+                            })
+                            : null}
+
+                          {branch.modules.length === 0 || branch.modules.length > 0 ? (
+                            <>
+                              {branch.modules.length > 0 && (
+                                <div className="w-0.5 h-8 bg-gray-300"></div>
+                              )}
+                              <AddModuleButton
+                                onClick={() => {
+                                  setEditingBranch(branchIndex);
+                                  setOpen(true);
+                                }}
+                              />
+                            </>
+                          ) : null}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <aside className="hidden lg:block border-l border-gray-200  h-full overflow-y-auto">
+                  <ScenarioHistoryPanel />
+                </aside>
+                {open && (
+                  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div
+                      ref={modalRef}
+                      className="bg-white rounded-xl shadow-2xl w-[500px] max-h-[80vh] overflow-hidden"
+                    >
+                      {!selectedApp ? (
+                        <>
+                          <div className="p-6 border-b bg-gradient-to-r from-purple-600 to-purple-500 text-white">
+                            <h2 className="text-lg font-semibold">
+                              Select Application
+                            </h2>
+                            <p className="text-sm text-purple-100 mt-1">
+                              Choose an app to add to your workflow
+                            </p>
+                          </div>
+                          <div className="p-4 max-h-96 overflow-y-auto space-y-3">
+                            {[
+                              {
+                                name: "Initial Email",
+                                base: "Gmail",
+                                color: "bg-red-500",
+                                icon: "Gmail",
+                              },
+                              {
+                                name: "First Follow-up",
+                                base: "Gmail",
+                                color: "bg-red-500",
+                                icon: "Gmail",
+                              },
+                              {
+                                name: "Second Follow-up",
+                                base: "Gmail",
+                                color: "bg-red-500",
+                                icon: "Gmail",
+                              },
+                              {
+                                name: "Delay",
+                                base: "Delay",
+                                color: "bg-blue-500",
+                                icon: "Delay",
+                              },
+                            ].map((item, idx) => {
+                              const Icon = iconMap[item.icon];
+                              return (
+                                <div
+                                  key={idx}
+                                  onClick={() => {
+                                    let templateName = "";
+                                    if (item.name === "Initial Email")
+                                      templateName = "Initial Email";
+                                    else if (item.name === "First Follow-up")
+                                      templateName = "First Follow-up";
+                                    else if (item.name === "Second Follow-up")
+                                      templateName = "Second Follow-up";
+                                    localStorage.setItem(
+                                      "activeShopifyModule",
+                                      templateName,
+                                    );
+
+                                    setSelectedApp({
+                                      name: item.base,
+                                      displayName: item.name,
+                                      color: item.color,
+                                      icon: item.icon,
+                                      defaultTemplate: templateName,
+                                    });
+
+                                    setSelectedTemplate(templateName);
+                                  }}
+                                  className="flex items-center p-4 rounded-lg border border-gray-200 hover:border-purple-500 hover:bg-purple-50 cursor-pointer transition-colors"
+                                >
+                                  <div
+                                    className={`w-12 h-12 ${item.color} rounded-lg flex items-center justify-center text-white`}
+                                  >
+                                    <Icon className="w-6 h-6" />
+                                  </div>
+                                  <div className="ml-4">
+                                    <p className="font-medium text-gray-800 text-sm">
+                                      {item.name}
+                                    </p>
+                                    <p className="text-xs text-gray-500">{item.base}</p>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="p-6 border-b bg-gradient-to-r from-purple-600 to-purple-500 text-white flex justify-between items-center">
+                            <h3 className="font-semibold text-lg">
+                              {selectedApp.displayName || selectedApp.name}
+                            </h3>
+
+                            <button
+                              onClick={resetForm}
+                              className="hover:bg-white hover:bg-opacity-20 p-1 rounded"
+                            >
+                              <X className="w-5 h-5" />
+                            </button>
+                          </div>
+
+                          <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+                            {selectedApp?.name === "Delay" ||
+                              selectedApp?.type === "Delay" ? (
                               <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                  Connection <span className="text-red-500">*</span>
+                                  Delay Duration <span className="text-red-500">*</span>
                                 </label>
-
-                                <div className="flex items-center border border-gray-300 rounded-lg px-2 py-2 focus-within:ring-2 focus-within:ring-purple-500">
+                                <div className="flex space-x-3">
+                                  <input
+                                    type="number"
+                                    value={delayValue}
+                                    onChange={(e) => setDelayValue(e.target.value)}
+                                    className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                  />
                                   <select
-                                    value={selectedConnection}
-                                    onChange={(e) => {
-                                      setSelectedConnection(e.target.value);
-                                      setIsScenarioUpdated(false);
-                                    }}
-                                    className="flex-1 border-none outline-none text-sm bg-transparent"
+                                    value={delayUnit}
+                                    onChange={(e) => setDelayUnit(e.target.value)}
+                                    className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                                   >
-                                    <option value="">
-                                      -- Select Connection --
-                                    </option>
-                                    {connections
-                                      .filter((c) => {
-                                        if (selectedAppType === "Email")
-                                          return (
-                                            c.provider === "smtp" ||
-                                            c.provider === "outlook"
-                                          );
-                                        if (selectedAppType === "Gmail")
-                                          return c.provider === "gmail";
-                                        return false;
-                                      })
-                                      .map((c) => (
-                                        <option key={c._id} value={c._id}>
-                                          {c.provider.toUpperCase()} - {c.email}
-                                        </option>
-                                      ))}
+                                    <option value="seconds">Seconds</option>
+                                    <option value="minutes">Minutes</option>
+                                    <option value="hours">Hours</option>
                                   </select>
+                                </div>
+                              </div>
+                            ) : (
+                              <>
+                                <div className="relative">
+                                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Select Application{" "}
+                                    <span className="text-red-500">*</span>
+                                  </label>
 
-                                  {/* <button
+                                  <div className="relative">
+                                    <select
+                                      value={selectedAppType}
+                                      onChange={(e) => {
+                                        const value = e.target.value;
+                                        setSelectedAppType(value);
+                                        fetchConnections();
+                                      }}
+                                      className="w-full border border-gray-300 rounded-lg px-4 py-2 pr-20 focus:ring-2 focus:ring-purple-500 focus:border-transparent appearance-none"
+                                    >
+                                      <option value="">-- Choose App Type --</option>
+                                      <option value="Gmail">Gmail</option>
+                                      <option value="Email">
+                                        Email (SMTP/Outlook)
+                                      </option>
+                                    </select>
+
+                                    {/* Add button INSIDE the select box (to the right) */}
+                                    <button
+                                      disabled={!selectedAppType}
+                                      onClick={() => {
+                                        if (selectedAppType === "Email") {
+                                          setShowOutlookModal(true);
+                                        } else if (selectedAppType === "Gmail") {
+                                          setShowGmailModal(true);
+                                        } else {
+                                          toast.error(
+                                            "Please select an application type first.",
+                                          );
+                                        }
+                                      }}
+                                      className={`absolute right-0 top-0 bottom-0 px-4 text-sm font-medium rounded-r-lg border-l transition-all duration-200 ${selectedAppType
+                                        ? "bg-purple-600 text-white border-l-gray-300 hover:bg-purple-700"
+                                        : "bg-gray-200 text-gray-400 border-l-gray-300 cursor-not-allowed"
+                                        }`}
+                                    >
+                                      Add
+                                    </button>
+                                  </div>
+
+                                  <p className="text-xs text-gray-500 mt-2">
+                                    Choose the application type and click <b>Add</b> to
+                                    connect a new account.
+                                  </p>
+                                </div>
+
+                                {selectedAppType && (
+                                  <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                      Connection <span className="text-red-500">*</span>
+                                    </label>
+
+                                    <div className="flex items-center border border-gray-300 rounded-lg px-2 py-2 focus-within:ring-2 focus-within:ring-purple-500">
+                                      <select
+                                        value={selectedConnection}
+                                        onChange={(e) => {
+                                          setSelectedConnection(e.target.value);
+                                          setIsScenarioUpdated(false);
+                                        }}
+                                        className="flex-1 border-none outline-none text-sm bg-transparent"
+                                      >
+                                        <option value="">
+                                          -- Select Connection --
+                                        </option>
+                                        {connections
+                                          .filter((c) => {
+                                            if (selectedAppType === "Email")
+                                              return (
+                                                c.provider === "smtp" ||
+                                                c.provider === "outlook"
+                                              );
+                                            if (selectedAppType === "Gmail")
+                                              return c.provider === "gmail";
+                                            return false;
+                                          })
+                                          .map((c) => (
+                                            <option key={c._id} value={c._id}>
+                                              {c.provider.toUpperCase()} - {c.email}
+                                            </option>
+                                          ))}
+                                      </select>
+
+                                      {/* <button
                                 onClick={() => {
                                   if (selectedAppType === "Email") {
                                     setShowOutlookModal(true);
@@ -2982,218 +2842,218 @@ const ShopifyScenariosPage = () => {
                               >
                                 Add
                               </button> */}
+                                    </div>
+                                  </div>
+                                )}
+
+                                <div>
+                                  <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                      Template
+                                    </label>
+
+                                    <div className="relative">
+                                      {/* Read-only Input */}
+                                      <input
+                                        type="text"
+                                        value={
+                                          selectedApp?.defaultTemplate ||
+                                          selectedTemplate ||
+                                          "No template selected"
+                                        }
+                                        readOnly
+                                        className="w-full border border-gray-300 rounded-lg px-4 py-2 pr-20 bg-gray-100 text-gray-700 focus:outline-none cursor-not-allowed"
+                                      />
+
+                                      {/* View Button inside the input box */}
+                                      <button
+                                        onClick={() => {
+                                          const templateName =
+                                            selectedTemplate ||
+                                            selectedApp?.defaultTemplate;
+
+                                          if (templateName) {
+                                            const encodedName =
+                                              encodeURIComponent(templateName);
+                                            window.open(
+                                              `/templates?view=${encodedName}`,
+                                              "_blank",
+                                            );
+                                          } else {
+                                            toast.info("No template selected to view.");
+                                          }
+                                        }}
+                                        disabled={
+                                          !selectedTemplate &&
+                                          !selectedApp?.defaultTemplate
+                                        }
+                                        className={`absolute right-0 top-0 bottom-0 px-4 text-sm font-medium rounded-r-lg border-l transition-all duration-200 ${selectedTemplate ||
+                                          selectedApp?.defaultTemplate
+                                          ? "bg-indigo-600 text-white border-l-gray-300 hover:bg-indigo-700"
+                                          : "bg-gray-200 text-gray-400 border-l-gray-300 cursor-not-allowed"
+                                          }`}
+                                      >
+                                        View
+                                      </button>
+                                    </div>
+
+                                    {/* Hint Text */}
+                                    <p className="text-xs text-gray-500 mt-2">
+                                      Click <b>View</b> to open and review the full
+                                      email template.
+                                    </p>
+                                  </div>
                                 </div>
-                              </div>
+
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    To
+                                  </label>
+                                  <div className="border border-gray-300 rounded-lg px-3 py-2 bg-gray-50">
+                                    <div className="flex flex-wrap gap-2">
+                                      <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm flex items-center">
+                                        Sender Email Address
+                                        <span className="ml-2 text-gray-400 text-xs">
+                                          (Sender)
+                                        </span>
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    CC{" "}
+                                    <span className="text-xs text-gray-500">
+                                      (Optional)
+                                    </span>
+                                  </label>
+                                  <div className="border border-gray-300 rounded-lg px-3 py-2 focus-within:ring-2 focus-within:ring-purple-500">
+                                    <div className="flex flex-wrap gap-2 mb-2">
+                                      {ccList.map((email, index) => (
+                                        <span
+                                          key={index}
+                                          className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm flex items-center"
+                                        >
+                                          {email}
+                                          <button
+                                            onClick={() =>
+                                              handleRemoveEmail("cc", index)
+                                            }
+                                            className="ml-2 text-red-500 hover:text-red-700"
+                                          >
+                                            <X className="w-3 h-3" />
+                                          </button>
+                                        </span>
+                                      ))}
+                                    </div>
+                                    <input
+                                      type="text"
+                                      value={ccInput}
+                                      onChange={(e) => setCcInput(e.target.value)}
+                                      onKeyDown={(e) => handleAddEmail(e, "cc")}
+                                      placeholder="Type email and press Enter"
+                                      className="w-full outline-none text-sm"
+                                    />
+                                  </div>
+                                </div>
+
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    BCC{" "}
+                                    <span className="text-xs text-gray-500">
+                                      (Optional)
+                                    </span>
+                                  </label>
+                                  <div className="border border-gray-300 rounded-lg px-3 py-2 focus-within:ring-2 focus-within:ring-purple-500">
+                                    <div className="flex flex-wrap gap-2 mb-2">
+                                      {bccList.map((email, index) => (
+                                        <span
+                                          key={index}
+                                          className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm flex items-center"
+                                        >
+                                          {email}
+                                          <button
+                                            onClick={() =>
+                                              handleRemoveEmail("bcc", index)
+                                            }
+                                            className="ml-2 text-red-500 hover:text-red-700"
+                                          >
+                                            <X className="w-3 h-3" />
+                                          </button>
+                                        </span>
+                                      ))}
+                                    </div>
+                                    <input
+                                      type="text"
+                                      value={bccInput}
+                                      onChange={(e) => setBccInput(e.target.value)}
+                                      onKeyDown={(e) => handleAddEmail(e, "bcc")}
+                                      placeholder="Type email and press Enter"
+                                      className="w-full outline-none text-sm"
+                                    />
+                                  </div>
+                                </div>
+                              </>
                             )}
+                          </div>
 
-                            <div>
-                              <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                  Template
-                                </label>
-
-                                <div className="relative">
-                                  {/* Read-only Input */}
-                                  <input
-                                    type="text"
-                                    value={
-                                      selectedApp?.defaultTemplate ||
-                                      selectedTemplate ||
-                                      "No template selected"
-                                    }
-                                    readOnly
-                                    className="w-full border border-gray-300 rounded-lg px-4 py-2 pr-20 bg-gray-100 text-gray-700 focus:outline-none cursor-not-allowed"
-                                  />
-
-                                  {/* View Button inside the input box */}
-                                  <button
-                                    onClick={() => {
-                                      const templateName =
-                                        selectedTemplate ||
-                                        selectedApp?.defaultTemplate;
-
-                                      if (templateName) {
-                                        const encodedName =
-                                          encodeURIComponent(templateName);
-                                        window.open(
-                                          `/templates?view=${encodedName}`,
-                                          "_blank",
-                                        );
-                                      } else {
-                                        toast.info("No template selected to view.");
-                                      }
-                                    }}
-                                    disabled={
-                                      !selectedTemplate &&
-                                      !selectedApp?.defaultTemplate
-                                    }
-                                    className={`absolute right-0 top-0 bottom-0 px-4 text-sm font-medium rounded-r-lg border-l transition-all duration-200 ${selectedTemplate ||
-                                      selectedApp?.defaultTemplate
-                                      ? "bg-indigo-600 text-white border-l-gray-300 hover:bg-indigo-700"
-                                      : "bg-gray-200 text-gray-400 border-l-gray-300 cursor-not-allowed"
-                                      }`}
-                                  >
-                                    View
-                                  </button>
-                                </div>
-
-                                {/* Hint Text */}
-                                <p className="text-xs text-gray-500 mt-2">
-                                  Click <b>View</b> to open and review the full
-                                  email template.
-                                </p>
-                              </div>
-                            </div>
-
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">
-                                To
-                              </label>
-                              <div className="border border-gray-300 rounded-lg px-3 py-2 bg-gray-50">
-                                <div className="flex flex-wrap gap-2">
-                                  <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm flex items-center">
-                                    Sender Email Address
-                                    <span className="ml-2 text-gray-400 text-xs">
-                                      (Sender)
-                                    </span>
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">
-                                CC{" "}
-                                <span className="text-xs text-gray-500">
-                                  (Optional)
-                                </span>
-                              </label>
-                              <div className="border border-gray-300 rounded-lg px-3 py-2 focus-within:ring-2 focus-within:ring-purple-500">
-                                <div className="flex flex-wrap gap-2 mb-2">
-                                  {ccList.map((email, index) => (
-                                    <span
-                                      key={index}
-                                      className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm flex items-center"
-                                    >
-                                      {email}
-                                      <button
-                                        onClick={() =>
-                                          handleRemoveEmail("cc", index)
-                                        }
-                                        className="ml-2 text-red-500 hover:text-red-700"
-                                      >
-                                        <X className="w-3 h-3" />
-                                      </button>
-                                    </span>
-                                  ))}
-                                </div>
-                                <input
-                                  type="text"
-                                  value={ccInput}
-                                  onChange={(e) => setCcInput(e.target.value)}
-                                  onKeyDown={(e) => handleAddEmail(e, "cc")}
-                                  placeholder="Type email and press Enter"
-                                  className="w-full outline-none text-sm"
-                                />
-                              </div>
-                            </div>
-
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">
-                                BCC{" "}
-                                <span className="text-xs text-gray-500">
-                                  (Optional)
-                                </span>
-                              </label>
-                              <div className="border border-gray-300 rounded-lg px-3 py-2 focus-within:ring-2 focus-within:ring-purple-500">
-                                <div className="flex flex-wrap gap-2 mb-2">
-                                  {bccList.map((email, index) => (
-                                    <span
-                                      key={index}
-                                      className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm flex items-center"
-                                    >
-                                      {email}
-                                      <button
-                                        onClick={() =>
-                                          handleRemoveEmail("bcc", index)
-                                        }
-                                        className="ml-2 text-red-500 hover:text-red-700"
-                                      >
-                                        <X className="w-3 h-3" />
-                                      </button>
-                                    </span>
-                                  ))}
-                                </div>
-                                <input
-                                  type="text"
-                                  value={bccInput}
-                                  onChange={(e) => setBccInput(e.target.value)}
-                                  onKeyDown={(e) => handleAddEmail(e, "bcc")}
-                                  placeholder="Type email and press Enter"
-                                  className="w-full outline-none text-sm"
-                                />
-                              </div>
-                            </div>
-                          </>
-                        )}
-                      </div>
-
-                      <div className="p-6 border-t bg-gray-50 flex justify-end space-x-3">
-                        <button
-                          onClick={resetForm}
-                          className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          onClick={handleSave}
-                          className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-                        >
-                          Save Module
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </div>
+                          <div className="p-6 border-t bg-gray-50 flex justify-end space-x-3">
+                            <button
+                              onClick={resetForm}
+                              className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              onClick={handleSave}
+                              className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                            >
+                              Save Module
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        </div>
-        <OutlookConnectionModal
-          isOpen={showOutlookModal}
-          onClose={() => setShowOutlookModal(false)}
-          onSuccess={(data) => {
-            setShowOutlookModal(false);
-            fetchConnections();
-            resetFormFields();
-          }}
-        />
-        <WebhookModal
-          showWebhookInfo={showWebhookInfo}
-          setShowWebhookInfo={setShowWebhookInfo}
-          webhookUrl={webhookUrl}
-          loading={loading}
-        />
-        <ConnectionModal
-          isOpen={showGmailModal}
-          onClose={() => {
-            setShowGmailModal(false);
-            setShowOutlookModal(false);
-          }}
-          onSuccess={async () => {
-            setShowGmailModal(false);
-            setShowOutlookModal(false);
+            </div>
+            <OutlookConnectionModal
+              isOpen={showOutlookModal}
+              onClose={() => setShowOutlookModal(false)}
+              onSuccess={(data) => {
+                setShowOutlookModal(false);
+                fetchConnections();
+                resetFormFields();
+              }}
+            />
+            <WebhookModal
+              showWebhookInfo={showWebhookInfo}
+              setShowWebhookInfo={setShowWebhookInfo}
+              webhookUrl={webhookUrl}
+              loading={loading}
+            />
+            <ConnectionModal
+              isOpen={showGmailModal}
+              onClose={() => {
+                setShowGmailModal(false);
+                setShowOutlookModal(false);
+              }}
+              onSuccess={async () => {
+                setShowGmailModal(false);
+                setShowOutlookModal(false);
 
-            await fetchConnections();
+                await fetchConnections();
 
-            toast.success(" Gmail connection added successfully!");
+                toast.success(" Gmail connection added successfully!");
 
-            if (selectedAppType === "Gmail") {
-              setSelectedConnection("");
-            }
-          }}
-        />
-        </>
+                if (selectedAppType === "Gmail") {
+                  setSelectedConnection("");
+                }
+              }}
+            />
+          </>
         )}
       </div>
       {showEmailPreview && (

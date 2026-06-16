@@ -1,373 +1,10 @@
-import React, { useState, useEffect } from "react";
-import {
-  FiMail,
-  FiCopy,
-  FiInfo,
-  FiArrowRight,
-  FiCheck,
-  FiX,
-  FiRefreshCcw,
-  FiAlertCircle,
-  FiClock,
-  FiCheckCircle
-} from "react-icons/fi";
-import { AnimatePresence, motion } from "framer-motion";
-import toast from "react-hot-toast";
-import axios from "axios";
+﻿const fs = require('fs');
 
-const MailhookWaitingTimer = ({ message }) => {
-  const [seconds, setSeconds] = useState(10);
-  const [alertMode, setAlertMode] = useState(false);
+const path = 'C:/react apps/Replex Engine/Zenith-inbox-frontend/src/component/MailhookConnectionModal.js';
+const code = fs.readFileSync(path, 'utf8');
+const lines = code.split(/\r?\n/);
 
-  useEffect(() => {
-    const tick = setInterval(() => {
-      setSeconds((s) => (s <= 1 ? 10 : s - 1));
-    }, 1000);
-
-    const toggle = setInterval(() => {
-      setAlertMode((p) => !p);
-    }, 10000);
-
-    return () => {
-      clearInterval(tick);
-      clearInterval(toggle);
-    };
-  }, []);
-
-  const progress = ((10 - seconds) / 10) * 100;
-
-  return (
-    <div className="text-center space-y-3 transition-all duration-300">
-      <div className="flex justify-center items-center gap-2 text-gray-700">
-        {alertMode ? (
-          <FiAlertCircle className="text-red-500 text-lg animate-pulse" />
-        ) : (
-          <FiMail className="text-[#4F46E5] text-lg animate-pulse" />
-        )}
-        <p className="text-sm text-gray-600 transition-all duration-500">
-          {alertMode ? (
-            <span className="flex items-center justify-center gap-2 text-red-600 font-medium">
-              No email received on mailhook.
-            </span>
-          ) : (
-            <span className="flex items-center justify-center gap-2 text-gray-700 font-medium">
-              {message || "Waiting for forwarded email..."}
-            </span>
-          )}
-        </p>
-      </div>
-
-      <p className="text-xs text-gray-500">
-        {alertMode
-          ? "Make sure you’ve forwarded emails to the correct mailhook address."
-          : "Keep this tab open while we check your mailhook."}
-      </p>
-
-      <div className="h-2 bg-gray-200 rounded-full overflow-hidden mt-2">
-        <div
-          className={`h-full transition-all duration-1000 ${alertMode ? "bg-red-500" : "bg-[#4F46E5]"
-            }`}
-          style={{ width: `${progress}%` }}
-        />
-      </div>
-
-      <div className="flex items-center justify-center gap-1 text-xs text-gray-400 mt-1">
-        <FiClock />
-        <span>Checking again in {seconds}s…</span>
-      </div>
-    </div>
-  );
-};
-
-const MailhookConnectionModal = ({
-  isOpen,
-  onClose,
-  user,
-  startAtStep3 = false,
-  cardId,
-  onMailhookUpdated,
-}) => {
-  const [step, setStep] = useState(1);
-  const [validating, setValidating] = useState(false);
-  const [validationFailed, setValidationFailed] = useState(false);
-  const [verificationEmail, setVerificationEmail] = useState(null);
-  const [retryKey, setRetryKey] = useState(0);
-  const [retrying, setRetrying] = useState(false);
-  const [alert, setAlert] = useState({ type: "", message: "" });
-
-  const [latestMailhookEmails, setLatestMailhookEmails] = useState([]);
-  const [autoOpenedEmailId, setAutoOpenedEmailId] = useState(null);
-
-  // New states for Step 2 Forwarding Setup
-  const [forwardingEnabled, setForwardingEnabled] = useState(false);
-  const [provider, setProvider] = useState(null);
-
-  // States for explicit step navigation
-  const [verificationFound, setVerificationFound] = useState(false);
-  const [validationSuccess, setValidationSuccess] = useState(false);
-
-  useEffect(() => {
-    if (alert.message) {
-      const timer = setTimeout(() => setAlert({ type: "", message: "" }), 4000);
-      return () => clearTimeout(timer);
-    }
-  }, [alert]);
-
-  useEffect(() => {
-    if (isOpen) {
-      setStep(startAtStep3 ? 3 : 1);
-
-      setValidating(false);
-      setValidationFailed(false);
-      setVerificationEmail(null);
-      setRetryKey(0);
-      setRetrying(false);
-      setAlert({ type: "", message: "" });
-
-      setLatestMailhookEmails([]);
-      setAutoOpenedEmailId(null);
-
-      setForwardingEnabled(false);
-      setProvider(null);
-
-      setVerificationFound(false);
-      setValidationSuccess(false);
-    }
-  }, [isOpen, startAtStep3]);
-
-  const fetchMailhookEmails = async ({ autoOpen = false } = {}) => {
-    if (!user?._id) return;
-
-    try {
-      const res = await fetch(
-        `https://email-syncing-backend.vercel.app/mailhook/verification/${user._id}`
-      );
-      const data = await res.json();
-
-      if (data.success && data.data) {
-        const emails = Array.isArray(data.data) ? data.data : [data.data];
-        const latestEmail = emails[0];
-
-        setLatestMailhookEmails(emails);
-
-        const latestEmailId =
-          latestEmail?._id ||
-          latestEmail?.messageId ||
-          latestEmail?.date ||
-          latestEmail?.subject;
-
-        if (autoOpen && latestEmailId && latestEmailId !== autoOpenedEmailId && step === 3) {
-          setAutoOpenedEmailId(latestEmailId);
-          toast.success("Verification email received successfully!");
-
-          setVerificationEmail({
-            ...latestEmail,
-            formattedBody: latestEmail.textBody || "",
-            toEmail: user?.mailhook || ""
-          });
-          setVerificationFound(true);
-        }
-      } else {
-        setLatestMailhookEmails([]);
-      }
-    } catch (err) {
-      console.error("Error fetching mailhook emails:", err);
-      setLatestMailhookEmails([]);
-    }
-  };
-
-  useEffect(() => {
-    if (step !== 3 || !user?._id) return;
-    if (verificationFound) return;
-
-    setValidationFailed(false);
-    setVerificationEmail(null);
-
-    let attempts = 0;
-    const maxAttempts = 5;
-    const loaderMinDuration = 10000;
-    const loaderStartTime = Date.now();
-
-    const fetchVerification = async () => {
-      attempts++;
-      console.log(`🔍 Checking verification attempt ${attempts}/${maxAttempts}`);
-
-      try {
-        const res = await fetch(
-          `https://email-syncing-backend.vercel.app/mailhook/verification/${user._id}`
-        );
-        const data = await res.json();
-
-        if (data.success && data.data) {
-          const email = data.data;
-          let autoEmail = "";
-          let isGmailVerification = false;
-          let cleanedBody = email.textBody || "";
-
-          if (
-            email.sender?.toLowerCase().includes("forwarding-noreply@google.com") &&
-            email.subject?.toLowerCase().includes("has requested to automatically forward")
-          ) {
-            isGmailVerification = true;
-            const match =
-              email.subject.match(/([\w._%+-]+@gmail\.com)/i) ||
-              email.textBody.match(/([\w._%+-]+@gmail\.com)/i);
-            if (match) autoEmail = match[1];
-
-            cleanedBody =
-              " Gmail forwarding request detected.<br/><br/>Please open Gmail and click the verification link in your inbox to confirm forwarding.<br/><br/>Once confirmed, return here to validate.";
-          }
-
-          cleanedBody = cleanedBody
-            .replace(
-              /(https?:\/\/[^\s<]+)/g,
-              '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:#2563eb;text-decoration:underline;">$1</a>'
-            )
-            .replace(/\n/g, "<br/>");
-
-          setVerificationEmail({
-            ...email,
-            toEmail: autoEmail || email.toEmail || "",
-            isGmailVerification,
-            formattedBody: cleanedBody,
-          });
-
-          clearInterval(intervalId);
-          const elapsed = Date.now() - loaderStartTime;
-          const remaining = Math.max(loaderMinDuration - elapsed, 0);
-
-          setTimeout(() => {
-            setVerificationFound(true);
-            setRetrying(false);
-          }, remaining);
-
-          return;
-        }
-
-        if (attempts >= maxAttempts) {
-          clearInterval(intervalId);
-          setValidationFailed(true);
-          setRetrying(false);
-        }
-      } catch (err) {
-        console.error("Error fetching verification email:", err);
-        if (attempts >= maxAttempts) {
-          clearInterval(intervalId);
-          setValidationFailed(true);
-          setRetrying(false);
-        }
-      }
-    };
-
-    const intervalId = setInterval(fetchVerification, 10000);
-    fetchVerification();
-
-    return () => clearInterval(intervalId);
-  }, [step, user, retryKey, verificationFound]);
-
-  useEffect(() => {
-    if (step !== 3 || !user?._id) return;
-    const interval = setInterval(() => {
-      fetchMailhookEmails({ autoOpen: true });
-    }, 10000);
-    return () => clearInterval(interval);
-  }, [step, user?._id, autoOpenedEmailId]);
-
-  const handleValidateForwarding = async () => {
-    try {
-      if (!verificationEmail?.toEmail?.trim()) {
-        setAlert({
-          type: "error",
-          message: "Please enter your forwarding email first.",
-        });
-        return;
-      }
-
-      setValidating(true);
-      setValidationFailed(false);
-
-      const res = await fetch(
-        `https://email-syncing-backend.vercel.app/mailhook/validate-forwarding/${user._id}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ toEmail: verificationEmail.toEmail }),
-        }
-      );
-
-      const data = await res.json();
-
-      if (!data.success) {
-        setAlert({
-          type: "error",
-          message: data.message || "Forwarding setup failed.",
-        });
-        setValidating(false);
-        return;
-      }
-
-
-      let attempts = 0;
-      const loop = async () => {
-        attempts++;
-
-        const res = await fetch(
-          `https://email-syncing-backend.vercel.app/mailhook/validateTest/${user._id}?cardId=${cardId}`,
-          {
-            method: "GET",
-            headers: { "Content-Type": "application/json" },
-          }
-        );
-
-        const json = await res.json();
-
-        if (json.success) {
-          await axios.post(
-            "https://email-syncing-backend.vercel.app/mailhookcard/create",
-            {
-              userId: user._id,
-              forwardingEmail: verificationEmail.toEmail,
-            }
-          );
-
-          if (onMailhookUpdated) onMailhookUpdated();
-
-
-          setValidating(false);
-          setValidationSuccess(true);
-
-          return;
-        }
-
-        if (attempts < 5) {
-          setTimeout(loop, 10000);
-        } else {
-          setValidating(false);
-          setValidationFailed(true);
-
-          setAlert({
-            type: "error",
-            message:
-              "Your email forwarding is not set up properly. Please check your forwarding settings and try again.",
-          });
-        }
-      };
-
-      loop();
-    } catch (err) {
-      console.error(err);
-      setAlert({
-        type: "error",
-        message: "Error during validation process.",
-      });
-      setValidating(false);
-      setValidationFailed(true);
-    }
-  };
-
-
-
-  if (!isOpen) return null;
+const newReturn = `  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 sm:p-6 overflow-hidden">
@@ -390,11 +27,11 @@ const MailhookConnectionModal = ({
               Replex Engine
             </span>
           </div>
-
+          
           {/* Step Indicator */}
           <div className="px-4 py-1.5 rounded-full text-xs sm:text-sm font-semibold flex items-center justify-center gap-1.5 text-gray-800 bg-white/70 backdrop-blur-md border border-gray-200/50 shadow-sm">
             <FiCheckCircle className="text-indigo-600" />
-            <span>Step {step} of 4</span>
+            <span>Step ${step} of 4</span>
           </div>
         </div>
 
@@ -408,10 +45,10 @@ const MailhookConnectionModal = ({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.3 }}
-                className={`absolute top-0 left-4 right-4 sm:left-8 sm:right-8 z-20 px-3 py-2 rounded-lg text-xs sm:text-sm font-medium text-center backdrop-blur-xl shadow-sm border ${alert.type === "success"
+                className={\`absolute top-0 left-4 right-4 sm:left-8 sm:right-8 z-20 px-3 py-2 rounded-lg text-xs sm:text-sm font-medium text-center backdrop-blur-xl shadow-sm border \${alert.type === "success"
                   ? "bg-green-50/95 text-green-800 border-green-200"
                   : "bg-red-50/95 text-red-800 border-red-200"
-                  }`}
+                  }\`}
               >
                 {alert.message}
               </motion.div>
@@ -513,7 +150,7 @@ const MailhookConnectionModal = ({
               {/* Validation Checklist */}
               <div className="w-full max-w-sm bg-white/60 rounded-xl p-3 sm:p-4 border border-white/80 shadow-sm text-left mb-5">
                 <h3 className="text-xs font-semibold text-gray-900 mb-2">Checklist to continue</h3>
-
+                
                 <div className="space-y-2.5 text-[11px] sm:text-xs text-gray-700 font-medium">
                   <label className="flex items-center gap-2 cursor-pointer group">
                     <input
@@ -525,7 +162,7 @@ const MailhookConnectionModal = ({
                     <span className="group-hover:text-gray-900 transition-colors">I have enabled <strong>email forwarding</strong></span>
                   </label>
 
-                  <label className={`flex items-center gap-2 ${forwardingEnabled ? "cursor-pointer group" : "cursor-not-allowed opacity-50"}`}>
+                  <label className={\`flex items-center gap-2 \${forwardingEnabled ? "cursor-pointer group" : "cursor-not-allowed opacity-50"}\`}>
                     <input
                       type="radio"
                       name="provider"
@@ -537,7 +174,7 @@ const MailhookConnectionModal = ({
                     <span className={forwardingEnabled ? "group-hover:text-gray-900 transition-colors" : ""}>Setup using <strong>Gmail / Google</strong></span>
                   </label>
 
-                  <label className={`flex items-center gap-2 ${forwardingEnabled ? "cursor-pointer group" : "cursor-not-allowed opacity-50"}`}>
+                  <label className={\`flex items-center gap-2 \${forwardingEnabled ? "cursor-pointer group" : "cursor-not-allowed opacity-50"}\`}>
                     <input
                       type="radio"
                       name="provider"
@@ -554,10 +191,11 @@ const MailhookConnectionModal = ({
               <button
                 disabled={!forwardingEnabled || !provider}
                 onClick={() => setStep(3)}
-                className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-full text-xs sm:text-sm font-semibold transition-all w-full max-w-sm ${(!forwardingEnabled || !provider)
-                  ? "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed"
-                  : "bg-indigo-600 text-white hover:bg-indigo-700 shadow-md hover:scale-[1.02]"
-                  }`}
+                className={\`flex items-center justify-center gap-2 px-6 py-2.5 rounded-full text-xs sm:text-sm font-semibold transition-all w-full max-w-sm \${
+                  (!forwardingEnabled || !provider)
+                    ? "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed"
+                    : "bg-indigo-600 text-white hover:bg-indigo-700 shadow-md hover:scale-[1.02]"
+                }\`}
               >
                 <span>Continue</span>
                 <FiArrowRight />
@@ -639,7 +277,7 @@ const MailhookConnectionModal = ({
                         </p>
 
                         <div
-                          className="border-t border-indigo-100/60 pt-2 text-gray-700 text-[11px] leading-relaxed max-h-[140px] overflow-y-auto overflow-x-hidden pr-2 break-words"
+                          className="border-t border-indigo-100/60 pt-2 text-gray-700 line-clamp-3 text-[11px] leading-relaxed"
                           dangerouslySetInnerHTML={{
                             __html: verificationEmail.formattedBody || verificationEmail.textBody || "",
                           }}
@@ -668,22 +306,13 @@ const MailhookConnectionModal = ({
                         <button
                           disabled={validating}
                           onClick={handleValidateForwarding}
-                          className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-bold text-white transition-all shadow-sm ${validating
+                          className={\`w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-bold text-white transition-all shadow-sm \${validating
                             ? "bg-gray-400 cursor-wait"
                             : "bg-indigo-600 hover:bg-indigo-700 hover:shadow-md"
-                            }`}
+                            }\`}
                         >
-                          {validating ? "Checking forwarded email..." : "Validate Forwarding"}                          {!validating && <FiCheckCircle />}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            window.open("mailto:support@replexengine.com?subject=Mailhook forwarding help", "_blank");
-                          }}
-                          className="mt-2 w-full flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 hover:text-indigo-600 transition-all"
-                        >
-                          <FiInfo className="text-sm" />
-                          Need help?
+                          {validating ? "Validating..." : "Validate Forwarding"}
+                          {!validating && <FiCheckCircle />}
                         </button>
                       </div>
                     ) : (
@@ -721,7 +350,7 @@ const MailhookConnectionModal = ({
                       }}
                       className="flex items-center gap-2 px-4 py-2 text-[11px] font-bold border border-indigo-200 text-indigo-700 bg-indigo-50/50 rounded-full hover:bg-indigo-100 hover:border-indigo-300 transition-all shadow-sm"
                     >
-                      <FiRefreshCcw className={`${retrying ? "animate-spin" : ""}`} />
+                      <FiRefreshCcw className={\`\${retrying ? "animate-spin" : ""}\`} />
                       {retrying ? "Checking..." : "Refresh Status"}
                     </button>
                   </div>
@@ -745,3 +374,9 @@ const MailhookConnectionModal = ({
 };
 
 export default MailhookConnectionModal;
+`;
+
+const newCode = lines.slice(0, 376).join('\n') + '\n' + newReturn;
+
+fs.writeFileSync(path, newCode);
+console.log('Update successful');
