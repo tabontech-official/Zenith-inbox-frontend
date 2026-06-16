@@ -1807,53 +1807,72 @@ const ShopifyScenariosPage = () => {
 
   const SetupProgressCard = () => {
     const completedCount = setupSteps.filter((s) => s.completed).length;
+    const progress = Math.round((completedCount / setupSteps.length) * 100);
 
     return (
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 w-full lg:w-72">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-bold text-gray-800">Setup Progress</h3>
-          <span className="text-xs text-gray-500">
-            {completedCount}/{setupSteps.length}
-          </span>
+      <div className="w-full lg:w-72 rounded-xl border border-[#E0E7FF] bg-white shadow-sm overflow-hidden">
+        <div className="border-b border-[#E0E7FF] bg-[#F5F7FF] px-4 py-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-slate-700">
+              Setup Progress
+            </h3>
+
+            <span className="rounded-full border border-[#C7D2FE] bg-[#EEF2FF] px-2 py-0.5 text-xs font-semibold text-[#5B5FD6]">
+              {completedCount}/{setupSteps.length}
+            </span>
+          </div>
+
+          <div className="mt-3 h-1.5 w-full rounded-full bg-[#E0E7FF]">
+            <div
+              className="h-1.5 rounded-full bg-[#8A8CF4] transition-all"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-2 p-4">
           {setupSteps.map((step) => (
             <button
               key={step.key}
               type="button"
               onClick={() => handleSetupStepClick(step.key)}
-              className={`w-full flex items-center justify-between gap-3 rounded-lg border px-3 py-2 text-xs text-left transition ${step.completed
-                ? "bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
-                : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-yellow-50 hover:border-yellow-300"
+              className={`w-full rounded-lg border px-3 py-2 text-left text-xs transition ${step.completed
+                  ? "border-[#C7D2FE] bg-[#EEF2FF] hover:bg-[#E0E7FF]"
+                  : "border-gray-200 bg-gray-50 hover:border-[#C7D2FE] hover:bg-[#F5F7FF]"
                 }`}
             >
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`flex h-4 w-4 items-center justify-center rounded border text-[10px] ${step.completed
+                        ? "border-[#8A8CF4] bg-[#8A8CF4] text-white"
+                        : "border-gray-300 bg-white text-gray-400"
+                      }`}
+                  >
+                    {step.completed ? "✓" : ""}
+                  </span>
+
+                  <span
+                    className={`font-medium ${step.completed ? "text-[#5B5FD6]" : "text-gray-600"
+                      }`}
+                  >
+                    {step.label}
+                  </span>
+                </div>
+
                 <span
-                  className={`w-4 h-4 rounded border flex items-center justify-center text-[10px] ${step.completed
-                    ? "bg-green-500 border-green-500 text-white"
-                    : "bg-white border-gray-300"
+                  className={`font-semibold ${step.completed ? "text-[#5B5FD6]" : "text-gray-400"
                     }`}
                 >
-                  {step.completed ? "✓" : ""}
+                  {step.completed ? "Done" : "Pending"}
                 </span>
-
-                <span className="font-medium">{step.label}</span>
               </div>
-
-              <span
-                className={`font-semibold ${step.completed ? "text-green-600" : "text-gray-400"
-                  }`}
-              >
-                {step.completed ? "Done" : "Pending"}
-              </span>
             </button>
           ))}
         </div>
       </div>
     );
   };
-
 
   const ScenarioHistoryPanel = () => {
     return (
@@ -1965,7 +1984,7 @@ const ShopifyScenariosPage = () => {
     <div className="flex min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 font-inter">
       <Sidebar />
 
-      <div className="flex-1 flex flex-col md:ml-64 ml-0 transition-all duration-300 h-screen overflow-hidden">
+      <div className="flex-1 flex flex-col md:ml-64 ml-0 transition-all duration-300 h-screen overflow-y-auto">
         {historyViewMode === "table" ? (
           <div className="flex-1 bg-gray-50 flex flex-col h-full overflow-hidden">
             {/* Header */}
@@ -2014,9 +2033,9 @@ const ShopifyScenariosPage = () => {
                           <div className="px-5 py-3 text-gray-700 truncate">
                             {log.scenarioName || "Shopify Scenario"}
                           </div>
-                          <div className="px-5 py-3 text-gray-500">
-                            <span className="flex items-center gap-1.5 bg-gray-50 border border-gray-200 w-fit px-2 py-1 rounded-md">
-                              <Zap size={10} className="text-blue-500" />
+                          <div className="px-5 py-3">
+                            <span className="flex w-fit items-center gap-1.5 rounded-md border border-[#C7D2FE] bg-[#EEF2FF] px-2 py-1 text-xs font-medium text-[#5B5FD6]">
+                              <Zap size={10} className="text-[#5B5FD6]" />
                               Instant
                             </span>
                           </div>
@@ -2080,31 +2099,31 @@ const ShopifyScenariosPage = () => {
             website: getLineValue("Website") || "N/A",
             country: getLineValue("Country") || "N/A",
           };
-const getStepColor = (status) => {
-  if (status === "success") return "border-green-200 bg-green-50 text-green-700";
-  if (status === "failed") return "border-red-200 bg-red-50 text-red-700";
-  return "border-yellow-200 bg-yellow-50 text-yellow-700";
-};
+          const getStepColor = (status) => {
+            if (status === "success") return "border-green-200 bg-green-50 text-green-700";
+            if (status === "failed") return "border-red-200 bg-red-50 text-red-700";
+            return "border-yellow-200 bg-yellow-50 text-yellow-700";
+          };
 
-const getStepLabel = (step) => {
-  if (step.stepKey === "reply-email-send") return "Initial Email";
-  if (step.stepKey === "delay-job-create") return "Delay";
-  if (step.stepKey === "delayed-email-send") {
-    return step.meta?.moduleName || step.stepName || "Follow-up Email";
-  }
-  return step.stepName || "Step";
-};
+          const getStepLabel = (step) => {
+            if (step.stepKey === "reply-email-send") return "Initial Email";
+            if (step.stepKey === "delay-job-create") return "Delay";
+            if (step.stepKey === "delayed-email-send") {
+              return step.meta?.moduleName || step.stepName || "Follow-up Email";
+            }
+            return step.stepName || "Step";
+          };
 
-const getStepReason = (step) => {
-  if (step.status === "success") {
-    if (step.stepKey === "reply-email-send") return "Initial reply email was sent successfully.";
-    if (step.stepKey === "delay-job-create") return "Delay job was created and scheduled successfully.";
-    if (step.stepKey === "delayed-email-send") return "Follow-up email was sent successfully after delay.";
-    return step.message || "Step completed successfully.";
-  }
+          const getStepReason = (step) => {
+            if (step.status === "success") {
+              if (step.stepKey === "reply-email-send") return "Initial reply email was sent successfully.";
+              if (step.stepKey === "delay-job-create") return "Delay job was created and scheduled successfully.";
+              if (step.stepKey === "delayed-email-send") return "Follow-up email was sent successfully after delay.";
+              return step.message || "Step completed successfully.";
+            }
 
-  return step.issue || step.message || "This step failed.";
-};
+            return step.issue || step.message || "This step failed.";
+          };
           const statusColors = selectedHistoryLog.status === "success"
             ? "bg-green-50 border-green-200 text-green-700"
             : selectedHistoryLog.status === "failed"
@@ -2183,164 +2202,163 @@ const getStepReason = (step) => {
                   </div>
 
 
-<div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-  <div className="px-5 py-3 border-b border-gray-100 bg-gray-50/50">
-    <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
-      <RefreshCw className="text-indigo-500" size={15} />
-      Scenario Execution Thread
-    </h3>
-    <p className="text-xs text-gray-500 mt-1">
-      Complete step-by-step execution status for this scenario run.
-    </p>
-  </div>
+                  <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                    <div className="px-5 py-3 border-b border-gray-100 bg-gray-50/50">
+                      <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                        <RefreshCw className="text-indigo-500" size={15} />
+                        Scenario Execution Thread
+                      </h3>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Complete step-by-step execution status for this scenario run.
+                      </p>
+                    </div>
 
-  <div className="p-5 space-y-4">
-    {(selectedHistoryLog.steps || []).map((step, index) => {
-      const isSuccess = step.status === "success";
-      const isFailed = step.status === "failed";
+                    <div className="p-5 space-y-4">
+                      {(selectedHistoryLog.steps || []).map((step, index) => {
+                        const isSuccess = step.status === "success";
+                        const isFailed = step.status === "failed";
 
-      return (
-        <div key={index} className="relative pl-8">
-          {index < selectedHistoryLog.steps.length - 1 && (
-            <div className="absolute left-[11px] top-7 bottom-[-18px] w-0.5 bg-gray-200"></div>
-          )}
+                        return (
+                          <div key={index} className="relative pl-8">
+                            {index < selectedHistoryLog.steps.length - 1 && (
+                              <div className="absolute left-[11px] top-7 bottom-[-18px] w-0.5 bg-gray-200"></div>
+                            )}
 
-          <div
-            className={`absolute left-0 top-1 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-              isSuccess
-                ? "bg-green-500 text-white"
-                : isFailed
-                  ? "bg-red-500 text-white"
-                  : "bg-yellow-500 text-white"
-            }`}
-          >
-            {isSuccess ? "✓" : isFailed ? "!" : "…"}
-          </div>
+                            <div
+                              className={`absolute left-0 top-1 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${isSuccess
+                                ? "bg-green-500 text-white"
+                                : isFailed
+                                  ? "bg-red-500 text-white"
+                                  : "bg-yellow-500 text-white"
+                                }`}
+                            >
+                              {isSuccess ? "✓" : isFailed ? "!" : "…"}
+                            </div>
 
-          <div className="border border-gray-200 rounded-lg bg-white p-4 shadow-sm">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <h4 className="text-sm font-semibold text-gray-900">
-                  {index + 1}. {getStepLabel(step)}
-                </h4>
+                            <div className="border border-gray-200 rounded-lg bg-white p-4 shadow-sm">
+                              <div className="flex items-start justify-between gap-3">
+                                <div>
+                                  <h4 className="text-sm font-semibold text-gray-900">
+                                    {index + 1}. {getStepLabel(step)}
+                                  </h4>
 
-                <p className="text-xs text-gray-500 mt-1">
-                  {step.completedAt
-                    ? new Date(step.completedAt).toLocaleString()
-                    : "Not completed yet"}
-                </p>
-              </div>
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    {step.completedAt
+                                      ? new Date(step.completedAt).toLocaleString()
+                                      : "Not completed yet"}
+                                  </p>
+                                </div>
 
-              <span
-                className={`text-[10px] px-2.5 py-1 rounded-full font-semibold border ${getStepColor(
-                  step.status
-                )}`}
-              >
-                {step.status?.toUpperCase() || "PENDING"}
-              </span>
-            </div>
+                                <span
+                                  className={`text-[10px] px-2.5 py-1 rounded-full font-semibold border ${getStepColor(
+                                    step.status
+                                  )}`}
+                                >
+                                  {step.status?.toUpperCase() || "PENDING"}
+                                </span>
+                              </div>
 
-            <div className="mt-3 text-sm text-gray-700">
-              <p>
-                <span className="font-semibold">Reason:</span>{" "}
-                {getStepReason(step)}
-              </p>
+                              <div className="mt-3 text-sm text-gray-700">
+                                <p>
+                                  <span className="font-semibold">Reason:</span>{" "}
+                                  {getStepReason(step)}
+                                </p>
 
-              {step.suggestion && (
-                <p className="mt-1 text-red-600">
-                  <span className="font-semibold">Suggestion:</span>{" "}
-                  {step.suggestion}
-                </p>
-              )}
-            </div>
+                                {step.suggestion && (
+                                  <p className="mt-1 text-red-600">
+                                    <span className="font-semibold">Suggestion:</span>{" "}
+                                    {step.suggestion}
+                                  </p>
+                                )}
+                              </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4 text-xs">
-              {step.meta?.templateName && (
-                <div className="bg-gray-50 border rounded-md p-3">
-                  <p className="text-gray-400 uppercase font-semibold mb-1">
-                    Template
-                  </p>
-                  <p className="text-gray-800 font-medium">
-                    {step.meta.templateName}
-                  </p>
-                </div>
-              )}
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4 text-xs">
+                                {step.meta?.templateName && (
+                                  <div className="bg-gray-50 border rounded-md p-3">
+                                    <p className="text-gray-400 uppercase font-semibold mb-1">
+                                      Template
+                                    </p>
+                                    <p className="text-gray-800 font-medium">
+                                      {step.meta.templateName}
+                                    </p>
+                                  </div>
+                                )}
 
-              {step.meta?.service && (
-                <div className="bg-gray-50 border rounded-md p-3">
-                  <p className="text-gray-400 uppercase font-semibold mb-1">
-                    Service
-                  </p>
-                  <p className="text-gray-800 font-medium">
-                    {step.meta.service}
-                  </p>
-                </div>
-              )}
+                                {step.meta?.service && (
+                                  <div className="bg-gray-50 border rounded-md p-3">
+                                    <p className="text-gray-400 uppercase font-semibold mb-1">
+                                      Service
+                                    </p>
+                                    <p className="text-gray-800 font-medium">
+                                      {step.meta.service}
+                                    </p>
+                                  </div>
+                                )}
 
-              {step.meta?.stepType && (
-                <div className="bg-gray-50 border rounded-md p-3">
-                  <p className="text-gray-400 uppercase font-semibold mb-1">
-                    Email Type
-                  </p>
-                  <p className="text-gray-800 font-medium capitalize">
-                    {step.meta.stepType}
-                  </p>
-                </div>
-              )}
+                                {step.meta?.stepType && (
+                                  <div className="bg-gray-50 border rounded-md p-3">
+                                    <p className="text-gray-400 uppercase font-semibold mb-1">
+                                      Email Type
+                                    </p>
+                                    <p className="text-gray-800 font-medium capitalize">
+                                      {step.meta.stepType}
+                                    </p>
+                                  </div>
+                                )}
 
-              {step.meta?.replyEmailId && (
-                <div className="bg-gray-50 border rounded-md p-3">
-                  <p className="text-gray-400 uppercase font-semibold mb-1">
-                    Reply Email ID
-                  </p>
-                  <p className="text-gray-800 font-medium break-all">
-                    {step.meta.replyEmailId}
-                  </p>
-                </div>
-              )}
+                                {step.meta?.replyEmailId && (
+                                  <div className="bg-gray-50 border rounded-md p-3">
+                                    <p className="text-gray-400 uppercase font-semibold mb-1">
+                                      Reply Email ID
+                                    </p>
+                                    <p className="text-gray-800 font-medium break-all">
+                                      {step.meta.replyEmailId}
+                                    </p>
+                                  </div>
+                                )}
 
-              {step.meta?.delayValue && (
-                <div className="bg-gray-50 border rounded-md p-3">
-                  <p className="text-gray-400 uppercase font-semibold mb-1">
-                    Delay
-                  </p>
-                  <p className="text-gray-800 font-medium">
-                    {step.meta.delayValue} {step.meta.delayUnit}
-                  </p>
-                </div>
-              )}
+                                {step.meta?.delayValue && (
+                                  <div className="bg-gray-50 border rounded-md p-3">
+                                    <p className="text-gray-400 uppercase font-semibold mb-1">
+                                      Delay
+                                    </p>
+                                    <p className="text-gray-800 font-medium">
+                                      {step.meta.delayValue} {step.meta.delayUnit}
+                                    </p>
+                                  </div>
+                                )}
 
-              {step.meta?.scheduledAt && (
-                <div className="bg-gray-50 border rounded-md p-3">
-                  <p className="text-gray-400 uppercase font-semibold mb-1">
-                    Scheduled At
-                  </p>
-                  <p className="text-gray-800 font-medium">
-                    {new Date(step.meta.scheduledAt).toLocaleString()}
-                  </p>
-                </div>
-              )}
+                                {step.meta?.scheduledAt && (
+                                  <div className="bg-gray-50 border rounded-md p-3">
+                                    <p className="text-gray-400 uppercase font-semibold mb-1">
+                                      Scheduled At
+                                    </p>
+                                    <p className="text-gray-800 font-medium">
+                                      {new Date(step.meta.scheduledAt).toLocaleString()}
+                                    </p>
+                                  </div>
+                                )}
 
-              {step.meta?.smtpErrorMessage && (
-                <div className="bg-red-50 border border-red-200 rounded-md p-3 sm:col-span-2">
-                  <p className="text-red-500 uppercase font-semibold mb-1">
-                    SMTP Error
-                  </p>
-                  <p className="text-red-700 font-medium">
-                    {step.meta.smtpErrorMessage}
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      );
-    })}
-  </div>
-</div>
+                                {step.meta?.smtpErrorMessage && (
+                                  <div className="bg-red-50 border border-red-200 rounded-md p-3 sm:col-span-2">
+                                    <p className="text-red-500 uppercase font-semibold mb-1">
+                                      SMTP Error
+                                    </p>
+                                    <p className="text-red-700 font-medium">
+                                      {step.meta.smtpErrorMessage}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
 
                   {/* Reply Email */}
-                
+
                   <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
                     <div className="px-5 py-3 border-b border-gray-100 bg-gray-50/50">
                       <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
@@ -2627,7 +2645,7 @@ const getStepReason = (step) => {
               </div>
             </div>
 
-            <div className="flex-1 overflow-hidden">          {guideStep > 0 && (
+            <div className="flex-1 overflow-y-auto">         {guideStep > 0 && (
               <div
                 className="
     fixed inset-0 
@@ -3973,31 +3991,31 @@ const getStepReason = (step) => {
           </div>
         </div>
       )}
-      {(showServiceModal || showEditTemplateModal) && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="flex gap-4 w-full max-w-6xl max-h-[90vh] p-4">
+      {showServiceModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 px-4 backdrop-blur-sm">
+          <div className="flex w-full max-w-6xl max-h-[90vh] gap-4 p-4">
             {showServiceModal && (
               <div
                 className={`flex w-full max-w-[90rem] max-h-[90vh] p-6 transition-all duration-500 ${showEditTemplateModal ? "justify-between" : "justify-center"
                   }`}
               >
                 <div
-                  className={`bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden transition-all duration-500 ${showEditTemplateModal ? "max-w-[50%]" : "max-w-[70rem]"
+                  className={`flex flex-col overflow-hidden rounded-2xl border border-[#E0E7FF] bg-white shadow-2xl transition-all duration-500 ${showEditTemplateModal ? "max-w-[50%]" : "max-w-[70rem]"
                     }`}
                 >
-                  <div className="flex justify-between items-center p-5 border-b bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
+                  <div className="flex items-center justify-between border-b border-[#E0E7FF] bg-[#F5F7FF] p-5">
                     <div>
-                      <h2 className="text-lg font-semibold">
+                      <h2 className="text-lg font-bold text-slate-800">
                         Services Overview
                       </h2>
-                      <p className="text-xs text-blue-100">
+                      <p className="text-xs text-slate-500">
                         Showing 3 templates per service
                       </p>
                     </div>
 
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-2">
-                        <label className="relative inline-flex items-center cursor-pointer">
+                        <label className="relative inline-flex cursor-pointer items-center">
                           <input
                             type="checkbox"
                             checked={allTemplatesActive}
@@ -4005,11 +4023,11 @@ const getStepReason = (step) => {
                               const userId = localStorage.getItem("userid");
                               const newStatus = e.target.checked;
 
-                              const actionText = newStatus
-                                ? "Please wait, templates are being activated..."
-                                : "Please wait, templates are being deactivated...";
-
-                              const toastId = toast.loading(actionText);
+                              const toastId = toast.loading(
+                                newStatus
+                                  ? "Please wait, templates are being activated..."
+                                  : "Please wait, templates are being deactivated..."
+                              );
 
                               try {
                                 const res = await fetch(
@@ -4020,7 +4038,7 @@ const getStepReason = (step) => {
                                       "Content-Type": "application/json",
                                     },
                                     body: JSON.stringify({ userId }),
-                                  },
+                                  }
                                 );
 
                                 const data = await res.json();
@@ -4032,51 +4050,50 @@ const getStepReason = (step) => {
                                       templates: grp.templates.map((tpl) =>
                                         tpl.service.toLowerCase() === "general"
                                           ? { ...tpl, active: true }
-                                          : { ...tpl, active: data.toggledTo },
+                                          : { ...tpl, active: data.toggledTo }
                                       ),
-                                    })),
+                                    }))
                                   );
 
                                   setAllTemplatesActive(data.toggledTo);
 
                                   toast.success(
                                     data.toggledTo
-                                      ? " All templates have been activated successfully!"
+                                      ? "All templates have been activated successfully!"
                                       : "All templates have been deactivated successfully!",
-                                    { id: toastId },
+                                    { id: toastId }
                                   );
                                 } else {
                                   toast.error(
-                                    data.message ||
-                                    "Failed to update templates.",
-                                    { id: toastId },
+                                    data.message || "Failed to update templates.",
+                                    { id: toastId }
                                   );
                                 }
                               } catch (err) {
                                 console.error("Error toggling templates:", err);
                                 toast.error(
                                   "Something went wrong while updating templates.",
-                                  { id: toastId },
+                                  { id: toastId }
                                 );
                               }
                             }}
                             className="sr-only peer"
                           />
 
-                          <div className="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:bg-green-500 transition-colors"></div>
-                          <div className="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full shadow-md transition-transform peer-checked:translate-x-5"></div>
+                          <div className="h-6 w-11 rounded-full bg-[#E0E7FF] transition-colors peer-checked:bg-[#8A8CF4]" />
+                          <div className="absolute left-[2px] top-[2px] h-5 w-5 rounded-full bg-white shadow-md transition-transform peer-checked:translate-x-5" />
                         </label>
 
                         <span
                           className={`text-xs font-semibold ${serviceGroups.every((grp) =>
-                            grp.templates.every((t) => t.active),
+                            grp.templates.every((t) => t.active)
                           )
-                            ? "text-green-300"
-                            : "text-gray-300"
+                              ? "text-[#5B5FD6]"
+                              : "text-slate-400"
                             }`}
                         >
                           {serviceGroups.every((grp) =>
-                            grp.templates.every((t) => t.active),
+                            grp.templates.every((t) => t.active)
                           )
                             ? "ON"
                             : "OFF"}
@@ -4084,94 +4101,84 @@ const getStepReason = (step) => {
                       </div>
 
                       <button
-                        onClick={() => setShowServiceModal(false)}
-                        className="text-white hover:text-gray-100 hover:bg-white/10 rounded-full p-1 transition"
+                        onClick={() => {
+                          setShowServiceModal(false);
+                          setShowEditTemplateModal(false);
+                          setEditingTemplate(null);
+                        }}
+                        className="rounded-full p-1 text-slate-500 transition hover:bg-[#E0E7FF] hover:text-[#5B5FD6]"
                       >
                         ✕
                       </button>
                     </div>
                   </div>
 
-                  <div className="p-6 overflow-y-auto flex-1 bg-gray-50">
+                  <div className="flex-1 overflow-y-auto bg-[#FAFBFF] p-6">
                     {loadingServices ? (
-                      <div className="flex flex-col items-center justify-center h-full text-gray-500">
-                        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-blue-500 mb-3"></div>
+                      <div className="flex h-full flex-col items-center justify-center text-slate-500">
+                        <div className="mb-3 h-8 w-8 animate-spin rounded-full border-2 border-[#E0E7FF] border-t-[#8A8CF4]" />
                         <p>Loading templates...</p>
                       </div>
                     ) : (
                       serviceGroups
-                        .filter(
-                          (group) => group.service.toLowerCase() === "general",
-                        ) // ✅ Only show "General"
+                        .filter((group) => group.service.toLowerCase() === "general")
                         .map((group, i) => {
-                          const shownTemplates = group.templates.slice(0, 3); // Only 3 templates
+                          const shownTemplates = group.templates.slice(0, 3);
+
                           return (
                             <div
                               key={i}
-                              className="mb-6 bg-white rounded-lg shadow border"
+                              className="mb-6 overflow-hidden rounded-xl border border-[#E0E7FF] bg-white shadow-sm"
                             >
-                              {/* Header */}
-                              <div className="p-4 bg-blue-50 border-b flex justify-between items-center">
-                                <h3 className="text-blue-700 font-bold text-lg">
+                              <div className="flex items-center justify-between border-b border-[#E0E7FF] bg-[#F5F7FF] p-4">
+                                <h3 className="text-lg font-bold text-slate-800">
                                   {group.service} Templates
                                 </h3>
-                                <p className="text-sm text-gray-500">
+                                <p className="text-sm text-slate-500">
                                   Showing {shownTemplates.length} templates
                                 </p>
                               </div>
 
                               {!allTemplatesActive && (
-                                <div className="p-4 bg-yellow-50 border-b border-yellow-200 text-sm text-gray-700 leading-relaxed">
-                                  <b>Note:</b> Activate your service-specific
-                                  templates (e.g., SEO, Theme customization,
-                                  etc.) to send personalized emails for that
-                                  service.
-                                  <br />
-                                  If you don’t activate any service templates,
-                                  the system will automatically use
-                                  <b> General templates</b> for all
-                                  communications.
+                                <div className="border-b border-[#E0E7FF] bg-[#FFFDF5] p-4 text-sm leading-relaxed text-slate-700">
+                                  <b className="text-slate-900">Note:</b> Activate your
+                                  service-specific templates to send personalized emails.
+                                  Otherwise, the system will use{" "}
+                                  <b className="text-[#5B5FD6]">General templates</b>.
                                   <br />
                                   <a
                                     href="/templates"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-blue-600 hover:underline font-medium inline-block mt-2"
+                                    className="mt-2 inline-block font-semibold text-[#5B5FD6] hover:underline"
                                   >
-                                    Click here to view all your services
-                                    templates
+                                    Click here to view all your services templates
                                   </a>
                                 </div>
                               )}
 
-                              {/* Templates Table */}
                               <table className="w-full border-collapse text-sm">
-                                <thead className="bg-gray-100 text-gray-600 uppercase text-xs">
+                                <thead className="bg-[#F8FAFF] text-xs uppercase text-slate-500">
                                   <tr>
-                                    <th className="p-3 text-left w-[40%]">
-                                      Template
-                                    </th>
-                                    <th className="p-3 text-center w-[20%]">
-                                      Status
-                                    </th>
+                                    <th className="p-3 text-left w-[40%]">Template</th>
+                                    <th className="p-3 text-center w-[20%]">Status</th>
                                     <th className="p-3 text-center w-[25%]">
                                       Updated At
                                     </th>
-                                    <th className="p-3 text-center w-[15%]">
-                                      Action
-                                    </th>
+                                    <th className="p-3 text-center w-[15%]">Action</th>
                                   </tr>
                                 </thead>
+
                                 <tbody>
                                   {shownTemplates.map((t) => (
                                     <tr
                                       key={t._id}
-                                      className={`border-b transition-colors ${t.active
-                                        ? "hover:bg-blue-50"
-                                        : "bg-red-50"
+                                      className={`border-t border-[#EEF2FF] transition-colors ${t.active
+                                          ? "hover:bg-[#F8FAFF]"
+                                          : "bg-[#FFF7F7]"
                                         }`}
                                     >
-                                      <td className="p-3 font-medium text-gray-800">
+                                      <td className="p-3 font-medium text-slate-700">
                                         {t.name.includes("Initial")
                                           ? "Initial Email"
                                           : t.name.includes("First")
@@ -4179,27 +4186,23 @@ const getStepReason = (step) => {
                                             : "Second Follow-up"}
                                       </td>
 
-                                      {/* Toggle */}
                                       <td className="p-3 text-center">
-                                        <label className="relative inline-flex items-center cursor-pointer">
+                                        <label className="relative inline-flex cursor-pointer items-center">
                                           <input
                                             type="checkbox"
                                             checked={t.active}
                                             onChange={async () => {
                                               const newStatus = !t.active;
+
                                               setServiceGroups((prev) =>
                                                 prev.map((grp) => ({
                                                   ...grp,
-                                                  templates: grp.templates.map(
-                                                    (tpl) =>
-                                                      tpl._id === t._id
-                                                        ? {
-                                                          ...tpl,
-                                                          active: newStatus,
-                                                        }
-                                                        : tpl,
+                                                  templates: grp.templates.map((tpl) =>
+                                                    tpl._id === t._id
+                                                      ? { ...tpl, active: newStatus }
+                                                      : tpl
                                                   ),
-                                                })),
+                                                }))
                                               );
 
                                               await fetch(
@@ -4207,38 +4210,32 @@ const getStepReason = (step) => {
                                                 {
                                                   method: "PATCH",
                                                   headers: {
-                                                    "Content-Type":
-                                                      "application/json",
+                                                    "Content-Type": "application/json",
                                                   },
                                                   body: JSON.stringify({
                                                     active: newStatus,
                                                   }),
-                                                },
+                                                }
                                               );
                                             }}
                                             className="sr-only peer"
                                           />
-                                          <div className="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:bg-green-500 transition-colors"></div>
-                                          <div className="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full shadow-md transition-transform peer-checked:translate-x-5"></div>
+                                          <div className="h-6 w-11 rounded-full bg-[#E0E7FF] transition-colors peer-checked:bg-[#8A8CF4]" />
+                                          <div className="absolute left-[2px] top-[2px] h-5 w-5 rounded-full bg-white shadow-md transition-transform peer-checked:translate-x-5" />
                                         </label>
                                       </td>
 
-                                      {/* Updated Date */}
-                                      <td className="p-3 text-center text-gray-500">
-                                        {new Date(t.updatedAt).toLocaleString(
-                                          "en-US",
-                                          {
-                                            year: "numeric",
-                                            month: "short",
-                                            day: "2-digit",
-                                            hour: "2-digit",
-                                            minute: "2-digit",
-                                            hour12: true,
-                                          },
-                                        )}
+                                      <td className="p-3 text-center text-slate-500">
+                                        {new Date(t.updatedAt).toLocaleString("en-US", {
+                                          year: "numeric",
+                                          month: "short",
+                                          day: "2-digit",
+                                          hour: "2-digit",
+                                          minute: "2-digit",
+                                          hour12: true,
+                                        })}
                                       </td>
 
-                                      {/* Edit Button */}
                                       <td className="p-3 text-center">
                                         <button
                                           onClick={() => {
@@ -4246,7 +4243,7 @@ const getStepReason = (step) => {
                                             setEditContent(t.content || "");
                                             setShowEditTemplateModal(true);
                                           }}
-                                          className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs rounded-md font-medium transition-colors"
+                                          className="rounded-md bg-[#7375E8] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#5B5FD6]"
                                         >
                                           Edit
                                         </button>
@@ -4261,12 +4258,12 @@ const getStepReason = (step) => {
                     )}
                   </div>
 
-                  <div className="border-t bg-gray-50 p-3 text-center">
+                  <div className="border-t border-[#E0E7FF] bg-[#FAFBFF] p-3 text-center">
                     <button
                       onClick={() => {
                         window.open(`/templates`, "_blank");
                       }}
-                      className="text-sm text-indigo-600 hover:underline transition"
+                      className="text-sm font-semibold text-[#5B5FD6] transition hover:underline"
                     >
                       View More Services Templates
                     </button>
@@ -4275,25 +4272,26 @@ const getStepReason = (step) => {
 
                 {showEditTemplateModal && (
                   <div
-                    className="bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden max-w-[45%] transition-all duration-500 transform translate-x-0 animate-slideIn"
+                    className="flex max-w-[45%] flex-col overflow-hidden rounded-2xl border border-[#E0E7FF] bg-white shadow-2xl transition-all duration-500"
                     style={{
                       animation: "slideIn 0.4s ease-out forwards",
                     }}
                   >
-                    <div className="flex justify-between items-center p-5 border-b bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
-                      <h2 className="text-lg font-semibold">
+                    <div className="flex items-center justify-between border-b border-[#E0E7FF] bg-[#F5F7FF] p-5">
+                      <h2 className="text-lg font-bold text-slate-800">
                         Edit Template — {editingTemplate?.name}
                       </h2>
+
                       <button
                         onClick={() => setShowEditTemplateModal(false)}
-                        className="text-white hover:text-gray-200 hover:bg-white/10 p-1 rounded-full transition"
+                        className="rounded-full p-1 text-slate-500 transition hover:bg-[#E0E7FF] hover:text-[#5B5FD6]"
                       >
                         ✕
                       </button>
                     </div>
 
-                    <div className="p-5 overflow-y-auto flex-1 space-y-4 bg-gray-50">
-                      <label className="block text-sm font-semibold text-gray-700">
+                    <div className="flex-1 space-y-4 overflow-y-auto bg-[#FAFBFF] p-5">
+                      <label className="block text-sm font-semibold text-slate-700">
                         Template Content
                       </label>
 
@@ -4302,9 +4300,9 @@ const getStepReason = (step) => {
                         theme="snow"
                         value={editContent}
                         onChange={setEditContent}
-                        className="rounded-lg shadow-sm"
+                        className="rounded-lg bg-white shadow-sm"
                         style={{
-                          border: "1px solid #e5e7eb",
+                          border: "1px solid #E0E7FF",
                           borderRadius: "0.5rem",
                         }}
                         modules={{
@@ -4318,10 +4316,11 @@ const getStepReason = (step) => {
                         }}
                       />
 
-                      <div className="border rounded-lg bg-white p-3 mt-4">
-                        <p className="text-sm font-semibold text-gray-700 mb-2">
+                      <div className="mt-4 rounded-xl border border-[#E0E7FF] bg-white p-3">
+                        <p className="mb-2 text-sm font-semibold text-slate-700">
                           Insert Fields
                         </p>
+
                         <div className="flex flex-wrap gap-2">
                           {[
                             "Full name",
@@ -4340,21 +4339,18 @@ const getStepReason = (step) => {
                                 if (editor) {
                                   const placeholder = `{{${field}}}`;
                                   const range = editor.getSelection(true);
+
                                   if (range) {
                                     editor.insertText(range.index, placeholder);
                                     editor.setSelection(
-                                      range.index + placeholder.length,
+                                      range.index + placeholder.length
                                     );
                                   } else {
-                                    // If cursor not in focus, add at the end
-                                    editor.insertText(
-                                      editor.getLength(),
-                                      placeholder,
-                                    );
+                                    editor.insertText(editor.getLength(), placeholder);
                                   }
                                 }
                               }}
-                              className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium hover:bg-purple-200 transition"
+                              className="rounded-full border border-[#C7D2FE] bg-[#EEF2FF] px-3 py-1 text-xs font-semibold text-[#5B5FD6] transition hover:bg-[#E0E7FF]"
                             >
                               {field}
                             </button>
@@ -4363,13 +4359,14 @@ const getStepReason = (step) => {
                       </div>
                     </div>
 
-                    <div className="border-t p-4 bg-white flex justify-end space-x-3">
+                    <div className="flex justify-end gap-3 border-t border-[#E0E7FF] bg-white p-4">
                       <button
                         onClick={() => setShowEditTemplateModal(false)}
-                        className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-100 transition"
+                        className="rounded-md border border-[#C7D2FE] bg-white px-4 py-2 text-sm font-medium text-[#5B5FD6] transition hover:bg-[#EEF2FF]"
                       >
                         Cancel
                       </button>
+
                       <button
                         onClick={async () => {
                           try {
@@ -4383,29 +4380,29 @@ const getStepReason = (step) => {
                                 body: JSON.stringify({
                                   content: editContent,
                                 }),
-                              },
+                              }
                             );
+
                             const data = await res.json();
+
                             if (data.success) {
                               toast.success("Template updated successfully!");
                               setTemplateList((prev) =>
                                 prev.map((tpl) =>
                                   tpl._id === editingTemplate._id
                                     ? { ...tpl, content: editContent }
-                                    : tpl,
-                                ),
+                                    : tpl
+                                )
                               );
                             } else {
-                              toast.error(
-                                data.message || "Failed to update template.",
-                              );
+                              toast.error(data.message || "Failed to update template.");
                             }
                           } catch (err) {
                             console.error("Error updating template:", err);
                             toast.error("Error updating template.");
                           }
                         }}
-                        className="px-5 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition"
+                        className="rounded-md bg-[#7375E8] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[#5B5FD6]"
                       >
                         Save Changes
                       </button>
@@ -4582,32 +4579,51 @@ const getStepReason = (step) => {
         </div>
       )}
       {showInactiveTemplateConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-            <div className="p-5 border-b bg-yellow-50">
-              <h2 className="text-lg font-bold text-gray-900">
-                Templates are not active
-              </h2>
-              <p className="text-sm text-gray-600 mt-1">
-                The templates for this service are currently inactive.
-              </p>
+        <div
+          onClick={() => setShowInactiveTemplateConfirm(false)}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 px-4 backdrop-blur-sm"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md overflow-hidden rounded-2xl border border-[#E0E7FF] bg-white shadow-2xl"
+          >      <div className="border-b border-[#E0E7FF] bg-[#F5F7FF] px-5 py-4">
+              <div className="flex items-start gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#E0E7FF] text-[#7375E8]">
+                  !
+                </div>
+
+                <div>
+                  <h2 className="text-lg font-bold text-slate-800">
+                    Templates are not active
+                  </h2>
+                  <p className="mt-1 text-sm text-slate-500">
+                    This service does not have active templates yet.
+                  </p>
+                </div>
+              </div>
             </div>
 
-            <div className="p-6 space-y-4">
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <p className="text-sm text-gray-800 leading-relaxed">
-                  <b>{inactiveTemplateService}</b> templates are not active.
-                  Do you want to continue using your <b>General templates</b> instead?
+            <div className="space-y-4 px-6 py-5">
+              <div className="rounded-xl border border-[#E0E7FF] bg-[#F8FAFF] p-4">
+                <p className="text-sm leading-relaxed text-slate-700">
+                  <b className="font-semibold text-slate-900">
+                    {inactiveTemplateService}
+                  </b>{" "}
+                  templates are inactive. You can continue using your{" "}
+                  <b className="font-semibold text-[#7375E8]">
+                    General templates
+                  </b>{" "}
+                  instead.
                 </p>
               </div>
 
-              <p className="text-xs text-gray-500 leading-relaxed">
-                If you continue, the test will use your General templates. If you want
-                service-specific replies, activate the templates for this service first.
+              <p className="text-xs leading-relaxed text-slate-500">
+                For service-specific replies, activate this service’s templates first.
+                Otherwise, the test will run with General templates.
               </p>
             </div>
 
-            <div className="border-t p-4 bg-gray-50 flex flex-col sm:flex-row justify-end gap-3">
+            <div className="flex flex-col-reverse gap-3 border-t border-[#E0E7FF] bg-[#FAFBFF] p-4 sm:flex-row sm:justify-end">
               <button
                 onClick={() => {
                   setShowInactiveTemplateConfirm(false);
@@ -4616,7 +4632,7 @@ const getStepReason = (step) => {
                     "_blank"
                   );
                 }}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-100"
+                className="rounded-lg border border-[#C7D2FE] bg-white px-4 py-2 text-sm font-medium text-[#5B5FD6] transition hover:bg-[#EEF2FF]"
               >
                 Activate Templates
               </button>
@@ -4626,7 +4642,7 @@ const getStepReason = (step) => {
                   setShowInactiveTemplateConfirm(false);
                   handleRunTest(true);
                 }}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700"
+                className="rounded-lg bg-[#7375E8] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#5B5FD6]"
               >
                 Continue with General Templates
               </button>
