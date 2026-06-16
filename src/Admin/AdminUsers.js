@@ -65,7 +65,7 @@ const AdminUsers = () => {
   //     }
 
   //     const res = await fetch(
-  //       `https://email-syncing-backend.vercel.app/auth/admin/give-pro/${proUserId}`,
+  //       `http://localhost:5000/auth/admin/give-pro/${proUserId}`,
   //       {
   //         method: "PUT",
   //         headers: {
@@ -122,7 +122,7 @@ const AdminUsers = () => {
       }
 
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/auth/admin/give-pro/${proUserId}`,
+        `http://localhost:5000/auth/admin/give-pro/${proUserId}`,
         {
           method: "PUT",
           headers: {
@@ -191,7 +191,7 @@ const AdminUsers = () => {
 
       const token = localStorage.getItem("token");
 
-      const res = await fetch(`https://email-syncing-backend.vercel.app/auth/admin/revoke-pro/${id}`, {
+      const res = await fetch(`http://localhost:5000/auth/admin/revoke-pro/${id}`, {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -233,7 +233,7 @@ const AdminUsers = () => {
     try {
       const token = localStorage.getItem("usertoken");
       const res = await fetch(
-        "https://email-syncing-backend.vercel.app/auth/users",
+        "http://localhost:5000/auth/users",
         {
           headers: { Authorization: `Bearer ${token}` },
         },
@@ -283,7 +283,7 @@ const AdminUsers = () => {
           return;
         }
 
-        const res = await fetch(`https://email-syncing-backend.vercel.app/auth/user/${activeId}`, {
+        const res = await fetch(`http://localhost:5000/auth/user/${activeId}`, {
           method: "DELETE",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -311,7 +311,7 @@ const AdminUsers = () => {
           return;
         }
 
-        const res = await fetch(`https://email-syncing-backend.vercel.app/auth/users/bulk-delete`, {
+        const res = await fetch(`http://localhost:5000/auth/users/bulk-delete`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

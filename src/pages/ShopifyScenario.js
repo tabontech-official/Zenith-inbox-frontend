@@ -214,7 +214,7 @@ const ShopifyScenariosPage = () => {
   const fetchConnections = async () => {
     try {
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/auth/getConnection/${localStorage.getItem(
+        `http://localhost:5000/auth/getConnection/${localStorage.getItem(
           "userid",
         )}`,
       );
@@ -239,7 +239,7 @@ const ShopifyScenariosPage = () => {
       setHistoryLoading(true);
 
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/scenario-run-log/history/${activeScenarioId}`
+        `http://localhost:5000/scenario-run-log/history/${activeScenarioId}`
       );
 
       const data = await res.json();
@@ -324,7 +324,7 @@ const ShopifyScenariosPage = () => {
       if (!activeScenarioId) {
         const userId = localStorage.getItem("userid");
         const checkRes = await fetch(
-          "https://email-syncing-backend.vercel.app/scenario/details",
+          "http://localhost:5000/scenario/details",
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -360,7 +360,7 @@ const ShopifyScenariosPage = () => {
       if (activeScenarioId) {
         console.log("✏️ Updating existing scenario:", activeScenarioId);
         res = await fetch(
-          `https://email-syncing-backend.vercel.app/scenario/detail/${activeScenarioId}`,
+          `http://localhost:5000/scenario/detail/${activeScenarioId}`,
           {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
@@ -375,7 +375,7 @@ const ShopifyScenariosPage = () => {
         toast.success("Scenario updated successfully!");
       } else {
         console.log("🆕 Creating a new scenario...");
-        res = await fetch(`https://email-syncing-backend.vercel.app/scenario`, {
+        res = await fetch(`http://localhost:5000/scenario`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
@@ -426,7 +426,7 @@ const ShopifyScenariosPage = () => {
       }
 
       const refresh = await fetch(
-        "https://email-syncing-backend.vercel.app/scenario/details",
+        "http://localhost:5000/scenario/details",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -464,7 +464,7 @@ const ShopifyScenariosPage = () => {
   const handleToggleTemplate = async (templateId, newStatus) => {
     try {
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/template/status/${templateId}`,
+        `http://localhost:5000/template/status/${templateId}`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -487,7 +487,7 @@ const ShopifyScenariosPage = () => {
   const handleToggleAllTemplates = async (newStatus) => {
     try {
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/template/templatestatus/all`,
+        `http://localhost:5000/template/templatestatus/all`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -561,7 +561,7 @@ const ShopifyScenariosPage = () => {
         console.log("🔄 Fetching existing Shopify scenario for user:", userId);
 
         const res = await fetch(
-          "https://email-syncing-backend.vercel.app/scenario/details",
+          "http://localhost:5000/scenario/details",
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -846,6 +846,7 @@ const ShopifyScenariosPage = () => {
     isWebhook,
     completed,
     module,
+    showValidation,
   }) => (
     <div className="relative group">
       <div
@@ -901,13 +902,14 @@ const ShopifyScenariosPage = () => {
           }
         }}
        className={`bg-white rounded-xl shadow-lg border-2 border-[#E0E7FF] p-6 w-64 hover:shadow-xl transition-all duration-200 relative cursor-pointer ${
-  completed
-    ? "ring-2 ring-[#C7D2FE] border-[#8A8CF4]"
-    : "ring-2 ring-[#FEE2E2] border-[#FCA5A5]"
+  showValidation
+    ? completed
+      ? "ring-2 ring-[#C7D2FE] border-[#8A8CF4]"
+      : "ring-2 ring-[#FEE2E2] border-[#FCA5A5]"
+    : "border-[#E0E7FF]"
 }`}
       >
-        {completed !== null && (
-          <div
+{showValidation && completed !== null && (          <div
           className={`absolute -top-3 -left-3 w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md transition-all duration-300 ${
   completed ? "bg-[#8A8CF4]" : "bg-[#EF4444]"
 }`}
@@ -1051,7 +1053,7 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
         if (!userId || !showRunTestModal) return;
 
         const res = await fetch(
-          `https://email-syncing-backend.vercel.app/mailhook/get-test-data/${userId}`,
+          `http://localhost:5000/mailhook/get-test-data/${userId}`,
         );
         const data = await res.json();
 
@@ -1113,7 +1115,7 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
     try {
       const userId = localStorage.getItem("userid");
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/template/alltemplates/query?userId=${userId}&service=${encodeURIComponent(
+        `http://localhost:5000/template/alltemplates/query?userId=${userId}&service=${encodeURIComponent(
           service,
         )}`,
       );
@@ -1250,7 +1252,7 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
 
     try {
       const res = await fetch(
-        "https://email-syncing-backend.vercel.app/mailhook/Run-test-mode",
+        "http://localhost:5000/mailhook/Run-test-mode",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -1280,7 +1282,7 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
 
         const userId = localStorage.getItem("userid");
         const res = await fetch(
-          `https://email-syncing-backend.vercel.app/template/alltemplates?userId=${userId}&service=${encodeURIComponent(
+          `http://localhost:5000/template/alltemplates?userId=${userId}&service=${encodeURIComponent(
             formData.service,
           )}`,
         );
@@ -1401,7 +1403,7 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
       toast.loading("Fetching test email...", { id: "email" });
 
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/mailhook/get-test-email/${userId}`,
+        `http://localhost:5000/mailhook/get-test-email/${userId}`,
       );
       const data = await res.json();
 
@@ -1435,7 +1437,7 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
       const userId = localStorage.getItem("userid");
       try {
         const res = await fetch(
-          `https://email-syncing-backend.vercel.app/template/all?userId=${userId}`,
+          `http://localhost:5000/template/all?userId=${userId}`,
         );
         const data = await res.json();
 
@@ -1473,7 +1475,7 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
   //       const userId = localStorage.getItem("userid");
   //       try {
   //         const { data } = await axios.get(
-  //           `https://email-syncing-backend.vercel.app/template/all?userId=${userId}`
+  //           `http://localhost:5000/template/all?userId=${userId}`
   //         );
 
   //         const grouped = data.reduce((acc, item) => {
@@ -1506,7 +1508,7 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
         const userId = localStorage.getItem("userid");
         try {
           const { data } = await axios.get(
-            `https://email-syncing-backend.vercel.app/template/all?userId=${userId}`,
+            `http://localhost:5000/template/all?userId=${userId}`,
           );
 
           const grouped = data.reduce((acc, item) => {
@@ -2704,6 +2706,7 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
                         <FlowNode
                           icon={Cloud}
                           title="Webhooks"
+                          showValidation={showValidation}
                           subtitle="Custom mailhook"
                           color="border-[#8A8CF4]"
                           number={1}
@@ -2778,6 +2781,7 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
                           icon={GitBranch}
                           title="Router"
                           subtitle="Route to different paths"
+                          showValidation={showValidation}
                           color="border-[#8A8CF4]"                          number={2}
                           isRouter={true}
                           completed={
@@ -2842,6 +2846,7 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
                           icon={FiFileText}
                           title="Template"
                           subtitle="Define message structure and content"
+                          showValidation={showValidation}
                           color="border-[#8A8CF4]"
                           number={3}
                           completed={
@@ -2898,6 +2903,7 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
                                         : isModuleCompleted(module)
                                     }
                                     module={module}
+                                    showValidation={showValidation}
                                   />
                                   {showValidation &&
                                     validationState === false &&
@@ -3630,7 +3636,7 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
 
                                 const updates = templateList.map((t) =>
                                   fetch(
-                                    `https://email-syncing-backend.vercel.app/template/status/${t._id}`,
+                                    `http://localhost:5000/template/status/${t._id}`,
                                     {
                                       method: "PATCH",
                                       headers: {
@@ -3932,7 +3938,7 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
                           onClick={async () => {
                             try {
                               const res = await fetch(
-                                `https://email-syncing-backend.vercel.app/template/update/${editingTemplate._id}`,
+                                `http://localhost:5000/template/update/${editingTemplate._id}`,
                                 {
                                   method: "PUT",
                                   headers: {
@@ -4016,7 +4022,7 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
 
                               try {
                                 const res = await fetch(
-                                  `https://email-syncing-backend.vercel.app/template/templatestatus/all`,
+                                  `http://localhost:5000/template/templatestatus/all`,
                                   {
                                     method: "PATCH",
                                     headers: {
@@ -4191,7 +4197,7 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
                                               );
 
                                               await fetch(
-                                                `https://email-syncing-backend.vercel.app/template/status/${t._id}`,
+                                                `http://localhost:5000/template/status/${t._id}`,
                                                 {
                                                   method: "PATCH",
                                                   headers: {
@@ -4356,7 +4362,7 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
                         onClick={async () => {
                           try {
                             const res = await fetch(
-                              `https://email-syncing-backend.vercel.app/template/update/${editingTemplate._id}`,
+                              `http://localhost:5000/template/update/${editingTemplate._id}`,
                               {
                                 method: "PUT",
                                 headers: {
@@ -4465,7 +4471,7 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
 
                               try {
                                 const res = await fetch(
-                                  `https://email-syncing-backend.vercel.app/mailhook/verify`,
+                                  `http://localhost:5000/mailhook/verify`,
                                   {
                                     method: "POST",
                                     headers: {
@@ -4563,78 +4569,80 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
           </div>
         </div>
       )}
-      {showInactiveTemplateConfirm && (
-        <div
-          onClick={() => setShowInactiveTemplateConfirm(false)}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 px-4 backdrop-blur-sm"
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-md overflow-hidden rounded-2xl border border-[#E0E7FF] bg-white shadow-2xl"
-          >      <div className="border-b border-[#E0E7FF] bg-[#F5F7FF] px-5 py-4">
-              <div className="flex items-start gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#E0E7FF] text-[#7375E8]">
-                  !
-                </div>
+    {showInactiveTemplateConfirm && (
+  <div
+    onClick={() => setShowInactiveTemplateConfirm(false)}
+    className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 px-4 backdrop-blur-sm"
+  >
+    <div
+      onClick={(e) => e.stopPropagation()}
+      className="w-full max-w-xl overflow-hidden rounded-2xl border border-[#E0E7FF] bg-white shadow-2xl"
+    >
+      <div className="border-b border-[#E0E7FF] bg-[#F5F7FF] px-5 py-4">
+        <div className="flex items-start gap-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#E0E7FF] text-lg font-bold text-[#7375E8]">
+            !
+          </div>
 
-                <div>
-                  <h2 className="text-lg font-bold text-slate-800">
-                    Templates are not active
-                  </h2>
-                  <p className="mt-1 text-sm text-slate-500">
-                    This service does not have active templates yet.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-4 px-6 py-5">
-              <div className="rounded-xl border border-[#E0E7FF] bg-[#F8FAFF] p-4">
-                <p className="text-sm leading-relaxed text-slate-700">
-                  <b className="font-semibold text-slate-900">
-                    {inactiveTemplateService}
-                  </b>{" "}
-                  templates are inactive. You can continue using your{" "}
-                  <b className="font-semibold text-[#7375E8]">
-                    General templates
-                  </b>{" "}
-                  instead.
-                </p>
-              </div>
-
-              <p className="text-xs leading-relaxed text-slate-500">
-                For service-specific replies, activate this service’s templates first.
-                Otherwise, the test will run with General templates.
-              </p>
-            </div>
-
-            <div className="flex flex-col-reverse gap-3 border-t border-[#E0E7FF] bg-[#FAFBFF] p-4 sm:flex-row sm:justify-end">
-              <button
-                onClick={() => {
-                  setShowInactiveTemplateConfirm(false);
-                  window.open(
-                    `/templates?service=${encodeURIComponent(inactiveTemplateService)}`,
-                    "_blank"
-                  );
-                }}
-                className="rounded-lg border border-[#C7D2FE] bg-white px-4 py-2 text-sm font-medium text-[#5B5FD6] transition hover:bg-[#EEF2FF]"
-              >
-                Activate Templates
-              </button>
-
-              <button
-                onClick={() => {
-                  setShowInactiveTemplateConfirm(false);
-                  handleRunTest(true);
-                }}
-                className="rounded-lg bg-[#7375E8] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#5B5FD6]"
-              >
-                Continue with General Templates
-              </button>
-            </div>
+          <div>
+            <h2 className="text-lg font-bold text-slate-800">
+              Service templates are inactive
+            </h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Replies for this service cannot use its specific templates right now.
+            </p>
           </div>
         </div>
-      )}
+      </div>
+
+      <div className="space-y-4 px-6 py-5">
+        <div className="rounded-xl border border-[#E0E7FF] bg-[#F8FAFF] p-4">
+          <p className="text-sm leading-relaxed text-slate-700">
+            <b className="font-semibold text-slate-900">
+              {inactiveTemplateService}
+            </b>{" "}
+            templates are currently inactive. If you continue, the reply email
+            will be sent using your{" "}
+            <b className="font-semibold text-[#7375E8]">
+              General templates
+            </b>{" "}
+            instead.
+          </p>
+        </div>
+
+        <p className="text-xs leading-relaxed text-slate-500">
+          Activate the service-specific templates if you want replies customized
+          for this service. Otherwise, General templates will be used as the fallback.
+        </p>
+      </div>
+
+      <div className="flex flex-col-reverse gap-3 border-t border-[#E0E7FF] bg-[#FAFBFF] p-4 sm:flex-row sm:justify-end">
+        <button
+          onClick={() => {
+            setShowInactiveTemplateConfirm(false);
+            window.open(
+              `/templates?service=${encodeURIComponent(inactiveTemplateService)}`,
+              "_blank"
+            );
+          }}
+          className="rounded-lg border border-[#C7D2FE] bg-white px-4 py-2 text-sm font-medium text-[#5B5FD6] transition hover:bg-[#EEF2FF]"
+        >
+          Activate Service Templates
+        </button>
+
+        <button
+          onClick={() => {
+            setShowInactiveTemplateConfirm(false);
+            handleRunTest(true);
+          }}
+          className="rounded-lg bg-[#7375E8] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#5B5FD6]"
+        >
+          Continue with General Templates
+        </button>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 };

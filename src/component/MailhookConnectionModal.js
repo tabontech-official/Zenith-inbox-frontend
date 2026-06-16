@@ -140,7 +140,7 @@ const MailhookConnectionModal = ({
 
     try {
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/mailhook/verification/${user._id}`
+        `http://localhost:5000/mailhook/verification/${user._id}`
       );
       const data = await res.json();
 
@@ -194,7 +194,7 @@ const MailhookConnectionModal = ({
 
       try {
         const res = await fetch(
-          `https://email-syncing-backend.vercel.app/mailhook/verification/${user._id}`
+          `http://localhost:5000/mailhook/verification/${user._id}`
         );
         const data = await res.json();
 
@@ -287,7 +287,7 @@ const MailhookConnectionModal = ({
       setValidationFailed(false);
 
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/mailhook/validate-forwarding/${user._id}`,
+        `http://localhost:5000/mailhook/validate-forwarding/${user._id}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -312,7 +312,7 @@ const MailhookConnectionModal = ({
         attempts++;
 
         const res = await fetch(
-          `https://email-syncing-backend.vercel.app/mailhook/validateTest/${user._id}?cardId=${cardId}`,
+          `http://localhost:5000/mailhook/validateTest/${user._id}?cardId=${cardId}`,
           {
             method: "GET",
             headers: { "Content-Type": "application/json" },
@@ -323,7 +323,7 @@ const MailhookConnectionModal = ({
 
         if (json.success) {
           await axios.post(
-            "https://email-syncing-backend.vercel.app/mailhookcard/create",
+            "http://localhost:5000/mailhookcard/create",
             {
               userId: user._id,
               forwardingEmail: verificationEmail.toEmail,
@@ -444,7 +444,7 @@ const MailhookConnectionModal = ({
                   onClick={async () => {
                     try {
                       const res = await axios.post(
-                        "https://email-syncing-backend.vercel.app/mailhookcard/create",
+                        "http://localhost:5000/mailhookcard/create",
                         {
                           userId: user._id,
                           forwardingEmail: "",
