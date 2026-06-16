@@ -900,15 +900,17 @@ const ShopifyScenariosPage = () => {
             onEdit && onEdit();
           }
         }}
-        className={`bg-white rounded-xl shadow-lg border-2 ${color} p-6 w-64 hover:shadow-xl transition-all duration-200 relative cursor-pointer ${completed
-          ? "ring-2 ring-green-400 border-green-500"
-          : "ring-2 ring-red-200"
-          }`}
+       className={`bg-white rounded-xl shadow-lg border-2 border-[#E0E7FF] p-6 w-64 hover:shadow-xl transition-all duration-200 relative cursor-pointer ${
+  completed
+    ? "ring-2 ring-[#C7D2FE] border-[#8A8CF4]"
+    : "ring-2 ring-[#FEE2E2] border-[#FCA5A5]"
+}`}
       >
         {completed !== null && (
           <div
-            className={`absolute -top-3 -left-3 w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md transition-all duration-300 ${completed ? "bg-green-500" : "bg-red-500"
-              }`}
+          className={`absolute -top-3 -left-3 w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md transition-all duration-300 ${
+  completed ? "bg-[#8A8CF4]" : "bg-[#EF4444]"
+}`}
           >
             {completed ? "✓" : "✗"}
           </div>
