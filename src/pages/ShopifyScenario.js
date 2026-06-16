@@ -150,6 +150,7 @@ const ShopifyScenariosPage = () => {
   const [scenarioHistory, setScenarioHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [selectedHistoryLog, setSelectedHistoryLog] = useState(null);
+  const [historyViewMode, setHistoryViewMode] = useState("builder");
   const existingScenarioId = localStorage.getItem("scenarioId");
   let initialEditingMode = "add";
 
@@ -1856,15 +1857,20 @@ const ShopifyScenariosPage = () => {
 
   const ScenarioHistoryPanel = () => {
     return (
-      <div className="h-full p-4">
+      <div className="h-full p-4 bg-gray-50/50">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xs font-bold text-gray-700 uppercase">
-            History
-          </h3>
+          <div>
+            <h3 className="text-sm font-semibold text-gray-800 uppercase tracking-wide">
+              History
+            </h3>
+            <p className="text-[11px] text-gray-400 mt-0.5">
+              Recent scenario runs
+            </p>
+          </div>
 
           <button
             onClick={fetchScenarioHistory}
-            className="text-gray-500 hover:text-gray-800"
+            className="w-7 h-7 flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 transition"
             title="Refresh history"
           >
             ↻
@@ -1877,80 +1883,177 @@ const ShopifyScenariosPage = () => {
           ) : scenarioHistory.length === 0 ? (
             <p className="text-xs text-gray-400">No history yet.</p>
           ) : (
-            scenarioHistory.map((log) => (
-              <div
-                key={log._id}
-                onClick={() => setSelectedHistoryLog(log)}
+            scenarioHistory.map((log) => {
+              const duration =
+                log.startedAt && log.completedAt
+                  ? `${Math.max(
+                    1,
+                    Math.round(
+                      (new Date(log.completedAt) - new Date(log.startedAt)) /
+                      1000
+                    )
+                  )} sec`
+                  : "< 1 sec";
 
-                className="bg-white border border-gray-200 rounded-sm px-4 py-3 hover:bg-gray-50 transition"
-              >
-                <div className="flex items-start justify-between">
-                  <h4 className="text-xs font-semibold text-gray-800">
-                    {new Date(log.createdAt).toLocaleString()}
-                  </h4>
+              return (
+                <div
+                  key={log._id}
+                  onClick={() => setHistoryViewMode("table")}
+                  className="group bg-white border border-gray-200 rounded-xl px-4 py-3 cursor-pointer transition-all duration-200 hover:border-indigo-200 hover:shadow-md hover:-translate-y-0.5"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h4 className="text-xs font-semibold text-gray-900">
+                        {new Date(log.createdAt).toLocaleString()}
+                      </h4>
 
-                  <span
-                    className={`text-[10px] px-2 py-1 rounded-md font-medium ${log.status === "success"
-                      ? "bg-green-100 text-green-700"
-                      : log.status === "failed"
-                        ? "bg-red-100 text-red-700"
-                        : "bg-yellow-100 text-yellow-700"
-                      }`}
-                  >
-                    {log.status === "failed" ? "Error" : "Success"}
-                  </span>
-                </div>
+                      <div className="mt-1 inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-600">
+                        <RotateCcw size={10} />
+                        Manual Run
+                      </div>
+                    </div>
 
-                <div className="flex items-center gap-3 mt-3 text-[11px] text-gray-500">
-                  <div className="flex items-center gap-1">
-                    <RotateCcw size={12} />
-                    <span>Manual</span>
-                  </div>
-
-                  <div className="flex items-center gap-1">
-                    <Clock3 size={12} />
-                    <span>
-                      {log.startedAt && log.completedAt
-                        ? `${Math.max(
-                          1,
-                          Math.round(
-                            (new Date(log.completedAt) -
-                              new Date(log.startedAt)) /
-                            1000
-                          )
-                        )} sec`
-                        : "Less than 1 sec"}
+                    <span
+                      className={`text-[10px] px-2.5 py-1 rounded-full font-semibold border ${log.status === "success"
+                        ? "bg-green-50 text-green-700 border-green-200"
+                        : log.status === "failed"
+                          ? "bg-red-50 text-red-700 border-red-200"
+                          : "bg-yellow-50 text-yellow-700 border-yellow-200"
+                        }`}
+                    >
+                      {log.status === "failed" ? "Error" : "Success"}
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-1">
-                    <Settings2 size={12} />
-                    <span>{log.steps?.length || 0} operations</span>
-                  </div>
+                  <div className="grid grid-cols-3 gap-2 mt-4">
+                    <div className="rounded-lg bg-blue-50 px-2 py-2 text-center">
+                      <Clock3 size={13} className="mx-auto text-blue-600 mb-1" />
+                      <p className="text-[10px] font-medium text-blue-700">
+                        {duration}
+                      </p>
+                    </div>
 
-                  <div className="flex items-center gap-1">
-                    <RefreshCw size={12} />
-                    <span>0</span>
+                    <div className="rounded-lg bg-purple-50 px-2 py-2 text-center">
+                      <Settings2
+                        size={13}
+                        className="mx-auto text-purple-600 mb-1"
+                      />
+                      <p className="text-[10px] font-medium text-purple-700">
+                        {log.steps?.length || 0} ops
+                      </p>
+                    </div>
+
+                    <div className="rounded-lg bg-gray-50 px-2 py-2 text-center">
+                      <RefreshCw
+                        size={13}
+                        className="mx-auto text-gray-600 mb-1"
+                      />
+                      <p className="text-[10px] font-medium text-gray-700">
+                        0 retries
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>
     );
   };
-
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 font-inter">
       <Sidebar />
 
-      <div className="flex-1 flex flex-col md:ml-64 ml-0 transition-all duration-300">
-        {selectedHistoryLog ? (() => {
+      <div className="flex-1 flex flex-col md:ml-64 ml-0 transition-all duration-300 h-screen overflow-hidden">
+        {historyViewMode === "table" ? (
+          <div className="flex-1 bg-gray-50 flex flex-col h-full overflow-hidden">
+            {/* Header */}
+            <div className="shrink-0 bg-white border-b border-gray-200 px-6 py-2.5 flex items-center gap-4 shadow-sm z-10">
+              <button
+                onClick={() => setHistoryViewMode("builder")}
+                className="inline-flex items-center justify-center w-8 h-8 rounded-full text-gray-500 hover:bg-gray-50 border border-gray-200 transition-colors"
+              >
+                <ArrowLeft size={18} />
+              </button>
+              <div>
+                <h1 className="text-lg font-semibold text-gray-900">Scenario History</h1>
+                <p className="text-sm text-gray-500">View all past executions and statuses</p>
+              </div>
+            </div>
+
+            {/* Table Container */}
+            <div className="flex-1 overflow-y-auto p-6">
+              <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                <div className="grid grid-cols-[1.5fr_1.5fr_1fr_1fr_1fr_1fr_auto] bg-gray-50/80 text-xs font-medium text-gray-500 uppercase tracking-wide border-b border-gray-200">
+                  <div className="px-5 py-3">Started</div>
+                  <div className="px-5 py-3">Run Name</div>
+                  <div className="px-5 py-3">Trigger / Activity</div>
+                  <div className="px-5 py-3">Status</div>
+                  <div className="px-5 py-3">Duration</div>
+                  <div className="px-5 py-3">Operations</div>
+                  <div className="px-5 py-3 text-right">Action</div>
+                </div>
+
+                <div className="divide-y divide-gray-100">
+                  {scenarioHistory.length === 0 ? (
+                    <div className="px-5 py-8 text-center text-gray-500 text-sm">No history logs found.</div>
+                  ) : (
+                    scenarioHistory.map((log) => {
+                      const duration = log.startedAt && log.completedAt
+                        ? `${Math.max(1, Math.round((new Date(log.completedAt) - new Date(log.startedAt)) / 1000))}s`
+                        : "< 1s";
+
+                      return (
+                        <div key={log._id} className="grid grid-cols-[1.5fr_1.5fr_1fr_1fr_1fr_1fr_auto] items-center text-sm text-gray-700 hover:bg-gray-50/50 transition-colors">
+                          <div className="px-5 py-3 font-normal text-gray-700">
+                            {new Date(log.createdAt).toLocaleString(undefined, {
+                              month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit'
+                            })}
+                          </div>
+                          <div className="px-5 py-3 text-gray-700 truncate">
+                            {log.scenarioName || "Shopify Scenario"}
+                          </div>
+                          <div className="px-5 py-3 text-gray-500">
+                            <span className="flex items-center gap-1.5 bg-gray-50 border border-gray-200 w-fit px-2 py-1 rounded-md">
+                              <Zap size={10} className="text-blue-500" />
+                              Instant
+                            </span>
+                          </div>
+                          <div className="px-5 py-3">
+                            <span className={`px-2.5 py-1 rounded-full text-xs font-normal border ${log.status === "success" ? "bg-green-50 text-green-700 border-green-200" :
+                              log.status === "failed" ? "bg-red-50 text-red-700 border-red-200" :
+                                "bg-yellow-50 text-yellow-700 border-yellow-200"
+                              }`}>
+                              {log.status === "failed" ? "Error" : log.status === "partial" ? "Partial" : "Success"}
+                            </span>
+                          </div>
+                          <div className="px-5 py-3 text-gray-500 text-sm text-gray-600">{duration}</div>
+                          <div className="px-5 py-3 text-gray-500">{log.steps?.length || 0}</div>
+                          <div className="px-5 py-3 text-right">
+                            <button
+                              onClick={() => {
+                                setSelectedHistoryLog(log);
+                                setHistoryViewMode("details");
+                              }}
+                              className="px-3 py-1.5 bg-white border border-gray-200 rounded-md text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+                            >
+                              Details
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : historyViewMode === "details" && selectedHistoryLog ? (() => {
           const emailBody = selectedHistoryLog.requestPayload?.body || "";
 
           const getLineValue = (label) => {
-            const regex = new RegExp(`${label}\\s*:\\s*(.+)`, "i");
+            const regex = new RegExp(`${label}\s*:\s*(.+)`, "i");
             const match = emailBody.match(regex);
             return match?.[1]?.trim() || "";
           };
@@ -1965,115 +2068,175 @@ const ShopifyScenariosPage = () => {
             return match?.[1]?.trim()?.split("\n")?.[0] || "";
           };
 
-          const duration =
-            selectedHistoryLog.startedAt && selectedHistoryLog.completedAt
-              ? `${Math.max(
-                1,
-                Math.round(
-                  (new Date(selectedHistoryLog.completedAt) -
-                    new Date(selectedHistoryLog.startedAt)) /
-                  1000
-                )
-              )} second`
-              : "Less than 1 sec";
+          const duration = selectedHistoryLog.startedAt && selectedHistoryLog.completedAt
+            ? `${Math.max(1, Math.round((new Date(selectedHistoryLog.completedAt) - new Date(selectedHistoryLog.startedAt)) / 1000))} sec`
+            : "Less than 1 sec";
 
           const leadDetails = {
-            customerName:
-              getCustomerFromSignature() ||
-              selectedHistoryLog.customerName ||
-              "N/A",
-            businessName: getBusinessName() || "N/A",
-            service:
-              selectedHistoryLog.service ||
-              getLineValue("Service needed") ||
-              "N/A",
+            customerName: getCustomerFromSignature() || selectedHistoryLog.customerName || getLineValue("Name") || "N/A",
+            businessName: getBusinessName() || getLineValue("Business") || "N/A",
+            service: selectedHistoryLog.service || getLineValue("Service needed") || "N/A",
             budget: getLineValue("Budget") || "N/A",
             website: getLineValue("Website") || "N/A",
             country: getLineValue("Country") || "N/A",
           };
 
-          return (
-            <div className="flex-1 bg-white h-screen flex flex-col overflow-hidden">
-              <div className="shrink-0 bg-white border-b border-gray-200 px-6 py-3">
-                <button
-                  onClick={() => setSelectedHistoryLog(null)}
-                  className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
-                >
-                  <ArrowLeft size={16} />
-                  Event registration
-                </button>
-              </div>
+          const statusColors = selectedHistoryLog.status === "success"
+            ? "bg-green-50 border-green-200 text-green-700"
+            : selectedHistoryLog.status === "failed"
+              ? "bg-red-50 border-red-200 text-red-700"
+              : "bg-yellow-50 border-yellow-200 text-yellow-700";
 
-              <div className="shrink-0 border-b border-gray-200 px-6 py-3">
-                <div className="flex items-center gap-6 text-xs uppercase">
-                  <span className="text-gray-900 font-medium border-b-2 border-gray-900 pb-3">
-                    History
-                  </span>
-                  <span className="text-gray-400 pb-3">
-                    Incomplete executions
-                  </span>
+          return (
+            <div className="flex-1 bg-gray-50 flex flex-col h-full overflow-hidden">
+              {/* Header - Fixed */}
+              <div className="shrink-0 bg-white border-b border-gray-200 px-6 py-2.5 flex items-center justify-between shadow-sm z-10">
+                <div className="flex items-center gap-4">
+                  <button
+                    onClick={() => setHistoryViewMode("table")}
+                    className="inline-flex items-center justify-center w-8 h-8 rounded-full text-gray-500 hover:bg-gray-50 border border-gray-200 transition-colors"
+                  >
+                    <ArrowLeft size={18} />
+                  </button>
+                  <div>
+                    <h1 className="text-lg font-semibold text-gray-900 flex items-center gap-3">
+                      Run Details
+                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-normal border ${statusColors} uppercase tracking-wider`}>
+                        {selectedHistoryLog.status}
+                      </span>
+                    </h1>
+                    <p className="text-xs text-gray-500 flex items-center gap-2 mt-0.5">
+                      <Clock3 size={12} /> {new Date(selectedHistoryLog.createdAt).toLocaleString()}
+                      <span className="text-gray-300">|</span>
+                      <RefreshCw size={12} /> {duration} duration
+                    </p>
+                  </div>
                 </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto bg-white">
-                <div className="px-6 py-5">
-                  <h2 className="text-base font-medium text-gray-900 mb-4">
-                    History
-                  </h2>
+              {/* Scrollable Content */}
+              <div className="flex-1 overflow-y-auto p-6">
+                <div className="max-w-5xl mx-auto space-y-6">
 
-                  <div className="border border-gray-200 rounded-sm overflow-hidden mb-6">
-                    <div className="grid grid-cols-[1.4fr_1.4fr_1.4fr_1fr_1fr_1fr] bg-gray-100 text-[11px] text-gray-500 uppercase">
-                      <div className="px-3 py-2">Started</div>
-                      <div className="px-3 py-2">Run name</div>
-                      <div className="px-3 py-2">Trigger / Activity</div>
-                      <div className="px-3 py-2">Status</div>
-                      <div className="px-3 py-2">Duration</div>
-                      <div className="px-3 py-2">Operations</div>
+                  {/* Lead Details Card */}
+                  <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                    <div className="px-5 py-3 border-b border-gray-100 bg-gray-50/50">
+                      <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                        <FiUsers className="text-indigo-500" />
+                        Extracted Lead Information
+                      </h3>
                     </div>
-
-                    <div className="grid grid-cols-[1.4fr_1.4fr_1.4fr_1fr_1fr_1fr] items-center border-t border-gray-100 text-xs">
-                      <div className="px-3 py-3 text-purple-600">
-                        {selectedHistoryLog.createdAt
-                          ? new Date(selectedHistoryLog.createdAt).toLocaleString()
-                          : "N/A"}
+                    <div className="p-5 grid grid-cols-2 sm:grid-cols-3 gap-y-6 gap-x-8">
+                      <div>
+                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Customer Name</p>
+                        <p className="text-sm text-gray-900 font-medium">{leadDetails.customerName}</p>
                       </div>
-
-                      <div className="px-3 py-3 text-gray-700">
-                        {selectedHistoryLog.scenarioName || "Shopify Scenario"}
+                      <div>
+                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Business</p>
+                        <p className="text-sm text-gray-900 font-medium">{leadDetails.businessName}</p>
                       </div>
-
-                      <div className="px-3 py-3 text-gray-600">
-                        Instant
+                      <div>
+                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Service Needed</p>
+                        <p className="text-sm text-gray-900 font-medium">{leadDetails.service}</p>
                       </div>
-
-                      <div className="px-3 py-3">
-                        <span
-                          className={`px-2 py-1 rounded-full text-[10px] ${selectedHistoryLog.status === "success"
-                              ? "bg-green-100 text-green-700"
-                              : selectedHistoryLog.status === "failed"
-                                ? "bg-red-100 text-red-700"
-                                : "bg-yellow-100 text-yellow-700"
-                            }`}
-                        >
-                          {selectedHistoryLog.status === "failed"
-                            ? "Error"
-                            : selectedHistoryLog.status === "partial"
-                              ? "Partial"
-                              : "Success"}
-                        </span>
+                      <div>
+                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Budget</p>
+                        <p className="text-sm text-gray-900 font-medium">{leadDetails.budget}</p>
                       </div>
-
-                      <div className="px-3 py-3 text-gray-600">
-                        {duration}
+                      <div>
+                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Country</p>
+                        <p className="text-sm text-gray-900 font-medium">{leadDetails.country}</p>
                       </div>
-
-                      <div className="px-3 py-3 text-gray-600">
-                        {selectedHistoryLog.steps?.length || 0}
+                      <div>
+                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Website</p>
+                        {leadDetails.website !== "N/A" ? (
+                          <a href={leadDetails.website.startsWith('http') ? leadDetails.website : `https://${leadDetails.website}`} target="_blank" rel="noreferrer" className="text-sm text-blue-600 hover:underline font-medium flex items-center gap-1">
+                            {leadDetails.website} <FiLink size={12} />
+                          </a>
+                        ) : <p className="text-sm text-gray-900 font-medium">N/A</p>}
                       </div>
                     </div>
                   </div>
 
+                  {/* Reply Email */}
+                  {/* Reply Email */}
+                  <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                    <div className="px-5 py-3 border-b border-gray-100 bg-gray-50/50">
+                      <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                        <FiMail className="text-green-500" />
+                        Reply Email
+                      </h3>
+                    </div>
 
+                    {selectedHistoryLog.replyEmail ? (
+                      <>
+                        <div className="px-5 py-4 border-b border-gray-100 bg-white grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">
+                              Reply Sent From
+                            </p>
+                            <p className="text-sm font-medium text-gray-900 break-all">
+                              {selectedHistoryLog.replyEmail.senderAddress || "N/A"}
+                            </p>
+                          </div>
+
+                          <div>
+                            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">
+                              Reply Sent To
+                            </p>
+                            <p className="text-sm font-medium text-gray-900 break-all">
+                              {selectedHistoryLog.replyEmail.recipientAddress || "N/A"}
+                            </p>
+                          </div>
+
+                          <div>
+                            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">
+                              Subject
+                            </p>
+                            <p className="text-sm font-medium text-gray-900 break-all">
+                              {selectedHistoryLog.replyEmail.subject || "N/A"}
+                            </p>
+                          </div>
+
+                          <div>
+                            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">
+                              Template Used
+                            </p>
+                            <p className="text-sm font-medium text-gray-900">
+                              {selectedHistoryLog.templateName ||
+                                selectedHistoryLog.replyEmail.service ||
+                                "N/A"}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="p-0">
+                          <pre className="text-[11px] font-mono text-gray-700 bg-[#f8f9fa] p-5 overflow-x-auto m-0 whitespace-pre-wrap">
+                            {selectedHistoryLog.replyEmail.textBody ||
+                              "No reply email body available."}
+                          </pre>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="p-5 bg-yellow-50 text-sm text-yellow-800">
+                        No reply email was sent.
+                      </div>
+                    )}
+                  </div>
+                  {/* Raw Payload Detail */}
+                  <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                    <div className="px-5 py-3 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
+                      <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                        <FiMail className="text-gray-500" />
+                        Incoming Lead Email
+                      </h3>
+                    </div>
+                    <div className="p-0">
+                      <pre className="text-[11px] font-mono text-gray-700 bg-[#f8f9fa] p-5 overflow-x-auto m-0 whitespace-pre-wrap">
+                        {emailBody || "No payload body available."}
+                      </pre>
+                    </div>
+                  </div>
 
                 </div>
               </div>
@@ -2693,7 +2856,7 @@ const ShopifyScenariosPage = () => {
                                     <p className="font-medium text-gray-800 text-sm">
                                       {item.name}
                                     </p>
-                                    <p className="text-xs text-gray-500">{item.base}</p>
+                                    <p className="text-sm text-gray-500">{item.base}</p>
                                   </div>
                                 </div>
                               );
@@ -3771,7 +3934,7 @@ const ShopifyScenariosPage = () => {
                                 <h3 className="text-blue-700 font-bold text-lg">
                                   {group.service} Templates
                                 </h3>
-                                <p className="text-xs text-gray-500">
+                                <p className="text-sm text-gray-500">
                                   Showing {shownTemplates.length} templates
                                 </p>
                               </div>
