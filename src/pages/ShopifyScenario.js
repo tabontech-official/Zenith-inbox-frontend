@@ -2080,7 +2080,31 @@ const ShopifyScenariosPage = () => {
             website: getLineValue("Website") || "N/A",
             country: getLineValue("Country") || "N/A",
           };
+const getStepColor = (status) => {
+  if (status === "success") return "border-green-200 bg-green-50 text-green-700";
+  if (status === "failed") return "border-red-200 bg-red-50 text-red-700";
+  return "border-yellow-200 bg-yellow-50 text-yellow-700";
+};
 
+const getStepLabel = (step) => {
+  if (step.stepKey === "reply-email-send") return "Initial Email";
+  if (step.stepKey === "delay-job-create") return "Delay";
+  if (step.stepKey === "delayed-email-send") {
+    return step.meta?.moduleName || step.stepName || "Follow-up Email";
+  }
+  return step.stepName || "Step";
+};
+
+const getStepReason = (step) => {
+  if (step.status === "success") {
+    if (step.stepKey === "reply-email-send") return "Initial reply email was sent successfully.";
+    if (step.stepKey === "delay-job-create") return "Delay job was created and scheduled successfully.";
+    if (step.stepKey === "delayed-email-send") return "Follow-up email was sent successfully after delay.";
+    return step.message || "Step completed successfully.";
+  }
+
+  return step.issue || step.message || "This step failed.";
+};
           const statusColors = selectedHistoryLog.status === "success"
             ? "bg-green-50 border-green-200 text-green-700"
             : selectedHistoryLog.status === "failed"
@@ -2158,8 +2182,165 @@ const ShopifyScenariosPage = () => {
                     </div>
                   </div>
 
+
+<div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+  <div className="px-5 py-3 border-b border-gray-100 bg-gray-50/50">
+    <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+      <RefreshCw className="text-indigo-500" size={15} />
+      Scenario Execution Thread
+    </h3>
+    <p className="text-xs text-gray-500 mt-1">
+      Complete step-by-step execution status for this scenario run.
+    </p>
+  </div>
+
+  <div className="p-5 space-y-4">
+    {(selectedHistoryLog.steps || []).map((step, index) => {
+      const isSuccess = step.status === "success";
+      const isFailed = step.status === "failed";
+
+      return (
+        <div key={index} className="relative pl-8">
+          {index < selectedHistoryLog.steps.length - 1 && (
+            <div className="absolute left-[11px] top-7 bottom-[-18px] w-0.5 bg-gray-200"></div>
+          )}
+
+          <div
+            className={`absolute left-0 top-1 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+              isSuccess
+                ? "bg-green-500 text-white"
+                : isFailed
+                  ? "bg-red-500 text-white"
+                  : "bg-yellow-500 text-white"
+            }`}
+          >
+            {isSuccess ? "✓" : isFailed ? "!" : "…"}
+          </div>
+
+          <div className="border border-gray-200 rounded-lg bg-white p-4 shadow-sm">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h4 className="text-sm font-semibold text-gray-900">
+                  {index + 1}. {getStepLabel(step)}
+                </h4>
+
+                <p className="text-xs text-gray-500 mt-1">
+                  {step.completedAt
+                    ? new Date(step.completedAt).toLocaleString()
+                    : "Not completed yet"}
+                </p>
+              </div>
+
+              <span
+                className={`text-[10px] px-2.5 py-1 rounded-full font-semibold border ${getStepColor(
+                  step.status
+                )}`}
+              >
+                {step.status?.toUpperCase() || "PENDING"}
+              </span>
+            </div>
+
+            <div className="mt-3 text-sm text-gray-700">
+              <p>
+                <span className="font-semibold">Reason:</span>{" "}
+                {getStepReason(step)}
+              </p>
+
+              {step.suggestion && (
+                <p className="mt-1 text-red-600">
+                  <span className="font-semibold">Suggestion:</span>{" "}
+                  {step.suggestion}
+                </p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4 text-xs">
+              {step.meta?.templateName && (
+                <div className="bg-gray-50 border rounded-md p-3">
+                  <p className="text-gray-400 uppercase font-semibold mb-1">
+                    Template
+                  </p>
+                  <p className="text-gray-800 font-medium">
+                    {step.meta.templateName}
+                  </p>
+                </div>
+              )}
+
+              {step.meta?.service && (
+                <div className="bg-gray-50 border rounded-md p-3">
+                  <p className="text-gray-400 uppercase font-semibold mb-1">
+                    Service
+                  </p>
+                  <p className="text-gray-800 font-medium">
+                    {step.meta.service}
+                  </p>
+                </div>
+              )}
+
+              {step.meta?.stepType && (
+                <div className="bg-gray-50 border rounded-md p-3">
+                  <p className="text-gray-400 uppercase font-semibold mb-1">
+                    Email Type
+                  </p>
+                  <p className="text-gray-800 font-medium capitalize">
+                    {step.meta.stepType}
+                  </p>
+                </div>
+              )}
+
+              {step.meta?.replyEmailId && (
+                <div className="bg-gray-50 border rounded-md p-3">
+                  <p className="text-gray-400 uppercase font-semibold mb-1">
+                    Reply Email ID
+                  </p>
+                  <p className="text-gray-800 font-medium break-all">
+                    {step.meta.replyEmailId}
+                  </p>
+                </div>
+              )}
+
+              {step.meta?.delayValue && (
+                <div className="bg-gray-50 border rounded-md p-3">
+                  <p className="text-gray-400 uppercase font-semibold mb-1">
+                    Delay
+                  </p>
+                  <p className="text-gray-800 font-medium">
+                    {step.meta.delayValue} {step.meta.delayUnit}
+                  </p>
+                </div>
+              )}
+
+              {step.meta?.scheduledAt && (
+                <div className="bg-gray-50 border rounded-md p-3">
+                  <p className="text-gray-400 uppercase font-semibold mb-1">
+                    Scheduled At
+                  </p>
+                  <p className="text-gray-800 font-medium">
+                    {new Date(step.meta.scheduledAt).toLocaleString()}
+                  </p>
+                </div>
+              )}
+
+              {step.meta?.smtpErrorMessage && (
+                <div className="bg-red-50 border border-red-200 rounded-md p-3 sm:col-span-2">
+                  <p className="text-red-500 uppercase font-semibold mb-1">
+                    SMTP Error
+                  </p>
+                  <p className="text-red-700 font-medium">
+                    {step.meta.smtpErrorMessage}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    })}
+  </div>
+</div>
+
                   {/* Reply Email */}
-                  {/* Reply Email */}
+                
                   <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
                     <div className="px-5 py-3 border-b border-gray-100 bg-gray-50/50">
                       <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
