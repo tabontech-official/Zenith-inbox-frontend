@@ -104,7 +104,6 @@ const AdminUsers = () => {
   //   }
   // };
 
-
   const handleGivePro = async () => {
     try {
       setProLoading(true);
@@ -132,7 +131,7 @@ const AdminUsers = () => {
           body: JSON.stringify({
             durationInDays: duration,
           }),
-        }
+        },
       );
 
       const data = await res.json();
@@ -152,16 +151,16 @@ const AdminUsers = () => {
         prev.map((u) =>
           u._id === proUserId
             ? {
-              ...u,
-              subscription: {
-                ...u.subscription,
-                plan: "pro",
-                status: "active",
-                currentPeriodEnd: expiry,
-              },
-            }
-            : u
-        )
+                ...u,
+                subscription: {
+                  ...u.subscription,
+                  plan: "pro",
+                  status: "active",
+                  currentPeriodEnd: expiry,
+                },
+              }
+            : u,
+        ),
       );
 
       window.dispatchEvent(
@@ -172,7 +171,7 @@ const AdminUsers = () => {
             status: "active",
             currentPeriodEnd: expiry,
           },
-        })
+        }),
       );
 
       setIsProModalOpen(false);
@@ -191,12 +190,15 @@ const AdminUsers = () => {
 
       const token = localStorage.getItem("token");
 
-      const res = await fetch(`https://email-syncing-backend.vercel.app/auth/admin/revoke-pro/${id}`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
+      const res = await fetch(
+        `https://email-syncing-backend.vercel.app/auth/admin/revoke-pro/${id}`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         },
-      });
+      );
 
       const data = await res.json();
 
@@ -209,16 +211,16 @@ const AdminUsers = () => {
         prev.map((u) =>
           u._id === id
             ? {
-              ...u,
-              subscription: {
-                ...u.subscription,
-                plan: "free",
-                status: "inactive",
-                currentPeriodEnd: null,
-              },
-            }
-            : u
-        )
+                ...u,
+                subscription: {
+                  ...u.subscription,
+                  plan: "free",
+                  status: "inactive",
+                  currentPeriodEnd: null,
+                },
+              }
+            : u,
+        ),
       );
     } catch (error) {
       console.error("Revoke Pro Error:", error);
@@ -227,7 +229,6 @@ const AdminUsers = () => {
       setRevokeLoading(false);
     }
   };
-
 
   const fetchUsers = async () => {
     try {
@@ -247,7 +248,6 @@ const AdminUsers = () => {
     }
   };
 
-
   useEffect(() => {
     const handleSubscriptionUpdated = () => {
       fetchUsers();
@@ -256,10 +256,12 @@ const AdminUsers = () => {
     window.addEventListener("subscriptionUpdated", handleSubscriptionUpdated);
 
     return () => {
-      window.removeEventListener("subscriptionUpdated", handleSubscriptionUpdated);
+      window.removeEventListener(
+        "subscriptionUpdated",
+        handleSubscriptionUpdated,
+      );
     };
   }, []);
-
 
   const openSingleDelete = (id) => {
     setDeleteTarget("single");
@@ -283,12 +285,15 @@ const AdminUsers = () => {
           return;
         }
 
-        const res = await fetch(`https://email-syncing-backend.vercel.app/auth/user/${activeId}`, {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
+        const res = await fetch(
+          `https://email-syncing-backend.vercel.app/auth/user/${activeId}`,
+          {
+            method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
           },
-        });
+        );
 
         let data = {};
         const contentType = res.headers.get("content-type");
@@ -311,14 +316,17 @@ const AdminUsers = () => {
           return;
         }
 
-        const res = await fetch(`https://email-syncing-backend.vercel.app/auth/users/bulk-delete`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+        const res = await fetch(
+          `https://email-syncing-backend.vercel.app/auth/users/bulk-delete`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ ids: selectedUsers }),
           },
-          body: JSON.stringify({ ids: selectedUsers }),
-        });
+        );
 
         let data = {};
         const contentType = res.headers.get("content-type");
@@ -328,7 +336,9 @@ const AdminUsers = () => {
         }
 
         if (!res.ok) {
-          alert(data?.error || data?.message || "Failed to delete selected users");
+          alert(
+            data?.error || data?.message || "Failed to delete selected users",
+          );
           return;
         }
 
@@ -386,7 +396,7 @@ const AdminUsers = () => {
     <div className="min-h-screen bg-[#F8FAFC] md:ml-64 flex font-sans">
       <Sidebar />
 
-      {/* ✅ CUSTOM CONFIRMATION MODAL */}
+      {/* CUSTOM CONFIRMATION MODAL */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div
@@ -587,10 +597,11 @@ const AdminUsers = () => {
                       {/* Role */}
                       <td className="p-5">
                         <span
-                          className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${user.role === "admin"
-                            ? "bg-purple-100 text-purple-700"
-                            : "bg-blue-100 text-blue-700"
-                            }`}
+                          className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${
+                            user.role === "admin"
+                              ? "bg-purple-100 text-purple-700"
+                              : "bg-blue-100 text-blue-700"
+                          }`}
                         >
                           {user.role}
                         </span>
@@ -612,51 +623,51 @@ const AdminUsers = () => {
                       {/* Plan */}
                       <td className="p-5">
                         <span
-                          className={`px-3 py-1 rounded-lg text-xs font-bold ${isPro
-                            ? "bg-green-100 text-green-700"
-                            : "bg-gray-100 text-gray-500"
-                            }`}
+                          className={`px-3 py-1 rounded-lg text-xs font-bold ${
+                            isPro
+                              ? "bg-green-100 text-green-700"
+                              : "bg-gray-100 text-gray-500"
+                          }`}
                         >
                           {isPro ? "PRO" : "FREE"}
                         </span>
                       </td>
 
                       {/* Actions */}
-                    {/* Actions */}
-<td className="p-5 text-center">
-  {user.role !== "admin" && (
-    <div className="flex items-center justify-center gap-2">
-      {isPro ? (
-        <button
-          onClick={() => openCancelModal(user._id)}
-          disabled={revokeLoading}
-          className="px-3 py-1.5 text-[10px] font-black tracking-widest text-amber-600 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl transition-all uppercase disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {revokeLoading && cancelUserId === user._id
-            ? "Revoking..."
-            : "Revoke Access"}
-        </button>
-      ) : (
-        <button
-          onClick={() => openProModal(user._id)}
-          className="px-3 py-1.5 text-[10px] font-black tracking-widest text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition-all uppercase"
-        >
-          Upgrade Pro
-        </button>
-      )}
+                      <td className="p-5 text-center">
+                        {user.role !== "admin" && (
+                          <div className="flex items-center justify-center gap-2">
+                            {isPro ? (
+                              <button
+                                onClick={() => openCancelModal(user._id)}
+                                disabled={revokeLoading}
+                                className="px-3 py-1.5 text-[10px] font-black tracking-widest text-amber-600 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl transition-all uppercase disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                {revokeLoading && cancelUserId === user._id
+                                  ? "Revoking..."
+                                  : "Revoke Access"}
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => openProModal(user._id)}
+                                className="px-3 py-1.5 text-[10px] font-black tracking-widest text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition-all uppercase"
+                              >
+                                Upgrade Pro
+                              </button>
+                            )}
 
-      <button
-        type="button"
-        onClick={() => openSingleDelete(user._id)}
-        disabled={deleteLoading}
-        className="p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-        title="Delete User"
-      >
-        <FiTrash2 size={18} />
-      </button>
-    </div>
-  )}
-</td>
+                            <button
+                              type="button"
+                              onClick={() => openSingleDelete(user._id)}
+                              disabled={deleteLoading}
+                              className="p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                              title="Delete User"
+                            >
+                              <FiTrash2 size={18} />
+                            </button>
+                          </div>
+                        )}
+                      </td>
                     </tr>
                   );
                 })}
@@ -685,10 +696,11 @@ const AdminUsers = () => {
                 <button
                   key={i}
                   onClick={() => setCurrentPage(i + 1)}
-                  className={`w-10 h-10 rounded-xl text-sm font-bold transition-all ${currentPage === i + 1
-                    ? "bg-indigo-600 text-white shadow-lg shadow-indigo-100"
-                    : "text-slate-400 hover:bg-white hover:text-indigo-600"
-                    }`}
+                  className={`w-10 h-10 rounded-xl text-sm font-bold transition-all ${
+                    currentPage === i + 1
+                      ? "bg-indigo-600 text-white shadow-lg shadow-indigo-100"
+                      : "text-slate-400 hover:bg-white hover:text-indigo-600"
+                  }`}
                 >
                   {i + 1}
                 </button>
@@ -747,10 +759,11 @@ const AdminUsers = () => {
                     type="button"
                     disabled={proLoading}
                     onClick={() => setDuration(d)}
-                    className={`px-3 py-1 rounded-lg text-sm font-medium transition-all ${duration === d
-                      ? "bg-indigo-600 text-white"
-                      : "bg-slate-100 hover:bg-indigo-100 text-slate-700"
-                      } disabled:opacity-50 disabled:cursor-not-allowed`}
+                    className={`px-3 py-1 rounded-lg text-sm font-medium transition-all ${
+                      duration === d
+                        ? "bg-indigo-600 text-white"
+                        : "bg-slate-100 hover:bg-indigo-100 text-slate-700"
+                    } disabled:opacity-50 disabled:cursor-not-allowed`}
                   >
                     {d}d
                   </button>

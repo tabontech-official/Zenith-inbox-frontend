@@ -67,7 +67,16 @@ import EmailInspector from "./EmailInspector";
 const ShopifyScenariosPage = () => {
   const quillRef = useRef(null);
   const [guideStep, setGuideStep] = useState(0);
+  const [showInsertFields, setShowInsertFields] = useState(false);
+  useEffect(() => {
+    const closeFields = () => setShowInsertFields(false);
 
+    document.addEventListener("mousedown", closeFields);
+
+    return () => {
+      document.removeEventListener("mousedown", closeFields);
+    };
+  }, []);
   useEffect(() => {
     const step = localStorage.getItem("shopifyGuideStep");
 
@@ -144,7 +153,8 @@ const ShopifyScenariosPage = () => {
   const [showEditTemplateModal, setShowEditTemplateModal] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState(null);
   const [editContent, setEditContent] = useState("");
-  const [showInactiveTemplateConfirm, setShowInactiveTemplateConfirm] = useState(false);
+  const [showInactiveTemplateConfirm, setShowInactiveTemplateConfirm] =
+    useState(false);
   const [inactiveTemplateService, setInactiveTemplateService] = useState("");
   const savedShopifyState = localStorage.getItem("shopifyScenarioState");
   const [scenarioHistory, setScenarioHistory] = useState([]);
@@ -229,7 +239,6 @@ const ShopifyScenariosPage = () => {
     fetchConnections();
   }, []);
 
-
   const fetchScenarioHistory = async () => {
     try {
       const activeScenarioId = scenarioId || localStorage.getItem("scenarioId");
@@ -239,7 +248,7 @@ const ShopifyScenariosPage = () => {
       setHistoryLoading(true);
 
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/scenario-run-log/history/${activeScenarioId}`
+        `https://email-syncing-backend.vercel.app/scenario-run-log/history/${activeScenarioId}`,
       );
 
       const data = await res.json();
@@ -397,13 +406,13 @@ const ShopifyScenariosPage = () => {
         data.routerBranches?.length > 0
           ? data.routerBranches
           : [
-            {
-              id: Date.now(),
-              hasModule: false,
-              condition: null,
-              modules: [],
-            },
-          ],
+              {
+                id: Date.now(),
+                hasModule: false,
+                condition: null,
+                modules: [],
+              },
+            ],
       );
 
       if (typeof data.scenarioActive === "boolean") {
@@ -441,13 +450,13 @@ const ShopifyScenariosPage = () => {
           freshData.routerBranches?.length > 0
             ? freshData.routerBranches
             : [
-              {
-                id: Date.now(),
-                hasModule: false,
-                condition: null,
-                modules: [],
-              },
-            ],
+                {
+                  id: Date.now(),
+                  hasModule: false,
+                  condition: null,
+                  modules: [],
+                },
+              ],
         );
         setScenarioName(freshData.name || scenarioName);
         setScenarioDescription(freshData.description || scenarioDescription);
@@ -585,13 +594,13 @@ const ShopifyScenariosPage = () => {
             Array.isArray(data.routerBranches) && data.routerBranches.length > 0
               ? data.routerBranches
               : [
-                {
-                  id: Date.now(),
-                  hasModule: false,
-                  condition: null,
-                  modules: [],
-                },
-              ],
+                  {
+                    id: Date.now(),
+                    hasModule: false,
+                    condition: null,
+                    modules: [],
+                  },
+                ],
           );
 
           if (data.scenarioActive === true) {
@@ -613,14 +622,13 @@ const ShopifyScenariosPage = () => {
           localStorage.removeItem("scenarioId");
           localStorage.removeItem("scenarioActive");
         }
-      } catch (err) { }
+      } catch (err) {}
     };
 
     fetchScenario();
   }, []);
 
   const [allActive, setAllActive] = useState(false);
-
 
   const handleSave = () => {
     if (editingBranch !== null) {
@@ -756,10 +764,7 @@ const ShopifyScenariosPage = () => {
 
       setSelectedApp({
         ...(module.app || {}),
-        name:
-          fixedEmailType === "Email"
-            ? "Email"
-            : "Gmail",
+        name: fixedEmailType === "Email" ? "Email" : "Gmail",
         displayName: fixedTitle,
         defaultTemplate: module.template || fixedTitle,
         color: module.app?.color || "bg-red-500",
@@ -798,7 +803,7 @@ const ShopifyScenariosPage = () => {
             localStorage.setItem("skipScenarioFetch", "true");
           } else {
           }
-        } catch (err) { }
+        } catch (err) {}
         localStorage.removeItem("shopifyScenarioState");
       }
 
@@ -901,18 +906,19 @@ const ShopifyScenariosPage = () => {
             onEdit && onEdit();
           }
         }}
-       className={`bg-white rounded-xl shadow-lg border-2 border-[#E0E7FF] p-6 w-64 hover:shadow-xl transition-all duration-200 relative cursor-pointer ${
-  showValidation
-    ? completed
-      ? "ring-2 ring-[#C7D2FE] border-[#8A8CF4]"
-      : "ring-2 ring-[#FEE2E2] border-[#FCA5A5]"
-    : "border-[#E0E7FF]"
-}`}
+        className={`bg-white rounded-xl shadow-lg border-2 border-[#E0E7FF] p-6 w-64 hover:shadow-xl transition-all duration-200 relative cursor-pointer ${
+          showValidation
+            ? completed
+              ? "ring-2 ring-[#C7D2FE] border-[#8A8CF4]"
+              : "ring-2 ring-[#FEE2E2] border-[#FCA5A5]"
+            : "border-[#E0E7FF]"
+        }`}
       >
-{showValidation && completed !== null && (          <div
-          className={`absolute -top-3 -left-3 w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md transition-all duration-300 ${
-  completed ? "bg-[#8A8CF4]" : "bg-[#EF4444]"
-}`}
+        {showValidation && completed !== null && (
+          <div
+            className={`absolute -top-3 -left-3 w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md transition-all duration-300 ${
+              completed ? "bg-[#8A8CF4]" : "bg-[#EF4444]"
+            }`}
           >
             {completed ? "✓" : "✗"}
           </div>
@@ -929,25 +935,25 @@ const ShopifyScenariosPage = () => {
               }
             }}
             title={isWebhook ? "View Webhook Info" : "View Test Email"}
-           className="absolute top-2 right-2 rounded-lg border border-[#C7D2FE] bg-white p-1.5 text-[#7375E8] shadow-sm transition hover:bg-[#EEF2FF] hover:text-[#5B5FD6]"
+            className="absolute top-2 right-2 rounded-lg border border-[#C7D2FE] bg-white p-1.5 text-[#7375E8] shadow-sm transition hover:bg-[#EEF2FF] hover:text-[#5B5FD6]"
           >
             <Eye className="w-4 h-4" />
           </button>
         )}
 
         <div className="flex items-center space-x-3 mb-3">
-         <div className="bg-[#EEF2FF] p-3 rounded-lg">
-  <Icon
-    className={`w-6 h-6 ${
-      completed ? "text-[#7375E8]" : "text-slate-500"
-    }`}
-  />
-</div>
+          <div className="bg-[#EEF2FF] p-3 rounded-lg">
+            <Icon
+              className={`w-6 h-6 ${
+                completed ? "text-[#7375E8]" : "text-slate-500"
+              }`}
+            />
+          </div>
           <div className="flex-1">
             <h3
-             className={`font-semibold text-sm ${
-  completed ? "text-[#5B5FD6]" : "text-slate-800"
-}`}
+              className={`font-semibold text-sm ${
+                completed ? "text-[#5B5FD6]" : "text-slate-800"
+              }`}
             >
               {title}
             </h3>
@@ -963,7 +969,8 @@ const ShopifyScenariosPage = () => {
                   e.stopPropagation();
                   onEdit();
                 }}
-className="rounded-lg bg-[#EEF2FF] p-1.5 text-[#5B5FD6] transition hover:bg-[#E0E7FF]"              >
+                className="rounded-lg bg-[#EEF2FF] p-1.5 text-[#5B5FD6] transition hover:bg-[#E0E7FF]"
+              >
                 <Settings className="w-3 h-3" />
               </button>
             )}
@@ -973,7 +980,8 @@ className="rounded-lg bg-[#EEF2FF] p-1.5 text-[#5B5FD6] transition hover:bg-[#E0
                   e.stopPropagation();
                   onDelete();
                 }}
-className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FECACA]"              >
+                className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FECACA]"
+              >
                 <X className="w-3 h-3" />
               </button>
             )}
@@ -994,21 +1002,18 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
   const AddModuleButton = ({ onClick }) => (
     <button
       onClick={onClick}
-    className="flex h-24 w-64 items-center justify-center rounded-xl border-2 border-dashed border-[#C7D2FE] bg-white transition-all hover:border-[#8A8CF4] hover:bg-[#F5F7FF] group"
+      className="flex h-24 w-64 items-center justify-center rounded-xl border-2 border-dashed border-[#C7D2FE] bg-white transition-all hover:border-[#8A8CF4] hover:bg-[#F5F7FF] group"
     >
-    <Plus className="h-6 w-6 text-[#8A8CF4]" />
-    <span className="ml-2 font-medium text-[#5B5FD6]">
-        Add Module
-      </span>
+      <Plus className="h-6 w-6 text-[#8A8CF4]" />
+      <span className="ml-2 font-medium text-[#5B5FD6]">Add Module</span>
     </button>
   );
   const AddBetweenButton = ({ onClick }) => (
     <button
       onClick={onClick}
-         className="absolute left-1/2 z-20 flex h-7 w-7 -translate-x-1/2 items-center justify-center rounded-full border border-[#C7D2FE] bg-white shadow transition hover:bg-[#EEF2FF]"
-
+      className="absolute left-1/2 z-20 flex h-7 w-7 -translate-x-1/2 items-center justify-center rounded-full border border-[#C7D2FE] bg-white shadow transition hover:bg-[#EEF2FF]"
     >
-    <Plus size={16} className="text-[#5B5FD6]" />
+      <Plus size={16} className="text-[#5B5FD6]" />
     </button>
   );
 
@@ -1069,7 +1074,7 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
           });
         } else {
         }
-      } catch (err) { }
+      } catch (err) {}
     };
 
     if (showRunTestModal) {
@@ -1135,17 +1140,14 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
         setInactiveTemplateService(service);
         setShowInactiveTemplateConfirm(true);
 
-        toast.error(
-          `${service} templates are not active.`,
-          {
-            duration: 5000,
-            style: {
-              background: "#fff0f0",
-              color: "#b91c1c",
-              border: "1px solid #fca5a5",
-            },
+        toast.error(`${service} templates are not active.`, {
+          duration: 5000,
+          style: {
+            background: "#fff0f0",
+            color: "#b91c1c",
+            border: "1px solid #fca5a5",
           },
-        );
+        });
 
         return;
       }
@@ -1408,7 +1410,10 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
       const data = await res.json();
 
       if (!data.success || !data.email) {
-        toast.error("No test email found. Please generate a test email first.", { id: "email" });
+        toast.error(
+          "No test email found. Please generate a test email first.",
+          { id: "email" },
+        );
         setHighlightRunTest(true);
         setTestEmailGenerated(false);
         return;
@@ -1576,12 +1581,16 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
           name.includes("follow") ||
           name.includes("initial")
         );
-      })
+      }),
     );
   };
 
   const findFirstMissingEmailModule = () => {
-    for (let branchIndex = 0; branchIndex < routerBranches.length; branchIndex++) {
+    for (
+      let branchIndex = 0;
+      branchIndex < routerBranches.length;
+      branchIndex++
+    ) {
       const branch = routerBranches[branchIndex];
 
       for (const module of branch.modules || []) {
@@ -1804,9 +1813,7 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
       <div className="w-full lg:w-72 rounded-xl border border-[#E0E7FF] bg-white shadow-sm overflow-hidden">
         <div className="border-b border-[#E0E7FF] bg-[#F5F7FF] px-4 py-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-slate-700">
-              Setup Progress
-            </h3>
+            <h3 className="text-sm font-bold text-slate-700">Setup Progress</h3>
 
             <span className="rounded-full border border-[#C7D2FE] bg-[#EEF2FF] px-2 py-0.5 text-xs font-semibold text-[#5B5FD6]">
               {completedCount}/{setupSteps.length}
@@ -1827,33 +1834,37 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
               key={step.key}
               type="button"
               onClick={() => handleSetupStepClick(step.key)}
-              className={`w-full rounded-lg border px-3 py-2 text-left text-xs transition ${step.completed
+              className={`w-full rounded-lg border px-3 py-2 text-left text-xs transition ${
+                step.completed
                   ? "border-[#C7D2FE] bg-[#EEF2FF] hover:bg-[#E0E7FF]"
                   : "border-gray-200 bg-gray-50 hover:border-[#C7D2FE] hover:bg-[#F5F7FF]"
-                }`}
+              }`}
             >
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <span
-                    className={`flex h-4 w-4 items-center justify-center rounded border text-[10px] ${step.completed
+                    className={`flex h-4 w-4 items-center justify-center rounded border text-[10px] ${
+                      step.completed
                         ? "border-[#8A8CF4] bg-[#8A8CF4] text-white"
                         : "border-gray-300 bg-white text-gray-400"
-                      }`}
+                    }`}
                   >
                     {step.completed ? "✓" : ""}
                   </span>
 
                   <span
-                    className={`font-medium ${step.completed ? "text-[#5B5FD6]" : "text-gray-600"
-                      }`}
+                    className={`font-medium ${
+                      step.completed ? "text-[#5B5FD6]" : "text-gray-600"
+                    }`}
                   >
                     {step.label}
                   </span>
                 </div>
 
                 <span
-                  className={`font-semibold ${step.completed ? "text-[#5B5FD6]" : "text-gray-400"
-                    }`}
+                  className={`font-semibold ${
+                    step.completed ? "text-[#5B5FD6]" : "text-gray-400"
+                  }`}
                 >
                   {step.completed ? "Done" : "Pending"}
                 </span>
@@ -1897,12 +1908,12 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
               const duration =
                 log.startedAt && log.completedAt
                   ? `${Math.max(
-                    1,
-                    Math.round(
-                      (new Date(log.completedAt) - new Date(log.startedAt)) /
-                      1000
-                    )
-                  )} sec`
+                      1,
+                      Math.round(
+                        (new Date(log.completedAt) - new Date(log.startedAt)) /
+                          1000,
+                      ),
+                    )} sec`
                   : "< 1 sec";
 
               return (
@@ -1924,12 +1935,13 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
                     </div>
 
                     <span
-                      className={`text-[10px] px-2.5 py-1 rounded-full font-semibold border ${log.status === "success"
-                        ? "bg-green-50 text-green-700 border-green-200"
-                        : log.status === "failed"
-                          ? "bg-red-50 text-red-700 border-red-200"
-                          : "bg-yellow-50 text-yellow-700 border-yellow-200"
-                        }`}
+                      className={`text-[10px] px-2.5 py-1 rounded-full font-semibold border ${
+                        log.status === "success"
+                          ? "bg-green-50 text-green-700 border-green-200"
+                          : log.status === "failed"
+                            ? "bg-red-50 text-red-700 border-red-200"
+                            : "bg-yellow-50 text-yellow-700 border-yellow-200"
+                      }`}
                     >
                       {log.status === "failed" ? "Error" : "Success"}
                     </span>
@@ -1937,7 +1949,10 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
 
                   <div className="grid grid-cols-3 gap-2 mt-4">
                     <div className="rounded-lg bg-blue-50 px-2 py-2 text-center">
-                      <Clock3 size={13} className="mx-auto text-blue-600 mb-1" />
+                      <Clock3
+                        size={13}
+                        className="mx-auto text-blue-600 mb-1"
+                      />
                       <p className="text-[10px] font-medium text-blue-700">
                         {duration}
                       </p>
@@ -1987,8 +2002,12 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
                 <ArrowLeft size={18} />
               </button>
               <div>
-                <h1 className="text-lg font-semibold text-gray-900">Scenario History</h1>
-                <p className="text-sm text-gray-500">View all past executions and statuses</p>
+                <h1 className="text-lg font-semibold text-gray-900">
+                  Scenario History
+                </h1>
+                <p className="text-sm text-gray-500">
+                  View all past executions and statuses
+                </p>
               </div>
             </div>
 
@@ -2007,18 +2026,28 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
 
                 <div className="divide-y divide-gray-100">
                   {scenarioHistory.length === 0 ? (
-                    <div className="px-5 py-8 text-center text-gray-500 text-sm">No history logs found.</div>
+                    <div className="px-5 py-8 text-center text-gray-500 text-sm">
+                      No history logs found.
+                    </div>
                   ) : (
                     scenarioHistory.map((log) => {
-                      const duration = log.startedAt && log.completedAt
-                        ? `${Math.max(1, Math.round((new Date(log.completedAt) - new Date(log.startedAt)) / 1000))}s`
-                        : "< 1s";
+                      const duration =
+                        log.startedAt && log.completedAt
+                          ? `${Math.max(1, Math.round((new Date(log.completedAt) - new Date(log.startedAt)) / 1000))}s`
+                          : "< 1s";
 
                       return (
-                        <div key={log._id} className="grid grid-cols-[1.5fr_1.5fr_1fr_1fr_1fr_1fr_auto] items-center text-sm text-gray-700 hover:bg-gray-50/50 transition-colors">
+                        <div
+                          key={log._id}
+                          className="grid grid-cols-[1.5fr_1.5fr_1fr_1fr_1fr_1fr_auto] items-center text-sm text-gray-700 hover:bg-gray-50/50 transition-colors"
+                        >
                           <div className="px-5 py-3 font-normal text-gray-700">
                             {new Date(log.createdAt).toLocaleString(undefined, {
-                              month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit'
+                              month: "short",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              second: "2-digit",
                             })}
                           </div>
                           <div className="px-5 py-3 text-gray-700 truncate">
@@ -2031,15 +2060,28 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
                             </span>
                           </div>
                           <div className="px-5 py-3">
-                            <span className={`px-2.5 py-1 rounded-full text-xs font-normal border ${log.status === "success" ? "bg-green-50 text-green-700 border-green-200" :
-                              log.status === "failed" ? "bg-red-50 text-red-700 border-red-200" :
-                                "bg-yellow-50 text-yellow-700 border-yellow-200"
-                              }`}>
-                              {log.status === "failed" ? "Error" : log.status === "partial" ? "Partial" : "Success"}
+                            <span
+                              className={`px-2.5 py-1 rounded-full text-xs font-normal border ${
+                                log.status === "success"
+                                  ? "bg-green-50 text-green-700 border-green-200"
+                                  : log.status === "failed"
+                                    ? "bg-red-50 text-red-700 border-red-200"
+                                    : "bg-yellow-50 text-yellow-700 border-yellow-200"
+                              }`}
+                            >
+                              {log.status === "failed"
+                                ? "Error"
+                                : log.status === "partial"
+                                  ? "Partial"
+                                  : "Success"}
                             </span>
                           </div>
-                          <div className="px-5 py-3 text-gray-500 text-sm text-gray-600">{duration}</div>
-                          <div className="px-5 py-3 text-gray-500">{log.steps?.length || 0}</div>
+                          <div className="px-5 py-3 text-gray-500 text-sm text-gray-600">
+                            {duration}
+                          </div>
+                          <div className="px-5 py-3 text-gray-500">
+                            {log.steps?.length || 0}
+                          </div>
                           <div className="px-5 py-3 text-right">
                             <button
                               onClick={() => {
@@ -2059,382 +2101,450 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
               </div>
             </div>
           </div>
-        ) : historyViewMode === "details" && selectedHistoryLog ? (() => {
-          const emailBody = selectedHistoryLog.requestPayload?.body || "";
+        ) : historyViewMode === "details" && selectedHistoryLog ? (
+          (() => {
+            const emailBody = selectedHistoryLog.requestPayload?.body || "";
 
-          const getLineValue = (label) => {
-            const regex = new RegExp(`${label}\s*:\s*(.+)`, "i");
-            const match = emailBody.match(regex);
-            return match?.[1]?.trim() || "";
-          };
+            const getLineValue = (label) => {
+              const regex = new RegExp(`${label}\s*:\s*(.+)`, "i");
+              const match = emailBody.match(regex);
+              return match?.[1]?.trim() || "";
+            };
 
-          const getBusinessName = () => {
-            const match = emailBody.match(/business,\s*(.+?)\./i);
-            return match?.[1]?.trim() || "";
-          };
+            const getBusinessName = () => {
+              const match = emailBody.match(/business,\s*(.+?)\./i);
+              return match?.[1]?.trim() || "";
+            };
 
-          const getCustomerFromSignature = () => {
-            const match = emailBody.match(/Best regards,\s*([\s\S]+)/i);
-            return match?.[1]?.trim()?.split("\n")?.[0] || "";
-          };
+            const getCustomerFromSignature = () => {
+              const match = emailBody.match(/Best regards,\s*([\s\S]+)/i);
+              return match?.[1]?.trim()?.split("\n")?.[0] || "";
+            };
 
-          const duration = selectedHistoryLog.startedAt && selectedHistoryLog.completedAt
-            ? `${Math.max(1, Math.round((new Date(selectedHistoryLog.completedAt) - new Date(selectedHistoryLog.startedAt)) / 1000))} sec`
-            : "Less than 1 sec";
+            const duration =
+              selectedHistoryLog.startedAt && selectedHistoryLog.completedAt
+                ? `${Math.max(1, Math.round((new Date(selectedHistoryLog.completedAt) - new Date(selectedHistoryLog.startedAt)) / 1000))} sec`
+                : "Less than 1 sec";
 
-          const leadDetails = {
-            customerName: getCustomerFromSignature() || selectedHistoryLog.customerName || getLineValue("Name") || "N/A",
-            businessName: getBusinessName() || getLineValue("Business") || "N/A",
-            service: selectedHistoryLog.service || getLineValue("Service needed") || "N/A",
-            budget: getLineValue("Budget") || "N/A",
-            website: getLineValue("Website") || "N/A",
-            country: getLineValue("Country") || "N/A",
-          };
-          const getStepColor = (status) => {
-            if (status === "success") return "border-green-200 bg-green-50 text-green-700";
-            if (status === "failed") return "border-red-200 bg-red-50 text-red-700";
-            return "border-yellow-200 bg-yellow-50 text-yellow-700";
-          };
+            const leadDetails = {
+              customerName:
+                getCustomerFromSignature() ||
+                selectedHistoryLog.customerName ||
+                getLineValue("Name") ||
+                "N/A",
+              businessName:
+                getBusinessName() || getLineValue("Business") || "N/A",
+              service:
+                selectedHistoryLog.service ||
+                getLineValue("Service needed") ||
+                "N/A",
+              budget: getLineValue("Budget") || "N/A",
+              website: getLineValue("Website") || "N/A",
+              country: getLineValue("Country") || "N/A",
+            };
+            const getStepColor = (status) => {
+              if (status === "success")
+                return "border-green-200 bg-green-50 text-green-700";
+              if (status === "failed")
+                return "border-red-200 bg-red-50 text-red-700";
+              return "border-yellow-200 bg-yellow-50 text-yellow-700";
+            };
 
-          const getStepLabel = (step) => {
-            if (step.stepKey === "reply-email-send") return "Initial Email";
-            if (step.stepKey === "delay-job-create") return "Delay";
-            if (step.stepKey === "delayed-email-send") {
-              return step.meta?.moduleName || step.stepName || "Follow-up Email";
-            }
-            return step.stepName || "Step";
-          };
+            const getStepLabel = (step) => {
+              if (step.stepKey === "reply-email-send") return "Initial Email";
+              if (step.stepKey === "delay-job-create") return "Delay";
+              if (step.stepKey === "delayed-email-send") {
+                return (
+                  step.meta?.moduleName || step.stepName || "Follow-up Email"
+                );
+              }
+              return step.stepName || "Step";
+            };
 
-          const getStepReason = (step) => {
-            if (step.status === "success") {
-              if (step.stepKey === "reply-email-send") return "Initial reply email was sent successfully.";
-              if (step.stepKey === "delay-job-create") return "Delay job was created and scheduled successfully.";
-              if (step.stepKey === "delayed-email-send") return "Follow-up email was sent successfully after delay.";
-              return step.message || "Step completed successfully.";
-            }
+            const getStepReason = (step) => {
+              if (step.status === "success") {
+                if (step.stepKey === "reply-email-send")
+                  return "Initial reply email was sent successfully.";
+                if (step.stepKey === "delay-job-create")
+                  return "Delay job was created and scheduled successfully.";
+                if (step.stepKey === "delayed-email-send")
+                  return "Follow-up email was sent successfully after delay.";
+                return step.message || "Step completed successfully.";
+              }
 
-            return step.issue || step.message || "This step failed.";
-          };
-          const statusColors = selectedHistoryLog.status === "success"
-            ? "bg-green-50 border-green-200 text-green-700"
-            : selectedHistoryLog.status === "failed"
-              ? "bg-red-50 border-red-200 text-red-700"
-              : "bg-yellow-50 border-yellow-200 text-yellow-700";
+              return step.issue || step.message || "This step failed.";
+            };
+            const statusColors =
+              selectedHistoryLog.status === "success"
+                ? "bg-green-50 border-green-200 text-green-700"
+                : selectedHistoryLog.status === "failed"
+                  ? "bg-red-50 border-red-200 text-red-700"
+                  : "bg-yellow-50 border-yellow-200 text-yellow-700";
 
-          return (
-            <div className="flex-1 bg-gray-50 flex flex-col h-full overflow-hidden">
-              {/* Header - Fixed */}
-              <div className="shrink-0 bg-white border-b border-gray-200 px-6 py-2.5 flex items-center justify-between shadow-sm z-10">
-                <div className="flex items-center gap-4">
-                  <button
-                    onClick={() => setHistoryViewMode("table")}
-                    className="inline-flex items-center justify-center w-8 h-8 rounded-full text-gray-500 hover:bg-gray-50 border border-gray-200 transition-colors"
-                  >
-                    <ArrowLeft size={18} />
-                  </button>
-                  <div>
-                    <h1 className="text-lg font-semibold text-gray-900 flex items-center gap-3">
-                      Run Details
-                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-normal border ${statusColors} uppercase tracking-wider`}>
-                        {selectedHistoryLog.status}
-                      </span>
-                    </h1>
-                    <p className="text-xs text-gray-500 flex items-center gap-2 mt-0.5">
-                      <Clock3 size={12} /> {new Date(selectedHistoryLog.createdAt).toLocaleString()}
-                      <span className="text-gray-300">|</span>
-                      <RefreshCw size={12} /> {duration} duration
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Scrollable Content */}
-              <div className="flex-1 overflow-y-auto p-6">
-                <div className="max-w-5xl mx-auto space-y-6">
-
-                  {/* Lead Details Card */}
-                  <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-                    <div className="px-5 py-3 border-b border-gray-100 bg-gray-50/50">
-                      <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
-                        <FiUsers className="text-indigo-500" />
-                        Extracted Lead Information
-                      </h3>
-                    </div>
-                    <div className="p-5 grid grid-cols-2 sm:grid-cols-3 gap-y-6 gap-x-8">
-                      <div>
-                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Customer Name</p>
-                        <p className="text-sm text-gray-900 font-medium">{leadDetails.customerName}</p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Business</p>
-                        <p className="text-sm text-gray-900 font-medium">{leadDetails.businessName}</p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Service Needed</p>
-                        <p className="text-sm text-gray-900 font-medium">{leadDetails.service}</p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Budget</p>
-                        <p className="text-sm text-gray-900 font-medium">{leadDetails.budget}</p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Country</p>
-                        <p className="text-sm text-gray-900 font-medium">{leadDetails.country}</p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Website</p>
-                        {leadDetails.website !== "N/A" ? (
-                          <a href={leadDetails.website.startsWith('http') ? leadDetails.website : `https://${leadDetails.website}`} target="_blank" rel="noreferrer" className="text-sm text-blue-600 hover:underline font-medium flex items-center gap-1">
-                            {leadDetails.website} <FiLink size={12} />
-                          </a>
-                        ) : <p className="text-sm text-gray-900 font-medium">N/A</p>}
-                      </div>
-                    </div>
-                  </div>
-
-
-                  <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-                    <div className="px-5 py-3 border-b border-gray-100 bg-gray-50/50">
-                      <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
-                        <RefreshCw className="text-indigo-500" size={15} />
-                        Scenario Execution Thread
-                      </h3>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Complete step-by-step execution status for this scenario run.
+            return (
+              <div className="flex-1 bg-gray-50 flex flex-col h-full overflow-hidden">
+                {/* Header - Fixed */}
+                <div className="shrink-0 bg-white border-b border-gray-200 px-6 py-2.5 flex items-center justify-between shadow-sm z-10">
+                  <div className="flex items-center gap-4">
+                    <button
+                      onClick={() => setHistoryViewMode("table")}
+                      className="inline-flex items-center justify-center w-8 h-8 rounded-full text-gray-500 hover:bg-gray-50 border border-gray-200 transition-colors"
+                    >
+                      <ArrowLeft size={18} />
+                    </button>
+                    <div>
+                      <h1 className="text-lg font-semibold text-gray-900 flex items-center gap-3">
+                        Run Details
+                        <span
+                          className={`px-2.5 py-0.5 rounded-full text-xs font-normal border ${statusColors} uppercase tracking-wider`}
+                        >
+                          {selectedHistoryLog.status}
+                        </span>
+                      </h1>
+                      <p className="text-xs text-gray-500 flex items-center gap-2 mt-0.5">
+                        <Clock3 size={12} />{" "}
+                        {new Date(
+                          selectedHistoryLog.createdAt,
+                        ).toLocaleString()}
+                        <span className="text-gray-300">|</span>
+                        <RefreshCw size={12} /> {duration} duration
                       </p>
                     </div>
+                  </div>
+                </div>
 
-                    <div className="p-5 space-y-4">
-                      {(selectedHistoryLog.steps || []).map((step, index) => {
-                        const isSuccess = step.status === "success";
-                        const isFailed = step.status === "failed";
-
-                        return (
-                          <div key={index} className="relative pl-8">
-                            {index < selectedHistoryLog.steps.length - 1 && (
-                              <div className="absolute left-[11px] top-7 bottom-[-18px] w-0.5 bg-gray-200"></div>
-                            )}
-
-                            <div
-                              className={`absolute left-0 top-1 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${isSuccess
-                                ? "bg-green-500 text-white"
-                                : isFailed
-                                  ? "bg-red-500 text-white"
-                                  : "bg-yellow-500 text-white"
-                                }`}
+                {/* Scrollable Content */}
+                <div className="flex-1 overflow-y-auto p-6">
+                  <div className="max-w-5xl mx-auto space-y-6">
+                    {/* Lead Details Card */}
+                    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                      <div className="px-5 py-3 border-b border-gray-100 bg-gray-50/50">
+                        <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                          <FiUsers className="text-indigo-500" />
+                          Extracted Lead Information
+                        </h3>
+                      </div>
+                      <div className="p-5 grid grid-cols-2 sm:grid-cols-3 gap-y-6 gap-x-8">
+                        <div>
+                          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">
+                            Customer Name
+                          </p>
+                          <p className="text-sm text-gray-900 font-medium">
+                            {leadDetails.customerName}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">
+                            Business
+                          </p>
+                          <p className="text-sm text-gray-900 font-medium">
+                            {leadDetails.businessName}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">
+                            Service Needed
+                          </p>
+                          <p className="text-sm text-gray-900 font-medium">
+                            {leadDetails.service}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">
+                            Budget
+                          </p>
+                          <p className="text-sm text-gray-900 font-medium">
+                            {leadDetails.budget}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">
+                            Country
+                          </p>
+                          <p className="text-sm text-gray-900 font-medium">
+                            {leadDetails.country}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">
+                            Website
+                          </p>
+                          {leadDetails.website !== "N/A" ? (
+                            <a
+                              href={
+                                leadDetails.website.startsWith("http")
+                                  ? leadDetails.website
+                                  : `https://${leadDetails.website}`
+                              }
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-sm text-blue-600 hover:underline font-medium flex items-center gap-1"
                             >
-                              {isSuccess ? "✓" : isFailed ? "!" : "…"}
-                            </div>
+                              {leadDetails.website} <FiLink size={12} />
+                            </a>
+                          ) : (
+                            <p className="text-sm text-gray-900 font-medium">
+                              N/A
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
 
-                            <div className="border border-gray-200 rounded-lg bg-white p-4 shadow-sm">
-                              <div className="flex items-start justify-between gap-3">
-                                <div>
-                                  <h4 className="text-sm font-semibold text-gray-900">
-                                    {index + 1}. {getStepLabel(step)}
-                                  </h4>
+                    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                      <div className="px-5 py-3 border-b border-gray-100 bg-gray-50/50">
+                        <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                          <RefreshCw className="text-indigo-500" size={15} />
+                          Scenario Execution Thread
+                        </h3>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Complete step-by-step execution status for this
+                          scenario run.
+                        </p>
+                      </div>
 
-                                  <p className="text-xs text-gray-500 mt-1">
-                                    {step.completedAt
-                                      ? new Date(step.completedAt).toLocaleString()
-                                      : "Not completed yet"}
-                                  </p>
+                      <div className="p-5 space-y-4">
+                        {(selectedHistoryLog.steps || []).map((step, index) => {
+                          const isSuccess = step.status === "success";
+                          const isFailed = step.status === "failed";
+
+                          return (
+                            <div key={index} className="relative pl-8">
+                              {index < selectedHistoryLog.steps.length - 1 && (
+                                <div className="absolute left-[11px] top-7 bottom-[-18px] w-0.5 bg-gray-200"></div>
+                              )}
+
+                              <div
+                                className={`absolute left-0 top-1 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                                  isSuccess
+                                    ? "bg-green-500 text-white"
+                                    : isFailed
+                                      ? "bg-red-500 text-white"
+                                      : "bg-yellow-500 text-white"
+                                }`}
+                              >
+                                {isSuccess ? "✓" : isFailed ? "!" : "…"}
+                              </div>
+
+                              <div className="border border-gray-200 rounded-lg bg-white p-4 shadow-sm">
+                                <div className="flex items-start justify-between gap-3">
+                                  <div>
+                                    <h4 className="text-sm font-semibold text-gray-900">
+                                      {index + 1}. {getStepLabel(step)}
+                                    </h4>
+
+                                    <p className="text-xs text-gray-500 mt-1">
+                                      {step.completedAt
+                                        ? new Date(
+                                            step.completedAt,
+                                          ).toLocaleString()
+                                        : "Not completed yet"}
+                                    </p>
+                                  </div>
+
+                                  <span
+                                    className={`text-[10px] px-2.5 py-1 rounded-full font-semibold border ${getStepColor(
+                                      step.status,
+                                    )}`}
+                                  >
+                                    {step.status?.toUpperCase() || "PENDING"}
+                                  </span>
                                 </div>
 
-                                <span
-                                  className={`text-[10px] px-2.5 py-1 rounded-full font-semibold border ${getStepColor(
-                                    step.status
-                                  )}`}
-                                >
-                                  {step.status?.toUpperCase() || "PENDING"}
-                                </span>
-                              </div>
-
-                              <div className="mt-3 text-sm text-gray-700">
-                                <p>
-                                  <span className="font-semibold">Reason:</span>{" "}
-                                  {getStepReason(step)}
-                                </p>
-
-                                {step.suggestion && (
-                                  <p className="mt-1 text-red-600">
-                                    <span className="font-semibold">Suggestion:</span>{" "}
-                                    {step.suggestion}
+                                <div className="mt-3 text-sm text-gray-700">
+                                  <p>
+                                    <span className="font-semibold">
+                                      Reason:
+                                    </span>{" "}
+                                    {getStepReason(step)}
                                   </p>
-                                )}
-                              </div>
 
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4 text-xs">
-                                {step.meta?.templateName && (
-                                  <div className="bg-gray-50 border rounded-md p-3">
-                                    <p className="text-gray-400 uppercase font-semibold mb-1">
-                                      Template
+                                  {step.suggestion && (
+                                    <p className="mt-1 text-red-600">
+                                      <span className="font-semibold">
+                                        Suggestion:
+                                      </span>{" "}
+                                      {step.suggestion}
                                     </p>
-                                    <p className="text-gray-800 font-medium">
-                                      {step.meta.templateName}
-                                    </p>
-                                  </div>
-                                )}
+                                  )}
+                                </div>
 
-                                {step.meta?.service && (
-                                  <div className="bg-gray-50 border rounded-md p-3">
-                                    <p className="text-gray-400 uppercase font-semibold mb-1">
-                                      Service
-                                    </p>
-                                    <p className="text-gray-800 font-medium">
-                                      {step.meta.service}
-                                    </p>
-                                  </div>
-                                )}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4 text-xs">
+                                  {step.meta?.templateName && (
+                                    <div className="bg-gray-50 border rounded-md p-3">
+                                      <p className="text-gray-400 uppercase font-semibold mb-1">
+                                        Template
+                                      </p>
+                                      <p className="text-gray-800 font-medium">
+                                        {step.meta.templateName}
+                                      </p>
+                                    </div>
+                                  )}
 
-                                {step.meta?.stepType && (
-                                  <div className="bg-gray-50 border rounded-md p-3">
-                                    <p className="text-gray-400 uppercase font-semibold mb-1">
-                                      Email Type
-                                    </p>
-                                    <p className="text-gray-800 font-medium capitalize">
-                                      {step.meta.stepType}
-                                    </p>
-                                  </div>
-                                )}
+                                  {step.meta?.service && (
+                                    <div className="bg-gray-50 border rounded-md p-3">
+                                      <p className="text-gray-400 uppercase font-semibold mb-1">
+                                        Service
+                                      </p>
+                                      <p className="text-gray-800 font-medium">
+                                        {step.meta.service}
+                                      </p>
+                                    </div>
+                                  )}
 
-                                {step.meta?.replyEmailId && (
-                                  <div className="bg-gray-50 border rounded-md p-3">
-                                    <p className="text-gray-400 uppercase font-semibold mb-1">
-                                      Reply Email ID
-                                    </p>
-                                    <p className="text-gray-800 font-medium break-all">
-                                      {step.meta.replyEmailId}
-                                    </p>
-                                  </div>
-                                )}
+                                  {step.meta?.stepType && (
+                                    <div className="bg-gray-50 border rounded-md p-3">
+                                      <p className="text-gray-400 uppercase font-semibold mb-1">
+                                        Email Type
+                                      </p>
+                                      <p className="text-gray-800 font-medium capitalize">
+                                        {step.meta.stepType}
+                                      </p>
+                                    </div>
+                                  )}
 
-                                {step.meta?.delayValue && (
-                                  <div className="bg-gray-50 border rounded-md p-3">
-                                    <p className="text-gray-400 uppercase font-semibold mb-1">
-                                      Delay
-                                    </p>
-                                    <p className="text-gray-800 font-medium">
-                                      {step.meta.delayValue} {step.meta.delayUnit}
-                                    </p>
-                                  </div>
-                                )}
+                                  {step.meta?.replyEmailId && (
+                                    <div className="bg-gray-50 border rounded-md p-3">
+                                      <p className="text-gray-400 uppercase font-semibold mb-1">
+                                        Reply Email ID
+                                      </p>
+                                      <p className="text-gray-800 font-medium break-all">
+                                        {step.meta.replyEmailId}
+                                      </p>
+                                    </div>
+                                  )}
 
-                                {step.meta?.scheduledAt && (
-                                  <div className="bg-gray-50 border rounded-md p-3">
-                                    <p className="text-gray-400 uppercase font-semibold mb-1">
-                                      Scheduled At
-                                    </p>
-                                    <p className="text-gray-800 font-medium">
-                                      {new Date(step.meta.scheduledAt).toLocaleString()}
-                                    </p>
-                                  </div>
-                                )}
+                                  {step.meta?.delayValue && (
+                                    <div className="bg-gray-50 border rounded-md p-3">
+                                      <p className="text-gray-400 uppercase font-semibold mb-1">
+                                        Delay
+                                      </p>
+                                      <p className="text-gray-800 font-medium">
+                                        {step.meta.delayValue}{" "}
+                                        {step.meta.delayUnit}
+                                      </p>
+                                    </div>
+                                  )}
 
-                                {step.meta?.smtpErrorMessage && (
-                                  <div className="bg-red-50 border border-red-200 rounded-md p-3 sm:col-span-2">
-                                    <p className="text-red-500 uppercase font-semibold mb-1">
-                                      SMTP Error
-                                    </p>
-                                    <p className="text-red-700 font-medium">
-                                      {step.meta.smtpErrorMessage}
-                                    </p>
-                                  </div>
-                                )}
+                                  {step.meta?.scheduledAt && (
+                                    <div className="bg-gray-50 border rounded-md p-3">
+                                      <p className="text-gray-400 uppercase font-semibold mb-1">
+                                        Scheduled At
+                                      </p>
+                                      <p className="text-gray-800 font-medium">
+                                        {new Date(
+                                          step.meta.scheduledAt,
+                                        ).toLocaleString()}
+                                      </p>
+                                    </div>
+                                  )}
+
+                                  {step.meta?.smtpErrorMessage && (
+                                    <div className="bg-red-50 border border-red-200 rounded-md p-3 sm:col-span-2">
+                                      <p className="text-red-500 uppercase font-semibold mb-1">
+                                        SMTP Error
+                                      </p>
+                                      <p className="text-red-700 font-medium">
+                                        {step.meta.smtpErrorMessage}
+                                      </p>
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Reply Email */}
-
-                  <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-                    <div className="px-5 py-3 border-b border-gray-100 bg-gray-50/50">
-                      <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
-                        <FiMail className="text-green-500" />
-                        Reply Email
-                      </h3>
-                    </div>
-
-                    {selectedHistoryLog.replyEmail ? (
-                      <>
-                        <div className="px-5 py-4 border-b border-gray-100 bg-white grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div>
-                            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">
-                              Reply Sent From
-                            </p>
-                            <p className="text-sm font-medium text-gray-900 break-all">
-                              {selectedHistoryLog.replyEmail.senderAddress || "N/A"}
-                            </p>
-                          </div>
-
-                          <div>
-                            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">
-                              Reply Sent To
-                            </p>
-                            <p className="text-sm font-medium text-gray-900 break-all">
-                              {selectedHistoryLog.replyEmail.recipientAddress || "N/A"}
-                            </p>
-                          </div>
-
-                          <div>
-                            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">
-                              Subject
-                            </p>
-                            <p className="text-sm font-medium text-gray-900 break-all">
-                              {selectedHistoryLog.replyEmail.subject || "N/A"}
-                            </p>
-                          </div>
-
-                          <div>
-                            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">
-                              Template Used
-                            </p>
-                            <p className="text-sm font-medium text-gray-900">
-                              {selectedHistoryLog.templateName ||
-                                selectedHistoryLog.replyEmail.service ||
-                                "N/A"}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="p-0">
-                          <pre className="text-[11px] font-mono text-gray-700 bg-[#f8f9fa] p-5 overflow-x-auto m-0 whitespace-pre-wrap">
-                            {selectedHistoryLog.replyEmail.textBody ||
-                              "No reply email body available."}
-                          </pre>
-                        </div>
-                      </>
-                    ) : (
-                      <div className="p-5 bg-yellow-50 text-sm text-yellow-800">
-                        No reply email was sent.
+                          );
+                        })}
                       </div>
-                    )}
-                  </div>
-                  {/* Raw Payload Detail */}
-                  <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-                    <div className="px-5 py-3 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
-                      <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
-                        <FiMail className="text-gray-500" />
-                        Incoming Lead Email
-                      </h3>
                     </div>
-                    <div className="p-0">
-                      <pre className="text-[11px] font-mono text-gray-700 bg-[#f8f9fa] p-5 overflow-x-auto m-0 whitespace-pre-wrap">
-                        {emailBody || "No payload body available."}
-                      </pre>
-                    </div>
-                  </div>
 
+                    {/* Reply Email */}
+
+                    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                      <div className="px-5 py-3 border-b border-gray-100 bg-gray-50/50">
+                        <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                          <FiMail className="text-green-500" />
+                          Reply Email
+                        </h3>
+                      </div>
+
+                      {selectedHistoryLog.replyEmail ? (
+                        <>
+                          <div className="px-5 py-4 border-b border-gray-100 bg-white grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">
+                                Reply Sent From
+                              </p>
+                              <p className="text-sm font-medium text-gray-900 break-all">
+                                {selectedHistoryLog.replyEmail.senderAddress ||
+                                  "N/A"}
+                              </p>
+                            </div>
+
+                            <div>
+                              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">
+                                Reply Sent To
+                              </p>
+                              <p className="text-sm font-medium text-gray-900 break-all">
+                                {selectedHistoryLog.replyEmail
+                                  .recipientAddress || "N/A"}
+                              </p>
+                            </div>
+
+                            <div>
+                              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">
+                                Subject
+                              </p>
+                              <p className="text-sm font-medium text-gray-900 break-all">
+                                {selectedHistoryLog.replyEmail.subject || "N/A"}
+                              </p>
+                            </div>
+
+                            <div>
+                              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">
+                                Template Used
+                              </p>
+                              <p className="text-sm font-medium text-gray-900">
+                                {selectedHistoryLog.templateName ||
+                                  selectedHistoryLog.replyEmail.service ||
+                                  "N/A"}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="p-0">
+                            <pre className="text-[11px] font-mono text-gray-700 bg-[#f8f9fa] p-5 overflow-x-auto m-0 whitespace-pre-wrap">
+                              {selectedHistoryLog.replyEmail.textBody ||
+                                "No reply email body available."}
+                            </pre>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="p-5 bg-yellow-50 text-sm text-yellow-800">
+                          No reply email was sent.
+                        </div>
+                      )}
+                    </div>
+                    {/* Raw Payload Detail */}
+                    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                      <div className="px-5 py-3 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
+                        <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                          <FiMail className="text-gray-500" />
+                          Incoming Lead Email
+                        </h3>
+                      </div>
+                      <div className="p-0">
+                        <pre className="text-[11px] font-mono text-gray-700 bg-[#f8f9fa] p-5 overflow-x-auto m-0 whitespace-pre-wrap">
+                          {emailBody || "No payload body available."}
+                        </pre>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })() : (
+            );
+          })()
+        ) : (
           <>
-
             <div className="sticky top-0 z-30 bg-white border-b px-4 sm:px-6 py-1 shadow-sm">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-0.5">
                 <div className="flex-1">
@@ -2450,7 +2560,6 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
                   </p>
                 </div>
                 <div className="flex flex-wrap justify-start gap-3">
-
                   <div ref={saveScenarioButtonRef} className="relative">
                     <button
                       onClick={handleSaveScenario}
@@ -2468,10 +2577,11 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
                         setHighlightRunTest(false);
                         setShowRunTestModal(true);
                       }}
-                      className={`px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center text-sm ${highlightRunTest
-                        ? "animate-pulse ring-4 ring-yellow-400 shadow-lg shadow-yellow-300"
-                        : ""
-                        }`}
+                      className={`px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center text-sm ${
+                        highlightRunTest
+                          ? "animate-pulse ring-4 ring-yellow-400 shadow-lg shadow-yellow-300"
+                          : ""
+                      }`}
                     >
                       <Zap className="w-4 h-4 mr-2" />
                       Run Test
@@ -2480,12 +2590,16 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
                     {highlightRunTest && (
                       <div className="absolute right-0 top-full mt-3 w-72 bg-yellow-50 border border-yellow-300 text-yellow-900 text-sm rounded-lg shadow-xl p-3 z-50">
                         <div className="absolute -top-2 right-8 w-4 h-4 bg-yellow-50 border-l border-t border-yellow-300 rotate-45"></div>
-                        Click this button to generate a test email. After that, the Router will show the email data.
+                        Click this button to generate a test email. After that,
+                        the Router will show the email data.
                       </div>
                     )}
                   </div>
 
-                  <div ref={activateScenarioRef} className="flex items-center gap-2 bg-white px-3 py-2 rounded-full shadow-sm border">
+                  <div
+                    ref={activateScenarioRef}
+                    className="flex items-center gap-2 bg-white px-3 py-2 rounded-full shadow-sm border"
+                  >
                     <span className="text-xs sm:text-sm font-medium text-gray-700">
                       Activate Scenario
                     </span>
@@ -2519,7 +2633,7 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
 
                                 const connection =
                                   m.connectionId &&
-                                    typeof m.connectionId === "string"
+                                  typeof m.connectionId === "string"
                                     ? m.connectionId.trim()
                                     : (m.connectionId ?? "").toString().trim();
 
@@ -2544,7 +2658,9 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
                             if (missingModules.length > 0) {
                               toast.error(
                                 `Scenario cannot be activated.\n\nMissing connections in:\n${missingModules
-                                  .map((m) => `• ${m.moduleName} (no connection)`)
+                                  .map(
+                                    (m) => `• ${m.moduleName} (no connection)`,
+                                  )
                                   .join("\n")}`,
                                 {
                                   duration: 7000,
@@ -2564,7 +2680,9 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
 
                             routerBranches.forEach((branch) => {
                               branch.modules.forEach((m) => {
-                                const appName = (m.app?.name || "").toLowerCase();
+                                const appName = (
+                                  m.app?.name || ""
+                                ).toLowerCase();
                                 const isEmailModule =
                                   appName.includes("gmail") ||
                                   appName.includes("email") ||
@@ -2626,8 +2744,9 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
                     </label>
 
                     <span
-                      className={`text-xs font-semibold ${automationOn ? "text-green-600" : "text-gray-400"
-                        }`}
+                      className={`text-xs font-semibold ${
+                        automationOn ? "text-green-600" : "text-gray-400"
+                      }`}
                     >
                       {automationOn ? "ON" : "OFF"}
                     </span>
@@ -2636,17 +2755,18 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto">         {guideStep > 0 && (
-              <div
-                className="
+            <div className="flex-1 overflow-y-auto">
+              {" "}
+              {guideStep > 0 && (
+                <div
+                  className="
     fixed inset-0 
     bg-black bg-opacity-20 
     backdrop-blur-sm
     z-[40]
   "
-              ></div>
-            )}
-
+                ></div>
+              )}
               <div className="grid grid-cols-1 lg:grid-cols-[18rem_minmax(0,1fr)_20rem] h-full">
                 <aside className="w-full lg:w-72 self-start p-4">
                   <SetupProgressCard />
@@ -2654,7 +2774,12 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
                 <div className="min-w-0 flex justify-center p-4 lg:p-8">
                   <div className="w-full max-w-5xl mx-auto flex flex-col items-center">
                     <div className="flex flex-col items-center mb-8">
-                      <div ref={webhookNodeRef} className={guideStep === 1 ? "relative z-[70]" : "relative"}>
+                      <div
+                        ref={webhookNodeRef}
+                        className={
+                          guideStep === 1 ? "relative z-[70]" : "relative"
+                        }
+                      >
                         {/* GUIDE STEP 1 */}
                         {guideStep === 1 && (
                           <div
@@ -2681,8 +2806,9 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
                             </div>
 
                             <p className="text-sm text-gray-600 mb-3">
-                              This webhook email is used to receive the forwarded Lead
-                              emails from your email service provider.
+                              This webhook email is used to receive the
+                              forwarded Lead emails from your email service
+                              provider.
                             </p>
 
                             <div className="flex justify-between">
@@ -2714,7 +2840,7 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
                           completed={
                             showValidation
                               ? (completedSteps.find((v) => v.id === "webhook")
-                                ?.passed ?? null)
+                                  ?.passed ?? null)
                               : Boolean(user?.mailhook)
                           }
                           isWebhook={true}
@@ -2729,7 +2855,12 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
                     </div>
 
                     <div className="flex flex-col items-center mb-8">
-                      <div ref={routerNodeRef} className={guideStep === 2 ? "relative z-[70]" : "relative"}>
+                      <div
+                        ref={routerNodeRef}
+                        className={
+                          guideStep === 2 ? "relative z-[70]" : "relative"
+                        }
+                      >
                         {/* GUIDE STEP 2 */}
                         {guideStep === 2 && (
                           <div
@@ -2749,14 +2880,16 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
                             ></div>
 
                             <div className="flex justify-between items-center mb-2">
-                              <h4 className="font-semibold text-gray-900">Router</h4>
+                              <h4 className="font-semibold text-gray-900">
+                                Router
+                              </h4>
                               <span className="text-xs text-gray-500">2/3</span>
                             </div>
 
                             <p className="text-sm text-gray-600 mb-3">
-                              Router is used to view the Lead email's content, common
-                              use is while configuring the Leads email templates and
-                              Conditional email flows.
+                              Router is used to view the Lead email's content,
+                              common use is while configuring the Leads email
+                              templates and Conditional email flows.
                             </p>
 
                             <div className="flex justify-between">
@@ -2782,18 +2915,24 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
                           title="Router"
                           subtitle="Route to different paths"
                           showValidation={showValidation}
-                          color="border-[#8A8CF4]"                          number={2}
+                          color="border-[#8A8CF4]"
+                          number={2}
                           isRouter={true}
                           completed={
                             showValidation
                               ? (completedSteps.find((v) => v.id === "router")
-                                ?.passed ?? null)
-                              : Array.isArray(routerBranches) && routerBranches.length > 0
+                                  ?.passed ?? null)
+                              : Array.isArray(routerBranches) &&
+                                routerBranches.length > 0
                           }
                         />
                       </div>
                       <div className="w-0.5 h-12 bg-gray-300"></div>
-                      <div className={guideStep === 3 ? "relative z-[70]" : "relative"}>
+                      <div
+                        className={
+                          guideStep === 3 ? "relative z-[70]" : "relative"
+                        }
+                      >
                         {/* GUIDE STEP 3 */}
                         {guideStep === 3 && (
                           <div
@@ -2820,9 +2959,9 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
                             </div>
 
                             <p className="text-sm text-gray-600 mb-3">
-                              Shopify email Templates are specifically Designed to
-                              manage the email templates based on the Service requested
-                              by client
+                              Shopify email Templates are specifically Designed
+                              to manage the email templates based on the Service
+                              requested by client
                             </p>
 
                             <div className="flex justify-between">
@@ -2852,7 +2991,7 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
                           completed={
                             showValidation
                               ? (completedSteps.find((v) => v.id === "template")
-                                ?.passed ?? null)
+                                  ?.passed ?? null)
                               : allTemplatesActive
                           }
                           module={{ app: { name: "Template" } }}
@@ -2871,79 +3010,88 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
                         >
                           {branch.modules.length > 0
                             ? branch.modules.map((module, moduleIndex) => {
-                              const Icon = iconMap[module.app.icon];
-                              const shouldShowState = showValidation;
+                                const Icon = iconMap[module.app.icon];
+                                const shouldShowState = showValidation;
 
-                              let validationState = null;
-                              if (showValidation) {
-                                const match = completedSteps.find(
-                                  (v) => v.id === module.id,
+                                let validationState = null;
+                                if (showValidation) {
+                                  const match = completedSteps.find(
+                                    (v) => v.id === module.id,
+                                  );
+                                  validationState = match ? match.passed : null;
+                                }
+
+                                return (
+                                  <React.Fragment key={module.id}>
+                                    <FlowNode
+                                      icon={Icon}
+                                      title={getModuleTitle(module)}
+                                      subtitle={module.description}
+                                      color="border-[#8A8CF4]"
+                                      number={3 + moduleIndex}
+                                      onEdit={() =>
+                                        handleEditModule(branchIndex, module)
+                                      }
+                                      onDelete={() =>
+                                        handleRemoveModule(
+                                          branchIndex,
+                                          module.id,
+                                        )
+                                      }
+                                      isLast={
+                                        moduleIndex ===
+                                        branch.modules.length - 1
+                                      }
+                                      completed={
+                                        shouldShowState
+                                          ? validationState
+                                          : isModuleCompleted(module)
+                                      }
+                                      module={module}
+                                      showValidation={showValidation}
+                                    />
+                                    {showValidation &&
+                                      validationState === false &&
+                                      (module.app.name === "Delay" ? (
+                                        <p className="text-sm text-orange-500 mt-2 text-center max-w-xs">
+                                          This delay was skipped because the
+                                          previous step failed.
+                                        </p>
+                                      ) : (
+                                        <p className="text-sm text-red-500 mt-2 text-center max-w-xs">
+                                          This module failed due to missing
+                                          connection
+                                        </p>
+                                      ))}
+
+                                    {moduleIndex <
+                                      branch.modules.length - 1 && (
+                                      <div className="relative flex flex-col items-center">
+                                        {/* vertical line */}
+                                        <div className="w-0.5 h-12 bg-gray-300"></div>
+
+                                        {/* PLUS BUTTON BETWEEN NODES */}
+                                        <AddBetweenButton
+                                          onClick={() => {
+                                            setEditingBranch(branchIndex);
+                                            setEditingModuleId(null);
+
+                                            // NEW: store position so module adds EXACT here
+                                            setInsertAtIndex(moduleIndex + 1);
+
+                                            setOpen(true);
+                                          }}
+                                          className="top-1/2"
+                                        />
+                                      </div>
+                                    )}
+                                  </React.Fragment>
                                 );
-                                validationState = match ? match.passed : null;
-                              }
-
-                              return (
-                                <React.Fragment key={module.id}>
-                                  <FlowNode
-                                    icon={Icon}
-                                    title={getModuleTitle(module)}
-                                    subtitle={module.description}
-                                    color="border-[#8A8CF4]"
-                                    number={3 + moduleIndex}
-                                    onEdit={() =>
-                                      handleEditModule(branchIndex, module)
-                                    }
-                                    onDelete={() =>
-                                      handleRemoveModule(branchIndex, module.id)
-                                    }
-                                    isLast={moduleIndex === branch.modules.length - 1}
-                                    completed={
-                                      shouldShowState
-                                        ? validationState
-                                        : isModuleCompleted(module)
-                                    }
-                                    module={module}
-                                    showValidation={showValidation}
-                                  />
-                                  {showValidation &&
-                                    validationState === false &&
-                                    (module.app.name === "Delay" ? (
-                                      <p className="text-sm text-orange-500 mt-2 text-center max-w-xs">
-                                        This delay was skipped because the previous
-                                        step failed.
-                                      </p>
-                                    ) : (
-                                      <p className="text-sm text-red-500 mt-2 text-center max-w-xs">
-                                        This module failed due to missing connection
-                                      </p>
-                                    ))}
-
-                                  {moduleIndex < branch.modules.length - 1 && (
-                                    <div className="relative flex flex-col items-center">
-                                      {/* vertical line */}
-                                      <div className="w-0.5 h-12 bg-gray-300"></div>
-
-                                      {/* PLUS BUTTON BETWEEN NODES */}
-                                      <AddBetweenButton
-                                        onClick={() => {
-                                          setEditingBranch(branchIndex);
-                                          setEditingModuleId(null);
-
-                                          // NEW: store position so module adds EXACT here
-                                          setInsertAtIndex(moduleIndex + 1);
-
-                                          setOpen(true);
-                                        }}
-                                        className="top-1/2"
-                                      />
-                                    </div>
-                                  )}
-                                </React.Fragment>
-                              );
-                            })
+                              })
                             : null}
 
-                          {branch.modules.length === 0 || branch.modules.length > 0 ? (
+                          {branch.modules.length === 0 ||
+                          branch.modules.length > 0 ? (
                             <>
                               {branch.modules.length > 0 && (
                                 <div className="w-0.5 h-8 bg-gray-300"></div>
@@ -3046,7 +3194,9 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
                                     <p className="font-medium text-gray-800 text-sm">
                                       {item.name}
                                     </p>
-                                    <p className="text-sm text-gray-500">{item.base}</p>
+                                    <p className="text-sm text-gray-500">
+                                      {item.base}
+                                    </p>
                                   </div>
                                 </div>
                               );
@@ -3070,21 +3220,26 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
 
                           <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
                             {selectedApp?.name === "Delay" ||
-                              selectedApp?.type === "Delay" ? (
+                            selectedApp?.type === "Delay" ? (
                               <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                  Delay Duration <span className="text-red-500">*</span>
+                                  Delay Duration{" "}
+                                  <span className="text-red-500">*</span>
                                 </label>
                                 <div className="flex space-x-3">
                                   <input
                                     type="number"
                                     value={delayValue}
-                                    onChange={(e) => setDelayValue(e.target.value)}
+                                    onChange={(e) =>
+                                      setDelayValue(e.target.value)
+                                    }
                                     className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                                   />
                                   <select
                                     value={delayUnit}
-                                    onChange={(e) => setDelayUnit(e.target.value)}
+                                    onChange={(e) =>
+                                      setDelayUnit(e.target.value)
+                                    }
                                     className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                                   >
                                     <option value="seconds">Seconds</option>
@@ -3111,7 +3266,9 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
                                       }}
                                       className="w-full border border-gray-300 rounded-lg px-4 py-2 pr-20 focus:ring-2 focus:ring-purple-500 focus:border-transparent appearance-none"
                                     >
-                                      <option value="">-- Choose App Type --</option>
+                                      <option value="">
+                                        -- Choose App Type --
+                                      </option>
                                       <option value="Gmail">Gmail</option>
                                       <option value="Email">
                                         Email (SMTP/Outlook)
@@ -3124,7 +3281,9 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
                                       onClick={() => {
                                         if (selectedAppType === "Email") {
                                           setShowOutlookModal(true);
-                                        } else if (selectedAppType === "Gmail") {
+                                        } else if (
+                                          selectedAppType === "Gmail"
+                                        ) {
                                           setShowGmailModal(true);
                                         } else {
                                           toast.error(
@@ -3132,25 +3291,27 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
                                           );
                                         }
                                       }}
-                                      className={`absolute right-0 top-0 bottom-0 px-4 text-sm font-medium rounded-r-lg border-l transition-all duration-200 ${selectedAppType
-                                        ? "bg-purple-600 text-white border-l-gray-300 hover:bg-purple-700"
-                                        : "bg-gray-200 text-gray-400 border-l-gray-300 cursor-not-allowed"
-                                        }`}
+                                      className={`absolute right-0 top-0 bottom-0 px-4 text-sm font-medium rounded-r-lg border-l transition-all duration-200 ${
+                                        selectedAppType
+                                          ? "bg-purple-600 text-white border-l-gray-300 hover:bg-purple-700"
+                                          : "bg-gray-200 text-gray-400 border-l-gray-300 cursor-not-allowed"
+                                      }`}
                                     >
                                       Add
                                     </button>
                                   </div>
 
                                   <p className="text-xs text-gray-500 mt-2">
-                                    Choose the application type and click <b>Add</b> to
-                                    connect a new account.
+                                    Choose the application type and click{" "}
+                                    <b>Add</b> to connect a new account.
                                   </p>
                                 </div>
 
                                 {selectedAppType && (
                                   <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                                      Connection <span className="text-red-500">*</span>
+                                      Connection{" "}
+                                      <span className="text-red-500">*</span>
                                     </label>
 
                                     <div className="flex items-center border border-gray-300 rounded-lg px-2 py-2 focus-within:ring-2 focus-within:ring-purple-500">
@@ -3178,7 +3339,8 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
                                           })
                                           .map((c) => (
                                             <option key={c._id} value={c._id}>
-                                              {c.provider.toUpperCase()} - {c.email}
+                                              {c.provider.toUpperCase()} -{" "}
+                                              {c.email}
                                             </option>
                                           ))}
                                       </select>
@@ -3233,18 +3395,21 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
                                               "_blank",
                                             );
                                           } else {
-                                            toast.info("No template selected to view.");
+                                            toast.info(
+                                              "No template selected to view.",
+                                            );
                                           }
                                         }}
                                         disabled={
                                           !selectedTemplate &&
                                           !selectedApp?.defaultTemplate
                                         }
-                                        className={`absolute right-0 top-0 bottom-0 px-4 text-sm font-medium rounded-r-lg border-l transition-all duration-200 ${selectedTemplate ||
+                                        className={`absolute right-0 top-0 bottom-0 px-4 text-sm font-medium rounded-r-lg border-l transition-all duration-200 ${
+                                          selectedTemplate ||
                                           selectedApp?.defaultTemplate
-                                          ? "bg-indigo-600 text-white border-l-gray-300 hover:bg-indigo-700"
-                                          : "bg-gray-200 text-gray-400 border-l-gray-300 cursor-not-allowed"
-                                          }`}
+                                            ? "bg-indigo-600 text-white border-l-gray-300 hover:bg-indigo-700"
+                                            : "bg-gray-200 text-gray-400 border-l-gray-300 cursor-not-allowed"
+                                        }`}
                                       >
                                         View
                                       </button>
@@ -3252,8 +3417,8 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
 
                                     {/* Hint Text */}
                                     <p className="text-xs text-gray-500 mt-2">
-                                      Click <b>View</b> to open and review the full
-                                      email template.
+                                      Click <b>View</b> to open and review the
+                                      full email template.
                                     </p>
                                   </div>
                                 </div>
@@ -3303,7 +3468,9 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
                                     <input
                                       type="text"
                                       value={ccInput}
-                                      onChange={(e) => setCcInput(e.target.value)}
+                                      onChange={(e) =>
+                                        setCcInput(e.target.value)
+                                      }
                                       onKeyDown={(e) => handleAddEmail(e, "cc")}
                                       placeholder="Type email and press Enter"
                                       className="w-full outline-none text-sm"
@@ -3340,8 +3507,12 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
                                     <input
                                       type="text"
                                       value={bccInput}
-                                      onChange={(e) => setBccInput(e.target.value)}
-                                      onKeyDown={(e) => handleAddEmail(e, "bcc")}
+                                      onChange={(e) =>
+                                        setBccInput(e.target.value)
+                                      }
+                                      onKeyDown={(e) =>
+                                        handleAddEmail(e, "bcc")
+                                      }
                                       placeholder="Type email and press Enter"
                                       className="w-full outline-none text-sm"
                                     />
@@ -3597,19 +3768,21 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
           </div>
         </div>
       )}
-      {(showTemplateModal || showEditTemplateModal) && (
+      {showTemplateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="flex gap-4 w-full max-w-6xl max-h-[90vh] p-4">
             {showTemplateModal && (
               <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 transition-all duration-300">
                 <div
-                  className={`flex w-full max-w-6xl max-h-[90vh] p-4 transition-all duration-500 ${showEditTemplateModal ? "justify-between" : "justify-center"
-                    }`}
+                  className={`flex w-full max-w-6xl max-h-[90vh] p-4 transition-all duration-500 ${
+                    showEditTemplateModal ? "justify-between" : "justify-center"
+                  }`}
                 >
                   {/* 🟣 Templates Overview Modal */}
                   <div
-                    className={`bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden transition-all duration-500 ${showEditTemplateModal ? "max-w-[55%]" : "max-w-3xl"
-                      }`}
+                    className={`bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden transition-all duration-500 ${
+                      showEditTemplateModal ? "max-w-[55%]" : "max-w-3xl"
+                    }`}
                   >
                     <div className="flex justify-between items-center p-5 border-b bg-gradient-to-r from-purple-600 to-indigo-600 text-white">
                       <div>
@@ -3651,7 +3824,8 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
 
                                 await Promise.all(updates);
                                 toast.success(
-                                  `All ${selectedServiceForTemplates} templates ${newStatus ? "activated" : "deactivated"
+                                  `All ${selectedServiceForTemplates} templates ${
+                                    newStatus ? "activated" : "deactivated"
                                   } successfully!`,
                                 );
 
@@ -3669,10 +3843,11 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
                           </label>
 
                           <span
-                            className={`text-xs font-semibold ${templateList.every((t) => t.active)
-                              ? "text-green-300"
-                              : "text-gray-300"
-                              }`}
+                            className={`text-xs font-semibold ${
+                              templateList.every((t) => t.active)
+                                ? "text-green-300"
+                                : "text-gray-300"
+                            }`}
                           >
                             {templateList.every((t) => t.active) ? "ON" : "OFF"}
                           </span>
@@ -3715,7 +3890,7 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
                               <React.Fragment key={t._id || i}>
                                 {/* Group by service */}
                                 {i === 0 ||
-                                  templateList[i - 1]?.service !== t.service ? (
+                                templateList[i - 1]?.service !== t.service ? (
                                   <tr className="bg-gray-50 border-t-4 border-gray-200">
                                     <td
                                       colSpan={4}
@@ -3727,10 +3902,11 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
                                 ) : null}
 
                                 <tr
-                                  className={`border-b transition-colors ${!t.active
-                                    ? "bg-red-50"
-                                    : "hover:bg-purple-50"
-                                    }`}
+                                  className={`border-b transition-colors ${
+                                    !t.active
+                                      ? "bg-red-50"
+                                      : "hover:bg-purple-50"
+                                  }`}
                                 >
                                   {/* 🟢 Service Name (clean) */}
                                   <td className="p-3 font-medium text-gray-800 flex items-center">
@@ -3786,6 +3962,7 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
                                       onClick={() => {
                                         setEditingTemplate(t);
                                         setEditContent(t.content || "");
+                                        setShowServiceModal(false);
                                         setShowEditTemplateModal(true);
                                       }}
                                       className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs rounded-md font-medium transition-colors"
@@ -3844,7 +4021,10 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
                           Edit Template — {editingTemplate?.name}
                         </h2>
                         <button
-                          onClick={() => setShowEditTemplateModal(false)}
+                          onClick={() => {
+                            setShowEditTemplateModal(false);
+                            setEditingTemplate(null);
+                          }}
                           className="text-white hover:text-gray-200 hover:bg-white/10 p-1 rounded-full transition"
                         >
                           ✕
@@ -3929,7 +4109,10 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
                       {/* Footer */}
                       <div className="border-t p-4 bg-white flex justify-end space-x-3">
                         <button
-                          onClick={() => setShowEditTemplateModal(false)}
+                          onClick={() => {
+                            setShowEditTemplateModal(false);
+                            setEditingTemplate(null);
+                          }}
                           className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-100 transition"
                         >
                           Cancel
@@ -3987,12 +4170,14 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
           <div className="flex w-full max-w-6xl max-h-[90vh] gap-4 p-4">
             {showServiceModal && (
               <div
-                className={`flex w-full max-w-[90rem] max-h-[90vh] p-6 transition-all duration-500 ${showEditTemplateModal ? "justify-between" : "justify-center"
-                  }`}
+                className={`flex w-full max-w-[90rem] max-h-[90vh] p-6 transition-all duration-500 ${
+                  showEditTemplateModal ? "justify-between" : "justify-center"
+                }`}
               >
                 <div
-                  className={`flex flex-col overflow-hidden rounded-2xl border border-[#E0E7FF] bg-white shadow-2xl transition-all duration-500 ${showEditTemplateModal ? "max-w-[50%]" : "max-w-[70rem]"
-                    }`}
+                  className={`flex flex-col overflow-hidden rounded-2xl border border-[#E0E7FF] bg-white shadow-2xl transition-all duration-500 ${
+                    showEditTemplateModal ? "max-w-[50%]" : "max-w-[70rem]"
+                  }`}
                 >
                   <div className="flex items-center justify-between border-b border-[#E0E7FF] bg-[#F5F7FF] p-5">
                     <div>
@@ -4017,7 +4202,7 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
                               const toastId = toast.loading(
                                 newStatus
                                   ? "Please wait, templates are being activated..."
-                                  : "Please wait, templates are being deactivated..."
+                                  : "Please wait, templates are being deactivated...",
                               );
 
                               try {
@@ -4029,7 +4214,7 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
                                       "Content-Type": "application/json",
                                     },
                                     body: JSON.stringify({ userId }),
-                                  }
+                                  },
                                 );
 
                                 const data = await res.json();
@@ -4041,9 +4226,9 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
                                       templates: grp.templates.map((tpl) =>
                                         tpl.service.toLowerCase() === "general"
                                           ? { ...tpl, active: true }
-                                          : { ...tpl, active: data.toggledTo }
+                                          : { ...tpl, active: data.toggledTo },
                                       ),
-                                    }))
+                                    })),
                                   );
 
                                   setAllTemplatesActive(data.toggledTo);
@@ -4052,19 +4237,20 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
                                     data.toggledTo
                                       ? "All templates have been activated successfully!"
                                       : "All templates have been deactivated successfully!",
-                                    { id: toastId }
+                                    { id: toastId },
                                   );
                                 } else {
                                   toast.error(
-                                    data.message || "Failed to update templates.",
-                                    { id: toastId }
+                                    data.message ||
+                                      "Failed to update templates.",
+                                    { id: toastId },
                                   );
                                 }
                               } catch (err) {
                                 console.error("Error toggling templates:", err);
                                 toast.error(
                                   "Something went wrong while updating templates.",
-                                  { id: toastId }
+                                  { id: toastId },
                                 );
                               }
                             }}
@@ -4076,15 +4262,16 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
                         </label>
 
                         <span
-                          className={`text-xs font-semibold ${serviceGroups.every((grp) =>
-                            grp.templates.every((t) => t.active)
-                          )
+                          className={`text-xs font-semibold ${
+                            serviceGroups.every((grp) =>
+                              grp.templates.every((t) => t.active),
+                            )
                               ? "text-[#5B5FD6]"
                               : "text-slate-400"
-                            }`}
+                          }`}
                         >
                           {serviceGroups.every((grp) =>
-                            grp.templates.every((t) => t.active)
+                            grp.templates.every((t) => t.active),
                           )
                             ? "ON"
                             : "OFF"}
@@ -4112,7 +4299,9 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
                       </div>
                     ) : (
                       serviceGroups
-                        .filter((group) => group.service.toLowerCase() === "general")
+                        .filter(
+                          (group) => group.service.toLowerCase() === "general",
+                        )
                         .map((group, i) => {
                           const shownTemplates = group.templates.slice(0, 3);
 
@@ -4132,10 +4321,14 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
 
                               {!allTemplatesActive && (
                                 <div className="border-b border-[#E0E7FF] bg-[#FFFDF5] p-4 text-sm leading-relaxed text-slate-700">
-                                  <b className="text-slate-900">Note:</b> Activate your
-                                  service-specific templates to send personalized emails.
-                                  Otherwise, the system will use{" "}
-                                  <b className="text-[#5B5FD6]">General templates</b>.
+                                  <b className="text-slate-900">Note:</b>{" "}
+                                  Activate your service-specific templates to
+                                  send personalized emails. Otherwise, the
+                                  system will use{" "}
+                                  <b className="text-[#5B5FD6]">
+                                    General templates
+                                  </b>
+                                  .
                                   <br />
                                   <a
                                     href="/templates"
@@ -4143,7 +4336,8 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
                                     rel="noopener noreferrer"
                                     className="mt-2 inline-block font-semibold text-[#5B5FD6] hover:underline"
                                   >
-                                    Click here to view all your services templates
+                                    Click here to view all your services
+                                    templates
                                   </a>
                                 </div>
                               )}
@@ -4151,12 +4345,18 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
                               <table className="w-full border-collapse text-sm">
                                 <thead className="bg-[#F8FAFF] text-xs uppercase text-slate-500">
                                   <tr>
-                                    <th className="p-3 text-left w-[40%]">Template</th>
-                                    <th className="p-3 text-center w-[20%]">Status</th>
+                                    <th className="p-3 text-left w-[40%]">
+                                      Template
+                                    </th>
+                                    <th className="p-3 text-center w-[20%]">
+                                      Status
+                                    </th>
                                     <th className="p-3 text-center w-[25%]">
                                       Updated At
                                     </th>
-                                    <th className="p-3 text-center w-[15%]">Action</th>
+                                    <th className="p-3 text-center w-[15%]">
+                                      Action
+                                    </th>
                                   </tr>
                                 </thead>
 
@@ -4164,10 +4364,11 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
                                   {shownTemplates.map((t) => (
                                     <tr
                                       key={t._id}
-                                      className={`border-t border-[#EEF2FF] transition-colors ${t.active
+                                      className={`border-t border-[#EEF2FF] transition-colors ${
+                                        t.active
                                           ? "hover:bg-[#F8FAFF]"
                                           : "bg-[#FFF7F7]"
-                                        }`}
+                                      }`}
                                     >
                                       <td className="p-3 font-medium text-slate-700">
                                         {t.name.includes("Initial")
@@ -4188,12 +4389,16 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
                                               setServiceGroups((prev) =>
                                                 prev.map((grp) => ({
                                                   ...grp,
-                                                  templates: grp.templates.map((tpl) =>
-                                                    tpl._id === t._id
-                                                      ? { ...tpl, active: newStatus }
-                                                      : tpl
+                                                  templates: grp.templates.map(
+                                                    (tpl) =>
+                                                      tpl._id === t._id
+                                                        ? {
+                                                            ...tpl,
+                                                            active: newStatus,
+                                                          }
+                                                        : tpl,
                                                   ),
-                                                }))
+                                                })),
                                               );
 
                                               await fetch(
@@ -4201,12 +4406,13 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
                                                 {
                                                   method: "PATCH",
                                                   headers: {
-                                                    "Content-Type": "application/json",
+                                                    "Content-Type":
+                                                      "application/json",
                                                   },
                                                   body: JSON.stringify({
                                                     active: newStatus,
                                                   }),
-                                                }
+                                                },
                                               );
                                             }}
                                             className="sr-only peer"
@@ -4217,14 +4423,17 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
                                       </td>
 
                                       <td className="p-3 text-center text-slate-500">
-                                        {new Date(t.updatedAt).toLocaleString("en-US", {
-                                          year: "numeric",
-                                          month: "short",
-                                          day: "2-digit",
-                                          hour: "2-digit",
-                                          minute: "2-digit",
-                                          hour12: true,
-                                        })}
+                                        {new Date(t.updatedAt).toLocaleString(
+                                          "en-US",
+                                          {
+                                            year: "numeric",
+                                            month: "short",
+                                            day: "2-digit",
+                                            hour: "2-digit",
+                                            minute: "2-digit",
+                                            hour12: true,
+                                          },
+                                        )}
                                       </td>
 
                                       <td className="p-3 text-center">
@@ -4232,6 +4441,7 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
                                           onClick={() => {
                                             setEditingTemplate(t);
                                             setEditContent(t.content || "");
+                                            setShowServiceModal(false);
                                             setShowEditTemplateModal(true);
                                           }}
                                           className="rounded-md bg-[#7375E8] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#5B5FD6]"
@@ -4260,148 +4470,156 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
                     </button>
                   </div>
                 </div>
-
-                {showEditTemplateModal && (
-                  <div
-                    className="flex max-w-[45%] flex-col overflow-hidden rounded-2xl border border-[#E0E7FF] bg-white shadow-2xl transition-all duration-500"
-                    style={{
-                      animation: "slideIn 0.4s ease-out forwards",
-                    }}
-                  >
-                    <div className="flex items-center justify-between border-b border-[#E0E7FF] bg-[#F5F7FF] p-5">
-                      <h2 className="text-lg font-bold text-slate-800">
-                        Edit Template — {editingTemplate?.name}
-                      </h2>
-
-                      <button
-                        onClick={() => setShowEditTemplateModal(false)}
-                        className="rounded-full p-1 text-slate-500 transition hover:bg-[#E0E7FF] hover:text-[#5B5FD6]"
-                      >
-                        ✕
-                      </button>
-                    </div>
-
-                    <div className="flex-1 space-y-4 overflow-y-auto bg-[#FAFBFF] p-5">
-                      <label className="block text-sm font-semibold text-slate-700">
-                        Template Content
-                      </label>
-
-                      <ReactQuill
-                        ref={quillRef}
-                        theme="snow"
-                        value={editContent}
-                        onChange={setEditContent}
-                        className="rounded-lg bg-white shadow-sm"
-                        style={{
-                          border: "1px solid #E0E7FF",
-                          borderRadius: "0.5rem",
-                        }}
-                        modules={{
-                          toolbar: [
-                            [{ header: [1, 2, false] }],
-                            ["bold", "italic", "underline", "strike"],
-                            [{ list: "ordered" }, { list: "bullet" }],
-                            ["link"],
-                            ["clean"],
-                          ],
-                        }}
-                      />
-
-                      <div className="mt-4 rounded-xl border border-[#E0E7FF] bg-white p-3">
-                        <p className="mb-2 text-sm font-semibold text-slate-700">
-                          Insert Fields
-                        </p>
-
-                        <div className="flex flex-wrap gap-2">
-                          {[
-                            "Full name",
-                            "Business email",
-                            "Store name",
-                            "Store URL",
-                            "Country",
-                            "Service",
-                            "Budget",
-                            "Problem & Goal",
-                          ].map((field) => (
-                            <button
-                              key={field}
-                              onClick={() => {
-                                const editor = quillRef.current?.getEditor();
-                                if (editor) {
-                                  const placeholder = `{{${field}}}`;
-                                  const range = editor.getSelection(true);
-
-                                  if (range) {
-                                    editor.insertText(range.index, placeholder);
-                                    editor.setSelection(
-                                      range.index + placeholder.length
-                                    );
-                                  } else {
-                                    editor.insertText(editor.getLength(), placeholder);
-                                  }
-                                }
-                              }}
-                              className="rounded-full border border-[#C7D2FE] bg-[#EEF2FF] px-3 py-1 text-xs font-semibold text-[#5B5FD6] transition hover:bg-[#E0E7FF]"
-                            >
-                              {field}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex justify-end gap-3 border-t border-[#E0E7FF] bg-white p-4">
-                      <button
-                        onClick={() => setShowEditTemplateModal(false)}
-                        className="rounded-md border border-[#C7D2FE] bg-white px-4 py-2 text-sm font-medium text-[#5B5FD6] transition hover:bg-[#EEF2FF]"
-                      >
-                        Cancel
-                      </button>
-
-                      <button
-                        onClick={async () => {
-                          try {
-                            const res = await fetch(
-                              `https://email-syncing-backend.vercel.app/template/update/${editingTemplate._id}`,
-                              {
-                                method: "PUT",
-                                headers: {
-                                  "Content-Type": "application/json",
-                                },
-                                body: JSON.stringify({
-                                  content: editContent,
-                                }),
-                              }
-                            );
-
-                            const data = await res.json();
-
-                            if (data.success) {
-                              toast.success("Template updated successfully!");
-                              setTemplateList((prev) =>
-                                prev.map((tpl) =>
-                                  tpl._id === editingTemplate._id
-                                    ? { ...tpl, content: editContent }
-                                    : tpl
-                                )
-                              );
-                            } else {
-                              toast.error(data.message || "Failed to update template.");
-                            }
-                          } catch (err) {
-                            console.error("Error updating template:", err);
-                            toast.error("Error updating template.");
-                          }
-                        }}
-                        className="rounded-md bg-[#7375E8] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[#5B5FD6]"
-                      >
-                        Save Changes
-                      </button>
-                    </div>
-                  </div>
-                )}
               </div>
             )}
+          </div>
+        </div>
+      )}
+      {showEditTemplateModal && editingTemplate && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/45 px-4 backdrop-blur-sm"
+          onMouseDown={() => setShowInsertFields(false)}
+        >
+          <div
+            onMouseDown={(e) => e.stopPropagation()}
+            className="relative flex w-full max-w-3xl max-h-[90vh] flex-col overflow-visible rounded-2xl border border-[#E0E7FF] bg-white shadow-2xl"
+          >
+            <div className="flex shrink-0 items-center justify-between border-b border-[#E0E7FF] bg-[#F5F7FF] p-5">
+              <h2 className="text-lg font-bold text-slate-800">
+                Edit Template — {editingTemplate?.name}
+              </h2>
+
+              <button
+                onClick={() => {
+                  setShowEditTemplateModal(false);
+                  setEditingTemplate(null);
+                  setShowInsertFields(false);
+                }}
+                className="rounded-full px-2 py-1 text-slate-500 hover:bg-[#E0E7FF]"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="relative flex-1 overflow-visible bg-[#FAFBFF] p-5">
+              <label className="mb-2 block text-sm font-semibold text-slate-700">
+                Template Content
+              </label>
+
+              {showInsertFields && (
+                <div
+                  className="absolute right-[-300px] top-[55px] z-[9999] h-[430px] w-72 overflow-y-auto rounded-xl border border-[#E0E7FF] bg-white shadow-2xl"
+                  onMouseDown={(e) => e.stopPropagation()}
+                >
+                  <div className="border-b border-[#E0E7FF] bg-[#F5F7FF] p-3">
+                    <input
+                      type="text"
+                      placeholder="Search items"
+                      className="w-full rounded-md border border-[#C7D2FE] px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#8A8CF4]"
+                    />
+                  </div>
+
+                  <div className="p-3">
+                    <p className="mb-3 text-sm font-semibold text-slate-700">
+                      Insert Fields
+                    </p>
+
+                    {[
+                      "FullName",
+                      "BusinessEmail",
+                      "StoreName",
+                      "StoreURL",
+                      "Country",
+                      "Service",
+                      "Budget",
+                      "ProblemGoal",
+                    ].map((field) => (
+                      <button
+                        key={field}
+                        type="button"
+                        onClick={() => {
+                          const editor = quillRef.current?.getEditor();
+                          if (!editor) return;
+
+                          const placeholder = `{{${field}}}`;
+                          const range = editor.getSelection(true);
+                          const index = range
+                            ? range.index
+                            : editor.getLength();
+
+                          editor.insertText(index, placeholder);
+                          editor.setSelection(index + placeholder.length);
+                          setShowInsertFields(true);
+                        }}
+                        className="mb-2 block rounded-full border border-[#C7D2FE] bg-[#EEF2FF] px-3 py-1 text-xs font-semibold text-[#5B5FD6] hover:bg-[#E0E7FF]"
+                      >
+                        {field}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="rounded-lg bg-white">
+                <ReactQuill
+                  ref={quillRef}
+                  theme="snow"
+                  value={editContent}
+                  onChange={setEditContent}
+                  onFocus={() => setShowInsertFields(true)}
+                  modules={{
+                    toolbar: [
+                      [{ header: [1, 2, false] }],
+                      ["bold", "italic", "underline", "strike"],
+                      [{ list: "ordered" }, { list: "bullet" }],
+                      ["link"],
+                      ["clean"],
+                    ],
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="shrink-0 flex justify-end gap-3 border-t border-[#E0E7FF] bg-white p-4">
+              <button
+                onClick={() => {
+                  setShowEditTemplateModal(false);
+                  setEditingTemplate(null);
+                  setShowInsertFields(false);
+                }}
+                className="rounded-md border border-[#C7D2FE] bg-white px-4 py-2 text-sm font-medium text-[#5B5FD6] hover:bg-[#EEF2FF]"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={async () => {
+                  const res = await fetch(
+                    `https://email-syncing-backend.vercel.app/template/update/${editingTemplate._id}`,
+                    {
+                      method: "PUT",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ content: editContent }),
+                    },
+                  );
+
+                  const data = await res.json();
+
+                  if (data.success) {
+                    toast.success("Template updated successfully!");
+                    setShowEditTemplateModal(false);
+                    setEditingTemplate(null);
+                    setShowInsertFields(false);
+                    setShowServiceModal(true);
+                  } else {
+                    toast.error(data.message || "Failed to update template.");
+                  }
+                }}
+                className="rounded-md bg-[#7375E8] px-5 py-2 text-sm font-semibold text-white hover:bg-[#5B5FD6]"
+              >
+                Save Changes
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -4493,10 +4711,10 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
                                     prev.map((c) =>
                                       c._id === conn._id
                                         ? {
-                                          ...c,
-                                          verified: true,
-                                          verifying: false,
-                                        }
+                                            ...c,
+                                            verified: true,
+                                            verifying: false,
+                                          }
                                         : c,
                                     ),
                                   );
@@ -4516,7 +4734,7 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
                                 } else {
                                   toast.error(
                                     data.message ||
-                                    `Failed to verify ${conn.email}`,
+                                      `Failed to verify ${conn.email}`,
                                   );
                                   setUnverifiedConnections((prev) =>
                                     prev.map((c) =>
@@ -4569,80 +4787,82 @@ className="rounded-lg bg-[#FEE2E2] p-1.5 text-[#DC2626] transition hover:bg-[#FE
           </div>
         </div>
       )}
-    {showInactiveTemplateConfirm && (
-  <div
-    onClick={() => setShowInactiveTemplateConfirm(false)}
-    className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 px-4 backdrop-blur-sm"
-  >
-    <div
-      onClick={(e) => e.stopPropagation()}
-      className="w-full max-w-xl overflow-hidden rounded-2xl border border-[#E0E7FF] bg-white shadow-2xl"
-    >
-      <div className="border-b border-[#E0E7FF] bg-[#F5F7FF] px-5 py-4">
-        <div className="flex items-start gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#E0E7FF] text-lg font-bold text-[#7375E8]">
-            !
-          </div>
+      {showInactiveTemplateConfirm && (
+        <div
+          onClick={() => setShowInactiveTemplateConfirm(false)}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 px-4 backdrop-blur-sm"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-xl overflow-hidden rounded-2xl border border-[#E0E7FF] bg-white shadow-2xl"
+          >
+            <div className="border-b border-[#E0E7FF] bg-[#F5F7FF] px-5 py-4">
+              <div className="flex items-start gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#E0E7FF] text-lg font-bold text-[#7375E8]">
+                  !
+                </div>
 
-          <div>
-            <h2 className="text-lg font-bold text-slate-800">
-              Service templates are inactive
-            </h2>
-            <p className="mt-1 text-sm text-slate-500">
-              Replies for this service cannot use its specific templates right now.
-            </p>
+                <div>
+                  <h2 className="text-lg font-bold text-slate-800">
+                    Service templates are inactive
+                  </h2>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Replies for this service cannot use its specific templates
+                    right now.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4 px-6 py-5">
+              <div className="rounded-xl border border-[#E0E7FF] bg-[#F8FAFF] p-4">
+                <p className="text-sm leading-relaxed text-slate-700">
+                  <b className="font-semibold text-slate-900">
+                    {inactiveTemplateService}
+                  </b>{" "}
+                  templates are currently inactive. If you continue, the reply
+                  email will be sent using your{" "}
+                  <b className="font-semibold text-[#7375E8]">
+                    General templates
+                  </b>{" "}
+                  instead.
+                </p>
+              </div>
+
+              <p className="text-xs leading-relaxed text-slate-500">
+                Activate the service-specific templates if you want replies
+                customized for this service. Otherwise, General templates will
+                be used as the fallback.
+              </p>
+            </div>
+
+            <div className="flex flex-col-reverse gap-3 border-t border-[#E0E7FF] bg-[#FAFBFF] p-4 sm:flex-row sm:justify-end">
+              <button
+                onClick={() => {
+                  setShowInactiveTemplateConfirm(false);
+                  window.open(
+                    `/templates?service=${encodeURIComponent(inactiveTemplateService)}`,
+                    "_blank",
+                  );
+                }}
+                className="rounded-lg border border-[#C7D2FE] bg-white px-4 py-2 text-sm font-medium text-[#5B5FD6] transition hover:bg-[#EEF2FF]"
+              >
+                Activate Service Templates
+              </button>
+
+              <button
+                onClick={() => {
+                  setShowInactiveTemplateConfirm(false);
+                  handleRunTest(true);
+                }}
+                className="rounded-lg bg-[#7375E8] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#5B5FD6]"
+              >
+                Continue with General Templates
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-
-      <div className="space-y-4 px-6 py-5">
-        <div className="rounded-xl border border-[#E0E7FF] bg-[#F8FAFF] p-4">
-          <p className="text-sm leading-relaxed text-slate-700">
-            <b className="font-semibold text-slate-900">
-              {inactiveTemplateService}
-            </b>{" "}
-            templates are currently inactive. If you continue, the reply email
-            will be sent using your{" "}
-            <b className="font-semibold text-[#7375E8]">
-              General templates
-            </b>{" "}
-            instead.
-          </p>
-        </div>
-
-        <p className="text-xs leading-relaxed text-slate-500">
-          Activate the service-specific templates if you want replies customized
-          for this service. Otherwise, General templates will be used as the fallback.
-        </p>
-      </div>
-
-      <div className="flex flex-col-reverse gap-3 border-t border-[#E0E7FF] bg-[#FAFBFF] p-4 sm:flex-row sm:justify-end">
-        <button
-          onClick={() => {
-            setShowInactiveTemplateConfirm(false);
-            window.open(
-              `/templates?service=${encodeURIComponent(inactiveTemplateService)}`,
-              "_blank"
-            );
-          }}
-          className="rounded-lg border border-[#C7D2FE] bg-white px-4 py-2 text-sm font-medium text-[#5B5FD6] transition hover:bg-[#EEF2FF]"
-        >
-          Activate Service Templates
-        </button>
-
-        <button
-          onClick={() => {
-            setShowInactiveTemplateConfirm(false);
-            handleRunTest(true);
-          }}
-          className="rounded-lg bg-[#7375E8] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#5B5FD6]"
-        >
-          Continue with General Templates
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+      )}
     </div>
   );
 };
