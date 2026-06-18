@@ -1,37 +1,38 @@
 import React, { useState, useEffect } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { FiUser, FiMail, FiGlobe, FiLock, FiArrowRight } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { GoogleLogin } from '@react-oauth/google';
+
+const COUNTRIES = [
+  "Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Antigua and Barbuda", "Argentina", "Armenia", "Australia", "Austria", "Azerbaijan", "Bahamas", "Bahrain", "Bangladesh", "Barbados", "Belarus", "Belgium", "Belize", "Benin", "Bhutan", "Bolivia", "Bosnia and Herzegovina", "Botswana", "Brazil", "Brunei", "Bulgaria", "Burkina Faso", "Burundi", "Cabo Verde", "Cambodia", "Cameroon", "Canada", "Central African Republic", "Chad", "Chile", "China", "Colombia", "Comoros", "Congo (Congo-Brazzaville)", "Costa Rica", "Croatia", "Cuba", "Cyprus", "Czechia (Czech Republic)", "Democratic Republic of the Congo", "Denmark", "Djibouti", "Dominica", "Dominican Republic", "Ecuador", "Egypt", "El Salvador", "Equatorial Guinea", "Eritrea", "Estonia", "Eswatini", "Ethiopia", "Fiji", "Finland", "France", "Gabon", "Gambia", "Georgia", "Germany", "Ghana", "Greece", "Grenada", "Guatemala", "Guinea", "Guinea-Bissau", "Guyana", "Haiti", "Honduras", "Hungary", "Iceland", "India", "Indonesia", "Iran", "Iraq", "Ireland", "Israel", "Italy", "Jamaica", "Japan", "Jordan", "Kazakhstan", "Kenya", "Kiribati", "Kuwait", "Kyrgyzstan", "Laos", "Latvia", "Lebanon", "Lesotho", "Liberia", "Libya", "Liechtenstein", "Lithuania", "Luxembourg", "Madagascar", "Malawi", "Malaysia", "Maldives", "Mali", "Malta", "Marshall Islands", "Mauritania", "Mauritius", "Mexico", "Micronesia", "Moldova", "Monaco", "Mongolia", "Montenegro", "Morocco", "Mozambique", "Myanmar (formerly Burma)", "Namibia", "Nauru", "Nepal", "Netherlands", "New Zealand", "Nicaragua", "Niger", "Nigeria", "North Korea", "North Macedonia", "Norway", "Oman", "Pakistan", "Palau", "Palestine State", "Panama", "Papua New Guinea", "Paraguay", "Peru", "Philippines", "Poland", "Portugal", "Qatar", "Romania", "Russia", "Rwanda", "Saint Kitts and Nevis", "Saint Lucia", "Saint Vincent and the Grenadines", "Samoa", "San Marino", "Sao Tome and Principe", "Saudi Arabia", "Senegal", "Serbia", "Seychelles", "Sierra Leone", "Singapore", "Slovakia", "Slovenia", "Solomon Islands", "Somalia", "South Africa", "South Korea", "South Sudan", "Spain", "Sri Lanka", "Sudan", "Suriname", "Sweden", "Switzerland", "Syria", "Tajikistan", "Tanzania", "Thailand", "Timor-Leste", "Togo", "Tonga", "Trinidad and Tobago", "Tunisia", "Turkey", "Turkmenistan", "Tuvalu", "Uganda", "Ukraine", "United Arab Emirates", "United Kingdom", "United States of America", "Uruguay", "Uzbekistan", "Vanuatu", "Vatican City", "Venezuela", "Vietnam", "Yemen", "Zambia", "Zimbabwe"
+];
 
 const RegisterPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [alert, setAlert] = useState({ type: "", message: "" });
-  const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
   const [country, setCountry] = useState("");
   const [website, setWebsite] = useState("");
+  const [alert, setAlert] = useState({ type: "", message: "" });
+  const [loading, setLoading] = useState(false);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (alert.message) {
-      const timer = setTimeout(() => setAlert({ type: "", message: "" }), 4000);
+      const timer = setTimeout(() => setAlert({ type: "", message: "" }), 5000);
       return () => clearTimeout(timer);
     }
   }, [alert]);
-
-  const handleClick = () => {
-    navigate("/login");
-  };
 
   const handleGoogleSuccess = async (credentialResponse) => {
     setAlert({ type: "", message: "" });
     setLoading(true);
     try {
-      // NOTE: Update URL to your production backend if needed
       const response = await axios.post("https://email-syncing-backend.vercel.app/auth/google-login", {
         credential: credentialResponse.credential,
       });
@@ -39,11 +40,9 @@ const RegisterPage = () => {
       if (response.status === 200) {
         setAlert({
           type: "success",
-          message: "Google signup/login successful! Redirecting...",
+          message: "Google signup successful! Redirecting...",
         });
         
-        // Setup local storage the same way login does (or we can just redirect to login so they login properly)
-        // Wait, google-login endpoint returns the token! Let's just store it and redirect to setup.
         const resData = response.data;
         const { token, data } = resData;
         const TWO_DAYS = 2 * 24 * 60 * 60 * 1000;
@@ -61,16 +60,10 @@ const RegisterPage = () => {
 
   const normalizeWebsite = (url) => {
     if (!url) return "";
-
     const trimmedUrl = url.trim();
-
-    if (
-      trimmedUrl.startsWith("http://") ||
-      trimmedUrl.startsWith("https://")
-    ) {
+    if (trimmedUrl.startsWith("http://") || trimmedUrl.startsWith("https://")) {
       return trimmedUrl;
     }
-
     return `https://${trimmedUrl}`;
   };
 
@@ -80,193 +73,263 @@ const RegisterPage = () => {
     const finalWebsite = normalizeWebsite(website);
 
     try {
-      const response = await axios.post(
-        "https://email-syncing-backend.vercel.app/auth/signUp",
-        {
-          fullName,
-          email,
-          password,
-          country,
-          website: finalWebsite,
-        },
-      );
+      const response = await axios.post("https://email-syncing-backend.vercel.app/auth/signUp", {
+        fullName,
+        email,
+        password,
+        country,
+        website: finalWebsite,
+      });
 
       if (response.status === 200) {
         setAlert({
           type: "success",
-          message: "Signup successful! Redirecting to login...",
+          message: "Account created successfully! Redirecting to login...",
         });
-
-        setTimeout(() => navigate("/login"), 1200);
+        setTimeout(() => navigate("/login"), 1500);
       }
     } catch (error) {
-      const errMsg =
-        error.response?.data?.error || "Signup failed. Please try again.";
+      const errMsg = error.response?.data?.error || "Signup failed. Please try again.";
       setAlert({ type: "error", message: errMsg });
     } finally {
       setLoading(false);
     }
   };
 
-  const AlertMessage = () =>
-    alert.message ? (
-      <div
-        className={`my-4 p-3 rounded-md text-sm text-center font-medium ${alert.type === "success"
-            ? "bg-green-100 text-green-700 border border-green-300"
-            : "bg-red-100 text-red-700 border border-red-300"
-          }`}
-      >
-        {alert.message}
-      </div>
-    ) : null;
-
   return (
-    <div className="min-h-screen flex">
-      <div className="w-full lg:w-1/2 bg-white p-10 flex flex-col justify-center">
-        <div className="max-w-md w-full mx-auto">
-          <h2 className="text-3xl font-bold mb-6 text-gray-800 text-center">
-            Create Your Account
-          </h2>
-          <p className="text-gray-500 text-center mb-8">
-            Join us today and get started
-          </p>
+    <div className="min-h-screen flex bg-slate-50 font-sans selection:bg-indigo-100 selection:text-indigo-900">
+      
+      {/* Left Side: Form Container */}
+      <div className="w-full lg:w-1/2 flex flex-col justify-center px-8 sm:px-16 md:px-24 xl:px-32 relative z-10 py-12 lg:py-0">
+        
+        {/* Subtle glowing orb for aesthetic */}
+        <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
+          <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 0.3 }} 
+            className="absolute top-[20%] right-[-10%] w-[35rem] h-[35rem] bg-indigo-300 rounded-full mix-blend-multiply filter blur-[100px]" 
+          />
+          <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 0.3 }} 
+            className="absolute bottom-[-10%] left-[-10%] w-[40rem] h-[40rem] bg-pink-300 rounded-full mix-blend-multiply filter blur-[120px]" 
+          />
+        </div>
 
-          {/* 🔔 Alert here */}
-          <AlertMessage />
+        <motion.div
+          initial={{ y: 30, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          className="w-full max-w-md mx-auto bg-white/70 backdrop-blur-xl border border-white/50 shadow-2xl shadow-indigo-900/5 p-8 sm:p-10 rounded-3xl"
+        >
+          <div className="mb-6 text-center">
+            <h2 className="text-3xl font-bold text-slate-800 tracking-tight mb-2">Create an Account</h2>
+            <p className="text-slate-500 text-sm">Join us today to automate your workflow.</p>
+          </div>
 
-          <div className="mb-4 flex justify-center mt-2">
-            <GoogleLogin
-              onSuccess={handleGoogleSuccess}
-              onError={() => setAlert({ type: "error", message: "Google Signup Failed" })}
-              theme="outline"
-              size="large"
-              text="signup_with"
-              width="100%"
-            />
+          <AnimatePresence>
+            {alert.message && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className={`px-4 py-3 rounded-xl mb-6 text-sm font-medium text-center shadow-sm border ${
+                  alert.type === "success"
+                    ? "bg-emerald-50 border-emerald-100 text-emerald-600"
+                    : "bg-red-50 border-red-100 text-red-600"
+                }`}
+              >
+                {alert.message}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <div className="mb-6 w-full flex justify-center">
+            <div className="w-full sm:w-auto">
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={() => setAlert({ type: "error", message: "Google Signup Failed" })}
+                theme="outline"
+                size="large"
+                text="signup_with"
+                shape="rectangular"
+                width="368"
+              />
+            </div>
           </div>
           
-          <div className="flex items-center my-5">
-            <div className="flex-1 border-t border-gray-200"></div>
-            <span className="px-4 text-gray-400 text-sm font-medium uppercase tracking-wider">or sign up with email</span>
-            <div className="flex-1 border-t border-gray-200"></div>
+          <div className="flex items-center my-6">
+            <div className="flex-1 border-t border-slate-200"></div>
+            <span className="px-4 text-slate-400 text-xs font-semibold uppercase tracking-widest">Or sign up with email</span>
+            <div className="flex-1 border-t border-slate-200"></div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            
             <div>
-              <label className="block text-sm font-medium mb-1 text-gray-700">
-                Full Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                placeholder="John Doe"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1 text-gray-700">
-                Email <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="email"
-                className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div>
-                <label className="block text-sm font-medium mb-1 text-gray-700">
-                  Country
-                </label>
-                <select
-                  value={country}
-                  onChange={(e) => setCountry(e.target.value)}
-                  className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                >
-                  <option value="">Select Country</option>
-                  <option value="Pakistan">Pakistan</option>
-                  <option value="India">India</option>
-                  <option value="United States">United States</option>
-                  <option value="United Kingdom">United Kingdom</option>
-                  <option value="Canada">Canada</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1 text-gray-700">
-                  Website
-                </label>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Full Name</label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-indigo-500 transition-colors">
+                  <FiUser size={18} />
+                </div>
                 <input
                   type="text"
-                  className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  placeholder="https://yourwebsite.com"
-                  value={website}
-                  onChange={(e) => setWebsite(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm"
+                  placeholder="John Doe"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  required
                 />
               </div>
             </div>
+
             <div>
-              <label className="block text-sm font-medium mb-1 text-gray-700">
-                Password <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Email Address</label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-indigo-500 transition-colors">
+                  <FiMail size={18} />
+                </div>
+                <input
+                  type="email"
+                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm"
+                  placeholder="name@company.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">Country</label>
+                <div className="relative">
+                  <select
+                    value={country}
+                    onChange={(e) => setCountry(e.target.value)}
+                    className="w-full pl-3 pr-8 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm appearance-none cursor-pointer text-slate-600"
+                  >
+                    <option value="">Select Country</option>
+                    {COUNTRIES.map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">Website <span className="text-slate-400 font-normal">(Optional)</span></label>
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-indigo-500 transition-colors">
+                    <FiGlobe size={16} />
+                  </div>
+                  <input
+                    type="text"
+                    className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm"
+                    placeholder="yourwebsite.com"
+                    value={website}
+                    onChange={(e) => setWebsite(e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Password</label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-indigo-500 transition-colors">
+                  <FiLock size={18} />
+                </div>
                 <input
                   type={showPassword ? "text" : "password"}
-                  className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm"
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  minLength={6}
                 />
-                <span
-                  className="absolute right-3 top-2.5 cursor-pointer text-gray-500"
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-indigo-600 transition-colors"
                   onClick={() => setShowPassword(!showPassword)}
                 >
-                  {showPassword ? <FaEyeSlash /> : <FaEye />}
-                </span>
+                  {showPassword ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
+                </button>
               </div>
             </div>
 
             <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.98 }}
               type="submit"
               disabled={loading}
-              className={`w-full ${loading
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-gradient-to-r from-pink-500 to-purple-600"
-                } text-white py-3 rounded-lg font-semibold shadow-md transition`}
+              className={`w-full py-3 mt-4 rounded-xl font-semibold text-white flex items-center justify-center gap-2 transition-all shadow-lg ${
+                loading
+                  ? "bg-indigo-400 cursor-not-allowed shadow-none"
+                  : "bg-indigo-600 hover:bg-indigo-700 hover:shadow-indigo-500/30"
+              }`}
             >
-              {loading ? "Signing up..." : "Sign up"}
+              {loading ? (
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+              ) : (
+                <>Create Account <FiArrowRight /></>
+              )}
             </motion.button>
           </form>
 
-          <p className="text-center text-sm text-gray-600 mt-4">
+          <p className="text-center text-sm text-slate-500 mt-6">
             Already have an account?{" "}
             <span
-              onClick={handleClick}
-              className="text-purple-600 hover:underline cursor-pointer"
+              onClick={() => navigate("/login")}
+              className="font-semibold text-indigo-600 hover:text-indigo-800 cursor-pointer transition-colors"
             >
-              Log in
+              Sign in
             </span>
           </p>
-        </div>
+        </motion.div>
       </div>
 
-      <div className="hidden lg:flex w-2/3 bg-gradient-to-br from-purple-600 to-fuchsia-600 text-white items-center justify-center relative p-0">
-        <div className="w-full text-center">
+      {/* Right Side: Showcase */}
+      <div className="hidden lg:flex w-1/2 bg-slate-900 relative overflow-hidden flex-col items-center justify-center">
+        {/* Background Grid Pattern */}
+        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(to right, #fff 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
+        
+        {/* Glowing Effects */}
+        <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-indigo-500 rounded-full mix-blend-screen filter blur-[120px] opacity-20 animate-pulse" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-pink-500 rounded-full mix-blend-screen filter blur-[120px] opacity-20 animate-pulse"></div>
+
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 1, delay: 0.2 }}
+          className="relative z-10 flex flex-col items-center max-w-lg text-center"
+        >
           <img
             src="https://images.ctfassets.net/un655fb9wln6/5yk7rxBv0Nw98EVV0tI0pi/cf7cc21501065fe11153936be521831a/Waves_25_Hero_transparent.png?w=1920&q=75"
             alt="Hero Graphic"
-            className="w-full max-w-5xl mx-auto"
+            className="w-full drop-shadow-[0_0_40px_rgba(236,72,153,0.4)] object-contain mb-8"
           />
-        </div>
+          <h3 className="text-3xl font-bold text-white mb-4">Start your journey today.</h3>
+          <p className="text-slate-400 text-lg leading-relaxed px-8">
+            Get exclusive access to the fastest and most seamless way to synchronize and manage your inboxes.
+          </p>
+          
+          <div className="flex gap-4 mt-8">
+            <div className="flex flex-col items-center">
+              <div className="text-white font-bold text-xl">10k+</div>
+              <div className="text-slate-500 text-xs uppercase tracking-wider mt-1">Users</div>
+            </div>
+            <div className="w-px h-10 bg-slate-700"></div>
+            <div className="flex flex-col items-center">
+              <div className="text-white font-bold text-xl">99.9%</div>
+              <div className="text-slate-500 text-xs uppercase tracking-wider mt-1">Uptime</div>
+            </div>
+          </div>
+        </motion.div>
       </div>
     </div>
   );
