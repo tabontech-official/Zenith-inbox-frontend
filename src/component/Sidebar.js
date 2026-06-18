@@ -404,6 +404,13 @@ const Sidebar = () => {
               )}
             </div>
           </div>
+          
+          <div>
+            <p className="mb-2 text-xs uppercase text-gray-400">Pages</p>
+            <div className="space-y-1">
+              {renderNavLink("Landing Page", FiFileText, "/admin/pages/landing-page")}
+            </div>
+          </div>
         </div>
       </nav>
 

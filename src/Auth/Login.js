@@ -225,6 +225,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { UserContext } from "../component/UserContext";
 import { motion } from "framer-motion";
+import { GoogleLogin } from '@react-oauth/google';
 
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -239,6 +240,54 @@ const LoginPage = () => {
 
   const handleClick = () => {
     navigate("/register");
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setError("");
+    setSuccess("");
+    setLoading(true);
+    try {
+      // NOTE: Update URL to your production backend if needed
+      const response = await axios.post("https://email-syncing-backend.vercel.app/auth/google-login", {
+        credential: credentialResponse.credential,
+      });
+
+      if (response.status === 200) {
+        const resData = response.data;
+        const { token, data } = resData;
+        const TWO_DAYS = 2 * 24 * 60 * 60 * 1000;
+        const expiryTime = Date.now() + TWO_DAYS;
+
+        localStorage.setItem("usertoken", token);
+        localStorage.setItem("userid", data._id);
+        localStorage.setItem("loginExpiry", expiryTime.toString());
+
+        setUser(data);
+        setSuccess("Google login successful! Redirecting...");
+        setLoading(false);
+
+        const userRole = data?.role || "user";
+        const setupCompleted = data?.setup?.setupCompleted === true;
+        const steps = data?.setup?.steps || [];
+
+        setTimeout(() => {
+          if (userRole === "admin") {
+            navigate("/admin/dashboard", { replace: true });
+            return;
+          }
+          if (setupCompleted) {
+            navigate("/organization", { replace: true });
+            return;
+          }
+          const nextStep =
+            steps.find((s) => s.status === "skipped" || s.status === "incomplete")?.step || 1;
+          navigate(`/setup?step=${nextStep}`, { replace: true });
+        }, 800);
+      }
+    } catch (err) {
+      setLoading(false);
+      setError(err.response?.data?.error || "Google Authentication failed.");
+    }
   };
 
  const handleSubmit = async (e) => {
@@ -356,6 +405,23 @@ const LoginPage = () => {
               {success}
             </div>
           )}
+
+          <div className="mb-4 flex justify-center">
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => setError("Google Authentication Failed")}
+              theme="outline"
+              size="large"
+              text="continue_with"
+              width="100%"
+            />
+          </div>
+          
+          <div className="flex items-center my-5">
+            <div className="flex-1 border-t border-gray-200"></div>
+            <span className="px-4 text-gray-400 text-sm font-medium uppercase tracking-wider">or sign in with email</span>
+            <div className="flex-1 border-t border-gray-200"></div>
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <label className="flex items-center gap-2 text-sm font-medium text-gray-700">

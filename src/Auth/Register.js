@@ -3,6 +3,7 @@ import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { motion } from "framer-motion";
+import { GoogleLogin } from '@react-oauth/google';
 
 const RegisterPage = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -25,6 +26,39 @@ const RegisterPage = () => {
   const handleClick = () => {
     navigate("/login");
   };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setAlert({ type: "", message: "" });
+    setLoading(true);
+    try {
+      // NOTE: Update URL to your production backend if needed
+      const response = await axios.post("https://email-syncing-backend.vercel.app/auth/google-login", {
+        credential: credentialResponse.credential,
+      });
+
+      if (response.status === 200) {
+        setAlert({
+          type: "success",
+          message: "Google signup/login successful! Redirecting...",
+        });
+        
+        // Setup local storage the same way login does (or we can just redirect to login so they login properly)
+        // Wait, google-login endpoint returns the token! Let's just store it and redirect to setup.
+        const resData = response.data;
+        const { token, data } = resData;
+        const TWO_DAYS = 2 * 24 * 60 * 60 * 1000;
+        localStorage.setItem("usertoken", token);
+        localStorage.setItem("userid", data._id);
+        localStorage.setItem("loginExpiry", (Date.now() + TWO_DAYS).toString());
+
+        setTimeout(() => navigate("/setup?step=1"), 1200);
+      }
+    } catch (err) {
+      setLoading(false);
+      setAlert({ type: "error", message: err.response?.data?.error || "Google Authentication failed." });
+    }
+  };
+
   const normalizeWebsite = (url) => {
     if (!url) return "";
 
@@ -99,6 +133,23 @@ const RegisterPage = () => {
 
           {/* 🔔 Alert here */}
           <AlertMessage />
+
+          <div className="mb-4 flex justify-center mt-2">
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => setAlert({ type: "error", message: "Google Signup Failed" })}
+              theme="outline"
+              size="large"
+              text="signup_with"
+              width="100%"
+            />
+          </div>
+          
+          <div className="flex items-center my-5">
+            <div className="flex-1 border-t border-gray-200"></div>
+            <span className="px-4 text-gray-400 text-sm font-medium uppercase tracking-wider">or sign up with email</span>
+            <div className="flex-1 border-t border-gray-200"></div>
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>

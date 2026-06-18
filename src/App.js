@@ -41,6 +41,7 @@ import AdminUserEmails from "./Admin/AdminUserEmails";
 import VerifyTwoFactor from "./Auth/VerifyTwoFactor";
 import Terms from "./pages/Terms";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
+import AdminLandingPage from "./Admin/AdminLandingPage";
 
 function App() {
   return (
@@ -242,6 +243,14 @@ function App() {
             element={
               <ProtectedRoute adminOnly={true}>
                 <AdminUsers />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/pages/landing-page"
+            element={
+              <ProtectedRoute adminOnly={true}>
+                <AdminLandingPage />
               </ProtectedRoute>
             }
           />
