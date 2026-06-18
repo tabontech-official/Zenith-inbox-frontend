@@ -677,6 +677,8 @@ const ShopifyScenariosPage = () => {
         description: moduleDescription,
         connectionId: selectedConnection,
         template: selectedTemplate,
+        subject: subject.trim(),
+
         cc: ccList,
         bcc: bccList,
         emailType: selectedAppType || selectedApp?.name || "",
@@ -3437,6 +3439,32 @@ const ShopifyScenariosPage = () => {
                                       </span>
                                     </div>
                                   </div>
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Subject{" "}
+                                    <span className="text-xs text-gray-500">
+                                      (Optional)
+                                    </span>
+                                  </label>
+
+                                  <input
+                                    type="text"
+                                    value={subject}
+                                    onChange={(e) => {
+                                      setSubject(e.target.value);
+                                      setIsScenarioUpdated(false);
+                                    }}
+                                    placeholder="Enter custom subject"
+                                    className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                  />
+
+                                  <p className="text-xs text-gray-500 mt-2">
+                                    Add a subject only if you want to send the
+                                    email with a custom subject. Leave it empty
+                                    to use the same subject from the incoming
+                                    lead email.
+                                  </p>
                                 </div>
 
                                 <div>

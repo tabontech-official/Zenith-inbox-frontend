@@ -60,12 +60,21 @@ const LandingPage = () => {
           </a>
         </nav>
 
-        <button
-          onClick={() => navigate("/register")}
-          className="px-5 py-2 bg-white text-black rounded-xl text-sm font-semibold hover:bg-gray-200"
-        >
-          Get Started
-        </button>
+       <div className="flex items-center gap-3">
+  <button
+    onClick={() => navigate("/login")}
+  className="px-5 py-2 bg-white/10 border border-white/15 text-white rounded-xl text-sm font-semibold hover:bg-indigo-500/20 hover:border-indigo-400/50 hover:text-indigo-100 transition"
+  >
+    Sign In
+  </button>
+
+  <button
+    onClick={() => navigate("/register")}
+    className="px-5 py-2 bg-indigo-500 text-white rounded-xl text-sm font-semibold hover:bg-indigo-400 shadow-lg shadow-indigo-500/20 transition"
+  >
+    Get Started
+  </button>
+</div>
       </header>
 
       {/* HERO */}
