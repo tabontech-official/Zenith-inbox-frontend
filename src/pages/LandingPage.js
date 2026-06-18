@@ -234,8 +234,25 @@ const LandingPage = () => {
       </section>
 
       {/* Footer */}
+      {/* Footer */}
       <footer className="border-t border-white/10 py-10 text-center text-gray-500 text-sm">
-        © 2025 Replex Engine — AI powered lead automation
+        <div className="flex justify-center gap-6 mb-3">
+          <button
+            onClick={() => navigate("/privacy-policy")}
+            className="hover:text-white transition"
+          >
+            Privacy Policy
+          </button>
+
+          <button
+            onClick={() => navigate("/terms")}
+            className="hover:text-white transition"
+          >
+            Terms & Conditions
+          </button>
+        </div>
+
+        <p>© 2025 Replex Engine — AI powered lead automation</p>
       </footer>
 
       {/* Demo modal */}
