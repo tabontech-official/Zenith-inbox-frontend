@@ -306,7 +306,7 @@ const Sidebar = () => {
                 FiFileText,
                 "/templates/general",
               )}
-              {renderNavLink("Connection", FiZap, "/connection")}
+              {renderNavLink("Connections", FiZap, "/connection")}
             </div>
           </div>
         </div>

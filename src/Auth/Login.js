@@ -241,61 +241,75 @@ const LoginPage = () => {
     navigate("/register");
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-    setSuccess("");
-    setLoading(true);
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError("");
+  setSuccess("");
+  setLoading(true);
 
-    try {
-      const response = await axios.post(
-        "https://email-syncing-backend.vercel.app/auth/signIn",
-        { email, password }
-      );
+  try {
+    const response = await axios.post("https://email-syncing-backend.vercel.app/auth/signIn", {
+      email,
+      password,
+    });
 
-      if (response.status === 200) {
-        const { token, data } = response.data;
-        const TWO_DAYS = 2 * 24 * 60 * 60 * 1000;
-        const expiryTime = Date.now() + TWO_DAYS;
+    if (response.status === 200) {
+      const resData = response.data;
 
-        localStorage.setItem("usertoken", token);
-        localStorage.setItem("userid", data._id);
-        localStorage.setItem("loginExpiry", expiryTime.toString());
+      if (resData.requiresTwoFactor) {
+        localStorage.setItem("twoFactorUserId", resData.userId);
 
-        setUser(data);
-        setSuccess("Login successful! Redirecting...");
+        setSuccess("Two-step verification required...");
         setLoading(false);
 
-        const userRole = data?.role || "user";
-        const setupCompleted = data?.setup?.setupCompleted === true;
-        const steps = data?.setup?.steps || [];
+        navigate("/verify-2fa", {
+          state: { userId: resData.userId },
+          replace: true,
+        });
 
-        setTimeout(() => {
-          if (userRole === "admin") {
-            navigate("/admin/dashboard", { replace: true });
-            return;
-          }
-
-          if (setupCompleted) {
-            navigate("/organization", { replace: true });
-            return;
-          }
-
-          const nextStep =
-            steps.find(
-              (s) => s.status === "skipped" || s.status === "incomplete"
-            )?.step || 1;
-
-          navigate(`/setup?step=${nextStep}`, { replace: true });
-        }, 800);
+        return;
       }
-    } catch (error) {
+
+      const { token, data } = resData;
+      const TWO_DAYS = 2 * 24 * 60 * 60 * 1000;
+      const expiryTime = Date.now() + TWO_DAYS;
+
+      localStorage.setItem("usertoken", token);
+      localStorage.setItem("userid", data._id);
+      localStorage.setItem("loginExpiry", expiryTime.toString());
+
+      setUser(data);
+      setSuccess("Login successful! Redirecting...");
       setLoading(false);
-      setError(
-        error.response?.data?.error || "Login failed. Please try again."
-      );
+
+      const userRole = data?.role || "user";
+      const setupCompleted = data?.setup?.setupCompleted === true;
+      const steps = data?.setup?.steps || [];
+
+      setTimeout(() => {
+        if (userRole === "admin") {
+          navigate("/admin/dashboard", { replace: true });
+          return;
+        }
+
+        if (setupCompleted) {
+          navigate("/organization", { replace: true });
+          return;
+        }
+
+        const nextStep =
+          steps.find(
+            (s) => s.status === "skipped" || s.status === "incomplete"
+          )?.step || 1;
+
+        navigate(`/setup?step=${nextStep}`, { replace: true });
+      }, 800);
     }
-  };
+  } catch (error) {
+    setLoading(false);
+    setError(error.response?.data?.error || "Login failed. Please try again.");
+  }
+};
 
   return (
     <div className="min-h-screen flex bg-gradient-to-br from-purple-600 to-fuchsia-600 relative overflow-hidden">

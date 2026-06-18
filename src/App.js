@@ -38,6 +38,9 @@ import ProductPage from "./pages/ProductPage";
 import DevelopersPage from "./pages/DevelopersPage";
 import FoldLandingPage from "./Reviews/Foldreviews";
 import AdminUserEmails from "./Admin/AdminUserEmails";
+import VerifyTwoFactor from "./Auth/VerifyTwoFactor";
+import Terms from "./pages/Terms";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 
 function App() {
   return (
@@ -141,6 +144,9 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password/:token" element={<ResetPassword />} />
           <Route path="/login-verify/:token" element={<LoginVerify />} />
+          <Route path="/verify-2fa" element={<VerifyTwoFactor />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<Terms />} />
 
           <Route
             path="/scenarios/others/:id"
