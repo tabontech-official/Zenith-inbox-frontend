@@ -23,7 +23,7 @@ const LoginPage = () => {
     setSuccess("");
     setLoading(true);
     try {
-      const response = await axios.post("https://email-syncing-backend.vercel.app/auth/google-login", {
+      const response = await axios.post("http://localhost:5000/auth/google-login", {
         credential: credentialResponse.credential,
       });
 
@@ -72,7 +72,7 @@ const LoginPage = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post("https://email-syncing-backend.vercel.app/auth/signIn", {
+      const response = await axios.post("http://localhost:5000/auth/signIn", {
         email,
         password,
       });
@@ -135,8 +135,8 @@ const LoginPage = () => {
   return (
     <div className="min-h-screen flex bg-slate-50 font-sans selection:bg-indigo-100 selection:text-indigo-900">
       
-      {/* Left Side: Form Container */}
-      <div className="w-full lg:w-1/2 flex flex-col justify-center px-8 sm:px-16 md:px-24 xl:px-32 relative z-10">
+      {/* Form Container */}
+      <div className="w-full flex flex-col justify-center px-8 sm:px-16 md:px-24 xl:px-32 relative z-10">
         
         {/* Subtle glowing orb for aesthetic */}
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
@@ -159,6 +159,7 @@ const LoginPage = () => {
           className="w-full max-w-md mx-auto bg-white/70 backdrop-blur-xl border border-white/50 shadow-2xl shadow-indigo-900/5 p-10 rounded-3xl"
         >
           <div className="mb-8 text-center">
+            <h1 className="text-2xl font-extrabold text-indigo-600 tracking-wider mb-6 uppercase">Replex Engine</h1>
             <h2 className="text-3xl font-bold text-slate-800 tracking-tight mb-2">Welcome back</h2>
             <p className="text-slate-500 text-sm">Please enter your details to sign in.</p>
           </div>
@@ -284,33 +285,6 @@ const LoginPage = () => {
             >
               Create one now
             </span>
-          </p>
-        </motion.div>
-      </div>
-
-      {/* Right Side: Showcase */}
-      <div className="hidden lg:flex w-1/2 bg-slate-900 relative overflow-hidden flex-col items-center justify-center">
-        {/* Background Grid Pattern */}
-        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(to right, #fff 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
-        
-        {/* Glowing Effects */}
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-500 rounded-full mix-blend-screen filter blur-[120px] opacity-20 animate-pulse"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-fuchsia-500 rounded-full mix-blend-screen filter blur-[120px] opacity-20 animate-pulse" style={{ animationDelay: '2s' }}></div>
-
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1, delay: 0.2 }}
-          className="relative z-10 flex flex-col items-center max-w-lg text-center"
-        >
-          <img
-            src="https://images.ctfassets.net/un655fb9wln6/5yk7rxBv0Nw98EVV0tI0pi/cf7cc21501065fe11153936be521831a/Waves_25_Hero_transparent.png?w=1920&q=75"
-            alt="Hero Graphic"
-            className="w-full drop-shadow-[0_0_40px_rgba(99,102,241,0.4)] object-contain"
-          />
-          <h3 className="text-3xl font-bold text-white mt-8 mb-4">Automate your workflow.</h3>
-          <p className="text-slate-400 text-lg leading-relaxed">
-            Connect your inbox, sync your data, and unlock powerful automation capabilities tailored to your business needs.
           </p>
         </motion.div>
       </div>

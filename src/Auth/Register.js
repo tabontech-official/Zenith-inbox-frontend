@@ -33,7 +33,7 @@ const RegisterPage = () => {
     setAlert({ type: "", message: "" });
     setLoading(true);
     try {
-      const response = await axios.post("https://email-syncing-backend.vercel.app/auth/google-login", {
+      const response = await axios.post("http://localhost:5000/auth/google-login", {
         credential: credentialResponse.credential,
       });
 
@@ -73,7 +73,7 @@ const RegisterPage = () => {
     const finalWebsite = normalizeWebsite(website);
 
     try {
-      const response = await axios.post("https://email-syncing-backend.vercel.app/auth/signUp", {
+      const response = await axios.post("http://localhost:5000/auth/signUp", {
         fullName,
         email,
         password,
@@ -99,8 +99,8 @@ const RegisterPage = () => {
   return (
     <div className="min-h-screen flex bg-slate-50 font-sans selection:bg-indigo-100 selection:text-indigo-900">
       
-      {/* Left Side: Form Container */}
-      <div className="w-full lg:w-1/2 flex flex-col justify-center px-8 sm:px-16 md:px-24 xl:px-32 relative z-10 py-12 lg:py-0">
+      {/* Form Container */}
+      <div className="w-full flex flex-col justify-center px-8 sm:px-16 md:px-24 xl:px-32 relative z-10 py-12">
         
         {/* Subtle glowing orb for aesthetic */}
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
@@ -123,6 +123,7 @@ const RegisterPage = () => {
           className="w-full max-w-md mx-auto bg-white/70 backdrop-blur-xl border border-white/50 shadow-2xl shadow-indigo-900/5 p-8 sm:p-10 rounded-3xl"
         >
           <div className="mb-6 text-center">
+            <h1 className="text-2xl font-extrabold text-indigo-600 tracking-wider mb-6 uppercase">Replex Engine</h1>
             <h2 className="text-3xl font-bold text-slate-800 tracking-tight mb-2">Create an Account</h2>
             <p className="text-slate-500 text-sm">Join us today to automate your workflow.</p>
           </div>
@@ -290,45 +291,6 @@ const RegisterPage = () => {
               Sign in
             </span>
           </p>
-        </motion.div>
-      </div>
-
-      {/* Right Side: Showcase */}
-      <div className="hidden lg:flex w-1/2 bg-slate-900 relative overflow-hidden flex-col items-center justify-center">
-        {/* Background Grid Pattern */}
-        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(to right, #fff 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
-        
-        {/* Glowing Effects */}
-        <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-indigo-500 rounded-full mix-blend-screen filter blur-[120px] opacity-20 animate-pulse" style={{ animationDelay: '1s' }}></div>
-        <div className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-pink-500 rounded-full mix-blend-screen filter blur-[120px] opacity-20 animate-pulse"></div>
-
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1, delay: 0.2 }}
-          className="relative z-10 flex flex-col items-center max-w-lg text-center"
-        >
-          <img
-            src="https://images.ctfassets.net/un655fb9wln6/5yk7rxBv0Nw98EVV0tI0pi/cf7cc21501065fe11153936be521831a/Waves_25_Hero_transparent.png?w=1920&q=75"
-            alt="Hero Graphic"
-            className="w-full drop-shadow-[0_0_40px_rgba(236,72,153,0.4)] object-contain mb-8"
-          />
-          <h3 className="text-3xl font-bold text-white mb-4">Start your journey today.</h3>
-          <p className="text-slate-400 text-lg leading-relaxed px-8">
-            Get exclusive access to the fastest and most seamless way to synchronize and manage your inboxes.
-          </p>
-          
-          <div className="flex gap-4 mt-8">
-            <div className="flex flex-col items-center">
-              <div className="text-white font-bold text-xl">10k+</div>
-              <div className="text-slate-500 text-xs uppercase tracking-wider mt-1">Users</div>
-            </div>
-            <div className="w-px h-10 bg-slate-700"></div>
-            <div className="flex flex-col items-center">
-              <div className="text-white font-bold text-xl">99.9%</div>
-              <div className="text-slate-500 text-xs uppercase tracking-wider mt-1">Uptime</div>
-            </div>
-          </div>
         </motion.div>
       </div>
     </div>

@@ -11,6 +11,7 @@ import {
   FiClock,
   FiAlertTriangle,
   FiX,
+  FiLogIn,
 } from "react-icons/fi";
 
 const AdminUsers = () => {
@@ -65,7 +66,7 @@ const AdminUsers = () => {
   //     }
 
   //     const res = await fetch(
-  //       `https://email-syncing-backend.vercel.app/auth/admin/give-pro/${proUserId}`,
+  //       `http://localhost:5000/auth/admin/give-pro/${proUserId}`,
   //       {
   //         method: "PUT",
   //         headers: {
@@ -104,6 +105,39 @@ const AdminUsers = () => {
   //   }
   // };
 
+
+const handleLoginAsUser = async (userId) => {
+  try {
+    const adminToken = localStorage.getItem("usertoken");
+
+    const res = await fetch(
+      `http://localhost:5000/auth/admin/login-as/${userId}`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${adminToken}`,
+        },
+      },
+    );
+
+    const data = await res.json();
+
+    if (!res.ok || data?.success === false) {
+      alert(data?.message || "Failed to login as user");
+      return;
+    }
+
+    localStorage.setItem("adminToken", adminToken);
+    localStorage.setItem("usertoken", data.token);
+    localStorage.setItem("user", JSON.stringify(data.data));
+
+    window.location.href = "/organization";
+  } catch (error) {
+    console.error("Login As User Error:", error);
+    alert("Something went wrong while login as user.");
+  }
+};
+
   const handleGivePro = async () => {
     try {
       setProLoading(true);
@@ -121,7 +155,7 @@ const AdminUsers = () => {
       }
 
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/auth/admin/give-pro/${proUserId}`,
+        `http://localhost:5000/auth/admin/give-pro/${proUserId}`,
         {
           method: "PUT",
           headers: {
@@ -191,7 +225,7 @@ const AdminUsers = () => {
       const token = localStorage.getItem("token");
 
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/auth/admin/revoke-pro/${id}`,
+        `http://localhost:5000/auth/admin/revoke-pro/${id}`,
         {
           method: "PUT",
           headers: {
@@ -234,7 +268,7 @@ const AdminUsers = () => {
     try {
       const token = localStorage.getItem("usertoken");
       const res = await fetch(
-        "https://email-syncing-backend.vercel.app/auth/users",
+        "http://localhost:5000/auth/users",
         {
           headers: { Authorization: `Bearer ${token}` },
         },
@@ -286,7 +320,7 @@ const AdminUsers = () => {
         }
 
         const res = await fetch(
-          `https://email-syncing-backend.vercel.app/auth/user/${activeId}`,
+          `http://localhost:5000/auth/user/${activeId}`,
           {
             method: "DELETE",
             headers: {
@@ -317,7 +351,7 @@ const AdminUsers = () => {
         }
 
         const res = await fetch(
-          `https://email-syncing-backend.vercel.app/auth/users/bulk-delete`,
+          `http://localhost:5000/auth/users/bulk-delete`,
           {
             method: "POST",
             headers: {
@@ -634,40 +668,49 @@ const AdminUsers = () => {
                       </td>
 
                       {/* Actions */}
-                      <td className="p-5 text-center">
-                        {user.role !== "admin" && (
-                          <div className="flex items-center justify-center gap-2">
-                            {isPro ? (
-                              <button
-                                onClick={() => openCancelModal(user._id)}
-                                disabled={revokeLoading}
-                                className="px-3 py-1.5 text-[10px] font-black tracking-widest text-amber-600 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl transition-all uppercase disabled:opacity-50 disabled:cursor-not-allowed"
-                              >
-                                {revokeLoading && cancelUserId === user._id
-                                  ? "Revoking..."
-                                  : "Revoke Access"}
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => openProModal(user._id)}
-                                className="px-3 py-1.5 text-[10px] font-black tracking-widest text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition-all uppercase"
-                              >
-                                Upgrade Pro
-                              </button>
-                            )}
+                  <td className="p-5 text-center">
+  {user.role !== "admin" && (
+    <div className="flex items-center justify-center gap-2">
+      <button
+        type="button"
+        onClick={() => handleLoginAsUser(user._id)}
+        className="p-2.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
+        title="Login as User"
+      >
+        <FiLogIn size={18} />
+      </button>
 
-                            <button
-                              type="button"
-                              onClick={() => openSingleDelete(user._id)}
-                              disabled={deleteLoading}
-                              className="p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                              title="Delete User"
-                            >
-                              <FiTrash2 size={18} />
-                            </button>
-                          </div>
-                        )}
-                      </td>
+      {isPro ? (
+        <button
+          onClick={() => openCancelModal(user._id)}
+          disabled={revokeLoading}
+          className="px-3 py-1.5 text-[10px] font-black tracking-widest text-amber-600 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl transition-all uppercase disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {revokeLoading && cancelUserId === user._id
+            ? "Revoking..."
+            : "Revoke Access"}
+        </button>
+      ) : (
+        <button
+          onClick={() => openProModal(user._id)}
+          className="px-3 py-1.5 text-[10px] font-black tracking-widest text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition-all uppercase"
+        >
+          Upgrade Pro
+        </button>
+      )}
+
+      <button
+        type="button"
+        onClick={() => openSingleDelete(user._id)}
+        disabled={deleteLoading}
+        className="p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+        title="Delete User"
+      >
+        <FiTrash2 size={18} />
+      </button>
+    </div>
+  )}
+</td>
                     </tr>
                   );
                 })}
