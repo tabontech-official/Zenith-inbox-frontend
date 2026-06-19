@@ -222,7 +222,7 @@ const handleLoginAsUser = async (userId) => {
     try {
       setRevokeLoading(true);
 
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("token")
 
       const res = await fetch(
         `https://email-syncing-backend.vercel.app/auth/admin/revoke-pro/${id}`,
