@@ -42,7 +42,7 @@
 //     setTwoFaLoading(true);
 
 //     const res = await fetch(
-//       "http://localhost:5000/auth/2fa/setup",
+//       "https://email-syncing-backend.vercel.app/auth/2fa/setup",
 //       {
 //         method: "POST",
 //         headers: { "Content-Type": "application/json" },
@@ -74,7 +74,7 @@
 //     }
 
 //     const res = await fetch(
-//       "http://localhost:5000/auth/2fa/verify-setup",
+//       "https://email-syncing-backend.vercel.app/auth/2fa/verify-setup",
 //       {
 //         method: "POST",
 //         headers: { "Content-Type": "application/json" },
@@ -157,7 +157,7 @@
 //       }
 
 //       const res = await fetch(
-//         `http://localhost:5000/auth/updateUserAndOrganization/${user._id}`,
+//         `https://email-syncing-backend.vercel.app/auth/updateUserAndOrganization/${user._id}`,
 //         {
 //           method: "PUT",
 //           body: fd,
@@ -638,7 +638,7 @@ const Profile = () => {
   const handleSetupTwoFactor = async () => {
     try {
       setTwoFaLoading(true);
-      const res = await fetch("http://localhost:5000/auth/2fa/setup", {
+      const res = await fetch("https://email-syncing-backend.vercel.app/auth/2fa/setup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: user._id }),
@@ -665,7 +665,7 @@ const Profile = () => {
         return;
       }
 
-      const res = await fetch("http://localhost:5000/auth/2fa/verify-setup", {
+      const res = await fetch("https://email-syncing-backend.vercel.app/auth/2fa/verify-setup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: user._id, token: twoFaToken }),
@@ -699,7 +699,7 @@ const Profile = () => {
       if (profileImageFile) fd.append("image", profileImageFile);
 
       const res = await fetch(
-        `http://localhost:5000/auth/updateUserAndOrganization/${user._id}`,
+        `https://email-syncing-backend.vercel.app/auth/updateUserAndOrganization/${user._id}`,
         {
           method: "PUT",
           body: fd,

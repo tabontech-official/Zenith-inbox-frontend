@@ -23,7 +23,7 @@ const LoginPage = () => {
     setSuccess("");
     setLoading(true);
     try {
-      const response = await axios.post("http://localhost:5000/auth/google-login", {
+      const response = await axios.post("https://email-syncing-backend.vercel.app/auth/google-login", {
         credential: credentialResponse.credential,
       });
 
@@ -72,7 +72,7 @@ const LoginPage = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post("http://localhost:5000/auth/signIn", {
+      const response = await axios.post("https://email-syncing-backend.vercel.app/auth/signIn", {
         email,
         password,
       });

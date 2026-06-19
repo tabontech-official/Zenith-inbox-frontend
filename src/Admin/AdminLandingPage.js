@@ -15,7 +15,7 @@ const AdminLandingPage = () => {
   useEffect(() => {
     const fetchContent = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/landing-page");
+        const res = await fetch("https://email-syncing-backend.vercel.app/api/landing-page");
         if (res.ok) {
           const data = await res.json();
           setContent(data);
@@ -35,7 +35,7 @@ const AdminLandingPage = () => {
     setSaving(true);
     try {
       const token = localStorage.getItem("usertoken");
-      const res = await fetch("http://localhost:5000/api/landing-page", {
+      const res = await fetch("https://email-syncing-backend.vercel.app/api/landing-page", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

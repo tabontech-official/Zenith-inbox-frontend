@@ -33,7 +33,7 @@ const RegisterPage = () => {
     setAlert({ type: "", message: "" });
     setLoading(true);
     try {
-      const response = await axios.post("http://localhost:5000/auth/google-login", {
+      const response = await axios.post("https://email-syncing-backend.vercel.app/auth/google-login", {
         credential: credentialResponse.credential,
       });
 
@@ -73,7 +73,7 @@ const RegisterPage = () => {
     const finalWebsite = normalizeWebsite(website);
 
     try {
-      const response = await axios.post("http://localhost:5000/auth/signUp", {
+      const response = await axios.post("https://email-syncing-backend.vercel.app/auth/signUp", {
         fullName,
         email,
         password,

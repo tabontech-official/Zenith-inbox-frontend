@@ -66,7 +66,7 @@ const ConnectionModal = ({
     // ✅ Redirect the current tab
     const currentPath = window.location.pathname.replace(/^\//, ""); // remove leading "/"
     console.log(currentPath);
-    window.location.href = `http://localhost:5000/auth/google?userId=${userId}&redirect=${encodeURIComponent(
+    window.location.href = `https://email-syncing-backend.vercel.app/auth/google?userId=${userId}&redirect=${encodeURIComponent(
       currentPath
     )}`;
   };
@@ -81,7 +81,7 @@ const ConnectionModal = ({
       try {
         setSubmitting(true);
         const res = await axios.put(
-          `http://localhost:5000/auth/connection/${connectionData._id}`,
+          `https://email-syncing-backend.vercel.app/auth/connection/${connectionData._id}`,
           {
             name: connectionName.trim(),
             status: status

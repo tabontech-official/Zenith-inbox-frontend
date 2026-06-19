@@ -62,7 +62,7 @@ const Sidebar = () => {
     const fetchGuide = async () => {
       try {
         const res = await fetch(
-          `http://localhost:5000/auth/guide/${userId}`,
+          `https://email-syncing-backend.vercel.app/auth/guide/${userId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -101,7 +101,7 @@ const Sidebar = () => {
 
   const handleLogout = async () => {
     await fetch(
-      `http://localhost:5000/auth/logout/${userId}`,
+      `https://email-syncing-backend.vercel.app/auth/logout/${userId}`,
       {
         method: "POST",
       },
@@ -119,7 +119,7 @@ const Sidebar = () => {
       setGuideStep(0);
 
       await fetch(
-        `http://localhost:5000/auth/guide/${userId}`,
+        `https://email-syncing-backend.vercel.app/auth/guide/${userId}`,
         {
           method: "POST",
           headers: {
@@ -141,7 +141,7 @@ const Sidebar = () => {
     setGuideStep(next);
 
     await fetch(
-      `http://localhost:5000/auth/guide/${userId}`,
+      `https://email-syncing-backend.vercel.app/auth/guide/${userId}`,
       {
         method: "POST",
         headers: {
@@ -160,7 +160,7 @@ const Sidebar = () => {
     setGuideStep(0);
 
     await fetch(
-      `http://localhost:5000/auth/guide/${userId}`,
+      `https://email-syncing-backend.vercel.app/auth/guide/${userId}`,
       {
         method: "POST",
         headers: {
