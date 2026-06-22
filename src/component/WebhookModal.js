@@ -1,4 +1,3 @@
-
 import React, { useState, useContext } from "react";
 import {
   FiX,
@@ -11,6 +10,7 @@ import {
 } from "react-icons/fi";
 import { CiLink } from "react-icons/ci";
 import { UserContext } from "./UserContext";
+import { useNavigate } from "react-router-dom";
 
 const WebhookModal = ({
   showWebhookInfo,
@@ -20,7 +20,7 @@ const WebhookModal = ({
 }) => {
   const { user } = useContext(UserContext);
   const [copied, setCopied] = useState(false);
-
+  const navigate = useNavigate();
   const handleCopy = async () => {
     if (!webhookUrl) return;
     try {
@@ -42,7 +42,7 @@ const WebhookModal = ({
       onClick={() => setShowWebhookInfo(false)}
     >
       <div
-        className="bg-white rounded-xl shadow-2xl w-[500px] p-6 relative transform animate-slideUp"
+        className="bg-white rounded-xl shadow-2xl w-[600px] p-6 relative transform animate-slideUp"
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -79,6 +79,24 @@ const WebhookModal = ({
               <br />
               You can now start receiving and automating your leads.
             </p>
+            <div className="mt-4 mb-2 rounded-lg border border-purple-200 bg-purple-50 p-4">
+              <p className="text-sm text-purple-800 leading-relaxed text-center">
+                <strong>Need to connect another forwarding account?</strong>
+                <br />
+                You can add and manage additional mailhook connections from the{" "}
+                <strong>Connections</strong> page.
+              </p>
+
+              <button
+                onClick={() => {
+                  setShowWebhookInfo(false);
+                  navigate("/connection");
+                }}
+                className="mt-3 w-full rounded-md bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-700"
+              >
+                Go to Connections
+              </button>
+            </div>
           </>
         ) : (
           <>
@@ -107,9 +125,17 @@ const WebhookModal = ({
         ) : webhookUrl ? (
           <div className="flex items-center bg-gray-50 border rounded-lg px-3 py-3 mb-5 shadow-sm">
             <CiLink className="mr-3 text-purple-600 w-5 h-5" />
-            <span className="text-sm text-gray-800 font-mono break-all select-all">
+
+            <span className="flex-1 text-sm text-gray-800 font-mono break-all select-all">
               {webhookUrl}
             </span>
+
+            <button
+              onClick={handleCopy}
+              className="ml-3 rounded-md bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-purple-700"
+            >
+              {copied ? "Copied!" : "Copy"}
+            </button>
           </div>
         ) : (
           <div className="flex items-center text-red-500 text-sm mb-4">
@@ -119,27 +145,23 @@ const WebhookModal = ({
         )}
 
         {!setupCompleted && (
-          <button
-            onClick={handleCopy}
-            disabled={loading || !webhookUrl}
-            className={`w-full flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors 
-              ${
-                copied
-                  ? "bg-green-600 text-white hover:bg-green-700"
-                  : "bg-purple-600 text-white hover:bg-purple-700"
-              } 
-              disabled:opacity-50`}
-          >
-            {copied ? (
-              <>
-                <FiCheckCircle className="w-5 h-5" /> Copied!
-              </>
-            ) : (
-              <>
-                <FiCopy className="w-5 h-5" /> Copy Webhook URL
-              </>
-            )}
-          </button>
+          <div className="mt-4 rounded-lg border border-purple-200 bg-purple-50 p-4">
+            <p className="text-sm text-purple-800 leading-relaxed">
+              <strong>Need to connect another email account?</strong> You can
+              add and manage additional mailhook connections from the{" "}
+              <strong>Connections</strong> page.
+            </p>
+
+            <button
+              onClick={() => {
+                setShowWebhookInfo(false);
+                navigate("/connection");
+              }}
+              className="mt-3 inline-flex items-center justify-center rounded-md bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-700"
+            >
+              Go to Connections
+            </button>
+          </div>
         )}
 
         {/* {setupCompleted && (

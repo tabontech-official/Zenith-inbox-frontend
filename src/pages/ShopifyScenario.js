@@ -1721,7 +1721,7 @@ const ShopifyScenariosPage = () => {
       completed: automationOn,
     },
   ];
-
+const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
   const handleSetupStepClick = (stepKey) => {
     switch (stepKey) {
       case "webhook":
@@ -2771,7 +2771,7 @@ const ShopifyScenariosPage = () => {
               )}
               <div className="grid grid-cols-1 lg:grid-cols-[18rem_minmax(0,1fr)_20rem] h-full">
                 <aside className="w-full lg:w-72 self-start p-4">
-                  <SetupProgressCard />
+  {!allSetupStepsCompleted && <SetupProgressCard />}
                 </aside>
                 <div className="min-w-0 flex justify-center p-4 lg:p-8">
                   <div className="w-full max-w-5xl mx-auto flex flex-col items-center">
