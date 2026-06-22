@@ -158,11 +158,23 @@ const LoginPage = () => {
           transition={{ duration: 0.6, ease: "easeOut" }}
           className="w-full max-w-md mx-auto bg-white/70 backdrop-blur-xl border border-white/50 shadow-2xl shadow-indigo-900/5 p-10 rounded-3xl"
         >
-          <div className="mb-8 text-center">
-            <h1 className="text-2xl font-extrabold text-indigo-600 tracking-wider mb-6 uppercase">Replex Engine</h1>
-            <h2 className="text-3xl font-bold text-slate-800 tracking-tight mb-2">Welcome back</h2>
-            <p className="text-slate-500 text-sm">Please enter your details to sign in.</p>
-          </div>
+      
+             <div className="mb-6 text-center">
+     <div className="mb-6 flex items-center justify-center gap-2">
+       <FiMail className="text-3xl text-indigo-600" />
+       <h1 className="text-xl font-bold text-slate-900">
+         Replex Engine
+       </h1>
+     </div>
+   
+     <h2 className="mb-2 text-3xl font-bold tracking-tight text-slate-800">
+       Create an Account
+     </h2>
+   
+     <p className="text-sm text-slate-500">
+       Join us today to automate your workflow.
+     </p>
+   </div>
 
           <AnimatePresence>
             {error && (
@@ -187,8 +199,8 @@ const LoginPage = () => {
             )}
           </AnimatePresence>
 
-          <div className="mb-6 w-full flex justify-center">
-            <div className="w-full sm:w-auto">
+          <div className="mb-6 w-full flex justify-center  ">
+            <div className="w-full sm:w-auto ">
               <GoogleLogin
                 onSuccess={handleGoogleSuccess}
                 onError={() => setError("Google Authentication Failed")}
