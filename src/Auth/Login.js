@@ -1,16 +1,26 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
-import { FiMail, FiLock, FiArrowRight } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { UserContext } from "../component/UserContext";
-import { motion, AnimatePresence } from "framer-motion";
-import { GoogleLogin } from '@react-oauth/google';
+import { AnimatePresence, motion } from "framer-motion";
+import AuthShell, {
+  AuthCardHeader,
+  AuthDivider,
+  GoogleAuthButton,
+  GitHubAuthButton,
+  AuthPrimaryButton,
+  AuthCardFooter,
+  AuthSecuredBadge,
+  authInputClass,
+  authLabelClass,
+} from "./AuthShell";
 
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
@@ -18,46 +28,56 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const { setUser } = useContext(UserContext);
 
+  useEffect(() => {
+    const saved = localStorage.getItem("rememberedEmail");
+    if (saved) {
+      setEmail(saved);
+      setRememberMe(true);
+    }
+  }, []);
+
+  const redirectAfterLogin = (data) => {
+    const userRole = data?.role || "user";
+    const setupCompleted = data?.setup?.setupCompleted === true;
+    const steps = data?.setup?.steps || [];
+
+    setTimeout(() => {
+      if (userRole === "admin") {
+        navigate("/admin/dashboard", { replace: true });
+        return;
+      }
+      if (setupCompleted) {
+        navigate("/organization", { replace: true });
+        return;
+      }
+      const nextStep =
+        steps.find((s) => s.status === "skipped" || s.status === "incomplete")?.step || 1;
+      navigate(`/setup?step=${nextStep}`, { replace: true });
+    }, 800);
+  };
+
   const handleGoogleSuccess = async (credentialResponse) => {
     setError("");
     setSuccess("");
     setLoading(true);
     try {
-      const response = await axios.post("https://email-syncing-backend.vercel.app/auth/google-login", {
-        credential: credentialResponse.credential,
-      });
+      const response = await axios.post(
+        "https://email-syncing-backend.vercel.app/auth/google-login",
+        { credential: credentialResponse.credential }
+      );
 
       if (response.status === 200) {
-        const resData = response.data;
-        const { token, data } = resData;
+        const { token, data } = response.data;
         const TWO_DAYS = 2 * 24 * 60 * 60 * 1000;
-        const expiryTime = Date.now() + TWO_DAYS;
-
         localStorage.setItem("usertoken", token);
         localStorage.setItem("userid", data._id);
-        localStorage.setItem("loginExpiry", expiryTime.toString());
+        localStorage.setItem("loginExpiry", (Date.now() + TWO_DAYS).toString());
+        localStorage.setItem("lastAuthMethod", "google");
 
         setUser(data);
         setSuccess("Welcome back! Redirecting...");
         setLoading(false);
-
-        const userRole = data?.role || "user";
-        const setupCompleted = data?.setup?.setupCompleted === true;
-        const steps = data?.setup?.steps || [];
-
-        setTimeout(() => {
-          if (userRole === "admin") {
-            navigate("/admin/dashboard", { replace: true });
-            return;
-          }
-          if (setupCompleted) {
-            navigate("/organization", { replace: true });
-            return;
-          }
-          const nextStep =
-            steps.find((s) => s.status === "skipped" || s.status === "incomplete")?.step || 1;
-          navigate(`/setup?step=${nextStep}`, { replace: true });
-        }, 800);
+        redirectAfterLogin(data);
       }
     } catch (err) {
       setLoading(false);
@@ -70,6 +90,9 @@ const LoginPage = () => {
     setError("");
     setSuccess("");
     setLoading(true);
+
+    if (rememberMe) localStorage.setItem("rememberedEmail", email);
+    else localStorage.removeItem("rememberedEmail");
 
     try {
       const response = await axios.post("https://email-syncing-backend.vercel.app/auth/signIn", {
@@ -84,223 +107,143 @@ const LoginPage = () => {
           localStorage.setItem("twoFactorUserId", resData.userId);
           setSuccess("Two-step verification required...");
           setLoading(false);
-          navigate("/verify-2fa", {
-            state: { userId: resData.userId },
-            replace: true,
-          });
+          navigate("/verify-2fa", { state: { userId: resData.userId }, replace: true });
           return;
         }
 
         const { token, data } = resData;
         const TWO_DAYS = 2 * 24 * 60 * 60 * 1000;
-        const expiryTime = Date.now() + TWO_DAYS;
-
         localStorage.setItem("usertoken", token);
         localStorage.setItem("userid", data._id);
-        localStorage.setItem("loginExpiry", expiryTime.toString());
+        localStorage.setItem("loginExpiry", (Date.now() + TWO_DAYS).toString());
+        localStorage.setItem("lastAuthMethod", "email");
 
         setUser(data);
         setSuccess("Welcome back! Redirecting...");
         setLoading(false);
-
-        const userRole = data?.role || "user";
-        const setupCompleted = data?.setup?.setupCompleted === true;
-        const steps = data?.setup?.steps || [];
-
-        setTimeout(() => {
-          if (userRole === "admin") {
-            navigate("/admin/dashboard", { replace: true });
-            return;
-          }
-
-          if (setupCompleted) {
-            navigate("/organization", { replace: true });
-            return;
-          }
-
-          const nextStep =
-            steps.find(
-              (s) => s.status === "skipped" || s.status === "incomplete"
-            )?.step || 1;
-
-          navigate(`/setup?step=${nextStep}`, { replace: true });
-        }, 800);
+        redirectAfterLogin(data);
       }
-    } catch (error) {
+    } catch (err) {
       setLoading(false);
-      setError(error.response?.data?.error || "Login failed. Please try again.");
+      setError(err.response?.data?.error || "Login failed. Please try again.");
     }
   };
 
+  const lastUsedGoogle =
+    typeof window !== "undefined" && localStorage.getItem("lastAuthMethod") === "google";
+
   return (
-    <div className="min-h-screen flex bg-slate-50 font-sans selection:bg-indigo-100 selection:text-indigo-900">
-      
-      {/* Form Container */}
-      <div className="w-full flex flex-col justify-center px-8 sm:px-16 md:px-24 xl:px-32 relative z-10">
-        
-        {/* Subtle glowing orb for aesthetic */}
-        <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
-          <motion.div 
-            initial={{ opacity: 0 }} 
-            animate={{ opacity: 0.4 }} 
-            className="absolute top-[-10%] left-[-10%] w-[40rem] h-[40rem] bg-indigo-300 rounded-full mix-blend-multiply filter blur-[100px]" 
-          />
-          <motion.div 
-            initial={{ opacity: 0 }} 
-            animate={{ opacity: 0.4 }} 
-            className="absolute bottom-[-10%] right-[-10%] w-[40rem] h-[40rem] bg-purple-300 rounded-full mix-blend-multiply filter blur-[100px]" 
+    <AuthShell>
+      <AuthCardHeader
+        title="Sign in to Replex Engine"
+        subtitle="Welcome back! Please sign in to continue"
+      />
+
+      <AnimatePresence mode="wait">
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mb-4 overflow-hidden rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-center text-xs font-medium text-red-600"
+          >
+            {error}
+          </motion.div>
+        )}
+        {success && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mb-4 overflow-hidden rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-center text-xs font-medium text-emerald-600"
+          >
+            {success}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <GoogleAuthButton
+        onSuccess={handleGoogleSuccess}
+        onError={() => setError("Google Authentication Failed")}
+        showLastUsed={lastUsedGoogle}
+      />
+      <GitHubAuthButton />
+
+      <AuthDivider />
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label htmlFor="login-email" className={authLabelClass}>
+            Email address
+          </label>
+          <input
+            id="login-email"
+            type="email"
+            autoComplete="email"
+            className={authInputClass}
+            placeholder="Enter your email address"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
           />
         </div>
 
-        <motion.div
-          initial={{ y: 30, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
-          className="w-full max-w-md mx-auto bg-white/70 backdrop-blur-xl border border-white/50 shadow-2xl shadow-indigo-900/5 p-10 rounded-3xl"
-        >
-      
-             <div className="mb-6 text-center">
-     <div className="mb-6 flex items-center justify-center gap-2">
-       <FiMail className="text-3xl text-indigo-600" />
-       <h1 className="text-xl font-bold text-slate-900">
-         Replex Engine
-       </h1>
-     </div>
-   
-     <h2 className="mb-2 text-3xl font-bold tracking-tight text-slate-800">
-       Create an Account
-     </h2>
-   
-     <p className="text-sm text-slate-500">
-       Join us today to automate your workflow.
-     </p>
-   </div>
-
-          <AnimatePresence>
-            {error && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                className="bg-red-50 border border-red-100 text-red-600 px-4 py-3 rounded-xl mb-6 text-sm font-medium text-center shadow-sm"
-              >
-                {error}
-              </motion.div>
-            )}
-            {success && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                className="bg-emerald-50 border border-emerald-100 text-emerald-600 px-4 py-3 rounded-xl mb-6 text-sm font-medium text-center shadow-sm"
-              >
-                {success}
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <div className="mb-6 w-full flex justify-center  ">
-            <div className="w-full sm:w-auto ">
-              <GoogleLogin
-                onSuccess={handleGoogleSuccess}
-                onError={() => setError("Google Authentication Failed")}
-                theme="outline"
-                size="large"
-                text="continue_with"
-                shape="rectangular"
-                width="368"
-              />
-            </div>
-          </div>
-          
-          <div className="flex items-center my-6">
-            <div className="flex-1 border-t border-slate-200"></div>
-            <span className="px-4 text-slate-400 text-xs font-semibold uppercase tracking-widest">Or sign in with email</span>
-            <div className="flex-1 border-t border-slate-200"></div>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Email Address</label>
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-indigo-500 transition-colors">
-                  <FiMail size={18} />
-                </div>
-                <input
-                  type="email"
-                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm"
-                  placeholder="name@company.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Password</label>
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-indigo-500 transition-colors">
-                  <FiLock size={18} />
-                </div>
-                <input
-                  type={showPassword ? "text" : "password"}
-                  className="w-full pl-10 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-indigo-600 transition-colors"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
-                </button>
-              </div>
-            </div>
-
-            <div className="flex justify-end mt-1">
-              <span
-                onClick={() => navigate("/forgot-password")}
-                className="text-sm font-medium text-indigo-600 hover:text-indigo-800 cursor-pointer transition-colors"
-              >
-                Forgot password?
-              </span>
-            </div>
-
-            <motion.button
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.98 }}
-              type="submit"
-              disabled={loading}
-              className={`w-full py-3 mt-4 rounded-xl font-semibold text-white flex items-center justify-center gap-2 transition-all shadow-lg ${
-                loading
-                  ? "bg-indigo-400 cursor-not-allowed shadow-none"
-                  : "bg-indigo-600 hover:bg-indigo-700 hover:shadow-indigo-500/30"
-              }`}
+        <div>
+          <label htmlFor="login-password" className={authLabelClass}>
+            Password
+          </label>
+          <div className="relative">
+            <input
+              id="login-password"
+              type={showPassword ? "text" : "password"}
+              autoComplete="current-password"
+              className={`${authInputClass} pr-10`}
+              placeholder="Enter your password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            <button
+              type="button"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-600"
+              onClick={() => setShowPassword(!showPassword)}
+              aria-label={showPassword ? "Hide password" : "Show password"}
             >
-              {loading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-              ) : (
-                <>Sign in <FiArrowRight /></>
-              )}
-            </motion.button>
-          </form>
+              {showPassword ? <FaEyeSlash size={15} /> : <FaEye size={15} />}
+            </button>
+          </div>
+        </div>
 
-          <p className="text-center text-sm text-slate-500 mt-8">
-            Don't have an account?{" "}
-            <span
-              onClick={() => navigate("/register")}
-              className="font-semibold text-indigo-600 hover:text-indigo-800 cursor-pointer transition-colors"
-            >
-              Create one now
-            </span>
-          </p>
-        </motion.div>
-      </div>
-    </div>
+        <div className="flex items-center justify-between">
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-600">
+            <input
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500/20"
+            />
+            Remember me
+          </label>
+          <button
+            type="button"
+            onClick={() => navigate("/forgot-password")}
+            className="text-sm font-medium text-indigo-600 transition hover:text-indigo-800"
+          >
+            Forgot password?
+          </button>
+        </div>
+
+        <AuthPrimaryButton loading={loading}>Continue</AuthPrimaryButton>
+      </form>
+
+      <AuthCardFooter
+        prompt="Don't have an account?"
+        linkText="Sign up"
+        onLinkClick={() => navigate("/register")}
+      />
+
+      <AuthSecuredBadge />
+    </AuthShell>
   );
 };
 

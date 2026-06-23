@@ -1,22 +1,37 @@
 import React, { useState, useEffect } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
-import { FiUser, FiMail, FiGlobe, FiLock, FiArrowRight } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { motion, AnimatePresence } from "framer-motion";
-import { GoogleLogin } from '@react-oauth/google';
+import { AnimatePresence, motion } from "framer-motion";
+import AuthShell, {
+  AuthBackground,
+  AuthPageFooter,
+  AuthCardHeader,
+  AuthDivider,
+  GoogleAuthButton,
+  GitHubAuthButton,
+  AuthPrimaryButton,
+  AuthCardFooter,
+  AuthSecuredBadge,
+  authInputClass,
+  authSelectClass,
+  authLabelClass,
+} from "./AuthShell";
 
 const COUNTRIES = [
-  "Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Antigua and Barbuda", "Argentina", "Armenia", "Australia", "Austria", "Azerbaijan", "Bahamas", "Bahrain", "Bangladesh", "Barbados", "Belarus", "Belgium", "Belize", "Benin", "Bhutan", "Bolivia", "Bosnia and Herzegovina", "Botswana", "Brazil", "Brunei", "Bulgaria", "Burkina Faso", "Burundi", "Cabo Verde", "Cambodia", "Cameroon", "Canada", "Central African Republic", "Chad", "Chile", "China", "Colombia", "Comoros", "Congo (Congo-Brazzaville)", "Costa Rica", "Croatia", "Cuba", "Cyprus", "Czechia (Czech Republic)", "Democratic Republic of the Congo", "Denmark", "Djibouti", "Dominica", "Dominican Republic", "Ecuador", "Egypt", "El Salvador", "Equatorial Guinea", "Eritrea", "Estonia", "Eswatini", "Ethiopia", "Fiji", "Finland", "France", "Gabon", "Gambia", "Georgia", "Germany", "Ghana", "Greece", "Grenada", "Guatemala", "Guinea", "Guinea-Bissau", "Guyana", "Haiti", "Honduras", "Hungary", "Iceland", "India", "Indonesia", "Iran", "Iraq", "Ireland", "Israel", "Italy", "Jamaica", "Japan", "Jordan", "Kazakhstan", "Kenya", "Kiribati", "Kuwait", "Kyrgyzstan", "Laos", "Latvia", "Lebanon", "Lesotho", "Liberia", "Libya", "Liechtenstein", "Lithuania", "Luxembourg", "Madagascar", "Malawi", "Malaysia", "Maldives", "Mali", "Malta", "Marshall Islands", "Mauritania", "Mauritius", "Mexico", "Micronesia", "Moldova", "Monaco", "Mongolia", "Montenegro", "Morocco", "Mozambique", "Myanmar (formerly Burma)", "Namibia", "Nauru", "Nepal", "Netherlands", "New Zealand", "Nicaragua", "Niger", "Nigeria", "North Korea", "North Macedonia", "Norway", "Oman", "Pakistan", "Palau", "Palestine State", "Panama", "Papua New Guinea", "Paraguay", "Peru", "Philippines", "Poland", "Portugal", "Qatar", "Romania", "Russia", "Rwanda", "Saint Kitts and Nevis", "Saint Lucia", "Saint Vincent and the Grenadines", "Samoa", "San Marino", "Sao Tome and Principe", "Saudi Arabia", "Senegal", "Serbia", "Seychelles", "Sierra Leone", "Singapore", "Slovakia", "Slovenia", "Solomon Islands", "Somalia", "South Africa", "South Korea", "South Sudan", "Spain", "Sri Lanka", "Sudan", "Suriname", "Sweden", "Switzerland", "Syria", "Tajikistan", "Tanzania", "Thailand", "Timor-Leste", "Togo", "Tonga", "Trinidad and Tobago", "Tunisia", "Turkey", "Turkmenistan", "Tuvalu", "Uganda", "Ukraine", "United Arab Emirates", "United Kingdom", "United States of America", "Uruguay", "Uzbekistan", "Vanuatu", "Vatican City", "Venezuela", "Vietnam", "Yemen", "Zambia", "Zimbabwe"
+  "Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Antigua and Barbuda", "Argentina", "Armenia", "Australia", "Austria", "Azerbaijan", "Bahamas", "Bahrain", "Bangladesh", "Barbados", "Belarus", "Belgium", "Belize", "Benin", "Bhutan", "Bolivia", "Bosnia and Herzegovina", "Botswana", "Brazil", "Brunei", "Bulgaria", "Burkina Faso", "Burundi", "Cabo Verde", "Cambodia", "Cameroon", "Canada", "Central African Republic", "Chad", "Chile", "China", "Colombia", "Comoros", "Congo (Congo-Brazzaville)", "Costa Rica", "Croatia", "Cuba", "Cyprus", "Czechia (Czech Republic)", "Democratic Republic of the Congo", "Denmark", "Djibouti", "Dominica", "Dominican Republic", "Ecuador", "Egypt", "El Salvador", "Equatorial Guinea", "Eritrea", "Estonia", "Eswatini", "Ethiopia", "Fiji", "Finland", "France", "Gabon", "Gambia", "Georgia", "Germany", "Ghana", "Greece", "Grenada", "Guatemala", "Guinea", "Guinea-Bissau", "Guyana", "Haiti", "Honduras", "Hungary", "Iceland", "India", "Indonesia", "Iran", "Iraq", "Ireland", "Israel", "Italy", "Jamaica", "Japan", "Jordan", "Kazakhstan", "Kenya", "Kiribati", "Kuwait", "Kyrgyzstan", "Laos", "Latvia", "Lebanon", "Lesotho", "Liberia", "Libya", "Liechtenstein", "Lithuania", "Luxembourg", "Madagascar", "Malawi", "Malaysia", "Maldives", "Mali", "Malta", "Marshall Islands", "Mauritania", "Mauritius", "Mexico", "Micronesia", "Moldova", "Monaco", "Mongolia", "Montenegro", "Morocco", "Mozambique", "Myanmar (formerly Burma)", "Namibia", "Nauru", "Nepal", "Netherlands", "New Zealand", "Nicaragua", "Niger", "Nigeria", "North Korea", "North Macedonia", "Norway", "Oman", "Pakistan", "Palau", "Palestine State", "Panama", "Papua New Guinea", "Paraguay", "Peru", "Philippines", "Poland", "Portugal", "Qatar", "Romania", "Russia", "Rwanda", "Saint Kitts and Nevis", "Saint Lucia", "Saint Vincent and the Grenadines", "Samoa", "San Marino", "Sao Tome and Principe", "Saudi Arabia", "Senegal", "Serbia", "Seychelles", "Sierra Leone", "Singapore", "Slovakia", "Slovenia", "Solomon Islands", "Somalia", "South Africa", "South Korea", "South Sudan", "Spain", "Sri Lanka", "Sudan", "Suriname", "Sweden", "Switzerland", "Syria", "Tajikistan", "Tanzania", "Thailand", "Timor-Leste", "Togo", "Tonga", "Trinidad and Tobago", "Tunisia", "Turkey", "Turkmenistan", "Tuvalu", "Uganda", "Ukraine", "United Arab Emirates", "United Kingdom", "United States of America", "Uruguay", "Uzbekistan", "Vanuatu", "Vatican City", "Venezuela", "Vietnam", "Yemen", "Zambia", "Zimbabwe",
 ];
 
 const RegisterPage = () => {
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [country, setCountry] = useState("");
   const [website, setWebsite] = useState("");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [alert, setAlert] = useState({ type: "", message: "" });
   const [loading, setLoading] = useState(false);
 
@@ -33,18 +48,16 @@ const RegisterPage = () => {
     setAlert({ type: "", message: "" });
     setLoading(true);
     try {
-      const response = await axios.post("https://email-syncing-backend.vercel.app/auth/google-login", {
-        credential: credentialResponse.credential,
-      });
+      const response = await axios.post(
+        "https://email-syncing-backend.vercel.app/auth/google-login",
+        { credential: credentialResponse.credential }
+      );
 
       if (response.status === 200) {
-        setAlert({
-          type: "success",
-          message: "Google signup successful! Redirecting...",
-        });
-        
-        const resData = response.data;
-        const { token, data } = resData;
+        localStorage.setItem("lastAuthMethod", "google");
+        setAlert({ type: "success", message: "Google signup successful! Redirecting..." });
+
+        const { token, data } = response.data;
         const TWO_DAYS = 2 * 24 * 60 * 60 * 1000;
         localStorage.setItem("usertoken", token);
         localStorage.setItem("userid", data._id);
@@ -54,101 +67,84 @@ const RegisterPage = () => {
       }
     } catch (err) {
       setLoading(false);
-      setAlert({ type: "error", message: err.response?.data?.error || "Google Authentication failed." });
+      setAlert({
+        type: "error",
+        message: err.response?.data?.error || "Google Authentication failed.",
+      });
     }
   };
 
   const normalizeWebsite = (url) => {
     if (!url) return "";
     const trimmedUrl = url.trim();
-    if (trimmedUrl.startsWith("http://") || trimmedUrl.startsWith("https://")) {
-      return trimmedUrl;
-    }
+    if (trimmedUrl.startsWith("http://") || trimmedUrl.startsWith("https://")) return trimmedUrl;
     return `https://${trimmedUrl}`;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    const finalWebsite = normalizeWebsite(website);
 
+    if (password !== confirmPassword) {
+      setAlert({ type: "error", message: "Passwords do not match." });
+      return;
+    }
+    if (!acceptedTerms) {
+      setAlert({ type: "error", message: "Please accept the Terms and Privacy Policy." });
+      return;
+    }
+
+    setLoading(true);
     try {
       const response = await axios.post("https://email-syncing-backend.vercel.app/auth/signUp", {
         fullName,
         email,
         password,
         country,
-        website: finalWebsite,
+        website: normalizeWebsite(website),
       });
 
       if (response.status === 200) {
+        localStorage.setItem("lastAuthMethod", "email");
         setAlert({
           type: "success",
           message: "Account created successfully! Redirecting to login...",
         });
         setTimeout(() => navigate("/login"), 1500);
       }
-    } catch (error) {
-      const errMsg = error.response?.data?.error || "Signup failed. Please try again.";
-      setAlert({ type: "error", message: errMsg });
+    } catch (err) {
+      setAlert({
+        type: "error",
+        message: err.response?.data?.error || "Signup failed. Please try again.",
+      });
     } finally {
       setLoading(false);
     }
   };
 
+  const lastUsedGoogle =
+    typeof window !== "undefined" && localStorage.getItem("lastAuthMethod") === "google";
+
   return (
-    <div className="min-h-screen flex bg-slate-50 font-sans selection:bg-indigo-100 selection:text-indigo-900">
-      
-      {/* Form Container */}
-      <div className="w-full flex flex-col justify-center px-8 sm:px-16 md:px-24 xl:px-32 relative z-10 py-12">
-        
-        {/* Subtle glowing orb for aesthetic */}
-        <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
-          <motion.div 
-            initial={{ opacity: 0 }} 
-            animate={{ opacity: 0.3 }} 
-            className="absolute top-[20%] right-[-10%] w-[35rem] h-[35rem] bg-indigo-300 rounded-full mix-blend-multiply filter blur-[100px]" 
+    <div className="flex min-h-screen flex-col font-['Inter',ui-sans-serif,system-ui] antialiased">
+      <AuthBackground />
+
+      <div className="flex flex-1 items-start justify-center overflow-y-auto px-4 py-8 sm:items-center">
+        <div className="my-auto w-full max-w-[420px] rounded-2xl border border-slate-200/80 bg-white px-8 py-8 shadow-[0_4px_24px_rgba(0,0,0,0.06)] sm:px-10">
+          <AuthCardHeader
+            title="Create your Replex Engine account"
+            subtitle="Start automating lead replies and follow-ups in minutes"
           />
-          <motion.div 
-            initial={{ opacity: 0 }} 
-            animate={{ opacity: 0.3 }} 
-            className="absolute bottom-[-10%] left-[-10%] w-[40rem] h-[40rem] bg-pink-300 rounded-full mix-blend-multiply filter blur-[120px]" 
-          />
-        </div>
 
-        <motion.div
-          initial={{ y: 30, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
-          className="w-full max-w-md mx-auto bg-white/70 backdrop-blur-xl border border-white/50 shadow-2xl shadow-indigo-900/5 p-8 sm:p-10 rounded-3xl"
-        >
-          <div className="mb-6 text-center">
-  <div className="mb-6 flex items-center justify-center gap-2">
-    <FiMail className="text-3xl text-indigo-600" />
-    <h1 className="text-xl font-bold text-slate-900">
-      Replex Engine
-    </h1>
-  </div>
-
-  <h2 className="mb-2 text-3xl font-bold tracking-tight text-slate-800">
-    Create an Account
-  </h2>
-
-  <p className="text-sm text-slate-500">
-    Join us today to automate your workflow.
-  </p>
-</div>
-
-          <AnimatePresence>
+          <AnimatePresence mode="wait">
             {alert.message && (
               <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                className={`px-4 py-3 rounded-xl mb-6 text-sm font-medium text-center shadow-sm border ${
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className={`mb-4 overflow-hidden rounded-lg border px-3 py-2 text-center text-xs font-medium ${
                   alert.type === "success"
-                    ? "bg-emerald-50 border-emerald-100 text-emerald-600"
-                    : "bg-red-50 border-red-100 text-red-600"
+                    ? "border-emerald-100 bg-emerald-50 text-emerald-600"
+                    : "border-red-100 bg-red-50 text-red-600"
                 }`}
               >
                 {alert.message}
@@ -156,109 +152,104 @@ const RegisterPage = () => {
             )}
           </AnimatePresence>
 
-          <div className="mb-6 w-full flex justify-center">
-            <div className="w-full sm:w-auto">
-              <GoogleLogin
-                onSuccess={handleGoogleSuccess}
-                onError={() => setAlert({ type: "error", message: "Google Signup Failed" })}
-                theme="outline"
-                size="large"
-                text="signup_with"
-                shape="rectangular"
-                width="368"
+          <GoogleAuthButton
+            onSuccess={handleGoogleSuccess}
+            onError={() => setAlert({ type: "error", message: "Google Signup Failed" })}
+            text="signup_with"
+            showLastUsed={lastUsedGoogle}
+          />
+          <GitHubAuthButton />
+
+          <AuthDivider />
+
+          <form onSubmit={handleSubmit} className="space-y-3.5">
+            <div>
+              <label htmlFor="register-name" className={authLabelClass}>
+                Full name
+              </label>
+              <input
+                id="register-name"
+                type="text"
+                autoComplete="name"
+                className={authInputClass}
+                placeholder="Enter your full name"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                required
               />
             </div>
-          </div>
-          
-          <div className="flex items-center my-6">
-            <div className="flex-1 border-t border-slate-200"></div>
-            <span className="px-4 text-slate-400 text-xs font-semibold uppercase tracking-widest">Or sign up with email</span>
-            <div className="flex-1 border-t border-slate-200"></div>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Full Name</label>
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-indigo-500 transition-colors">
-                  <FiUser size={18} />
-                </div>
-                <input
-                  type="text"
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm"
-                  placeholder="John Doe"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  required
-                />
-              </div>
-            </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Email Address</label>
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-indigo-500 transition-colors">
-                  <FiMail size={18} />
-                </div>
-                <input
-                  type="email"
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm"
-                  placeholder="name@company.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
+              <label htmlFor="register-email" className={authLabelClass}>
+                Email address
+              </label>
+              <input
+                id="register-email"
+                type="email"
+                autoComplete="email"
+                className={authInputClass}
+                placeholder="Enter your email address"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">Country</label>
+                <label htmlFor="register-country" className={authLabelClass}>
+                  Country
+                </label>
                 <div className="relative">
                   <select
+                    id="register-country"
                     value={country}
                     onChange={(e) => setCountry(e.target.value)}
-                    className="w-full pl-3 pr-8 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm appearance-none cursor-pointer text-slate-600"
+                    className={authSelectClass}
+                    required
                   >
-                    <option value="">Select Country</option>
+                    <option value="">Select</option>
                     {COUNTRIES.map((c) => (
-                      <option key={c} value={c}>{c}</option>
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
                     ))}
                   </select>
-                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5 text-slate-400">
+                    <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                    </svg>
                   </div>
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">Website <span className="text-slate-400 font-normal">(Optional)</span></label>
-                <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-indigo-500 transition-colors">
-                    <FiGlobe size={16} />
-                  </div>
-                  <input
-                    type="text"
-                    className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm"
-                    placeholder="yourwebsite.com"
-                    value={website}
-                    onChange={(e) => setWebsite(e.target.value)}
-                  />
-                </div>
+                <label htmlFor="register-website" className={authLabelClass}>
+                  Website <span className="font-normal text-slate-400">(optional)</span>
+                </label>
+                <input
+                  id="register-website"
+                  type="text"
+                  autoComplete="url"
+                  className={authInputClass}
+                  placeholder="yoursite.com"
+                  value={website}
+                  onChange={(e) => setWebsite(e.target.value)}
+                />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Password</label>
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-indigo-500 transition-colors">
-                  <FiLock size={18} />
-                </div>
+              <label htmlFor="register-password" className={authLabelClass}>
+                Password
+              </label>
+              <div className="relative">
                 <input
+                  id="register-password"
                   type={showPassword ? "text" : "password"}
-                  className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm"
-                  placeholder="••••••••"
+                  autoComplete="new-password"
+                  className={`${authInputClass} pr-10`}
+                  placeholder="Create a password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -266,44 +257,84 @@ const RegisterPage = () => {
                 />
                 <button
                   type="button"
-                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-indigo-600 transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-600"
                   onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
-                  {showPassword ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
+                  {showPassword ? <FaEyeSlash size={15} /> : <FaEye size={15} />}
                 </button>
               </div>
             </div>
 
-            <motion.button
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.98 }}
-              type="submit"
-              disabled={loading}
-              className={`w-full py-3 mt-4 rounded-xl font-semibold text-white flex items-center justify-center gap-2 transition-all shadow-lg ${
-                loading
-                  ? "bg-indigo-400 cursor-not-allowed shadow-none"
-                  : "bg-indigo-600 hover:bg-indigo-700 hover:shadow-indigo-500/30"
-              }`}
-            >
-              {loading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-              ) : (
-                <>Create Account <FiArrowRight /></>
-              )}
-            </motion.button>
+            <div>
+              <label htmlFor="register-confirm-password" className={authLabelClass}>
+                Confirm password
+              </label>
+              <div className="relative">
+                <input
+                  id="register-confirm-password"
+                  type={showConfirmPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  className={`${authInputClass} pr-10`}
+                  placeholder="Confirm your password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  minLength={6}
+                />
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-600"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                >
+                  {showConfirmPassword ? <FaEyeSlash size={15} /> : <FaEye size={15} />}
+                </button>
+              </div>
+            </div>
+
+            <label className="flex cursor-pointer items-start gap-2 text-xs leading-relaxed text-slate-600">
+              <input
+                type="checkbox"
+                checked={acceptedTerms}
+                onChange={(e) => setAcceptedTerms(e.target.checked)}
+                className="mt-0.5 h-3.5 w-3.5 shrink-0 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500/20"
+                required
+              />
+              <span>
+                I agree to the{" "}
+                <button
+                  type="button"
+                  onClick={() => navigate("/terms")}
+                  className="font-semibold text-indigo-600 hover:text-indigo-800"
+                >
+                  Terms
+                </button>{" "}
+                and{" "}
+                <button
+                  type="button"
+                  onClick={() => navigate("/privacy-policy")}
+                  className="font-semibold text-indigo-600 hover:text-indigo-800"
+                >
+                  Privacy Policy
+                </button>
+              </span>
+            </label>
+
+            <AuthPrimaryButton loading={loading}>Create Account</AuthPrimaryButton>
           </form>
 
-          <p className="text-center text-sm text-slate-500 mt-6">
-            Already have an account?{" "}
-            <span
-              onClick={() => navigate("/login")}
-              className="font-semibold text-indigo-600 hover:text-indigo-800 cursor-pointer transition-colors"
-            >
-              Sign in
-            </span>
-          </p>
-        </motion.div>
+          <AuthCardFooter
+            prompt="Already have an account?"
+            linkText="Sign in"
+            onLinkClick={() => navigate("/login")}
+          />
+
+          <AuthSecuredBadge />
+        </div>
       </div>
+
+      <AuthPageFooter />
     </div>
   );
 };
