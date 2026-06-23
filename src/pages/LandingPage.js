@@ -73,8 +73,7 @@ const LandingPage = () => {
         },
         { text: "Watch workflow demo", route: "#demo", isPrimary: false },
       ],
-      demoVideoUrl:
-        "https://videos.ctfassets.net/un655fb9wln6/3wNElEdBiFdK2eauJB7wMp/021db93cbf76430c0b75cfb622876308/make_new_hero_animation.webm",
+      demoVideoUrl: "https://youtu.be/P_QYuxHaC7k",
     },
     features: {
       title: "A visual workflow for every lead",
@@ -318,6 +317,81 @@ const LandingPage = () => {
       </div>
     </div>
   );
+  const GoogleDataUsageSection = () => (
+  <section className="relative overflow-hidden border-b border-zinc-200/70 bg-white py-24">
+    <div className="mx-auto max-w-7xl px-5">
+      <div className="grid items-start gap-14 lg:grid-cols-[0.9fr_1.1fr]">
+        <div>
+          <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-3.5 py-1.5 text-xs font-bold text-zinc-700 shadow-sm">
+            <span className="h-1.5 w-1.5 rounded-full bg-violet-600" />
+            Data Transparency
+          </div>
+
+          <h2 className="max-w-xl text-[40px] font-semibold leading-[1] tracking-[-0.06em] text-zinc-950 sm:text-5xl">
+            Why Replex Engine requests Google data
+          </h2>
+
+          <p className="mt-6 max-w-xl text-base leading-8 text-zinc-600 sm:text-lg">
+            Replex Engine requests access to your Google account only to provide
+            lead automation features such as detecting inbound leads, generating
+            replies, sending responses, and running follow-up workflows.
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-zinc-200 bg-[#fafafa] p-6 shadow-[0_24px_80px_rgba(24,24,27,0.08)]">
+          <div className="space-y-5">
+            {[
+              {
+                title: "Gmail access",
+                text: "If you connect Gmail, we use email data to identify inbound leads, understand message intent, prepare replies, send responses, and manage follow-up sequences.",
+              },
+              {
+                title: "Limited use",
+                text: "Google user data is used only for the features shown inside Replex Engine. We do not sell Google user data or use it for advertising.",
+              },
+              {
+                title: "User control",
+                text: "Users can disconnect their Google account or stop using the automation features at any time.",
+              },
+              {
+                title: "Privacy Policy",
+                text: "Our privacy policy explains how user data is collected, used, stored, and protected.",
+              },
+            ].map((item) => (
+              <div
+                key={item.title}
+                className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm"
+              >
+                <div className="flex items-start gap-3">
+                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#F7F7F8] ring-1 ring-zinc-200">
+                    <FiCheckCircle className="text-[13px] text-[#6F4BFF]" />
+                  </span>
+
+                  <div>
+                    <h3 className="text-sm font-semibold text-zinc-950">
+                      {item.title}
+                    </h3>
+                    <p className="mt-2 text-sm font-medium leading-6 text-zinc-600">
+                      {item.text}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <button
+            onClick={() => navigate("/privacy-policy")}
+            className="mt-6 inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-[#6F4BFF] px-4 text-[13px] font-semibold text-white shadow-[0_7px_18px_rgba(111,75,255,0.28)] transition hover:bg-[#6242E8]"
+          >
+            View Privacy Policy
+            <FiArrowRight className="text-[13px]" />
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+);
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#fafafa] text-zinc-950 font-sans selection:bg-violet-100">
@@ -632,118 +706,119 @@ const LandingPage = () => {
       {/* working on this below section */}
 
       <TestimonialsSection />
+<GoogleDataUsageSection />
 
       <footer className="border-t border-zinc-200/70 bg-[#FBFAFA] py-16">
-  <div className="mx-auto max-w-7xl px-5">
-    <div className="grid gap-10 lg:grid-cols-[1.2fr_3fr]">
-      <button
-        onClick={() => navigate("/")}
-        className="flex items-center gap-2 self-start"
-      >
-        <span className="relative flex h-7 w-7 items-center justify-center rounded-full bg-zinc-100 ring-1 ring-zinc-200">
-          <span className="absolute h-3.5 w-3.5 rounded-full border-[3px] border-zinc-900 border-r-transparent" />
-          <span className="absolute right-[5px] top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-zinc-900" />
-        </span>
+        <div className="mx-auto max-w-7xl px-5">
+          <div className="grid gap-10 lg:grid-cols-[1.2fr_3fr]">
+            <button
+              onClick={() => navigate("/")}
+              className="flex items-center gap-2 self-start"
+            >
+              <span className="relative flex h-7 w-7 items-center justify-center rounded-full bg-zinc-100 ring-1 ring-zinc-200">
+                <span className="absolute h-3.5 w-3.5 rounded-full border-[3px] border-zinc-900 border-r-transparent" />
+                <span className="absolute right-[5px] top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-zinc-900" />
+              </span>
 
-        <span className="text-[18px] font-semibold tracking-[-0.025em] text-zinc-950">
-          {pageData.logoText}
-        </span>
-      </button>
+              <span className="text-[18px] font-semibold tracking-[-0.025em] text-zinc-950">
+                {pageData.logoText}
+              </span>
+            </button>
 
-      <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-5">
-        {[
-          {
-            title: "Product",
-            links: [
-              { label: "Lead Capture", route: "/product" },
-              { label: "AI Replies", route: "/solutions" },
-              { label: "Follow-ups", route: "/product" },
-              { label: "Workflow Automation", route: "/product" },
-            ],
-          },
-          {
-            title: "Solutions",
-            links: [
-              { label: "Sales Teams", route: "/solutions" },
-              { label: "Agencies", route: "/solutions" },
-              { label: "Startups", route: "/solutions" },
-              { label: "Customer Support", route: "/solutions" },
-            ],
-          },
-          {
-            title: "Developers",
-            links: [
-              { label: "API Access", route: "/developer" },
-              { label: "Email Webhooks", route: "/developer" },
-              { label: "Integrations", route: "/developer" },
-              { label: "Documentation", route: "/developer" },
-            ],
-          },
-          {
-            title: "Company",
-            links: [
-              { label: "About", route: "/about" },
-              { label: "Pricing", route: "/pricing" },
-              { label: "Talk to Sales", route: "/talk-to-sales" },
-              { label: "Contact", route: "/contact" },
-            ],
-          },
-          {
-            title: "Legal",
-            links: [
-              { label: "Privacy Policy", route: "/privacy-policy" },
-              { label: "Terms & Conditions", route: "/terms" },
-              { label: "Security", route: "/security" },
-              { label: "Cookie Policy", route: "/cookies" },
-            ],
-          },
-        ].map((group) => (
-          <div key={group.title}>
-            <h4 className="mb-4 text-xs font-semibold text-zinc-400">
-              {group.title}
-            </h4>
+            <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-5">
+              {[
+                {
+                  title: "Product",
+                  links: [
+                    { label: "Lead Capture", route: "/product" },
+                    { label: "AI Replies", route: "/solutions" },
+                    { label: "Follow-ups", route: "/product" },
+                    { label: "Workflow Automation", route: "/product" },
+                  ],
+                },
+                {
+                  title: "Solutions",
+                  links: [
+                    { label: "Sales Teams", route: "/solutions" },
+                    { label: "Agencies", route: "/solutions" },
+                    { label: "Startups", route: "/solutions" },
+                    { label: "Customer Support", route: "/solutions" },
+                  ],
+                },
+                {
+                  title: "Developers",
+                  links: [
+                    { label: "API Access", route: "/developer" },
+                    { label: "Email Webhooks", route: "/developer" },
+                    { label: "Integrations", route: "/developer" },
+                    { label: "Documentation", route: "/developer" },
+                  ],
+                },
+                {
+                  title: "Company",
+                  links: [
+                    { label: "About", route: "/about" },
+                    { label: "Pricing", route: "/pricing" },
+                    { label: "Talk to Sales", route: "/talk-to-sales" },
+                    { label: "Contact", route: "/contact" },
+                  ],
+                },
+                {
+                  title: "Legal",
+                  links: [
+                    { label: "Privacy Policy", route: "/privacy-policy" },
+                    { label: "Terms & Conditions", route: "/terms" },
+                    { label: "Security", route: "/security" },
+                    { label: "Cookie Policy", route: "/cookies" },
+                  ],
+                },
+              ].map((group) => (
+                <div key={group.title}>
+                  <h4 className="mb-4 text-xs font-semibold text-zinc-400">
+                    {group.title}
+                  </h4>
 
-            <div className="flex flex-col gap-3">
-              {group.links.map((link) => (
+                  <div className="flex flex-col gap-3">
+                    {group.links.map((link) => (
+                      <button
+                        key={link.label}
+                        onClick={() => goTo(link.route)}
+                        className="text-left text-sm font-semibold text-zinc-950 transition hover:text-violet-600"
+                      >
+                        {link.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-14 flex flex-col items-center justify-between gap-5 border-t border-zinc-200 pt-7 sm:flex-row">
+            <p className="text-sm font-medium text-zinc-500">
+              {pageData.footer?.copyrightText}
+            </p>
+
+            <div className="flex items-center gap-4 text-zinc-500">
+              {[
+                { icon: <FiTwitter />, label: "Twitter" },
+                { icon: <FiLinkedin />, label: "LinkedIn" },
+                { icon: <FiGithub />, label: "GitHub" },
+                { icon: <FiYoutube />, label: "YouTube" },
+                { icon: <FiMail />, label: "Email" },
+              ].map((item) => (
                 <button
-                  key={link.label}
-                  onClick={() => goTo(link.route)}
-                  className="text-left text-sm font-semibold text-zinc-950 transition hover:text-violet-600"
+                  key={item.label}
+                  aria-label={item.label}
+                  className="text-[18px] transition hover:text-violet-600"
                 >
-                  {link.label}
+                  {item.icon}
                 </button>
               ))}
             </div>
           </div>
-        ))}
-      </div>
-    </div>
-
-    <div className="mt-14 flex flex-col items-center justify-between gap-5 border-t border-zinc-200 pt-7 sm:flex-row">
-      <p className="text-sm font-medium text-zinc-500">
-        {pageData.footer?.copyrightText}
-      </p>
-
-      <div className="flex items-center gap-4 text-zinc-500">
-        {[
-          { icon: <FiTwitter />, label: "Twitter" },
-          { icon: <FiLinkedin />, label: "LinkedIn" },
-          { icon: <FiGithub />, label: "GitHub" },
-          { icon: <FiYoutube />, label: "YouTube" },
-          { icon: <FiMail />, label: "Email" },
-        ].map((item) => (
-          <button
-            key={item.label}
-            aria-label={item.label}
-            className="text-[18px] transition hover:text-violet-600"
-          >
-            {item.icon}
-          </button>
-        ))}
-      </div>
-    </div>
-  </div>
-</footer>
+        </div>
+      </footer>
 
       {demoOpen && (
         <div
@@ -838,5 +913,8 @@ const CircuitBackground = () => (
     <div className="absolute left-1/2 top-[118px] h-[360px] w-[720px] -translate-x-1/2 rounded-full bg-white/55 blur-3xl" />
   </div>
 );
+
+
+
 
 export default LandingPage;
