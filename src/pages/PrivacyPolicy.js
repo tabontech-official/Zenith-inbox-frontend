@@ -11,8 +11,12 @@ const PrivacyPolicy = () => {
 
           <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-200">
             This Privacy Policy explains how Replex Engine collects, uses,
-            protects, and handles information when you use our services,
-            including Google and Microsoft integrations.
+            stores, shares, protects, and handles information when you use our
+            services, including Google and Microsoft integrations.
+          </p>
+
+          <p className="mt-4 text-sm font-medium text-slate-300">
+            Last Updated: June 23, 2026
           </p>
         </div>
 
@@ -25,8 +29,9 @@ const PrivacyPolicy = () => {
               <p>
                 We may collect your name, email address, profile information,
                 organization details, contact information, authentication data,
-                account identifiers, usage data, device information, logs, and
-                other information required to provide and secure our services.
+                account identifiers, usage data, device information, logs,
+                workflow settings, connected account information, and other
+                information required to provide and secure our services.
               </p>
             </section>
 
@@ -37,9 +42,9 @@ const PrivacyPolicy = () => {
               <p>
                 We use your information to provide Replex Engine services,
                 authenticate users, manage accounts, enable integrations,
-                process requested actions, improve platform performance, provide
-                support, prevent abuse, troubleshoot issues, and comply with
-                legal obligations.
+                process requested actions, automate lead workflows, improve
+                platform performance, provide support, prevent abuse,
+                troubleshoot issues, and comply with legal obligations.
               </p>
             </section>
 
@@ -47,19 +52,34 @@ const PrivacyPolicy = () => {
               <h2 className="text-lg font-semibold text-slate-900 mb-2">
                 3. Google User Data
               </h2>
+
               <p>
-                If you connect your Google account, Replex Engine accesses only
-                the Google data and permissions you approve during the consent
-                process. This may include basic profile information, email
-                address, Gmail data, calendar data, or other Google services
-                depending on the features you choose to use.
+                If you connect your Google account, Replex Engine may access the
+                Google user data that you authorize during the OAuth consent
+                process. Depending on the features you choose to use, this may
+                include your Google account email address, basic profile
+                information, Gmail messages, Gmail send permissions, Gmail labels
+                or metadata, and Google Calendar event data.
               </p>
+
               <p className="mt-3">
-                Google user data is used only to provide and improve the
-                user-facing features you request. We do not sell Google user
-                data, use it for advertising, or share it with unauthorized
-                third parties.
+                We use Google user data only to provide Replex Engine’s
+                user-facing functionality. Gmail data may be used to detect
+                inbound leads, understand message intent, generate or send email
+                replies, organize lead workflows, and run follow-up automation.
+                Calendar data may be used only if a calendar-related feature is
+                enabled by the user.
               </p>
+
+              <p className="mt-3">
+                We do not sell Google user data. We do not use Google user data
+                for advertising. We do not use Google user data to train general
+                AI models. We do not transfer Google user data to third parties
+                except as necessary to provide or improve Replex Engine’s
+                functionality, comply with law, prevent abuse, or protect our
+                users and services.
+              </p>
+
               <p className="mt-3">
                 Replex Engine’s use and transfer of information received from
                 Google APIs will adhere to the Google API Services User Data
@@ -93,9 +113,9 @@ const PrivacyPolicy = () => {
               <p>
                 Replex Engine may use third-party services such as Google,
                 Microsoft, hosting providers, analytics providers, email
-                providers, payment processors, and infrastructure services.
-                These providers may process data only as necessary to support
-                our platform and services.
+                providers, payment processors, AI infrastructure providers, and
+                other infrastructure services. These providers may process data
+                only as necessary to support our platform and services.
               </p>
             </section>
 
@@ -107,7 +127,7 @@ const PrivacyPolicy = () => {
                 We do not sell your personal information. We may share
                 information only with service providers that help us operate the
                 platform, when required by law, to protect rights and security,
-                or with your consent.
+                prevent abuse, or with your consent.
               </p>
             </section>
 
@@ -118,14 +138,37 @@ const PrivacyPolicy = () => {
               <p>
                 We use reasonable technical and organizational safeguards to
                 protect your information from unauthorized access, misuse,
-                disclosure, alteration, or destruction. However, no method of
-                transmission or storage is completely secure.
+                disclosure, alteration, or destruction. These safeguards may
+                include encrypted transmission, access controls, secure
+                infrastructure, monitoring, and restricted internal access.
+                However, no method of transmission or storage is completely
+                secure.
               </p>
             </section>
 
             <section>
               <h2 className="text-lg font-semibold text-slate-900 mb-2">
-                8. Data Retention
+                8. Google Data Storage and Protection
+              </h2>
+              <p>
+                Replex Engine stores only the data necessary to provide the
+                requested automation features, maintain user workflows,
+                authenticate connected accounts, and keep the service secure.
+                Where applicable, access tokens, refresh tokens, workflow
+                settings, email metadata, lead status, and related automation
+                records may be stored securely.
+              </p>
+
+              <p className="mt-3">
+                Access to Google user data is limited to authorized systems or
+                personnel only when required to operate, secure, or support the
+                service.
+              </p>
+            </section>
+
+            <section>
+              <h2 className="text-lg font-semibold text-slate-900 mb-2">
+                9. Data Retention
               </h2>
               <p>
                 We retain information only as long as necessary to provide our
@@ -137,19 +180,27 @@ const PrivacyPolicy = () => {
 
             <section>
               <h2 className="text-lg font-semibold text-slate-900 mb-2">
-                9. User Control and Revocation
+                10. User Control, Revocation, and Deletion
               </h2>
               <p>
-                You may revoke Google or Microsoft access at any time from your
-                respective account security or connected apps settings. You may
-                also contact us to request access, correction, deletion, or
-                export of your personal information.
+                You may revoke Replex Engine’s access to your Google or
+                Microsoft account at any time from your account security or
+                connected apps settings.
+              </p>
+
+              <p className="mt-3">
+                You may request deletion of your personal data, connected
+                account data, stored automation records, and Google user data by
+                contacting us at paul@replexengine.com. After receiving a
+                verified deletion request, we will delete or anonymize applicable
+                data unless retention is required for legal, security, fraud
+                prevention, or compliance reasons.
               </p>
             </section>
 
             <section>
               <h2 className="text-lg font-semibold text-slate-900 mb-2">
-                10. Children’s Privacy
+                11. Children’s Privacy
               </h2>
               <p>
                 Replex Engine is not intended for children under 13. We do not
@@ -159,11 +210,13 @@ const PrivacyPolicy = () => {
 
             <section>
               <h2 className="text-lg font-semibold text-slate-900 mb-2">
-                11. Changes to This Policy
+                12. Changes to This Policy
               </h2>
               <p>
                 We may update this Privacy Policy from time to time. Any changes
                 will be posted on this page with an updated “Last Updated” date.
+                If we materially change how we use Google user data, we will
+                provide notice where required.
               </p>
             </section>
 
