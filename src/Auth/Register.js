@@ -586,7 +586,7 @@ const RegisterPage = () => {
                 )}
               </AnimatePresence>
 
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 gap-2">
                 {/* <button
                   type="button"
                   className="flex h-9 items-center justify-center gap-2 rounded-lg border border-zinc-200 bg-white text-sm font-medium text-zinc-700 shadow-sm transition hover:bg-zinc-50"
