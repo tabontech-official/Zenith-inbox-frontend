@@ -800,52 +800,62 @@ const PasswordField = ({
 
 const CircuitAuthBackground = () => (
   <div className="pointer-events-none absolute inset-0 overflow-hidden opacity-70">
-    <div className="absolute left-1/2 top-1/2 h-[520px] w-[1200px] -translate-x-1/2 -translate-y-1/2">
+    <div className="absolute inset-y-0 right-0 w-[58%]">
       <svg
-  className="h-full w-full"
-  viewBox="0 0 1200 520"
-  fill="none"
->
-  <defs>
-    <filter id="blueGlow" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="4" result="blur" />
-      <feMerge>
-        <feMergeNode in="blur" />
-        <feMergeNode in="SourceGraphic" />
-      </feMerge>
-    </filter>
-  </defs>
+        className="h-full w-full"
+        viewBox="0 0 900 900"
+        fill="none"
+        preserveAspectRatio="none"
+      >
+        <defs>
+          <filter id="blueGlow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="4" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
 
-  {/* Base grey lines */}
-  <path
-    d="M40 220H270L360 310H500L590 220H720L810 310H950L1040 220H1160"
-    stroke="rgba(113,113,122,0.22)"
-  />
-  <path
-    d="M220 120H350L440 210H760L850 120H980"
-    stroke="rgba(113,113,122,0.22)"
-  />
-  <path
-    d="M260 410H420L500 330H700L780 410H940"
-    stroke="rgba(113,113,122,0.22)"
-  />
+        {/* Base grey lines */}
+        <path
+          d="M0 170H180L280 270H470L580 160H900"
+          stroke="rgba(113,113,122,0.20)"
+        />
+        <path
+          d="M0 310H230L340 420H560L700 280H900"
+          stroke="rgba(113,113,122,0.20)"
+        />
+        <path
+          d="M0 470H160L280 590H500L630 460H900"
+          stroke="rgba(113,113,122,0.18)"
+        />
+        <path
+          d="M0 650H220L330 760H560L690 630H900"
+          stroke="rgba(113,113,122,0.16)"
+        />
 
-  {/* Moving blue lights */}
-  <path
-    d="M40 220H270L360 310H500L590 220H720L810 310H950L1040 220H1160"
-    className="circuit-glow"
-  />
-  <path
-    d="M220 120H350L440 210H760L850 120H980"
-    className="circuit-glow"
-    style={{ animationDelay: "0.8s" }}
-  />
-  <path
-    d="M260 410H420L500 330H700L780 410H940"
-    className="circuit-glow"
-    style={{ animationDelay: "1.6s" }}
-  />
-</svg>
+        {/* Moving blue lights */}
+        <path
+          d="M0 170H180L280 270H470L580 160H900"
+          className="circuit-glow"
+        />
+        <path
+          d="M0 310H230L340 420H560L700 280H900"
+          className="circuit-glow"
+          style={{ animationDelay: "0.7s" }}
+        />
+        <path
+          d="M0 470H160L280 590H500L630 460H900"
+          className="circuit-glow"
+          style={{ animationDelay: "1.4s" }}
+        />
+        <path
+          d="M0 650H220L330 760H560L690 630H900"
+          className="circuit-glow"
+          style={{ animationDelay: "2.1s" }}
+        />
+      </svg>
     </div>
   </div>
 );
