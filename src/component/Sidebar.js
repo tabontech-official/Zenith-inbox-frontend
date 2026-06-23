@@ -210,8 +210,7 @@ const Sidebar = () => {
           to="/organization"
           className="flex items-center space-x-2 text-gray-900"
         >
-          <FiMail className="text-3xl text-indigo-500" />
-          <span className="text-lg font-semibold">Replex Engine</span>
+          <BrandLogo />
         </Link>
 
         <button
@@ -409,6 +408,8 @@ const Sidebar = () => {
             <p className="mb-2 text-xs uppercase text-gray-400">Pages</p>
             <div className="space-y-1">
               {renderNavLink("Landing Page", FiFileText, "/admin/pages/landing-page")}
+                  {renderNavLink("Scripts", FiFileText, "/admin/pages/scripts")}
+
             </div>
           </div>
         </div>
@@ -426,7 +427,18 @@ const Sidebar = () => {
       </div>
     </>
   );
+const BrandLogo = ({ label = "Replex Engine" }) => (
+  <>
+    <span className="relative flex h-7 w-7 items-center justify-center rounded-full bg-zinc-100 ring-1 ring-zinc-200">
+      <span className="absolute h-3.5 w-3.5 rounded-full border-[3px] border-zinc-900 border-r-transparent" />
+      <span className="absolute right-[5px] top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-zinc-900" />
+    </span>
 
+    <span className="text-lg font-semibold tracking-[-0.035em] text-zinc-950">
+      {label}
+    </span>
+  </>
+);
   return (
     <>
       <button

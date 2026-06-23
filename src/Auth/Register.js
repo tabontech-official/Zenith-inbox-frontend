@@ -927,7 +927,7 @@ const RegisterPage = () => {
                   </span>
 
                   <span className="text-xl font-semibold tracking-[-0.035em] text-zinc-950">
-                    Replex
+                    Replex Engine
                   </span>
                 </button>
 
@@ -1094,7 +1094,7 @@ const RegisterPage = () => {
 
             <div className="border-t border-zinc-200 bg-[#F7F7F8] px-9 py-4 text-center text-xs font-medium text-zinc-500">
               Secured by{" "}
-              <span className="font-semibold text-zinc-700">Replex</span>
+              <span className="font-semibold text-zinc-700">Replex Engine</span>
             </div>
           </div>
           <p className="absolute bottom-8 left-10 text-sm text-zinc-500">

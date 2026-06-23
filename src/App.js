@@ -42,11 +42,14 @@ import VerifyTwoFactor from "./Auth/VerifyTwoFactor";
 import Terms from "./pages/Terms";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import AdminLandingPage from "./Admin/AdminLandingPage";
+import AdminScriptsPage from "./pages/Script";
+import DynamicScripts from "./pages/DynamicScripts";
 
 function App() {
   return (
     <UserProvider>
       <Router>
+        <DynamicScripts />
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<LandingPage />} />
@@ -235,6 +238,14 @@ function App() {
             element={
               <ProtectedRoute adminOnly={true}>
                 <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/pages/scripts"
+            element={
+              <ProtectedRoute adminOnly={true}>
+                <AdminScriptsPage />
               </ProtectedRoute>
             }
           />

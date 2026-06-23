@@ -763,7 +763,7 @@ const LoginPage = () => {
               </span>
 
               <span className="text-xl font-semibold tracking-[-0.035em] text-zinc-950">
-                Replex
+                Replex Engine
               </span>
             </button>
 
