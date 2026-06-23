@@ -587,13 +587,13 @@ const RegisterPage = () => {
               </AnimatePresence>
 
               <div className="grid grid-cols-2 gap-2">
-                <button
+                {/* <button
                   type="button"
                   className="flex h-9 items-center justify-center gap-2 rounded-lg border border-zinc-200 bg-white text-sm font-medium text-zinc-700 shadow-sm transition hover:bg-zinc-50"
                 >
                   <FiGithub className="text-lg text-zinc-950" />
                   GitHub
-                </button>
+                </button> */}
 
                 <button
                   type="button"
@@ -802,30 +802,50 @@ const CircuitAuthBackground = () => (
   <div className="pointer-events-none absolute inset-0 overflow-hidden opacity-70">
     <div className="absolute left-1/2 top-1/2 h-[520px] w-[1200px] -translate-x-1/2 -translate-y-1/2">
       <svg
-        className="h-full w-full text-zinc-300/70"
-        viewBox="0 0 1200 520"
-        fill="none"
-      >
-        <path
-          d="M40 220H270L360 310H500L590 220H720L810 310H950L1040 220H1160"
-          stroke="currentColor"
-        />
-        <path d="M220 120H350L440 210H760L850 120H980" stroke="currentColor" />
-        <path d="M260 410H420L500 330H700L780 410H940" stroke="currentColor" />
-      </svg>
-      <path d="M40 220H270L360 310H500" className="circuit-glow" />
+  className="h-full w-full"
+  viewBox="0 0 1200 520"
+  fill="none"
+>
+  <defs>
+    <filter id="blueGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="4" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
 
-      <path
-        d="M220 120H350L440 210H760"
-        className="circuit-glow"
-        style={{ animationDelay: "0.9s" }}
-      />
+  {/* Base grey lines */}
+  <path
+    d="M40 220H270L360 310H500L590 220H720L810 310H950L1040 220H1160"
+    stroke="rgba(113,113,122,0.22)"
+  />
+  <path
+    d="M220 120H350L440 210H760L850 120H980"
+    stroke="rgba(113,113,122,0.22)"
+  />
+  <path
+    d="M260 410H420L500 330H700L780 410H940"
+    stroke="rgba(113,113,122,0.22)"
+  />
 
-      <path
-        d="M260 410H420L500 330H700"
-        className="circuit-glow"
-        style={{ animationDelay: "1.8s" }}
-      />
+  {/* Moving blue lights */}
+  <path
+    d="M40 220H270L360 310H500L590 220H720L810 310H950L1040 220H1160"
+    className="circuit-glow"
+  />
+  <path
+    d="M220 120H350L440 210H760L850 120H980"
+    className="circuit-glow"
+    style={{ animationDelay: "0.8s" }}
+  />
+  <path
+    d="M260 410H420L500 330H700L780 410H940"
+    className="circuit-glow"
+    style={{ animationDelay: "1.6s" }}
+  />
+</svg>
     </div>
   </div>
 );
