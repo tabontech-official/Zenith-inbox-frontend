@@ -36,7 +36,40 @@ const Profile = () => {
   const [manualKey, setManualKey] = useState("");
   const [twoFaToken, setTwoFaToken] = useState("");
   const [showTwoFaModal, setShowTwoFaModal] = useState(false);
-
+const countries = [
+  "Afghanistan",
+  "Albania",
+  "Algeria",
+  "Argentina",
+  "Australia",
+  "Austria",
+  "Bangladesh",
+  "Belgium",
+  "Brazil",
+  "Canada",
+  "China",
+  "Denmark",
+  "Egypt",
+  "France",
+  "Germany",
+  "India",
+  "Indonesia",
+  "Ireland",
+  "Italy",
+  "Japan",
+  "Malaysia",
+  "Netherlands",
+  "New Zealand",
+  "Pakistan",
+  "Saudi Arabia",
+  "Singapore",
+  "South Africa",
+  "Spain",
+  "Turkey",
+  "United Arab Emirates",
+  "United Kingdom",
+  "United States",
+];
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -444,14 +477,16 @@ const Profile = () => {
                     editing={editing}
                     onChange={handleChange}
                   />
-                  <ProfileField
-                    label="Country"
-                    icon={<FiGlobe />}
-                    name="country"
-                    value={formData.country}
-                    editing={editing}
-                    onChange={handleChange}
-                  />
+                <ProfileField
+  label="Country"
+  icon={<FiGlobe />}
+  name="country"
+  value={formData.country}
+  editing={editing}
+  onChange={handleChange}
+  select
+  options={countries}
+/>
                   <ProfileField
                     label="Hourly Rate"
                     icon={<FiClock />}
@@ -587,6 +622,7 @@ const ProfileField = ({
   editing,
   readOnly,
   select,
+  options = [],
 }) => (
   <div className="flex flex-col gap-1.5">
     <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">

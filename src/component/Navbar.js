@@ -149,7 +149,7 @@ const Navbar = () => {
             </button>
           )}
 
-          <div className="relative">
+          {/* <div className="relative">
             <button
               onClick={() => setOpen(true)}
               className={`hidden md:inline-flex h-10 items-center justify-center gap-2 border border-slate-200 bg-white px-4 rounded-xl text-sm font-semibold text-slate-700 shadow-sm transition duration-200 hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-350
@@ -167,7 +167,7 @@ const Navbar = () => {
                 onNext={nextGuide}
               />
             )}
-          </div>
+          </div> */}
 
           <div className="relative">
             <button

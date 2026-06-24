@@ -52,8 +52,6 @@ const SetupFlow = () => {
       query.set("step", step);
       navigate(`${location.pathname}?${query.toString()}`, { replace: true });
     }
-
-
   }, [step, navigate, location.pathname, location.search]);
   const [showOtherSMTPModal, setShowOtherSMTPModal] = useState(false);
   const [testSent, setTestSent] = useState(false);
@@ -91,12 +89,11 @@ const SetupFlow = () => {
 
       .replace(
         /(https?:\/\/[^\s<]+)/g,
-        '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-indigo-600 underline break-all">$1</a>'
+        '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-indigo-600 underline break-all">$1</a>',
       )
 
       .replace(/\n/g, "<br />");
   };
-
 
   const progressWidth =
     step === 1
@@ -382,12 +379,11 @@ const SetupFlow = () => {
     return () => clearInterval(intervalId);
   }, [step, user, retryKey]);
 
-
   const linkifyEmailBody = (text = "") => {
     return text
       .replace(
         /(https?:\/\/[^\s]+)/g,
-        '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-indigo-600 font-semibold underline break-all">$1</a>'
+        '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-indigo-600 font-semibold underline break-all">$1</a>',
       )
       .replace(/\n/g, "<br />");
   };
@@ -399,7 +395,7 @@ const SetupFlow = () => {
       setLoadingMailhookEmails(true);
 
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/mailhook/verification/${user._id}`
+        `https://email-syncing-backend.vercel.app/mailhook/verification/${user._id}`,
       );
 
       const data = await res.json();
@@ -417,11 +413,7 @@ const SetupFlow = () => {
           latestEmail?.date ||
           latestEmail?.subject;
 
-        if (
-          autoOpen &&
-          latestEmailId &&
-          latestEmailId !== autoOpenedEmailId
-        ) {
+        if (autoOpen && latestEmailId && latestEmailId !== autoOpenedEmailId) {
           setAutoOpenedEmailId(latestEmailId);
           setLastSeenMailhookEmailId(latestEmailId);
           setShowInboxModal(true);
@@ -446,9 +438,7 @@ const SetupFlow = () => {
     if (step !== 3 || !user?._id) return;
 
     fetchMailhookEmails();
-
   }, [step, user]);
-
 
   useEffect(() => {
     if (step !== 3 || !user?._id) return;
@@ -689,8 +679,9 @@ const SetupFlow = () => {
 
         <div className="h-2 bg-gray-200 rounded-full overflow-hidden mt-2">
           <div
-            className={`h-full transition-all duration-1000 ${showAlert ? "bg-red-500" : "bg-[#4F46E5]"
-              }`}
+            className={`h-full transition-all duration-1000 ${
+              showAlert ? "bg-red-500" : "bg-[#4F46E5]"
+            }`}
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -794,10 +785,11 @@ const SetupFlow = () => {
         backdrop-blur-xl shadow-[0_4px_20px_rgba(0,0,0,0.1)]
         border
         transition-all
-        ${alert.type === "success"
+        ${
+          alert.type === "success"
             ? "bg-[rgba(209,250,229,0.7)] text-green-800 border-green-300"
             : "bg-[rgba(254,226,226,0.7)] text-red-800 border-red-300"
-          }
+        }
       `}
         style={{ WebkitBackdropFilter: "blur(10px)" }}
       >
@@ -831,10 +823,11 @@ const SetupFlow = () => {
         className={`relative flex flex-col items-center justify-center min-h-screen 
     bg-cover bg-center bg-no-repeat
     transition-all duration-700 ease-[cubic-bezier(0.4,0,0.2,1)] transform
-    ${isExpanded
-            ? "lg:translate-x-[-350px] lg:scale-[0.97]"
-            : "translate-x-0 scale-100"
-          }`}
+    ${
+      isExpanded
+        ? "lg:translate-x-[-350px] lg:scale-[0.97]"
+        : "translate-x-0 scale-100"
+    }`}
       >
         <video
           autoPlay
@@ -851,7 +844,6 @@ const SetupFlow = () => {
         <div className="flex flex-col items-center justify-center w-full max-w-3xl mx-auto ">
           <div className="w-full max-w-3xl mx-auto mb-4 relative z-10 px-4">
             <div className="w-full flex items-center justify-center relative min-h-[48px]">
-
               {/* LEFT: Mailhook Inbox Button */}
               {/* {step === 3 && (
                 <button
@@ -896,14 +888,14 @@ const SetupFlow = () => {
 
               {/* CENTER: Replex Engine Heading */}
               <div className="flex items-center gap-2 px-3 py-1.5">
-                  <span className="relative flex h-7 w-7 items-center justify-center rounded-full bg-zinc-100 ring-1 ring-zinc-200">
-                <span className="absolute h-3.5 w-3.5 rounded-full border-[3px] border-zinc-900 border-r-transparent" />
-                <span className="absolute right-[5px] top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-zinc-900" />
-              </span>
+                <span className="relative flex h-7 w-7 items-center justify-center rounded-full bg-zinc-100 ring-1 ring-zinc-200">
+                  <span className="absolute h-3.5 w-3.5 rounded-full border-[3px] border-zinc-900 border-r-transparent" />
+                  <span className="absolute right-[5px] top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-zinc-900" />
+                </span>
 
-              <span className="text-xl font-semibold tracking-[-0.035em] text-zinc-950">
-                Replex Engine
-              </span>
+                <span className="text-xl font-semibold tracking-[-0.035em] text-zinc-950">
+                  Replex Engine
+                </span>
               </div>
             </div>
           </div>
@@ -968,10 +960,11 @@ const SetupFlow = () => {
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: -10 }}
                           transition={{ duration: 0.3 }}
-                          className={`px-4 py-2 rounded-md text-sm font-medium shadow-sm ${alert.type === "success"
-                            ? "bg-green-100 text-green-700 border border-green-300"
-                            : "bg-red-100 text-red-700 border border-red-300"
-                            }`}
+                          className={`px-4 py-2 rounded-md text-sm font-medium shadow-sm ${
+                            alert.type === "success"
+                              ? "bg-green-100 text-green-700 border border-green-300"
+                              : "bg-red-100 text-red-700 border border-red-300"
+                          }`}
                         >
                           {alert.message}
                         </motion.div>
@@ -1093,10 +1086,11 @@ const SetupFlow = () => {
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: -10 }}
                           transition={{ duration: 0.3 }}
-                          className={`px-4 py-2 rounded-md text-sm font-medium shadow-sm ${alert.type === "success"
-                            ? "bg-green-100 text-green-700 border border-green-300"
-                            : "bg-red-100 text-red-700 border border-red-300"
-                            }`}
+                          className={`px-4 py-2 rounded-md text-sm font-medium shadow-sm ${
+                            alert.type === "success"
+                              ? "bg-green-100 text-green-700 border border-green-300"
+                              : "bg-red-100 text-red-700 border border-red-300"
+                          }`}
                         >
                           {alert.message}
                         </motion.div>
@@ -1347,31 +1341,37 @@ const SetupFlow = () => {
                       {!confirmations.forwardingEnabled && (
                         <div className="mb-4 rounded-lg border border-indigo-200 bg-indigo-50/80 px-4 py-3 text-left">
                           <p className="text-sm text-indigo-800 leading-relaxed">
-                            <strong>Tip:</strong> If you have enabled email forwarding in your email provider,
-                            please check the box below.
+                            <strong>Tip:</strong> If you have enabled email
+                            forwarding in your email provider, please check the
+                            box below.
                           </p>
                         </div>
                       )}
 
                       {/* TIP 2 */}
-                      {confirmations.forwardingEnabled && !confirmations.provider && (
-                        <div className="mb-4 rounded-lg border border-yellow-200 bg-yellow-50/90 px-4 py-3 text-left">
-                          <p className="text-sm text-yellow-800 leading-relaxed">
-                            <strong>Next:</strong> Now select which provider you used for forwarding.
-                            Choose either Gmail / Google or Outlook / Hotmail / Other provider to continue.
-                          </p>
-                        </div>
-                      )}
+                      {confirmations.forwardingEnabled &&
+                        !confirmations.provider && (
+                          <div className="mb-4 rounded-lg border border-yellow-200 bg-yellow-50/90 px-4 py-3 text-left">
+                            <p className="text-sm text-yellow-800 leading-relaxed">
+                              <strong>Next:</strong> Now select which provider
+                              you used for forwarding. Choose either Gmail /
+                              Google or Outlook / Hotmail / Other provider to
+                              continue.
+                            </p>
+                          </div>
+                        )}
 
                       {/* SUCCESS TIP */}
-                      {confirmations.forwardingEnabled && confirmations.provider && (
-                        <div className="mb-4 rounded-lg border border-green-200 bg-green-50/90 px-4 py-3 text-left">
-                          <p className="text-sm text-green-800 leading-relaxed">
-                            <strong>Ready:</strong> Email forwarding is enabled and your provider is selected.
-                            You can move to the next step now.
-                          </p>
-                        </div>
-                      )}
+                      {confirmations.forwardingEnabled &&
+                        confirmations.provider && (
+                          <div className="mb-4 rounded-lg border border-green-200 bg-green-50/90 px-4 py-3 text-left">
+                            <p className="text-sm text-green-800 leading-relaxed">
+                              <strong>Ready:</strong> Email forwarding is
+                              enabled and your provider is selected. You can
+                              move to the next step now.
+                            </p>
+                          </div>
+                        )}
 
                       <div className="space-y-3 text-sm text-gray-700 text-left">
                         {/* Forwarding enabled */}
@@ -1383,7 +1383,9 @@ const SetupFlow = () => {
                             onChange={(e) =>
                               setConfirmations((prev) => ({
                                 forwardingEnabled: e.target.checked,
-                                provider: e.target.checked ? prev.provider : null,
+                                provider: e.target.checked
+                                  ? prev.provider
+                                  : null,
                               }))
                             }
                           />
@@ -1394,10 +1396,11 @@ const SetupFlow = () => {
 
                         {/* Gmail */}
                         <label
-                          className={`flex items-start gap-2 ${confirmations.forwardingEnabled
-                            ? "cursor-pointer"
-                            : "cursor-not-allowed opacity-50"
-                            }`}
+                          className={`flex items-start gap-2 ${
+                            confirmations.forwardingEnabled
+                              ? "cursor-pointer"
+                              : "cursor-not-allowed opacity-50"
+                          }`}
                         >
                           <input
                             type="radio"
@@ -1418,10 +1421,11 @@ const SetupFlow = () => {
 
                         {/* Other providers */}
                         <label
-                          className={`flex items-start gap-2 ${confirmations.forwardingEnabled
-                            ? "cursor-pointer"
-                            : "cursor-not-allowed opacity-50"
-                            }`}
+                          className={`flex items-start gap-2 ${
+                            confirmations.forwardingEnabled
+                              ? "cursor-pointer"
+                              : "cursor-not-allowed opacity-50"
+                          }`}
                         >
                           <input
                             type="radio"
@@ -1436,31 +1440,34 @@ const SetupFlow = () => {
                             }
                           />
                           <span>
-                            I use <strong>Outlook / Hotmail / Other provider</strong>
+                            I use{" "}
+                            <strong>Outlook / Hotmail / Other provider</strong>
                           </span>
                         </label>
                       </div>
 
                       {/* PROVIDER REQUIRED MESSAGE */}
-                      {confirmations.forwardingEnabled && !confirmations.provider && (
-                        <p className="mt-4 text-xs text-red-600 font-medium text-left">
-                          Please select one provider option to continue.
-                        </p>
-                      )}
+                      {confirmations.forwardingEnabled &&
+                        !confirmations.provider && (
+                          <p className="mt-4 text-xs text-red-600 font-medium text-left">
+                            Please select one provider option to continue.
+                          </p>
+                        )}
 
                       {/* CONTINUE BUTTON - ONLY GMAIL */}
-                      {confirmations.forwardingEnabled && confirmations.provider === "gmail" && (
-                        <button
-                          onClick={() => setForwardingConfirmed(true)}
-                          className="
+                      {confirmations.forwardingEnabled &&
+                        confirmations.provider === "gmail" && (
+                          <button
+                            onClick={() => setForwardingConfirmed(true)}
+                            className="
           mt-6 w-full px-6 py-2 rounded-full text-sm font-semibold
           bg-white/30 border border-white/50 backdrop-blur-xl
           shadow hover:bg-white/40 transition
         "
-                        >
-                          Continue
-                        </button>
-                      )}
+                          >
+                            Continue
+                          </button>
+                        )}
                     </div>
                   )}
                   {confirmations.forwardingEnabled &&
@@ -1519,9 +1526,6 @@ const SetupFlow = () => {
                         </button>
                       </div>
                     )}
-
-
-
 
                   {forwardingConfirmed && (
                     <>
@@ -1665,13 +1669,14 @@ const SetupFlow = () => {
 
                         {/* EMAIL INPUT (Glass) */}
                         <div
-                          className={`space-y-3 mt-6 transition-all duration-300 ${!validationPhase &&
+                          className={`space-y-3 mt-6 transition-all duration-300 ${
+                            !validationPhase &&
                             !validated &&
                             (showValidateButton ||
                               verificationEmail?.isGmailVerification)
-                            ? "opacity-100 max-h-[150px]"
-                            : "opacity-0 max-h-0 overflow-hidden"
-                            }`}
+                              ? "opacity-100 max-h-[150px]"
+                              : "opacity-0 max-h-0 overflow-hidden"
+                          }`}
                         >
                           <p className="text-sm text-gray-700">
                             Enter the email address you configured forwarding
@@ -1702,9 +1707,10 @@ const SetupFlow = () => {
                   )}
                   <div className="mt-10 pt-6 flex justify-center w-full max-w-xl  border-white/40">
                     {!validated &&
-                      !validationPhase &&
-                      forwardingConfirmed &&
-                      (showValidateButton || verificationEmail?.isGmailVerification) ? (
+                    !validationPhase &&
+                    forwardingConfirmed &&
+                    (showValidateButton ||
+                      verificationEmail?.isGmailVerification) ? (
                       <button
                         disabled={validating}
                         onClick={async () => {
@@ -1790,7 +1796,7 @@ const SetupFlow = () => {
                     </h2>
 
                     <p className="text-gray-700 text-sm sm:text-base mb-8 max-w-md mx-auto">
-                      Configure {" "}
+                      Configure{" "}
                       <span className="font-semibold text-indigo-600">
                         Replex Engine
                       </span>{" "}
@@ -1812,10 +1818,11 @@ const SetupFlow = () => {
                         onClick={() => setSelectedTab(tab)}
                         className={`
             w-1/2 px-4 py-2 text-sm font-medium transition-all
-            ${selectedTab === tab
-                            ? "bg-indigo-600 text-white shadow-[0_4px_20px_rgba(79,70,229,0.4)]"
-                            : "text-gray-700 bg-white/20 hover:bg-white/40"
-                          }
+            ${
+              selectedTab === tab
+                ? "bg-indigo-600 text-white shadow-[0_4px_20px_rgba(79,70,229,0.4)]"
+                : "text-gray-700 bg-white/20 hover:bg-white/40"
+            }
           `}
                       >
                         {tab}
@@ -2022,10 +2029,11 @@ const SetupFlow = () => {
                             <span
                               className={`
                   text-xs px-2 py-1 rounded-full
-                  ${stepItem.status === "completed"
-                                  ? "bg-green-100 text-green-700 border border-green-300"
-                                  : "bg-yellow-100 text-yellow-700 border border-yellow-300"
-                                }
+                  ${
+                    stepItem.status === "completed"
+                      ? "bg-green-100 text-green-700 border border-green-300"
+                      : "bg-yellow-100 text-yellow-700 border border-yellow-300"
+                  }
                 `}
                             >
                               {stepItem.status === "completed"
@@ -2112,14 +2120,16 @@ const SetupFlow = () => {
         </div>
       </div>
       <div
-        className={`transition-all duration-500 ease-in-out ${isExpanded ? "lg:mr-[700px]" : "lg:mr-0"
-          } w-full`}
+        className={`transition-all duration-500 ease-in-out ${
+          isExpanded ? "lg:mr-[700px]" : "lg:mr-0"
+        } w-full`}
       ></div>
 
       <div className="hidden lg:block">
         <div
-          className={`fixed top-0 right-0 h-full bg-white shadow-2xl border-l border-gray-200 transform transition-transform duration-500 ease-in-out z-40 ${isExpanded ? "translate-x-0" : "translate-x-full"
-            }`}
+          className={`fixed top-0 right-0 h-full bg-white shadow-2xl border-l border-gray-200 transform transition-transform duration-500 ease-in-out z-40 ${
+            isExpanded ? "translate-x-0" : "translate-x-full"
+          }`}
           style={{ width: "700px" }}
         >
           <button
@@ -2215,7 +2225,7 @@ const SetupFlow = () => {
                 <InstructionPanel
                   step={step}
                   isExpanded={true}
-                  setIsExpanded={() => { }}
+                  setIsExpanded={() => {}}
                   isMobile={true}
                 />
               </div>
@@ -2266,12 +2276,14 @@ const SetupFlow = () => {
               style={{ WebkitBackdropFilter: "blur(20px)" }}
             >
               {/* HEADER */}
-              <div className="
+              <div
+                className="
             flex items-center justify-between gap-4
             px-6 py-5
             border-b border-gray-200/70
             bg-gradient-to-r from-indigo-50/90 via-white/80 to-purple-50/90
-          ">
+          "
+              >
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="w-11 h-11 rounded-2xl flex items-center justify-center bg-indigo-100 text-indigo-600 border border-indigo-200 shadow-sm">
                     <FiMail className="text-xl" />
@@ -2346,7 +2358,8 @@ const SetupFlow = () => {
                     </p>
 
                     <p className="text-xs text-gray-500 mt-1 max-w-sm">
-                      Once forwarding is active, incoming messages will appear here.
+                      Once forwarding is active, incoming messages will appear
+                      here.
                     </p>
                   </div>
                 ) : (
@@ -2371,7 +2384,9 @@ const SetupFlow = () => {
                           <p className="text-xs text-gray-500">Received</p>
                           <p className="text-xs font-medium text-gray-600">
                             {latestMailhookEmails[0]?.date
-                              ? new Date(latestMailhookEmails[0].date).toLocaleString()
+                              ? new Date(
+                                  latestMailhookEmails[0].date,
+                                ).toLocaleString()
                               : "Unknown date"}
                           </p>
                         </div>
@@ -2390,9 +2405,9 @@ const SetupFlow = () => {
                         dangerouslySetInnerHTML={{
                           __html: formatEmailBody(
                             latestMailhookEmails[0]?.htmlBody ||
-                            latestMailhookEmails[0]?.formattedBody ||
-                            latestMailhookEmails[0]?.textBody ||
-                            "No email body available."
+                              latestMailhookEmails[0]?.formattedBody ||
+                              latestMailhookEmails[0]?.textBody ||
+                              "No email body available.",
                           ),
                         }}
                       />
@@ -2481,12 +2496,13 @@ const InstructionPanel = ({
   overflow-y-auto     /* 👈 SCROLL ENABLED */
   overflow-x-hidden
   relative
-  ${isMobile
-          ? "w-full p-5 text-sm"
-          : isExpanded
-            ? "w-[700px] p-8"
-            : "w-[450px] p-7"
-        }`}
+  ${
+    isMobile
+      ? "w-full p-5 text-sm"
+      : isExpanded
+        ? "w-[700px] p-8"
+        : "w-[450px] p-7"
+  }`}
       style={{ WebkitBackdropFilter: "blur(12px)" }}
     >
       {/* {!isMobile && (
@@ -2660,10 +2676,11 @@ const InstructionPanel = ({
                   key={id}
                   onClick={() => setActiveTab(id)}
                   className={`flex-1 min-w-[90px] sm:min-w-0 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all duration-200
-            ${activeTab === id
-                      ? "bg-white/90 text-indigo-700 shadow-md border border-indigo-100"
-                      : "text-gray-600 hover:bg-white/50"
-                    }`}
+            ${
+              activeTab === id
+                ? "bg-white/90 text-indigo-700 shadow-md border border-indigo-100"
+                : "text-gray-600 hover:bg-white/50"
+            }`}
                 >
                   <div className="flex items-center justify-center gap-2">
                     {icon}
@@ -2904,55 +2921,42 @@ const InstructionPanel = ({
             </div>
 
             {/* Intro */}
+            {/* Intro */}
             <p className="text-sm text-gray-700 leading-relaxed mb-5">
-              Great job — your Mailhook is now connected! Let’s verify that
-              Gmail is forwarding messages correctly to your{" "}
+              Let’s set up your email forwarding to your{" "}
               <strong className="text-indigo-700">Mailhook address</strong>.
+              Follow these steps carefully before validating the connection.
             </p>
 
-            {/* Instruction list */}
             <div className="space-y-4 text-sm text-gray-700 leading-relaxed">
               {[
                 {
-                  icon: <FiMail className="text-indigo-600 text-lg mt-0.5" />,
+                  icon: (
+                    <FiSettings className="text-indigo-600 text-lg mt-0.5" />
+                  ),
                   text: (
                     <>
-                      Go back to your <strong>Gmail Settings</strong> → open the{" "}
-                      <strong>Forwarding and POP/IMAP</strong> tab again.
+                      Open your <strong>Gmail / Google Workspace</strong>{" "}
+                      account, click the <strong>Settings gear icon</strong>,
+                      then click <strong>See all settings</strong>.
+                    </>
+                  ),
+                },
+                {
+                  icon: <FiFolder className="text-indigo-600 text-lg mt-0.5" />,
+                  text: (
+                    <>
+                      Open the <strong>Forwarding and POP/IMAP</strong> tab.
                     </>
                   ),
                 },
                 {
                   icon: (
-                    <FiRefreshCcw className="text-indigo-600 text-lg mt-0.5" />
+                    <FiPlusCircle className="text-indigo-600 text-lg mt-0.5" />
                   ),
                   text: (
                     <>
-                      Refresh that page — you’ll now see your{" "}
-                      <strong>Mailhook address</strong> in the forwarding
-                      dropdown.
-                    </>
-                  ),
-                },
-                {
-                  icon: (
-                    <FiToggleRight className="text-indigo-600 text-lg mt-0.5" />
-                  ),
-                  text: (
-                    <>
-                      Select your Mailhook under{" "}
-                      <strong>“Forward a copy of incoming mail to”</strong> and
-                      choose what happens to the original (e.g., “Keep Gmail’s
-                      copy in Inbox”).
-                    </>
-                  ),
-                },
-                {
-                  icon: <FiSave className="text-green-600 text-lg mt-0.5" />,
-                  text: (
-                    <>
-                      Scroll down and click <strong>Save Changes</strong> to
-                      enable forwarding.
+                      Click <strong>Add a forwarding address</strong>.
                     </>
                   ),
                 },
@@ -2960,18 +2964,25 @@ const InstructionPanel = ({
                   icon: <FiMail className="text-indigo-600 text-lg mt-0.5" />,
                   text: (
                     <>
-                      Return to this screen. Replex Engine will automatically
-                      check for Gmail’s confirmation email.
+                      Enter your Mailhook address and complete Gmail’s
+                      confirmation process:
+                      <code className="block bg-white/70 border border-indigo-200 text-indigo-700 px-3 py-1.5 rounded-lg text-xs font-mono mt-2 break-all select-all">
+                        {user?.mailhook ||
+                          "your-mailhook@mail.replexengine.com"}
+                      </code>
                     </>
                   ),
                 },
                 {
-                  icon: <FiSearch className="text-indigo-600 text-lg mt-0.5" />,
+                  icon: (
+                    <FiArrowRightCircle className="text-indigo-600 text-lg mt-0.5" />
+                  ),
                   text: (
                     <>
-                      If the confirmation email hasn’t appeared yet, click{" "}
-                      <strong>Retry Checking</strong> below. Once it arrives,
-                      you’ll see it appear here.
+                      Gmail will send a <strong>confirmation email</strong> to
+                      your Mailhook. Come back to this wizard and click the{" "}
+                      <strong>Mailhook Inbox LIVE</strong> button to view that
+                      email.
                     </>
                   ),
                 },
@@ -2981,10 +2992,32 @@ const InstructionPanel = ({
                   ),
                   text: (
                     <>
-                      Open that email, click the{" "}
-                      <strong>verification link</strong>, and your Gmail
-                      forwarding will be active. Then click{" "}
-                      <strong>Validate Forwarding</strong> to complete.
+                      Open the confirmation email from Mailhook Inbox and either
+                      click the verification link or enter the confirmation code
+                      in Gmail, depending on Gmail’s instructions.
+                    </>
+                  ),
+                },
+                {
+                  icon: (
+                    <FiToggleRight className="text-indigo-600 text-lg mt-0.5" />
+                  ),
+                  text: (
+                    <>
+                      Go back to{" "}
+                      <strong>Gmail Settings → Forwarding and POP/IMAP</strong>.
+                      Select <strong>Forward a copy of incoming mail to</strong>{" "}
+                      your Mailhook address and choose{" "}
+                      <strong>Keep Gmail’s copy in the Inbox</strong>.
+                    </>
+                  ),
+                },
+                {
+                  icon: <FiSave className="text-green-600 text-lg mt-0.5" />,
+                  text: (
+                    <>
+                      Scroll down and click <strong>Save Changes</strong>. Your
+                      Mailhook forwarding setup is now ready for validation.
                     </>
                   ),
                 },
@@ -2994,6 +3027,113 @@ const InstructionPanel = ({
                   <p>{text}</p>
                 </div>
               ))}
+            </div>
+
+            <div className="mt-6 bg-green-50 border-l-4 border-green-500 rounded-lg p-4 text-green-800 text-sm flex items-start gap-2 shadow-sm">
+              <FiCheckCircle className="text-green-600 text-lg mt-0.5" />
+              <p>
+                <strong>Congratulations:</strong> Your Mailhook is now
+                configured. Next, check{" "}
+                <strong>I have enabled email forwarding</strong>, choose your
+                provider, and continue to validation.
+              </p>
+            </div>
+
+            <div className="mt-4 bg-indigo-50 border-l-4 border-indigo-500 rounded-lg p-4 text-indigo-800 text-sm flex items-start gap-2 shadow-sm">
+              <FiInfo className="text-indigo-600 text-lg mt-0.5" />
+              <p>
+                <strong>Validation:</strong> Select{" "}
+                <strong>Gmail / Google</strong> if you used Gmail or Google
+                Workspace. Then enter the email address you forwarded from, for
+                example <strong>xyz@domain.com</strong>, and click{" "}
+                <strong>Validate Forwarding</strong>. Validation can take a
+                couple of minutes. If it fails or delays, click{" "}
+                <strong>Retry</strong>.
+              </p>
+            </div>
+
+            <div className="mt-4 bg-yellow-50 border-l-4 border-yellow-400 rounded-lg p-4 text-yellow-800 text-sm flex items-start gap-2 shadow-sm">
+              <FiAlertCircle className="text-yellow-600 text-lg mt-0.5" />
+              <p>
+                <strong>Other providers:</strong> If you use Outlook, Hotmail,
+                GoDaddy, or any third-party email provider, enable forwarding
+                from that provider to your Mailhook address, then follow the
+                same validation process here.
+              </p>
+            </div>
+
+            <div className="mt-4 bg-slate-50 border-l-4 border-slate-500 rounded-lg p-4 text-slate-800 text-sm flex items-start gap-2 shadow-sm">
+              <FiServer className="text-slate-600 text-lg mt-0.5" />
+              <div>
+                <p className="font-semibold mb-2">Common SMTP Settings</p>
+
+                <ul className="space-y-2 text-sm">
+                  <li>
+                    <strong>Microsoft 365 / Outlook</strong>
+                    <br />
+                    Host: smtp.office365.com
+                    <br />
+                    Port: 587 (TLS)
+                  </li>
+
+                  <li>
+                    <strong>Google Workspace / Gmail</strong>
+                    <br />
+                    Host: smtp.gmail.com
+                    <br />
+                    Port: 587 (TLS) or 465 (SSL)
+                  </li>
+
+                  <li>
+                    <strong>Zoho Mail</strong>
+                    <br />
+                    Host: smtp.zoho.com
+                    <br />
+                    Port: 587 (TLS) or 465 (SSL)
+                  </li>
+
+                  <li>
+                    <strong>Yahoo Mail</strong>
+                    <br />
+                    Host: smtp.mail.yahoo.com
+                    <br />
+                    Port: 465 (SSL) or 587 (TLS)
+                  </li>
+
+                  <li>
+                    <strong>GoDaddy / Microsoft 365</strong>
+                    <br />
+                    Host: smtp.office365.com
+                    <br />
+                    Port: 587 (TLS)
+                  </li>
+
+                  <li>
+                    <strong>Custom SMTP Provider</strong>
+                    <br />
+                    Host: smtp.yourprovider.com
+                    <br />
+                    Port: 587 (TLS Recommended)
+                    <br />
+                    Alternative Port: 465 (SSL)
+                  </li>
+                  <li>
+                    <strong>Namecheap Private Email</strong>
+                    <br />
+                    Host: mail.privateemail.com
+                    <br />
+                    Port: 587 (TLS) or 465 (SSL)
+                  </li>
+
+                  <li>
+                    <strong>Hostinger Email</strong>
+                    <br />
+                    Host: smtp.hostinger.com
+                    <br />
+                    Port: 587 (TLS) or 465 (SSL)
+                  </li>
+                </ul>
+              </div>
             </div>
 
             {/* Note Box */}
@@ -3202,10 +3342,11 @@ const InstructionPanel = ({
                         <span>{s.title}</span>
                       </div>
                       <span
-                        className={`text-xs font-semibold px-2 py-0.5 rounded-full ${s.status === "completed"
-                          ? "bg-green-100 text-green-700"
-                          : "bg-yellow-100 text-yellow-700"
-                          }`}
+                        className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                          s.status === "completed"
+                            ? "bg-green-100 text-green-700"
+                            : "bg-yellow-100 text-yellow-700"
+                        }`}
                       >
                         {s.status.charAt(0).toUpperCase() + s.status.slice(1)}
                       </span>
