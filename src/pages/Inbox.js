@@ -700,13 +700,41 @@ const Inbox = () => {
   const [leadStatuses, setLeadStatuses] = useState({});
   const [replyText, setReplyText] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-
+const [modal, setModal] = useState({
+  open: false,
+  type: "info",
+  title: "",
+  message: "",
+  onConfirm: null,
+});
   useEffect(() => {
     const handleResize = () => setIsMobileView(window.innerWidth < 1024);
     handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+
+const showModal = ({ type = "info", title, message, onConfirm = null }) => {
+  setModal({
+    open: true,
+    type,
+    title,
+    message,
+    onConfirm,
+  });
+};
+
+const closeModal = () => {
+  setModal({
+    open: false,
+    type: "info",
+    title: "",
+    message: "",
+    onConfirm: null,
+  });
+};
+
 
   const leadStatusOptions = [
     { value: "new_lead", label: "New Lead" },
@@ -885,36 +913,50 @@ const Inbox = () => {
     } catch (err) {
       console.error("Error updating lead status:", err);
       setLeadStatuses((prev) => ({ ...prev, [emailId]: oldStatus }));
-      alert(err.response?.data?.message || "Lead status update nahi hua");
+showModal({
+        type: "error",
+        title: "Status Update Failed",
+        message: err.response?.data?.message || "UPDATE ERROR",
+      });
     }
   };
 
   const handleDeleteLeads = async (idsToDelete) => {
-    if (!idsToDelete.length) return;
+  if (!idsToDelete.length) return;
 
-    const confirmDelete = window.confirm(
-      `Delete ${idsToDelete.length} selected lead(s)?`,
-    );
-    if (!confirmDelete) return;
+  showModal({
+    type: "confirm",
+    title: "Delete Lead",
+    message: `Are you sure you want to delete ${idsToDelete.length} selected lead(s)?`,
+    onConfirm: async () => {
+      try {
+        await axios.post(`${API_BASE_URL}/leads/delete-many`, {
+          emailIds: idsToDelete,
+        });
 
-    try {
-      await axios.post(`${API_BASE_URL}/leads/delete-many`, {
-        emailIds: idsToDelete,
-      });
+        setEmails((prev) =>
+          prev.filter((email) => !idsToDelete.includes(email._id)),
+        );
 
-      setEmails((prev) =>
-        prev.filter((email) => !idsToDelete.includes(email._id)),
-      );
-      setSelectedLeadIds(new Set());
+        setSelectedLeadIds(new Set());
 
-      if (selectedEmail && idsToDelete.includes(selectedEmail._id)) {
-        setSelectedEmail(null);
+        if (selectedEmail && idsToDelete.includes(selectedEmail._id)) {
+          setSelectedEmail(null);
+        }
+
+        closeModal();
+      } catch (err) {
+        console.error("Error deleting leads:", err);
+
+        showModal({
+          type: "error",
+          title: "Delete Failed",
+          message: err.response?.data?.message || "Lead delete nahi hui",
+        });
       }
-    } catch (err) {
-      console.error("Error deleting leads:", err);
-      alert(err.response?.data?.message || "Lead delete nahi hui");
-    }
-  };
+    },
+  });
+};
 
   const handleSendThreadReply = async () => {
     if (!selectedEmail || !replyText.trim() || replySending) return;
@@ -950,7 +992,11 @@ const Inbox = () => {
       setReplyText("");
     } catch (err) {
       console.error("Error sending thread reply:", err);
-      alert(err.response?.data?.message || "Reply email send nahi hui");
+      showModal({
+        type: "error",
+        title: "Reply Failed",
+        message: err.response?.data?.message || "",
+      });
     } finally {
       setReplySending(false);
     }
@@ -1173,7 +1219,52 @@ const Inbox = () => {
   return (
     <div className="flex h-screen overflow-hidden bg-slate-100 font-sans text-slate-900">
       <Sidebar />
+{modal.open && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+    <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+      <div
+        className={`mb-4 flex h-12 w-12 items-center justify-center rounded-full ${
+          modal.type === "error"
+            ? "bg-red-50 text-red-600"
+            : modal.type === "confirm"
+            ? "bg-orange-50 text-orange-600"
+            : "bg-blue-50 text-blue-600"
+        }`}
+      >
+        {modal.type === "error" ? "!" : modal.type === "confirm" ? "?" : "i"}
+      </div>
 
+      <h3 className="text-lg font-bold text-slate-900">{modal.title}</h3>
+
+      <p className="mt-2 text-sm leading-6 text-slate-500">{modal.message}</p>
+
+      <div className="mt-6 flex justify-end gap-3">
+        <button
+          onClick={closeModal}
+          className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+        >
+          Cancel
+        </button>
+
+        {modal.type === "confirm" ? (
+          <button
+            onClick={modal.onConfirm}
+            className="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
+          >
+            Delete
+          </button>
+        ) : (
+          <button
+            onClick={closeModal}
+            className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+          >
+            OK
+          </button>
+        )}
+      </div>
+    </div>
+  </div>
+)}
       <main className="flex min-w-0 flex-1 flex-col md:ml-64">
         <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 px-5 py-4 backdrop-blur">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -1463,7 +1554,7 @@ const Inbox = () => {
                           Reply in same email thread
                         </div>
 
-                        <div className="mb-3 space-y-2">
+                        {/* <div className="mb-3 space-y-2">
                           {getThreadReplies(selectedEmail).length === 0 ? (
                             <p className="text-sm text-slate-400">
                               No reply sent from here yet.
@@ -1489,7 +1580,7 @@ const Inbox = () => {
                               </div>
                             ))
                           )}
-                        </div>
+                        </div> */}
 
                         <textarea
                           value={replyText}
