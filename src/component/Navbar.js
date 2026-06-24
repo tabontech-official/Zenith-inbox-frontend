@@ -1,7 +1,6 @@
-
 import React, { useState, useContext, useRef, useEffect } from "react";
 import { FiEdit3, FiLogOut, FiUser } from "react-icons/fi";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import OrganizationSettingsModal from "./OrganizationSettingsModal";
 import ScenarioSelectModal from "./ScenarioSelectModal";
 import { UserContext } from "./UserContext";
@@ -21,6 +20,7 @@ const Navbar = () => {
   const profileRef = useRef(null);
 
   const { user, loading } = useContext(UserContext);
+  const plan = user?.subscription?.plan || "free";
   const userId = localStorage.getItem("userid");
 
   useEffect(() => {
@@ -99,8 +99,7 @@ const Navbar = () => {
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
-    return () =>
-      document.removeEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const handleLogout = async () => {
@@ -113,7 +112,8 @@ const Navbar = () => {
   };
 
   const isBlurred =
-    !isProfilePage && (open || openScenario || showProfileMenu || guideStep > 0);
+    !isProfilePage &&
+    (open || openScenario || showProfileMenu || guideStep > 0);
 
   // const hasSkippedStep = user?.setup?.steps?.some(
   //   (s) => s.status === "skipped" || s.status === "incomplete"
@@ -128,13 +128,9 @@ const Navbar = () => {
     const skipped = user?.setup?.steps?.find((s) => s.status === "skipped");
     // navigate(skipped ? `/setup?step=${skipped.step}` : "/setup");
     navigate(
-      skipped
-        ? `/setup?step=${skipped.step}&force=true`
-        : "/setup?force=true"
+      skipped ? `/setup?step=${skipped.step}&force=true` : "/setup?force=true",
     );
-
   };
-
 
   return (
     <>
@@ -144,17 +140,12 @@ const Navbar = () => {
 
       <header className="w-full sticky top-0 z-30 border-b border-slate-200 bg-white/95 px-6 py-3.5 backdrop-blur flex justify-end">
         <div className="flex items-center gap-4">
-
-          {!loading && user && (
+          {!loading && user && !setupCompleted && (
             <button
               onClick={handleWizardClick}
-              className={`hidden md:inline-flex h-10 items-center justify-center px-4 rounded-xl text-sm font-semibold shadow-sm transition duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2
-      ${setupCompleted
-                  ? "bg-slate-100 hover:bg-slate-200 text-slate-800 focus:ring-slate-300"
-                  : "bg-indigo-600 hover:bg-indigo-700 text-white focus:ring-indigo-500"
-                }`}
+              className="hidden md:inline-flex h-10 items-center justify-center px-4 rounded-xl text-sm font-semibold shadow-sm transition duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 bg-indigo-600 hover:bg-indigo-700 text-white focus:ring-indigo-500"
             >
-              {setupCompleted ? "Wizard Completed" : "Complete Wizard"}
+              Complete Wizard
             </button>
           )}
 
@@ -210,13 +201,26 @@ const Navbar = () => {
 
             {showProfileMenu && (
               <div className="absolute right-0 mt-2 w-44 bg-white border rounded-lg shadow-lg z-50 overflow-hidden">
+                {!loading && plan !== "pro" && (
+                  <Link
+                    to="/pricing"
+                    onClick={() => setShowProfileMenu(false)}
+                    className="w-full px-4 py-3 text-sm text-indigo-700 hover:bg-indigo-50 flex items-center justify-between gap-2 transition font-semibold"
+                  >
+                    <span>Upgrade Plan</span>
+                    <span className="rounded-full bg-indigo-600 px-2 py-0.5 text-[10px] font-bold tracking-wide text-white">
+                      PRO
+                    </span>
+                  </Link>
+                )}
+
                 {!isProfilePage && (
                   <button
                     onClick={() => {
                       setShowProfileMenu(false);
                       navigate("/profile");
                     }}
-                    className="w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2 transition"
+                    className="w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2 transition border-t"
                   >
                     <FiUser className="text-gray-600" /> Profile
                   </button>
@@ -244,7 +248,6 @@ const Navbar = () => {
   );
 };
 
-
 const Tooltip = ({ title, step, text, onNext }) => (
   <div className="absolute top-full mt-3 right-0 bg-white shadow-xl border rounded-lg w-72 p-4 z-[70]">
     <div className="flex justify-between mb-2">
@@ -264,6 +267,5 @@ const Tooltip = ({ title, step, text, onNext }) => (
     </div>
   </div>
 );
-
 
 export default Navbar;

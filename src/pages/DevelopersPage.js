@@ -264,117 +264,109 @@ const pageData = content || {
           </button>
         </div>
       </section>
-        <footer className="border-t border-zinc-200/70 bg-[#FBFAFA] py-16">
-              <div className="mx-auto max-w-7xl px-5">
-                <div className="grid gap-10 lg:grid-cols-[1.2fr_3fr]">
-                  <button
-                    onClick={() => navigate("/")}
-                    className="flex items-center gap-2 self-start"
-                  >
-                    <span className="relative flex h-7 w-7 items-center justify-center rounded-full bg-zinc-100 ring-1 ring-zinc-200">
-                      <span className="absolute h-3.5 w-3.5 rounded-full border-[3px] border-zinc-900 border-r-transparent" />
-                      <span className="absolute right-[5px] top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-zinc-900" />
-                    </span>
-      
-                    <span className="text-[18px] font-semibold tracking-[-0.025em] text-zinc-950">
-                      {pageData.logoText}
-                    </span>
-                  </button>
-      
-                  <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-5">
-                    {[
-                      {
-                        title: "Product",
-                        links: [
-                          { label: "Lead Capture", route: "/product" },
-                          { label: "AI Replies", route: "/solutions" },
-                          { label: "Follow-ups", route: "/product" },
-                          { label: "Workflow Automation", route: "/product" },
-                        ],
-                      },
-                      {
-                        title: "Solutions",
-                        links: [
-                          { label: "Sales Teams", route: "/solutions" },
-                          { label: "Agencies", route: "/solutions" },
-                          { label: "Startups", route: "/solutions" },
-                          { label: "Customer Support", route: "/solutions" },
-                        ],
-                      },
-                      {
-                        title: "Developers",
-                        links: [
-                          { label: "API Access", route: "/developer" },
-                          { label: "Email Webhooks", route: "/developer" },
-                          { label: "Integrations", route: "/developer" },
-                          { label: "Documentation", route: "/developer" },
-                        ],
-                      },
-                      {
-                        title: "Company",
-                        links: [
-                          { label: "About", route: "/about" },
-                          { label: "Pricing", route: "/pricing" },
-                          { label: "Talk to Sales", route: "/talk-to-sales" },
-                          { label: "Contact", route: "/contact" },
-                        ],
-                      },
-                      {
-                        title: "Legal",
-                        links: [
-                          { label: "Privacy Policy", route: "/privacy-policy" },
-                          { label: "Terms & Conditions", route: "/terms" },
-                          { label: "Security", route: "/security" },
-                          { label: "Cookie Policy", route: "/cookies" },
-                        ],
-                      },
-                    ].map((group) => (
-                      <div key={group.title}>
-                        <h4 className="mb-4 text-xs font-semibold text-zinc-400">
-                          {group.title}
-                        </h4>
-      
-                        <div className="flex flex-col gap-3">
-                          {group.links.map((link) => (
-                            <button
-                              key={link.label}
-                              onClick={() => goTo(link.route)}
-                              className="text-left text-sm font-semibold text-zinc-950 transition hover:text-violet-600"
-                            >
-                              {link.label}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-      
-                <div className="mt-14 flex flex-col items-center justify-between gap-5 border-t border-zinc-200 pt-7 sm:flex-row">
-                  <p className="text-sm font-medium text-zinc-500">
-                    {pageData.footer?.copyrightText}
-                  </p>
-      
-                  <div className="flex items-center gap-4 text-zinc-500">
-                    {[
-                      { icon: <FiTwitter />, label: "Twitter" },
-                      { icon: <FiLinkedin />, label: "LinkedIn" },
-                      { icon: <FiGithub />, label: "GitHub" },
-                      { icon: <FiYoutube />, label: "YouTube" },
-                      { icon: <FiMail />, label: "Email" },
-                    ].map((item) => (
+           <footer className="border-t border-zinc-200/70 bg-[#FBFAFA] py-16">
+        <div className="mx-auto max-w-7xl px-5">
+          <div className="grid gap-10 lg:grid-cols-[1.2fr_3fr]">
+            <button
+              onClick={() => navigate("/")}
+              className="flex items-center gap-2 self-start"
+            >
+              <span className="relative flex h-7 w-7 items-center justify-center rounded-full bg-zinc-100 ring-1 ring-zinc-200">
+                <span className="absolute h-3.5 w-3.5 rounded-full border-[3px] border-zinc-900 border-r-transparent" />
+                <span className="absolute right-[5px] top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-zinc-900" />
+              </span>
+
+              <span className="text-[18px] font-semibold tracking-[-0.025em] text-zinc-950">
+                {pageData.logoText}
+              </span>
+            </button>
+
+            <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-4">
+              {[
+                {
+                  title: "Product",
+                  links: [
+                    { label: "Lead Capture", route: "/product" },
+                    // { label: "AI Replies", route: "/solutions" },
+                    // { label: "Follow-ups", route: "/product" },
+                    { label: "Workflow Automation", route: "/product" },
+                  ],
+                },
+                
+                {
+                  title: "Developers",
+                  links: [
+                    { label: "API Access", route: "/developer" },
+                    // { label: "Email Webhooks", route: "/developer" },
+                    { label: "Integrations", route: "/developer" },
+                    // { label: "Documentation", route: "/developer" },
+                  ],
+                },
+                {
+                  title: "Company",
+                  links: [
+                    // { label: "About", route: "/about" },
+                    { label: "Pricing", route: "/pricing" },
+                    { label: "Talk to Sales", route: "/talk-to-sales" },
+                    // { label: "Contact", route: "/contact" },
+                  ],
+                },
+                {
+                  title: "Legal",
+                  links: [
+                    { label: "Privacy Policy", route: "/privacy-policy" },
+                    { label: "Terms & Conditions", route: "/terms" },
+                    // { label: "Security", route: "/security" },
+                    // { label: "Cookie Policy", route: "/cookies" },
+                  ],
+                },
+              ].map((group) => (
+                <div key={group.title}>
+                  <h4 className="mb-4 text-xs font-semibold text-zinc-400">
+                    {group.title}
+                  </h4>
+
+                  <div className="flex flex-col gap-3">
+                    {group.links.map((link) => (
                       <button
-                        key={item.label}
-                        aria-label={item.label}
-                        className="text-[18px] transition hover:text-violet-600"
+                        key={link.label}
+                        onClick={() => goTo(link.route)}
+                        className="text-left text-sm font-semibold text-zinc-950 transition hover:text-violet-600"
                       >
-                        {item.icon}
+                        {link.label}
                       </button>
                     ))}
                   </div>
                 </div>
-              </div>
-            </footer>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-14 flex flex-col items-center justify-between gap-5 border-t border-zinc-200 pt-7 sm:flex-row">
+            <p className="text-sm font-medium text-zinc-500">
+              {pageData.footer?.copyrightText}
+            </p>
+
+            {/* <div className="flex items-center gap-4 text-zinc-500">
+              {[
+                { icon: <FiTwitter />, label: "Twitter" },
+                { icon: <FiLinkedin />, label: "LinkedIn" },
+                { icon: <FiGithub />, label: "GitHub" },
+                { icon: <FiYoutube />, label: "YouTube" },
+                { icon: <FiMail />, label: "Email" },
+              ].map((item) => (
+                <button
+                  key={item.label}
+                  aria-label={item.label}
+                  className="text-[18px] transition hover:text-violet-600"
+                >
+                  {item.icon}
+                </button>
+              ))}
+            </div> */}
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };

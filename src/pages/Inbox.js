@@ -67,24 +67,24 @@ const Inbox = () => {
   useEffect(() => {
     fetchEmails();
   }, []);
-  const getDisplayRecipient = (email) => {
-    const possibleEmails = [
-      email?.toEmail,
-      email?.to,
-      email?.originalTo,
-      email?.originalRecipient,
-      email?.recipientEmail,
-      email?.recipientAddress,
-    ].filter(Boolean);
+ const getDisplayRecipient = (email) => {
+  const possibleEmails = [
+    email?.toEmail,
+    email?.to,
+    email?.originalTo,
+    email?.originalRecipient,
+    email?.recipientEmail,
+    email?.recipientAddress,
+  ].filter(Boolean);
 
-    const realEmail = possibleEmails.find(
-      (address) =>
-        !address.includes("mail.replexengine.com") &&
-        !address.includes("zenith-inbox.com"),
-    );
+  const realEmail = possibleEmails.find(
+    (address) =>
+      !address.includes("mail.replexengine.com") &&
+      !address.includes("zenith-inbox.com")
+  );
 
-    return realEmail || "me";
-  };
+  return realEmail || email?.senderAddress || "";
+};
   const formatEmailBody = (html, text) => {
     let isHtml = html && html.trim().length > 0;
     let content = isHtml ? html : text;
@@ -182,7 +182,7 @@ const Inbox = () => {
                 </span>
               </div>
               <p className="text-[11px] text-slate-500">
-                to {email.recipientAddress || "me"}
+  to {getDisplayRecipient(email)}
               </p>
             </div>
           </div>

@@ -12,7 +12,7 @@ const LoginVerify = () => {
     if (token) {
       localStorage.setItem("usertoken", token);
       toast.success("Login verified successfully!");
-      setTimeout(() => navigate("/organization"), 1000);
+      setTimeout(() => navigate("/dashboard"), 1000);
     } else {
       toast.error("Invalid or expired verification link.");
       navigate("/login");

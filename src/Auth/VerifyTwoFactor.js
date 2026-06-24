@@ -28,7 +28,7 @@ const VerifyTwoFactor = () => {
     }
 
     if (setupCompleted) {
-      navigate("/organization", { replace: true });
+      navigate("/dashboard", { replace: true });
       return;
     }
 

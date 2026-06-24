@@ -45,10 +45,10 @@ const Header = () => {
               )}`}
             >
               {link.label}
-
+{/* 
               {["Product", "Developers"].includes(link.label) && (
                 <FiChevronDown className="text-[12px] text-zinc-700" />
-              )}
+              )} */}
             </button>
           ))}
         </nav>

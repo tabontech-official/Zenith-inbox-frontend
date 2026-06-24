@@ -14,7 +14,7 @@ const ProtectedRoute = ({ children, adminOnly = false }) => {
 
   // 👑 Admin routes
   if (adminOnly && user.role !== "admin") {
-    return <Navigate to="/organization" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   const setup = user?.setup || {};
@@ -41,7 +41,7 @@ const ProtectedRoute = ({ children, adminOnly = false }) => {
 
   // 🚫 Block wizard if setup done (unless forced)
   if (allowOrganization && isSetupPage && !forceWizard) {
-    return <Navigate to="/organization" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   return children;

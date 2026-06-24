@@ -640,7 +640,7 @@ const LoginPage = () => {
       }
 
       if (setupCompleted) {
-        navigate("/organization", { replace: true });
+        navigate("/dashboard", { replace: true });
         return;
       }
 
@@ -767,9 +767,9 @@ const LoginPage = () => {
               </span>
             </button>
 
-            <h1 className="text-base font-semibold text-zinc-950">
+            {/* <h1 className="text-base font-semibold text-zinc-950">
               Sign in to Replex Engine
-            </h1>
+            </h1> */}
 
             <p className="mt-2 text-sm leading-6 text-zinc-500">
               Welcome back! Please sign in to continue
@@ -932,7 +932,7 @@ const LoginPage = () => {
 
         <div className="border-t border-zinc-200 bg-[#F7F7F8] px-9 py-4 text-center text-xs font-medium text-zinc-500">
           Secured by{" "}
-          <span className="font-semibold text-zinc-700">Replex</span>
+          <span className="font-semibold text-zinc-700">Replex Engine</span>
         </div>
       </div>
     </div>

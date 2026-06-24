@@ -51,85 +51,157 @@ const LandingPage = () => {
     fetchContent();
   }, []);
 
-  const pageData = content || {
-    logoText: "Replex Engine",
-    navbarLinks: [
-      { label: "Product", route: "/product" },
-      { label: "Solutions", route: "/solutions" },
-      { label: "Developers", route: "/developer" },
-      { label: "Pricing", route: "/pricing" },
+  const defaultPageData = {
+  logoText: "Replex Engine",
+  navbarLinks: [
+    { label: "Product", route: "/product" },
+    { label: "Solutions", route: "/solutions" },
+    { label: "Developers", route: "/developer" },
+    { label: "Pricing", route: "/pricing" },
+  ],
+  hero: {
+    badge: "Shopify Partners Lead Automation Tool",
+    mainTitle: "Automate your lead replies",
+    highlightedTitle: "visually.",
+    description:
+      "Build visual automation flows to reply to leads instantly, apply delays, and send the right email at the perfect time — without writing code.",
+    buttons: [
+      {
+        text: "Get Started For Free No Credit Card Required",
+        route: "/register",
+        isPrimary: true,
+      },
+      {
+        text: "Watch Demo",
+        route: "#demo",
+        isPrimary: false,
+      },
     ],
-    hero: {
-      badge: "AI Lead Automation",
-      mainTitle: "More than auto-replies, Complete Lead Automation",
-      highlightedTitle: "",
-      description:
-        "Replex Engine captures inbound leads, understands email intent, sends instant replies, and keeps follow-ups running until every opportunity is handled.",
-      buttons: [
-        {
-          text: "Start automating for free",
-          route: "/register",
-          isPrimary: true,
-        },
-        { text: "Watch workflow demo", route: "#demo", isPrimary: false },
-      ],
-      demoVideoUrl: "https://youtu.be/P_QYuxHaC7k",
-    },
-    features: {
-      title: "A visual workflow for every lead",
-      subtitle:
-        "From first email to final follow-up, Replex Engine keeps your pipeline moving.",
-      cards: [
-        {
-          iconName: "FiZap",
-          title: "Capture",
-          description:
-            "Automatically capture inbound leads from email, forms, forwarding, or mailhooks.",
-        },
-        {
-          iconName: "PiRobotLight",
-          title: "Understand",
-          description:
-            "Detect intent, urgency, lead source, and context before replying.",
-        },
-        {
-          iconName: "FiSend",
-          title: "Reply",
-          description:
-            "Send the right template or AI-assisted response instantly.",
-        },
-        {
-          iconName: "FiRepeat",
-          title: "Follow-up",
-          description:
-            "Trigger delayed sequences until the lead responds or converts.",
-        },
-        {
-          iconName: "FiBarChart2",
-          title: "Track",
-          description:
-            "Monitor lead progress, reply status, and workflow performance.",
-        },
-      ],
-    },
-    cta: {
-      title: "Ready to stop losing leads?",
-      description:
-        "Launch your automated reply engine and respond to every inbound opportunity faster than your competitors.",
-      buttons: [
-        { text: "Get Started Free", route: "/register", isPrimary: true },
-        { text: "Talk to Sales", route: "/talk-to-sales", isPrimary: false },
-      ],
-    },
-    footer: {
-      copyrightText: "© 2026 Replex Engine — AI powered lead automation",
-      links: [
-        { label: "Privacy Policy", route: "/privacy-policy" },
-        { label: "Terms & Conditions", route: "/terms" },
-      ],
-    },
-  };
+    trustItems: [
+      "No-code workflows",
+      "Instant AI replies",
+      "Automated follow-ups",
+    ],
+    demoVideoUrl: "Comming soon",
+  },
 
+  trustedCountries: [
+    "United States",
+    "United Kingdom",
+    "Germany",
+    "Canada",
+    "Australia",
+  ],
+
+  leadAutomation: {
+    badge: "Lead automation",
+    title: "Capture, understand, and reply to every lead in minutes",
+    description:
+      "Replex Engine turns your inbox into an automated sales workflow.",
+    bullets: [
+      "Connect your lead inbox or forwarding address",
+      "Let AI detect intent, urgency, and customer context",
+      "Send instant replies and continue follow-ups automatically",
+    ],
+    pipelineLabel: "Active pipeline",
+    pipelineTitle: "Agency lead scenario",
+    pipelineStatus: "Running",
+    steps: [
+      { step: "01", title: "Lead", description: "Email received" },
+      { step: "02", title: "Intent", description: "Template detected" },
+      { step: "03", title: "Reply", description: "Response sent" },
+      { step: "04", title: "Follow-up", description: "Sequence completed" },
+    ],
+    completionTitle: "Scenario completed",
+    completionStatus: "Delivered",
+    completionDescription:
+      "Lead captured, intent analyzed, reply sent, and follow-up sequence completed automatically.",
+    stats: [
+      { label: "Reply time", value: "18s" },
+      { label: "Lead score", value: "92%" },
+      { label: "Status", value: "Won" },
+    ],
+  },
+
+  clientCommunication: {
+    badge: "Client Communication",
+    title: "Keep every client conversation clear, fast, and organized",
+    description:
+      "Replex Engine helps your team handle incoming conversations, respond faster, and keep follow-ups consistent.",
+    cards: [
+      {
+        title: "Clear conversation flow",
+        text: "Keep every incoming message organized so your team knows what needs attention.",
+      },
+      {
+        title: "Faster response handling",
+        text: "Use ready replies and smart suggestions to answer clients quickly.",
+      },
+      {
+        title: "Consistent follow-through",
+        text: "Make sure no conversation is forgotten by keeping reminders and follow-ups aligned with your process.",
+      },
+      {
+        title: "Simple team visibility",
+        text: "Give your team a cleaner way to track client conversations, response status, and next steps from one place.",
+      },
+    ],
+    buttonText: "Organize Conversations",
+    buttonRoute: "/register",
+  },
+
+  testimonials: {
+    badge: "Customer Reviews",
+    title: "Trusted by teams who move fast",
+    description:
+      "Join businesses using Replex Engine to capture leads, send instant AI replies, and keep follow-ups running automatically.",
+    buttonText: "Start automating for free",
+    buttonRoute: "/register",
+    quote:
+      "Replex Engine helped us respond to every inbound lead without adding more sales reps.",
+    authorName: "Replex Customer",
+    authorRole: "Growth Team",
+    leftReviews: [],
+    rightReviews: [],
+  },
+
+  footer: {
+    copyrightText: "© 2026 Replex Engine — AI powered lead automation",
+    links: [
+      { label: "Privacy Policy", route: "/privacy-policy" },
+      { label: "Terms & Conditions", route: "/terms" },
+    ],
+  },
+};
+
+const pageData = {
+  ...defaultPageData,
+  ...content,
+  hero: {
+    ...defaultPageData.hero,
+    ...(content?.hero || {}),
+  },
+  leadAutomation: {
+    ...defaultPageData.leadAutomation,
+    ...(content?.leadAutomation || {}),
+  },
+  clientCommunication: {
+    ...defaultPageData.clientCommunication,
+    ...(content?.clientCommunication || {}),
+  },
+  testimonials: {
+    ...defaultPageData.testimonials,
+    ...(content?.testimonials || {}),
+  },
+  trustedCountries:
+    content?.trustedCountries?.length > 0
+      ? content.trustedCountries
+      : defaultPageData.trustedCountries,
+  footer: {
+    ...defaultPageData.footer,
+    ...(content?.footer || {}),
+  },
+};
   const goTo = (route) => {
     if (route === "#demo") setDemoOpen(true);
     else navigate(route);
@@ -162,6 +234,19 @@ const LandingPage = () => {
       text: "We connected our inbox and started capturing leads the same day.",
     },
   ];
+
+  const isComingSoon = (url) => {
+    if (!url) return true;
+
+    const value = url.toLowerCase().trim();
+
+    return (
+      value === "coming soon" ||
+      value === "comming soon" ||
+      value === "coming-soon" ||
+      value === "comming-soon"
+    );
+  };
 
   const reviewsRight = [
     {
@@ -318,80 +403,65 @@ const LandingPage = () => {
     </div>
   );
   const GoogleDataUsageSection = () => (
-  <section className="relative overflow-hidden border-b border-zinc-200/70 bg-white py-24">
-    <div className="mx-auto max-w-7xl px-5">
-      <div className="grid items-start gap-14 lg:grid-cols-[0.9fr_1.1fr]">
-        <div>
-          <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-3.5 py-1.5 text-xs font-bold text-zinc-700 shadow-sm">
-            <span className="h-1.5 w-1.5 rounded-full bg-violet-600" />
-            Data Transparency
+    <section className="relative overflow-hidden border-b border-zinc-200/70 bg-white py-24">
+      <div className="mx-auto max-w-7xl px-5">
+        <div className="grid items-start gap-14 lg:grid-cols-[0.9fr_1.1fr]">
+          <div>
+            <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-3.5 py-1.5 text-xs font-bold text-zinc-700 shadow-sm">
+              <span className="h-1.5 w-1.5 rounded-full bg-violet-600" />
+              {pageData.clientCommunication?.badge}
+            </div>
+
+            <h2 className="max-w-xl text-[40px] font-semibold leading-[1] tracking-[-0.06em] text-zinc-950 sm:text-5xl">
+              {pageData.clientCommunication?.title}{" "}
+            </h2>
+
+            <p className="mt-6 max-w-xl text-base leading-8 text-zinc-600 sm:text-lg">
+              {pageData.clientCommunication?.description}
+            </p>
           </div>
 
-          <h2 className="max-w-xl text-[40px] font-semibold leading-[1] tracking-[-0.06em] text-zinc-950 sm:text-5xl">
-            Why Replex Engine requests Google data
-          </h2>
+          <div className="rounded-2xl border border-zinc-200 bg-[#fafafa] p-6 shadow-[0_24px_80px_rgba(24,24,27,0.08)]">
+            <div className="space-y-5">
+              {pageData.clientCommunication?.cards?.map((item) => (
+                <div
+                  key={item.title}
+                  className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm"
+                >
+                  <div className="flex items-start gap-3">
+                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#F7F7F8] ring-1 ring-zinc-200">
+                      <FiCheckCircle className="text-[13px] text-[#6F4BFF]" />
+                    </span>
 
-          <p className="mt-6 max-w-xl text-base leading-8 text-zinc-600 sm:text-lg">
-            Replex Engine requests access to your Google account only to provide
-            lead automation features such as detecting inbound leads, generating
-            replies, sending responses, and running follow-up workflows.
-          </p>
-        </div>
-
-        <div className="rounded-2xl border border-zinc-200 bg-[#fafafa] p-6 shadow-[0_24px_80px_rgba(24,24,27,0.08)]">
-          <div className="space-y-5">
-            {[
-              {
-                title: "Gmail access",
-                text: "If you connect Gmail, we use email data to identify inbound leads, understand message intent, prepare replies, send responses, and manage follow-up sequences.",
-              },
-              {
-                title: "Limited use",
-                text: "Google user data is used only for the features shown inside Replex Engine. We do not sell Google user data or use it for advertising.",
-              },
-              {
-                title: "User control",
-                text: "Users can disconnect their Google account or stop using the automation features at any time.",
-              },
-              {
-                title: "Privacy Policy",
-                text: "Our privacy policy explains how user data is collected, used, stored, and protected.",
-              },
-            ].map((item) => (
-              <div
-                key={item.title}
-                className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm"
-              >
-                <div className="flex items-start gap-3">
-                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#F7F7F8] ring-1 ring-zinc-200">
-                    <FiCheckCircle className="text-[13px] text-[#6F4BFF]" />
-                  </span>
-
-                  <div>
-                    <h3 className="text-sm font-semibold text-zinc-950">
-                      {item.title}
-                    </h3>
-                    <p className="mt-2 text-sm font-medium leading-6 text-zinc-600">
-                      {item.text}
-                    </p>
+                    <div>
+                      <h3 className="text-sm font-semibold text-zinc-950">
+                        {item.title}
+                      </h3>
+                      <p className="mt-2 text-sm font-medium leading-6 text-zinc-600">
+                        {item.text}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
 
-          <button
-            onClick={() => navigate("/privacy-policy")}
-            className="mt-6 inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-[#6F4BFF] px-4 text-[13px] font-semibold text-white shadow-[0_7px_18px_rgba(111,75,255,0.28)] transition hover:bg-[#6242E8]"
-          >
-            View Privacy Policy
-            <FiArrowRight className="text-[13px]" />
-          </button>
+            <button
+              onClick={() =>
+                navigate(
+                  pageData.clientCommunication?.buttonRoute || "/register",
+                )
+              }
+              className="mt-6 inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-[#6F4BFF] px-4 text-[13px] font-semibold text-white shadow-[0_7px_18px_rgba(111,75,255,0.28)] transition hover:bg-[#6242E8]"
+            >
+              {pageData.clientCommunication?.buttonText}{" "}
+              <FiArrowRight className="text-[13px]" />
+            </button>
+          </div>
         </div>
       </div>
-    </div>
-  </section>
-);
+    </section>
+  );
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#fafafa] text-zinc-950 font-sans selection:bg-violet-100">
@@ -431,9 +501,7 @@ const LandingPage = () => {
                     "Docs",
                     "Changelog",
                     "Company",
-                  ].includes(link.label) && (
-                    <FiChevronDown className="text-[12px] text-zinc-700" />
-                  )}
+                  ].includes(link.label) && <></>}
                 </button>
               ))}
             </nav>
@@ -516,11 +584,7 @@ const LandingPage = () => {
               variants={fadeUp}
               className="mt-8 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[13px] font-medium text-zinc-500"
             >
-              {[
-                "No-code workflows",
-                "Instant AI replies",
-                "Automated follow-ups",
-              ].map((item) => (
+              {pageData.hero?.trustItems?.map((item) => (
                 <span key={item} className="inline-flex items-center gap-1.5">
                   <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#F7F7F8] ring-1 ring-zinc-200">
                     <FiCheckCircle className="text-[11px] text-[#6F4BFF]" />
@@ -536,40 +600,32 @@ const LandingPage = () => {
       <section className="relative z-10 border-b border-zinc-200 bg-white">
         <div className="mx-auto max-w-7xl px-5">
           <div className="grid grid-cols-2 items-center gap-6 border-b border-zinc-200 py-7 text-center sm:grid-cols-5">
-            {["LeadSync", "Flowdesk", "Mailhook", "ReplyOS", "Pipeline"].map(
-              (logo) => (
-                <div
-                  key={logo}
-                  className="text-sm font-semibold tracking-[-0.02em] text-zinc-400"
-                >
-                  {logo}
-                </div>
-              ),
-            )}
+            {pageData.trustedCountries?.map((logo) => (
+              <div
+                key={logo}
+                className="text-sm font-semibold tracking-[-0.02em] text-zinc-400"
+              >
+                {logo}
+              </div>
+            ))}
           </div>
 
           <div className="grid items-center gap-14 py-24 lg:grid-cols-2">
             <div>
               <p className="mb-4 text-xs font-bold uppercase tracking-[0.22em] text-[#6F4BFF]">
-                Lead automation
+                {pageData.leadAutomation?.badge}{" "}
               </p>
 
               <h2 className="max-w-xl text-3xl font-semibold leading-tight tracking-[-0.045em] text-zinc-950 sm:text-5xl">
-                Capture, understand, and reply to every lead in minutes
+                {pageData.leadAutomation?.title}{" "}
               </h2>
 
               <p className="mt-5 max-w-xl text-base leading-7 text-zinc-600">
-                Replex Engine turns your inbox into an automated sales workflow.
-                Capture incoming leads, detect intent, send the right response,
-                and trigger smart follow-ups without manual work.
+                {pageData.leadAutomation?.description}
               </p>
 
               <div className="mt-8 space-y-4">
-                {[
-                  "Connect your lead inbox or forwarding address",
-                  "Let AI detect intent, urgency, and customer context",
-                  "Send instant replies and continue follow-ups automatically",
-                ].map((item) => (
+                {pageData.leadAutomation?.bullets?.map((item) => (
                   <div key={item} className="flex items-start gap-3">
                     <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#F7F7F8] ring-1 ring-zinc-200">
                       <FiCheckCircle className="text-[13px] text-[#6F4BFF]" />
@@ -592,16 +648,17 @@ const LandingPage = () => {
                   <div className="relative mb-5 flex items-center justify-between">
                     <div>
                       <p className="text-xs font-semibold text-zinc-500">
-                        Active pipeline
+                        {pageData.leadAutomation?.pipelineLabel ||
+                          "Active pipeline"}{" "}
                       </p>
                       <h3 className="text-sm font-semibold text-zinc-950">
-                        Agency lead scenario
+                        {pageData.leadAutomation?.pipelineTitle}{" "}
                       </h3>
                     </div>
 
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-[#F7F7F8] px-2.5 py-1 text-[11px] font-semibold text-zinc-700 ring-1 ring-zinc-200">
                       <span className="h-1.5 w-1.5 rounded-full bg-[#6F4BFF]" />
-                      Running
+                      {pageData.leadAutomation?.pipelineStatus}{" "}
                     </span>
                   </div>
 
@@ -610,14 +667,9 @@ const LandingPage = () => {
                     <div className="absolute left-6 right-6 top-[30px] hidden h-px bg-gradient-to-r from-[#6F4BFF] via-[#6F4BFF] to-transparent md:block" />
 
                     <div className="relative grid gap-4 md:grid-cols-4">
-                      {[
-                        ["01", "Lead", "Email received"],
-                        ["02", "Intent", "Template detected"],
-                        ["03", "Reply", "Response sent"],
-                        ["04", "Follow-up", "Sequence completed"],
-                      ].map(([step, title, desc], index) => (
+                      {pageData.leadAutomation?.steps?.map((item, index) => (
                         <div
-                          key={title}
+                          key={item.title}
                           className="relative flex flex-col items-center text-center"
                         >
                           <div
@@ -628,7 +680,7 @@ const LandingPage = () => {
                             }
                           >
                             <span className="text-xs font-semibold">
-                              {step}
+                              {item.step}{" "}
                             </span>
 
                             {index === 1 && (
@@ -643,10 +695,10 @@ const LandingPage = () => {
                           </div>
 
                           <p className="mt-3 text-sm font-semibold text-zinc-950">
-                            {title}
+                            {item.title}{" "}
                           </p>
                           <p className="mt-1 text-xs leading-5 text-zinc-500">
-                            {desc}
+                            {item.description}
                           </p>
                         </div>
                       ))}
@@ -662,36 +714,31 @@ const LandingPage = () => {
                       <div className="flex-1">
                         <div className="flex items-center justify-between gap-3">
                           <p className="text-sm font-semibold text-zinc-950">
-                            Scenario completed
+                            {pageData.leadAutomation?.completionTitle}
                           </p>
                           <span className="rounded-full bg-emerald-50 px-2 py-1 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-200">
-                            Delivered
+                            {pageData.leadAutomation?.completionStatus}
                           </span>
                         </div>
 
                         <p className="mt-1 text-xs leading-5 text-zinc-500">
-                          Lead captured, intent analyzed, reply sent, and
-                          follow-up sequence completed automatically.
+                          {pageData.leadAutomation?.completionDescription}
                         </p>
                       </div>
                     </div>
                   </div>
 
                   <div className="relative mt-4 grid grid-cols-3 gap-2">
-                    {[
-                      ["Reply time", "18s"],
-                      ["Lead score", "92%"],
-                      ["Status", "Won"],
-                    ].map(([label, value]) => (
+                    {pageData.leadAutomation?.stats?.map((stat) => (
                       <div
-                        key={label}
+                        key={stat.label}
                         className="rounded-xl border border-zinc-200 bg-white p-3 text-center shadow-sm"
                       >
                         <p className="text-[11px] font-medium text-zinc-400">
-                          {label}
+                          {stat.label}
                         </p>
                         <p className="mt-1 text-sm font-semibold text-zinc-950">
-                          {value}
+                          {stat.value}
                         </p>
                       </div>
                     ))}
@@ -705,8 +752,8 @@ const LandingPage = () => {
 
       {/* working on this below section */}
 
-      <TestimonialsSection />
-<GoogleDataUsageSection />
+      {/* <TestimonialsSection /> */}
+      <GoogleDataUsageSection />
 
       <footer className="border-t border-zinc-200/70 bg-[#FBFAFA] py-16">
         <div className="mx-auto max-w-7xl px-5">
@@ -725,42 +772,34 @@ const LandingPage = () => {
               </span>
             </button>
 
-            <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-5">
+            <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-4">
               {[
                 {
                   title: "Product",
                   links: [
                     { label: "Lead Capture", route: "/product" },
-                    { label: "AI Replies", route: "/solutions" },
-                    { label: "Follow-ups", route: "/product" },
+                    // { label: "AI Replies", route: "/solutions" },
+                    // { label: "Follow-ups", route: "/product" },
                     { label: "Workflow Automation", route: "/product" },
                   ],
                 },
-                {
-                  title: "Solutions",
-                  links: [
-                    { label: "Sales Teams", route: "/solutions" },
-                    { label: "Agencies", route: "/solutions" },
-                    { label: "Startups", route: "/solutions" },
-                    { label: "Customer Support", route: "/solutions" },
-                  ],
-                },
+                
                 {
                   title: "Developers",
                   links: [
                     { label: "API Access", route: "/developer" },
-                    { label: "Email Webhooks", route: "/developer" },
+                    // { label: "Email Webhooks", route: "/developer" },
                     { label: "Integrations", route: "/developer" },
-                    { label: "Documentation", route: "/developer" },
+                    // { label: "Documentation", route: "/developer" },
                   ],
                 },
                 {
                   title: "Company",
                   links: [
-                    { label: "About", route: "/about" },
+                    // { label: "About", route: "/about" },
                     { label: "Pricing", route: "/pricing" },
                     { label: "Talk to Sales", route: "/talk-to-sales" },
-                    { label: "Contact", route: "/contact" },
+                    // { label: "Contact", route: "/contact" },
                   ],
                 },
                 {
@@ -768,8 +807,8 @@ const LandingPage = () => {
                   links: [
                     { label: "Privacy Policy", route: "/privacy-policy" },
                     { label: "Terms & Conditions", route: "/terms" },
-                    { label: "Security", route: "/security" },
-                    { label: "Cookie Policy", route: "/cookies" },
+                    // { label: "Security", route: "/security" },
+                    // { label: "Cookie Policy", route: "/cookies" },
                   ],
                 },
               ].map((group) => (
@@ -799,7 +838,7 @@ const LandingPage = () => {
               {pageData.footer?.copyrightText}
             </p>
 
-            <div className="flex items-center gap-4 text-zinc-500">
+            {/* <div className="flex items-center gap-4 text-zinc-500">
               {[
                 { icon: <FiTwitter />, label: "Twitter" },
                 { icon: <FiLinkedin />, label: "LinkedIn" },
@@ -815,7 +854,7 @@ const LandingPage = () => {
                   {item.icon}
                 </button>
               ))}
-            </div>
+            </div> */}
           </div>
         </div>
       </footer>
@@ -839,12 +878,25 @@ const LandingPage = () => {
               <FiX />
             </button>
             <div className="aspect-video overflow-hidden rounded-2xl bg-zinc-100">
-              <video
-                src={pageData.hero?.demoVideoUrl}
-                controls
-                autoPlay
-                className="h-full w-full object-cover"
-              />
+              {!isComingSoon(pageData.hero?.demoVideoUrl) ? (
+                <video
+                  src={pageData.hero.demoVideoUrl}
+                  controls
+                  autoPlay
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center bg-[#fafafa]">
+                  <div className="text-center">
+                    <p className="text-3xl font-semibold tracking-[-0.05em] text-zinc-900">
+                      Coming Soon
+                    </p>
+                    <p className="mt-2 text-sm font-medium text-zinc-500">
+                      Demo video will be available soon.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           </motion.div>
         </div>
@@ -913,8 +965,5 @@ const CircuitBackground = () => (
     <div className="absolute left-1/2 top-[118px] h-[360px] w-[720px] -translate-x-1/2 rounded-full bg-white/55 blur-3xl" />
   </div>
 );
-
-
-
 
 export default LandingPage;

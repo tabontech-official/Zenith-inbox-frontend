@@ -131,7 +131,7 @@ const handleLoginAsUser = async (userId) => {
     localStorage.setItem("usertoken", data.token);
     localStorage.setItem("user", JSON.stringify(data.data));
 
-    window.location.href = "/organization";
+    window.location.href = "/dashboard";
   } catch (error) {
     console.error("Login As User Error:", error);
     alert("Something went wrong while login as user.");

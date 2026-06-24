@@ -58,7 +58,7 @@ const PublicRoute = ({ children }) => {
       return <Navigate to={`/setup?step=${nextStep}`} replace />;
     }
 
-    return <Navigate to="/organization" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   // baqi sab public routes allow

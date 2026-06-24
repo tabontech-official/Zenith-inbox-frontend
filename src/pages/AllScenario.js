@@ -71,6 +71,7 @@ const AllScenariosPage = () => {
   const [selectedScenario, setSelectedScenario] = useState(null);
   const [loading, setLoading] = useState(false);
   const [openScenarioModal, setOpenScenarioModal] = useState(false);
+  const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -81,9 +82,7 @@ const AllScenariosPage = () => {
     const userId = localStorage.getItem("userid");
     try {
       setLoading(true);
-      const res = await fetch(
-        `https://email-syncing-backend.vercel.app/scenario/user/${userId}`,
-      );
+      const res = await fetch(`https://email-syncing-backend.vercel.app/scenario/user/${userId}`);
       const data = await res.json();
       setScenarios(Array.isArray(data) ? data : data.data || []);
     } catch (err) {
@@ -126,64 +125,59 @@ const AllScenariosPage = () => {
       <Sidebar />
 
       <main className="flex-1 md:ml-64 flex flex-col">
-       <header className="flex flex-col md:flex-row md:items-center justify-between px-4 py-1 bg-white border-b border-gray-100 shadow-sm gap-4">
+        <header className="flex flex-col md:flex-row md:items-center justify-between px-4 py-1 bg-white border-b border-gray-100 shadow-sm gap-4">
+          <div className="flex items-center gap-4">
+            <div className="hidden sm:flex w-12 h-12 bg-indigo-50 rounded-xl items-center justify-center text-indigo-600">
+              <Workflow className="w-6 h-6" />
+            </div>
 
-  <div className="flex items-center gap-4">
-    <div className="hidden sm:flex w-12 h-12 bg-indigo-50 rounded-xl items-center justify-center text-indigo-600">
-      <Workflow className="w-6 h-6" />
-    </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
+                All Scenarios
+              </h1>
+              <p className="text-sm text-gray-500 mt-0.5">
+                Manage, edit, and organize your automation workflows.
+              </p>
+            </div>
+          </div>
 
-    <div>
-      <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
-        All Scenarios
-      </h1>
-      <p className="text-sm text-gray-500 mt-0.5">
-        Manage, edit, and organize your automation workflows.
-      </p>
-    </div>
-  </div>
+          <div className="flex flex-wrap items-center gap-3 bg-gray-50 p-1.5 rounded-2xl border border-gray-100">
+            <div className="text-sm text-gray-600 font-medium px-3 py-1 bg-white rounded-lg border border-gray-100 shadow-sm">
+              Shopify:{" "}
+              <span className="font-semibold text-indigo-600">
+                {scenarios.filter((s) => s.type === "shopify").length}/1
+              </span>
+            </div>
 
-  <div className="flex flex-wrap items-center gap-3 bg-gray-50 p-1.5 rounded-2xl border border-gray-100">
+            <div className="text-sm text-gray-600 font-medium px-3 py-1 bg-white rounded-lg border border-gray-100 shadow-sm">
+              Custom:{" "}
+              <span className="font-semibold text-indigo-600">
+                {scenarios.filter((s) => s.type !== "shopify").length}/2
+              </span>
+            </div>
 
-    <div className="text-sm text-gray-600 font-medium px-3 py-1 bg-white rounded-lg border border-gray-100 shadow-sm">
-      Shopify:{" "}
-      <span className="font-semibold text-indigo-600">
-        {scenarios.filter((s) => s.type === "shopify").length}/1
-      </span>
-    </div>
+            <button
+              onClick={() => {
+                const shopifyCount = scenarios.filter(
+                  (s) => s.type === "shopify",
+                ).length;
+                const customCount = scenarios.filter(
+                  (s) => s.type !== "shopify",
+                ).length;
 
-    <div className="text-sm text-gray-600 font-medium px-3 py-1 bg-white rounded-lg border border-gray-100 shadow-sm">
-      Custom:{" "}
-      <span className="font-semibold text-indigo-600">
-        {scenarios.filter((s) => s.type !== "shopify").length}/2
-      </span>
-    </div>
+                if (shopifyCount >= 1 && customCount >= 2) {
+                  setUpgradeModalOpen(true);
+                  return;
+                }
 
-    <button
-      onClick={() => {
-        const shopifyCount = scenarios.filter(
-          (s) => s.type === "shopify",
-        ).length;
-        const customCount = scenarios.filter(
-          (s) => s.type !== "shopify",
-        ).length;
-
-        if (shopifyCount >= 1 && customCount >= 2) {
-          alert(
-            "You’ve reached the limit: 1 Shopify + 2 Custom Scenarios.",
-          );
-          return;
-        }
-
-        setOpenScenarioModal(true);
-      }}
-      className="px-4 py-2 rounded-xl font-medium shadow-sm bg-indigo-600 hover:bg-indigo-500 text-white transition"
-    >
-      + New Scenario
-    </button>
-
-  </div>
-</header>
+                setOpenScenarioModal(true);
+              }}
+              className="px-4 py-2 rounded-xl font-medium shadow-sm bg-indigo-600 hover:bg-indigo-500 text-white transition"
+            >
+              + New Scenario
+            </button>
+          </div>
+        </header>
 
         {/* 🔹 Responsive Table */}
         <section className="flex-1 p-4 sm:p-6 lg:p-8 overflow-x-auto">
@@ -325,6 +319,58 @@ const AllScenariosPage = () => {
                 className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white shadow transition"
               >
                 Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {upgradeModalOpen && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 px-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 relative">
+            <button
+              onClick={() => setUpgradeModalOpen(false)}
+              className="absolute right-4 top-4 text-gray-400 hover:text-gray-600 transition"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="w-12 h-12 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center mb-4">
+              <Layers className="w-6 h-6" />
+            </div>
+
+            <h2 className="text-xl font-bold text-gray-900 mb-2">
+              Scenario Limit Reached
+            </h2>
+
+            <p className="text-gray-600 leading-relaxed mb-5">
+              You’ve reached the free plan limit of{" "}
+              <span className="font-semibold text-gray-900">
+                1 Shopify scenario
+              </span>{" "}
+              and{" "}
+              <span className="font-semibold text-gray-900">
+                2 custom scenarios
+              </span>
+              . Higher limits will be available with the Pro plan soon.
+            </p>
+
+            <div className="rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-3 mb-5">
+              <p className="text-sm font-semibold text-indigo-700">
+                Pro plan coming soon
+              </p>
+              <p className="text-sm text-indigo-600 mt-1">
+                More scenarios, higher automation limits, and advanced workflow
+                features are on the way.
+              </p>
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                onClick={() => setUpgradeModalOpen(false)}
+                className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-medium shadow transition"
+              >
+                Got it
               </button>
             </div>
           </div>

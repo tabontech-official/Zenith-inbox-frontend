@@ -61,14 +61,11 @@ const Sidebar = () => {
   useEffect(() => {
     const fetchGuide = async () => {
       try {
-        const res = await fetch(
-          `https://email-syncing-backend.vercel.app/auth/guide/${userId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+        const res = await fetch(`https://email-syncing-backend.vercel.app/auth/guide/${userId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
           },
-        );
+        });
 
         const data = await res.json();
 
@@ -100,12 +97,9 @@ const Sidebar = () => {
   }, []);
 
   const handleLogout = async () => {
-    await fetch(
-      `https://email-syncing-backend.vercel.app/auth/logout/${userId}`,
-      {
-        method: "POST",
-      },
-    );
+    await fetch(`https://email-syncing-backend.vercel.app/auth/logout/${userId}`, {
+      method: "POST",
+    });
 
     localStorage.clear();
     navigate("/login", { replace: true });
@@ -118,50 +112,7 @@ const Sidebar = () => {
     if (next > LAST_STEP) {
       setGuideStep(0);
 
-      await fetch(
-        `https://email-syncing-backend.vercel.app/auth/guide/${userId}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            type: "sidebar",
-            completed: true,
-            step: LAST_STEP + 1,
-          }),
-        },
-      );
-
-      window.dispatchEvent(new Event("sidebarGuideCompleted"));
-      return;
-    }
-
-    setGuideStep(next);
-
-    await fetch(
-      `https://email-syncing-backend.vercel.app/auth/guide/${userId}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          type: "sidebar",
-          step: next,
-        }),
-      },
-    );
-  };
-
-  const skipGuide = async () => {
-    setGuideStep(0);
-
-    await fetch(
-      `https://email-syncing-backend.vercel.app/auth/guide/${userId}`,
-      {
+      await fetch(`https://email-syncing-backend.vercel.app/auth/guide/${userId}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -170,9 +121,43 @@ const Sidebar = () => {
         body: JSON.stringify({
           type: "sidebar",
           completed: true,
+          step: LAST_STEP + 1,
         }),
+      });
+
+      window.dispatchEvent(new Event("sidebarGuideCompleted"));
+      return;
+    }
+
+    setGuideStep(next);
+
+    await fetch(`https://email-syncing-backend.vercel.app/auth/guide/${userId}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
-    );
+      body: JSON.stringify({
+        type: "sidebar",
+        step: next,
+      }),
+    });
+  };
+
+  const skipGuide = async () => {
+    setGuideStep(0);
+
+    await fetch(`https://email-syncing-backend.vercel.app/auth/guide/${userId}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        type: "sidebar",
+        completed: true,
+      }),
+    });
 
     window.dispatchEvent(new Event("sidebarGuideCompleted"));
   };
@@ -187,16 +172,18 @@ const Sidebar = () => {
         ref={ref}
         onClick={() => window.innerWidth < 768 && setIsSidebarOpen(false)}
         className={`flex items-center space-x-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors
-          ${active
-            ? "bg-indigo-100 text-indigo-700 font-semibold"
-            : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+          ${
+            active
+              ? "bg-indigo-100 text-indigo-700 font-semibold"
+              : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
           }
           ${guideStep === stepMatch ? "sidebar-highlight" : ""}
         `}
       >
         <Icon
-          className={`h-5 w-5 shrink-0 ${active ? "text-indigo-700" : "text-gray-500"
-            }`}
+          className={`h-5 w-5 shrink-0 ${
+            active ? "text-indigo-700" : "text-gray-500"
+          }`}
         />
         <span>{label}</span>
       </Link>
@@ -207,7 +194,7 @@ const Sidebar = () => {
     <>
       <div className="flex items-center justify-between border-b bg-white px-8 py-4">
         <Link
-          to="/organization"
+          to="/dashboard"
           className="flex items-center space-x-2 text-gray-900"
         >
           <BrandLogo />
@@ -228,7 +215,7 @@ const Sidebar = () => {
             <p className="mb-2 text-xs uppercase text-gray-400">Main</p>
 
             <div className="space-y-1">
-              {renderNavLink("Organization", FiGrid, "/organization")}
+              {renderNavLink("Dashboard", FiGrid, "/dashboard")}
               {renderNavLink("Lead Conversation", FiMail, "/inbox", leadRef, 1)}
             </div>
           </div>
@@ -240,36 +227,41 @@ const Sidebar = () => {
               type="button"
               onClick={() => setIsScenariosOpen(!isScenariosOpen)}
               className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors
-                ${isScenarioActive
-                  ? "bg-indigo-100 text-indigo-700 font-semibold"
-                  : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                ${
+                  isScenarioActive
+                    ? "bg-indigo-100 text-indigo-700 font-semibold"
+                    : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
                 }
               `}
             >
               <div className="flex items-center space-x-3">
                 <FiLayers
-                  className={`h-5 w-5 shrink-0 ${isScenarioActive ? "text-indigo-700" : "text-gray-500"
-                    }`}
+                  className={`h-5 w-5 shrink-0 ${
+                    isScenarioActive ? "text-indigo-700" : "text-gray-500"
+                  }`}
                 />
                 <span>Scenarios</span>
               </div>
 
               {isScenariosOpen ? (
                 <FiChevronDown
-                  className={`h-4 w-4 ${isScenarioActive ? "text-indigo-700" : "text-gray-500"
-                    }`}
+                  className={`h-4 w-4 ${
+                    isScenarioActive ? "text-indigo-700" : "text-gray-500"
+                  }`}
                 />
               ) : (
                 <FiChevronRight
-                  className={`h-4 w-4 ${isScenarioActive ? "text-indigo-700" : "text-gray-500"
-                    }`}
+                  className={`h-4 w-4 ${
+                    isScenarioActive ? "text-indigo-700" : "text-gray-500"
+                  }`}
                 />
               )}
             </button>
 
             <div
-              className={`ml-8 mt-2 space-y-1 overflow-hidden transition-all duration-300 ${isScenariosOpen ? "max-h-[200px]" : "max-h-0"
-                }`}
+              className={`ml-8 mt-2 space-y-1 overflow-hidden transition-all duration-300 ${
+                isScenariosOpen ? "max-h-[200px]" : "max-h-0"
+              }`}
             >
               {renderNavLink(
                 "All Scenarios",
@@ -324,15 +316,17 @@ const Sidebar = () => {
         <Link
           to="/profile"
           className={`flex items-center space-x-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors
-            ${isProfileActive
-              ? "bg-indigo-100 text-indigo-700 font-semibold"
-              : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+            ${
+              isProfileActive
+                ? "bg-indigo-100 text-indigo-700 font-semibold"
+                : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
             }
           `}
         >
           <FiUser
-            className={`h-5 w-5 shrink-0 ${isProfileActive ? "text-indigo-700" : "text-gray-500"
-              }`}
+            className={`h-5 w-5 shrink-0 ${
+              isProfileActive ? "text-indigo-700" : "text-gray-500"
+            }`}
           />
           <span>Profile</span>
         </Link>
@@ -403,13 +397,18 @@ const Sidebar = () => {
               )}
             </div>
           </div>
-          
+
           <div>
             <p className="mb-2 text-xs uppercase text-gray-400">Pages</p>
             <div className="space-y-1">
-              {renderNavLink("Landing Page", FiFileText, "/admin/pages/landing-page")}
-                  {renderNavLink("Scripts", FiFileText, "/admin/pages/scripts")}
+              {renderNavLink(
+                "Landing Page",
+                FiFileText,
+                "/admin/pages/landing-page",
+              )}
+              {renderNavLink("Product Page", FiFileText, "/admin/product-page")}
 
+              {renderNavLink("Scripts", FiFileText, "/admin/pages/scripts")}
             </div>
           </div>
         </div>
@@ -427,18 +426,18 @@ const Sidebar = () => {
       </div>
     </>
   );
-const BrandLogo = ({ label = "Replex Engine" }) => (
-  <>
-    <span className="relative flex h-7 w-7 items-center justify-center rounded-full bg-zinc-100 ring-1 ring-zinc-200">
-      <span className="absolute h-3.5 w-3.5 rounded-full border-[3px] border-zinc-900 border-r-transparent" />
-      <span className="absolute right-[5px] top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-zinc-900" />
-    </span>
+  const BrandLogo = ({ label = "Replex Engine" }) => (
+    <>
+      <span className="relative flex h-7 w-7 items-center justify-center rounded-full bg-zinc-100 ring-1 ring-zinc-200">
+        <span className="absolute h-3.5 w-3.5 rounded-full border-[3px] border-zinc-900 border-r-transparent" />
+        <span className="absolute right-[5px] top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-zinc-900" />
+      </span>
 
-    <span className="text-lg font-semibold tracking-[-0.035em] text-zinc-950">
-      {label}
-    </span>
-  </>
-);
+      <span className="text-lg font-semibold tracking-[-0.035em] text-zinc-950">
+        {label}
+      </span>
+    </>
+  );
   return (
     <>
       <button
@@ -457,10 +456,7 @@ const BrandLogo = ({ label = "Replex Engine" }) => (
       )}
       <aside
         className={`sidebar fixed left-0 top-0 z-40 flex h-screen w-64 shrink-0 flex-col border-r bg-white shadow-xl transition-transform duration-300 md:shadow-none
-    ${isSidebarOpen
-            ? "translate-x-0"
-            : "-translate-x-full md:translate-x-0"
-          }
+    ${isSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
   `}
       >
         {role === "admin" ? renderAdminSidebar() : renderUserSidebar()}

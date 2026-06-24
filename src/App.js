@@ -44,6 +44,8 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import AdminLandingPage from "./Admin/AdminLandingPage";
 import AdminScriptsPage from "./pages/Script";
 import DynamicScripts from "./pages/DynamicScripts";
+import FooterLinksPage from "./pages/FooterLinksPage";
+import AdminProductPage from "./Admin/AdminProductPage";
 
 function App() {
   return (
@@ -54,7 +56,7 @@ function App() {
           {/* Public Routes */}
           <Route path="/" element={<LandingPage />} />
           <Route path="/reviews" element={<FoldLandingPage />} />
-
+          <Route path="/resources" element={<FooterLinksPage />} />
           <Route
             path="/login"
             element={
@@ -106,7 +108,7 @@ function App() {
 
           {/* Protected Routes */}
           <Route
-            path="/organization"
+            path="/dashboard"
             element={
               <ProtectedRoute>
                 <Organization />
@@ -201,7 +203,7 @@ function App() {
             }
           />
           <Route
-            path="/organization/email/:id"
+            path="/dashboard/email/:id"
             element={
               <ProtectedRoute>
                 <EmailDetailPage />
@@ -238,6 +240,14 @@ function App() {
             element={
               <ProtectedRoute adminOnly={true}>
                 <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/product-page"
+            element={
+              <ProtectedRoute adminOnly={true}>
+                <AdminProductPage />
               </ProtectedRoute>
             }
           />

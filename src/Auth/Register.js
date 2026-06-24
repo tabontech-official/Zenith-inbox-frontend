@@ -817,13 +817,13 @@ const RegisterPage = () => {
       return;
     }
 
-    if (!acceptedTerms) {
-      setAlert({
-        type: "error",
-        message: "Please accept the Terms and Privacy Policy.",
-      });
-      return;
-    }
+  if (!acceptedTerms) {
+  setAlert({
+    type: "error",
+    message: "You must agree to terms and conditions before you proceed.",
+  });
+  return;
+}
 
     setLoading(true);
     setAlert({ type: "", message: "" });

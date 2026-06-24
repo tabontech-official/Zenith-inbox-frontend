@@ -241,7 +241,7 @@ const EmailDetailPage = () => {
           404: Thread Not Found
         </p>
         <Link
-          to="/organization"
+          to="/dashboard"
           className="text-white bg-purple-700 hover:bg-purple-800 transition px-6 py-3 rounded-lg"
         >
           <ChevronLeftIcon className="w-5 h-5 mr-2 inline" />
@@ -261,7 +261,7 @@ const EmailDetailPage = () => {
         <div className="flex-1 space-y-6">
           <div className="mb-10 border-b border-gray-200 pb-6">
             <Link
-              to="/organization"
+              to="/dashboard"
               className="text-indigo-600 hover:text-indigo-850 font-semibold inline-flex items-center transition duration-200"
             >
               <ChevronLeftIcon className="w-5 h-5 mr-2" />

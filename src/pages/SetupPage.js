@@ -604,7 +604,7 @@ const SetupFlow = () => {
       );
 
       if (user?.setup?.completed && !hasSkippedStep) {
-        navigate("/organization");
+        navigate("/dashboard");
       }
     }
   }, [user, loading, navigate]);
@@ -896,10 +896,14 @@ const SetupFlow = () => {
 
               {/* CENTER: Replex Engine Heading */}
               <div className="flex items-center gap-2 px-3 py-1.5">
-                <FiMail className="text-indigo-600 text-2xl sm:text-3xl drop-shadow" />
-                <span className="font-semibold text-lg sm:text-xl text-gray-900 drop-shadow">
-                  Replex Engine
-                </span>
+                  <span className="relative flex h-7 w-7 items-center justify-center rounded-full bg-zinc-100 ring-1 ring-zinc-200">
+                <span className="absolute h-3.5 w-3.5 rounded-full border-[3px] border-zinc-900 border-r-transparent" />
+                <span className="absolute right-[5px] top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-zinc-900" />
+              </span>
+
+              <span className="text-xl font-semibold tracking-[-0.035em] text-zinc-950">
+                Replex Engine
+              </span>
               </div>
             </div>
           </div>
@@ -1046,7 +1050,7 @@ const SetupFlow = () => {
                       await refreshUser();
 
                       // 4️⃣ Navigate
-                      navigate("/organization", { replace: true });
+                      navigate("/dashboard", { replace: true });
                     }}
                     className="
     absolute bottom-4 left-4
@@ -2044,7 +2048,7 @@ const SetupFlow = () => {
                           completed: true,
                         });
                         await refreshUser();
-                        navigate("/organization");
+                        navigate("/dashboard");
                       }}
                       className="
           flex items-center justify-center gap-2

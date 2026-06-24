@@ -1,6 +1,15 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { FiCheck, FiArrowRight, FiStar, FiTwitter, FiLinkedin, FiGithub, FiYoutube, FiMail } from "react-icons/fi";
+import {
+  FiCheck,
+  FiArrowRight,
+  FiStar,
+  FiTwitter,
+  FiLinkedin,
+  FiGithub,
+  FiYoutube,
+  FiMail,
+} from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import Header from "../component/Header";
 
@@ -25,7 +34,7 @@ const Pricing = () => {
   const navigate = useNavigate();
   const [demoOpen, setDemoOpen] = useState(false);
   const [content, setContent] = useState(null);
-const pageData = content || {
+  const pageData = content || {
     logoText: "Replex Engine",
     navbarLinks: [
       { label: "Product", route: "/product" },
@@ -110,7 +119,6 @@ const pageData = content || {
     else navigate(route);
   };
 
-
   const handleProCheckout = async () => {
     try {
       const userId = localStorage.getItem("userid");
@@ -127,7 +135,7 @@ const pageData = content || {
           headers: {
             "Content-Type": "application/json",
           },
-        }
+        },
       );
 
       const data = await res.json();
@@ -153,7 +161,10 @@ const pageData = content || {
           animate="visible"
           className="relative z-10 mx-auto max-w-6xl"
         >
-          <motion.div variants={fadeUp} className="mx-auto max-w-4xl text-center">
+          <motion.div
+            variants={fadeUp}
+            className="mx-auto max-w-4xl text-center"
+          >
             <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white/80 px-3.5 py-1.5 text-xs font-bold text-zinc-700 shadow-sm backdrop-blur">
               <span className="h-1.5 w-1.5 rounded-full bg-violet-600" />
               Pricing
@@ -231,122 +242,114 @@ const pageData = content || {
             onClick={() => navigate("/login")}
             className="mt-8 inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-[#6F4BFF] px-4 text-[13px] font-semibold text-white shadow-[0_7px_18px_rgba(111,75,255,0.28)] transition hover:bg-[#6242E8]"
           >
-            Start for Free
+            Contact Support
             <FiArrowRight className="text-[13px]" />
           </button>
         </div>
       </section>
       <footer className="border-t border-zinc-200/70 bg-[#FBFAFA] py-16">
-              <div className="mx-auto max-w-7xl px-5">
-                <div className="grid gap-10 lg:grid-cols-[1.2fr_3fr]">
-                  <button
-                    onClick={() => navigate("/")}
-                    className="flex items-center gap-2 self-start"
-                  >
-                    <span className="relative flex h-7 w-7 items-center justify-center rounded-full bg-zinc-100 ring-1 ring-zinc-200">
-                      <span className="absolute h-3.5 w-3.5 rounded-full border-[3px] border-zinc-900 border-r-transparent" />
-                      <span className="absolute right-[5px] top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-zinc-900" />
-                    </span>
-      
-                    <span className="text-[18px] font-semibold tracking-[-0.025em] text-zinc-950">
-                      {pageData.logoText}
-                    </span>
-                  </button>
-      
-                  <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-5">
-                    {[
-                      {
-                        title: "Product",
-                        links: [
-                          { label: "Lead Capture", route: "/product" },
-                          { label: "AI Replies", route: "/solutions" },
-                          { label: "Follow-ups", route: "/product" },
-                          { label: "Workflow Automation", route: "/product" },
-                        ],
-                      },
-                      {
-                        title: "Solutions",
-                        links: [
-                          { label: "Sales Teams", route: "/solutions" },
-                          { label: "Agencies", route: "/solutions" },
-                          { label: "Startups", route: "/solutions" },
-                          { label: "Customer Support", route: "/solutions" },
-                        ],
-                      },
-                      {
-                        title: "Developers",
-                        links: [
-                          { label: "API Access", route: "/developer" },
-                          { label: "Email Webhooks", route: "/developer" },
-                          { label: "Integrations", route: "/developer" },
-                          { label: "Documentation", route: "/developer" },
-                        ],
-                      },
-                      {
-                        title: "Company",
-                        links: [
-                          { label: "About", route: "/about" },
-                          { label: "Pricing", route: "/pricing" },
-                          { label: "Talk to Sales", route: "/talk-to-sales" },
-                          { label: "Contact", route: "/contact" },
-                        ],
-                      },
-                      {
-                        title: "Legal",
-                        links: [
-                          { label: "Privacy Policy", route: "/privacy-policy" },
-                          { label: "Terms & Conditions", route: "/terms" },
-                          { label: "Security", route: "/security" },
-                          { label: "Cookie Policy", route: "/cookies" },
-                        ],
-                      },
-                    ].map((group) => (
-                      <div key={group.title}>
-                        <h4 className="mb-4 text-xs font-semibold text-zinc-400">
-                          {group.title}
-                        </h4>
-      
-                        <div className="flex flex-col gap-3">
-                          {group.links.map((link) => (
-                            <button
-                              key={link.label}
-                              onClick={() => goTo(link.route)}
-                              className="text-left text-sm font-semibold text-zinc-950 transition hover:text-violet-600"
-                            >
-                              {link.label}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-      
-                <div className="mt-14 flex flex-col items-center justify-between gap-5 border-t border-zinc-200 pt-7 sm:flex-row">
-                  <p className="text-sm font-medium text-zinc-500">
-                    {pageData.footer?.copyrightText}
-                  </p>
-      
-                  <div className="flex items-center gap-4 text-zinc-500">
-                    {[
-                      { icon: <FiTwitter />, label: "Twitter" },
-                      { icon: <FiLinkedin />, label: "LinkedIn" },
-                      { icon: <FiGithub />, label: "GitHub" },
-                      { icon: <FiYoutube />, label: "YouTube" },
-                      { icon: <FiMail />, label: "Email" },
-                    ].map((item) => (
+        <div className="mx-auto max-w-7xl px-5">
+          <div className="grid gap-10 lg:grid-cols-[1.2fr_3fr]">
+            <button
+              onClick={() => navigate("/")}
+              className="flex items-center gap-2 self-start"
+            >
+              <span className="relative flex h-7 w-7 items-center justify-center rounded-full bg-zinc-100 ring-1 ring-zinc-200">
+                <span className="absolute h-3.5 w-3.5 rounded-full border-[3px] border-zinc-900 border-r-transparent" />
+                <span className="absolute right-[5px] top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-zinc-900" />
+              </span>
+
+              <span className="text-[18px] font-semibold tracking-[-0.025em] text-zinc-950">
+                {pageData.logoText}
+              </span>
+            </button>
+
+            <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-4">
+              {[
+                {
+                  title: "Product",
+                  links: [
+                    { label: "Lead Capture", route: "/product" },
+                    // { label: "AI Replies", route: "/solutions" },
+                    // { label: "Follow-ups", route: "/product" },
+                    { label: "Workflow Automation", route: "/product" },
+                  ],
+                },
+
+                {
+                  title: "Developers",
+                  links: [
+                    { label: "API Access", route: "/developer" },
+                    // { label: "Email Webhooks", route: "/developer" },
+                    { label: "Integrations", route: "/developer" },
+                    // { label: "Documentation", route: "/developer" },
+                  ],
+                },
+                {
+                  title: "Company",
+                  links: [
+                    // { label: "About", route: "/about" },
+                    { label: "Pricing", route: "/pricing" },
+                    { label: "Talk to Sales", route: "/talk-to-sales" },
+                    // { label: "Contact", route: "/contact" },
+                  ],
+                },
+                {
+                  title: "Legal",
+                  links: [
+                    { label: "Privacy Policy", route: "/privacy-policy" },
+                    { label: "Terms & Conditions", route: "/terms" },
+                    // { label: "Security", route: "/security" },
+                    // { label: "Cookie Policy", route: "/cookies" },
+                  ],
+                },
+              ].map((group) => (
+                <div key={group.title}>
+                  <h4 className="mb-4 text-xs font-semibold text-zinc-400">
+                    {group.title}
+                  </h4>
+
+                  <div className="flex flex-col gap-3">
+                    {group.links.map((link) => (
                       <button
-                        key={item.label}
-                        aria-label={item.label}
-                        className="text-[18px] transition hover:text-violet-600"
+                        key={link.label}
+                        onClick={() => goTo(link.route)}
+                        className="text-left text-sm font-semibold text-zinc-950 transition hover:text-violet-600"
                       >
-                        {item.icon}
+                        {link.label}
                       </button>
                     ))}
                   </div>
                 </div>
-              </div>
-            </footer>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-14 flex flex-col items-center justify-between gap-5 border-t border-zinc-200 pt-7 sm:flex-row">
+            <p className="text-sm font-medium text-zinc-500">
+              {pageData.footer?.copyrightText}
+            </p>
+
+            {/* <div className="flex items-center gap-4 text-zinc-500">
+              {[
+                { icon: <FiTwitter />, label: "Twitter" },
+                { icon: <FiLinkedin />, label: "LinkedIn" },
+                { icon: <FiGithub />, label: "GitHub" },
+                { icon: <FiYoutube />, label: "YouTube" },
+                { icon: <FiMail />, label: "Email" },
+              ].map((item) => (
+                <button
+                  key={item.label}
+                  aria-label={item.label}
+                  className="text-[18px] transition hover:text-violet-600"
+                >
+                  {item.icon}
+                </button>
+              ))}
+            </div> */}
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };
@@ -433,10 +436,16 @@ const CircuitBackground = () => (
       fill="none"
     >
       <path d="M72 140H222L292 210H474L545 140H690" stroke="currentColor" />
-      <path d="M1430 140H1278L1208 210H1026L955 140H810" stroke="currentColor" />
+      <path
+        d="M1430 140H1278L1208 210H1026L955 140H810"
+        stroke="currentColor"
+      />
       <path d="M260 460H430L500 525H658V392H750" stroke="currentColor" />
       <path d="M1240 460H1070L1000 525H842V392H750" stroke="currentColor" />
-      <path d="M750 0V105M750 495V600M520 0V105L590 175V245M980 0V105L910 175V245" stroke="currentColor" />
+      <path
+        d="M750 0V105M750 495V600M520 0V105L590 175V245M980 0V105L910 175V245"
+        stroke="currentColor"
+      />
 
       {[260, 430, 585, 750, 915, 1070, 1240].map((x, i) => (
         <rect
