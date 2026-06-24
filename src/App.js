@@ -46,6 +46,7 @@ import AdminScriptsPage from "./pages/Script";
 import DynamicScripts from "./pages/DynamicScripts";
 import FooterLinksPage from "./pages/FooterLinksPage";
 import AdminProductPage from "./Admin/AdminProductPage";
+import Security from "./pages/Security";
 
 function App() {
   return (
@@ -128,6 +129,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <OthersScenariosPage />
+              </ProtectedRoute>
+            }
+          />
+            <Route
+            path="/security"
+            element={
+              <ProtectedRoute>
+                <Security />
               </ProtectedRoute>
             }
           />

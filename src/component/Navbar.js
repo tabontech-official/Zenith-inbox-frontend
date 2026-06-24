@@ -5,6 +5,7 @@ import OrganizationSettingsModal from "./OrganizationSettingsModal";
 import ScenarioSelectModal from "./ScenarioSelectModal";
 import { UserContext } from "./UserContext";
 import axios from "axios";
+import { MdSecurity } from "react-icons/md";
 
 const API = "https://email-syncing-backend.vercel.app/auth/guide";
 
@@ -111,9 +112,7 @@ const Navbar = () => {
     window.location.reload();
   };
 
-  const isBlurred =
-    !isProfilePage &&
-    (open || openScenario || showProfileMenu || guideStep > 0);
+  const isBlurred = !isProfilePage && (open || openScenario || showProfileMenu);
 
   // const hasSkippedStep = user?.setup?.steps?.some(
   //   (s) => s.status === "skipped" || s.status === "incomplete"
@@ -213,7 +212,15 @@ const Navbar = () => {
                     </span>
                   </Link>
                 )}
-
+                <button
+                  onClick={() => {
+                    setShowProfileMenu(false);
+                    navigate("/security");
+                  }}
+                  className="w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2 transition border-t"
+                >
+                  <MdSecurity className="text-gray-600" /> Security
+                </button>
                 {!isProfilePage && (
                   <button
                     onClick={() => {
