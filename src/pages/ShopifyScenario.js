@@ -935,12 +935,12 @@ const ShopifyScenariosPage = () => {
             onClick={(e) => {
               e.stopPropagation();
               if (isWebhook) {
-                setShowWebhookInfo(true);
+                onEdit && onEdit();
               } else {
                 handleViewEmailData();
               }
             }}
-            title={isWebhook ? "View Webhook Info" : "View Test Email"}
+            title={isWebhook ? "Edit Connection" : "View Test Email"}
             className="absolute top-2 right-2 rounded-lg border border-[#C7D2FE] bg-white p-1.5 text-[#7375E8] shadow-sm transition hover:bg-[#EEF2FF] hover:text-[#5B5FD6]"
           >
             <Eye className="w-4 h-4" />
