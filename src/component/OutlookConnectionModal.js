@@ -193,7 +193,7 @@ const OutlookConnectionModal = ({
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-50">
+    <div className="fixed inset-0 flex items-center justify-center z-50 p-4 sm:p-0">
       {/* Blurred Backdrop */}
       <div 
         className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm transition-opacity" 
@@ -201,10 +201,10 @@ const OutlookConnectionModal = ({
       ></div>
       
       {/* Modal Container */}
-      <div className="relative bg-white rounded-2xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.15)] w-[460px] overflow-hidden transform transition-all animate-in fade-in zoom-in-95 duration-300">
+      <div className="relative bg-white rounded-2xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.15)] w-full max-w-[460px] max-h-[90vh] flex flex-col overflow-hidden transform transition-all animate-in fade-in zoom-in-95 duration-300">
         
         {/* Header */}
-        <div className="relative flex items-center justify-between px-6 py-5 bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 text-white overflow-hidden">
+        <div className="relative shrink-0 flex items-center justify-between px-6 py-5 bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 text-white overflow-hidden">
           <div className="absolute inset-0 bg-white/10 backdrop-blur-sm"></div>
           <div className="relative flex items-center space-x-3">
             <div className="bg-white/20 p-2 rounded-lg backdrop-blur-md border border-white/30 shadow-inner">
@@ -223,7 +223,7 @@ const OutlookConnectionModal = ({
         </div>
 
         {/* Body */}
-        <div className="p-7 space-y-6 bg-gray-50/30">
+        <div className="p-7 space-y-6 bg-gray-50/30 overflow-y-auto">
           {!editMode && (
             <div className="group">
               <label className="block text-[14px] font-semibold text-gray-700 mb-1.5 ml-1">
