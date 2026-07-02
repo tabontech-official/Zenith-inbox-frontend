@@ -193,28 +193,46 @@ const OutlookConnectionModal = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl w-[440px] overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
-          <div className="flex items-center space-x-2">
-            <FaMicrosoft className="text-white text-xl" />
-            <h2 className="font-semibold text-lg">{editMode ? "Edit Outlook Connection" : "Connect Outlook"}</h2>
+    <div className="fixed inset-0 flex items-center justify-center z-50">
+      {/* Blurred Backdrop */}
+      <div 
+        className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm transition-opacity" 
+        onClick={onClose}
+      ></div>
+      
+      {/* Modal Container */}
+      <div className="relative bg-white rounded-2xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.15)] w-[460px] overflow-hidden transform transition-all animate-in fade-in zoom-in-95 duration-300">
+        
+        {/* Header */}
+        <div className="relative flex items-center justify-between px-6 py-5 bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 text-white overflow-hidden">
+          <div className="absolute inset-0 bg-white/10 backdrop-blur-sm"></div>
+          <div className="relative flex items-center space-x-3">
+            <div className="bg-white/20 p-2 rounded-lg backdrop-blur-md border border-white/30 shadow-inner">
+              <FaMicrosoft className="text-white text-xl drop-shadow-md" />
+            </div>
+            <h2 className="font-semibold text-xl tracking-tight text-white drop-shadow-sm">
+              {editMode ? "Edit Outlook Connection" : "Connect Outlook"}
+            </h2>
           </div>
-          <button onClick={onClose}>
-            <FiX className="text-white text-lg hover:text-gray-200" />
+          <button 
+            onClick={onClose}
+            className="relative text-white/80 hover:text-white hover:bg-white/10 p-1.5 rounded-full transition-colors"
+          >
+            <FiX className="text-xl" />
           </button>
         </div>
 
-        <div className="p-6 space-y-5">
+        {/* Body */}
+        <div className="p-7 space-y-6 bg-gray-50/30">
           {!editMode && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="group">
+              <label className="block text-[14px] font-semibold text-gray-700 mb-1.5 ml-1">
                 Connection Type
               </label>
               <select
                 value={connectionType}
                 onChange={(e) => setConnectionType(e.target.value)}
-                className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full bg-white border border-gray-200 hover:border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none px-4 py-3 rounded-xl text-[14px] text-gray-800 transition-all shadow-sm cursor-pointer"
               >
                 <option value="other">Other (Custom SMTP)</option>
                 <option value="microsoft">Microsoft 365 (OAuth)</option>
@@ -224,9 +242,9 @@ const OutlookConnectionModal = ({
 
           {/* Add Mode: Custom SMTP OR Edit Mode: SMTP */}
           {((!editMode && connectionType === "other") || (editMode && connectionData?.provider === "smtp")) && (
-            <>
+            <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 space-y-5">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-[14px] font-semibold text-gray-700 mb-1.5 ml-1">
                   Connection Name
                 </label>
                 <input
@@ -234,12 +252,12 @@ const OutlookConnectionModal = ({
                   name="name"
                   value={form.name}
                   onChange={handleChange}
-                  className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="w-full bg-white border border-gray-200 hover:border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none px-4 py-3 rounded-xl text-[14px] text-gray-800 transition-all shadow-sm"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-[14px] font-semibold text-gray-700 mb-1.5 ml-1">
                   Email Address
                 </label>
                 <input
@@ -247,14 +265,14 @@ const OutlookConnectionModal = ({
                   name="email"
                   value={form.email}
                   onChange={handleChange}
-                  className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="w-full bg-white border border-gray-200 hover:border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none px-4 py-3 rounded-xl text-[14px] text-gray-800 transition-all shadow-sm"
                   placeholder="yourname@outlook.com"
                 />
               </div>
 
               {!editMode && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-[14px] font-semibold text-gray-700 mb-1.5 ml-1">
                     Full Name
                   </label>
                   <input
@@ -262,14 +280,14 @@ const OutlookConnectionModal = ({
                     name="fullName"
                     value={form.fullName}
                     onChange={handleChange}
-                    className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="w-full bg-white border border-gray-200 hover:border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none px-4 py-3 rounded-xl text-[14px] text-gray-800 transition-all shadow-sm"
                     placeholder="Your full name"
                   />
                 </div>
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-[14px] font-semibold text-gray-700 mb-1.5 ml-1">
                   Username
                 </label>
                 <input
@@ -277,40 +295,41 @@ const OutlookConnectionModal = ({
                   name="username"
                   value={form.username}
                   onChange={handleChange}
-                  className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="w-full bg-white border border-gray-200 hover:border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none px-4 py-3 rounded-xl text-[14px] text-gray-800 transition-all shadow-sm"
                   placeholder="Usually same as email"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-[14px] font-semibold text-gray-700 mb-1.5 ml-1">
                   Password / App Password
                 </label>
-                <div className="relative">
+                <div className="relative group">
                   <input
                     type={showPassword ? "text" : "password"}
                     name="password"
                     value={form.password}
                     onChange={handleChange}
-                    className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none pr-10"
+                    className="w-full bg-white border border-gray-200 hover:border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none px-4 py-3 pr-11 rounded-xl text-[14px] text-gray-800 transition-all shadow-sm"
                     placeholder={editMode ? "Leave blank to keep current password" : "Enter password"}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-2.5 text-gray-500 hover:text-gray-700"
+                    className="absolute right-3 top-3 text-gray-400 hover:text-blue-500 transition-colors bg-white px-1"
                   >
-                    {showPassword ? <FiEyeOff /> : <FiEye />}
+                    {showPassword ? <FiEyeOff className="text-lg" /> : <FiEye className="text-lg" />}
                   </button>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-500 mt-2 ml-1 flex items-center">
+                  <span className="w-1 h-1 rounded-full bg-gray-400 mr-1.5"></span>
                   If MFA is enabled, use an Outlook App Password.
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-5 pt-2">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-[14px] font-semibold text-gray-700 mb-1.5 ml-1">
                     SMTP Host
                   </label>
                   <input
@@ -318,11 +337,11 @@ const OutlookConnectionModal = ({
                     name="host"
                     value={form.host}
                     onChange={handleChange}
-                    className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="w-full bg-gray-50/50 border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none px-4 py-3 rounded-xl text-[14px] text-gray-800 transition-all shadow-sm"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-[14px] font-semibold text-gray-700 mb-1.5 ml-1">
                     Port
                   </label>
                   <input
@@ -330,34 +349,34 @@ const OutlookConnectionModal = ({
                     name="port"
                     value={form.port}
                     onChange={handleChange}
-                    className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="w-full bg-gray-50/50 border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none px-4 py-3 rounded-xl text-[14px] text-gray-800 transition-all shadow-sm"
                   />
                 </div>
               </div>
 
               {editMode && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                <div className="pt-2">
+                  <label className="block text-[14px] font-semibold text-gray-700 mb-1.5 ml-1">
                     Status
                   </label>
                   <select
                     value={status}
                     onChange={(e) => setStatus(e.target.value)}
-                    className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="w-full bg-white border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none px-4 py-3 rounded-xl text-[14px] text-gray-800 transition-all shadow-sm cursor-pointer"
                   >
                     <option value="active">Active</option>
                     <option value="disconnected">Disconnected</option>
                   </select>
                 </div>
               )}
-            </>
+            </div>
           )}
 
           {/* Edit Mode: OAuth Outlook */}
           {editMode && connectionData?.provider === "outlook" && (
-            <>
+            <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 space-y-5">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-[14px] font-semibold text-gray-700 mb-1.5 ml-1">
                   Connection Name
                 </label>
                 <input
@@ -365,12 +384,12 @@ const OutlookConnectionModal = ({
                   name="name"
                   value={form.name}
                   onChange={handleChange}
-                  className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="w-full bg-white border border-gray-200 hover:border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none px-4 py-3 rounded-xl text-[14px] text-gray-800 transition-all shadow-sm"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-[14px] font-semibold text-gray-700 mb-1.5 ml-1">
                   Email Address
                 </label>
                 <input
@@ -378,39 +397,42 @@ const OutlookConnectionModal = ({
                   name="email"
                   value={form.email}
                   disabled
-                  className="w-full border rounded px-3 py-2 text-sm bg-gray-100 text-gray-500 cursor-not-allowed outline-none"
+                  className="w-full border border-gray-100 bg-gray-100/50 text-gray-500 px-4 py-3 rounded-xl text-[14px] cursor-not-allowed shadow-inner"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-[14px] font-semibold text-gray-700 mb-1.5 ml-1">
                   Status
                 </label>
                 <select
                   value={status}
                   onChange={(e) => setStatus(e.target.value)}
-                  className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="w-full bg-white border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none px-4 py-3 rounded-xl text-[14px] text-gray-800 transition-all shadow-sm cursor-pointer"
                 >
                   <option value="active">Active</option>
                   <option value="disconnected">Disconnected</option>
                 </select>
               </div>
-            </>
+            </div>
           )}
 
           {/* Add Mode: Microsoft OAuth */}
           {!editMode && connectionType === "microsoft" && (
-            <div className="flex flex-col items-center justify-center py-6">
-              <p className="text-sm text-gray-600 mb-3 text-center">
-                Connect your Outlook (Microsoft 365) account securely using
-                OAuth.
+            <div className="flex flex-col items-center justify-center py-10 px-4 animate-in fade-in zoom-in-95 duration-300">
+              <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-5 border border-blue-100 shadow-inner">
+                <FaMicrosoft className="text-blue-600 text-3xl" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Connect Securely</h3>
+              <p className="text-[14px] text-gray-500 mb-8 text-center leading-relaxed px-4">
+                You'll be securely redirected to Microsoft to authorize access for your Outlook account.
               </p>
               <button
                 onClick={handleMicrosoftOAuth}
-                className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded shadow"
+                className="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-3.5 rounded-xl shadow-lg shadow-blue-500/30 transform active:scale-95 transition-all font-semibold"
               >
-                <FaMicrosoft />
-                <span>Connect with Microsoft</span>
+                <FaMicrosoft className="text-lg" />
+                <span>Continue with Microsoft</span>
               </button>
             </div>
           )}
@@ -418,10 +440,10 @@ const OutlookConnectionModal = ({
 
         {/* Footer actions */}
         {(editMode || connectionType === "other") && (
-          <div className="flex justify-end space-x-3 px-6 py-4 border-t bg-gray-50">
+          <div className="flex justify-end space-x-3 px-7 py-5 bg-gray-50/80 border-t border-gray-100 backdrop-blur-md">
             <button
               onClick={onClose}
-              className="px-4 py-2 text-sm border rounded hover:bg-gray-100"
+              className="px-6 py-2.5 text-[14px] font-semibold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:text-gray-900 transition-colors shadow-sm"
               disabled={submitting}
             >
               Cancel
@@ -429,9 +451,9 @@ const OutlookConnectionModal = ({
             <button
               onClick={editMode ? handleEditSubmit : handleManualSubmit}
               disabled={submitting}
-              className="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 font-semibold"
+              className="px-6 py-2.5 text-[14px] font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 hover:from-blue-700 hover:to-indigo-700 transform active:scale-95 transition-all disabled:opacity-70 disabled:active:scale-100"
             >
-              {editMode ? (submitting ? "Saving..." : "Save Changes") : "Save Connection"}
+              {editMode ? (submitting ? "Saving..." : "Save Changes") : (submitting ? "Connecting..." : "Save Connection")}
             </button>
           </div>
         )}

@@ -58,128 +58,145 @@ const userId = localStorage.getItem("userid");
 
 };
 
-return ( <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"> <div className="bg-white rounded-lg shadow-xl w-[440px] overflow-hidden">
+return (
+  <div className="fixed inset-0 flex items-center justify-center z-50">
+    {/* Blurred Backdrop */}
+    <div 
+      className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm transition-opacity" 
+      onClick={onClose}
+    ></div>
 
-    {/* Header */}
-    <div className="flex items-center justify-between px-5 py-3 bg-indigo-600 text-white">
-      <h2 className="font-semibold text-lg">Connect Other SMTP</h2>
-      <button onClick={onClose}>
-        <FiX className="text-lg" />
-      </button>
-    </div>
-
-    <div className="p-6 space-y-4">
-
-      <div>
-        <label className="text-sm font-medium">Connection Name</label>
-        <input
-          type="text"
-          name="name"
-          value={form.name}
-          onChange={handleChange}
-          className="w-full border rounded px-3 py-2 text-sm"
-        />
-      </div>
-
-      <div>
-        <label className="text-sm font-medium">Email Address</label>
-        <input
-          type="email"
-          name="email"
-          placeholder="your@email.com"
-          value={form.email}
-          onChange={handleChange}
-          className="w-full border rounded px-3 py-2 text-sm"
-        />
-      </div>
-
-      <div>
-        <label className="text-sm font-medium">Full Name</label>
-        <input
-          type="text"
-          name="fullName"
-          value={form.fullName}
-          onChange={handleChange}
-          className="w-full border rounded px-3 py-2 text-sm"
-        />
-      </div>
-
-      <div>
-        <label className="text-sm font-medium">Username</label>
-        <input
-          type="text"
-          name="username"
-          value={form.username}
-          onChange={handleChange}
-          className="w-full border rounded px-3 py-2 text-sm"
-        />
-      </div>
-
-      <div>
-        <label className="text-sm font-medium">Password / App Password</label>
-        <div className="relative">
-          <input
-            type={showPassword ? "text" : "password"}
-            name="password"
-            value={form.password}
-            onChange={handleChange}
-            className="w-full border rounded px-3 py-2 text-sm pr-10"
-          />
-          <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-2.5 text-gray-500"
-          >
-            {showPassword ? <FiEyeOff /> : <FiEye />}
-          </button>
+    {/* Modal Container */}
+    <div className="relative bg-white rounded-2xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.15)] w-[460px] overflow-hidden transform transition-all animate-in fade-in zoom-in-95 duration-300">
+      
+      {/* Header */}
+      <div className="relative flex items-center justify-between px-6 py-5 bg-gradient-to-r from-violet-600 via-indigo-600 to-blue-600 text-white overflow-hidden">
+        <div className="absolute inset-0 bg-white/10 backdrop-blur-sm"></div>
+        <div className="relative flex items-center space-x-3">
+          <div className="bg-white/20 p-2 rounded-lg backdrop-blur-md border border-white/30 shadow-inner">
+            <svg className="w-5 h-5 text-white drop-shadow-md" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+          </div>
+          <h2 className="font-semibold text-xl tracking-tight text-white drop-shadow-sm">Connect Other SMTP</h2>
         </div>
+        <button 
+          onClick={onClose}
+          className="relative text-white/80 hover:text-white hover:bg-white/10 p-1.5 rounded-full transition-colors"
+        >
+          <FiX className="text-xl" />
+        </button>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      {/* Body */}
+      <div className="p-7 space-y-5 bg-gray-50/30 animate-in fade-in slide-in-from-bottom-2 duration-300">
         <div>
-          <label className="text-sm font-medium">SMTP Host</label>
+          <label className="block text-[14px] font-semibold text-gray-700 mb-1.5 ml-1">Connection Name</label>
           <input
             type="text"
-            name="host"
-            placeholder="smtp.example.com"
-            value={form.host}
+            name="name"
+            value={form.name}
             onChange={handleChange}
-            className="w-full border rounded px-3 py-2 text-sm"
+            className="w-full bg-white border border-gray-200 hover:border-violet-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none px-4 py-3 rounded-xl text-[14px] text-gray-800 transition-all shadow-sm"
           />
         </div>
 
         <div>
-          <label className="text-sm font-medium">Port</label>
+          <label className="block text-[14px] font-semibold text-gray-700 mb-1.5 ml-1">Email Address</label>
           <input
-            type="number"
-            name="port"
-            value={form.port}
+            type="email"
+            name="email"
+            placeholder="your@email.com"
+            value={form.email}
             onChange={handleChange}
-            className="w-full border rounded px-3 py-2 text-sm"
+            className="w-full bg-white border border-gray-200 hover:border-violet-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none px-4 py-3 rounded-xl text-[14px] text-gray-800 transition-all shadow-sm"
           />
         </div>
+
+        <div>
+          <label className="block text-[14px] font-semibold text-gray-700 mb-1.5 ml-1">Full Name</label>
+          <input
+            type="text"
+            name="fullName"
+            value={form.fullName}
+            onChange={handleChange}
+            className="w-full bg-white border border-gray-200 hover:border-violet-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none px-4 py-3 rounded-xl text-[14px] text-gray-800 transition-all shadow-sm"
+          />
+        </div>
+
+        <div>
+          <label className="block text-[14px] font-semibold text-gray-700 mb-1.5 ml-1">Username</label>
+          <input
+            type="text"
+            name="username"
+            value={form.username}
+            onChange={handleChange}
+            className="w-full bg-white border border-gray-200 hover:border-violet-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none px-4 py-3 rounded-xl text-[14px] text-gray-800 transition-all shadow-sm"
+          />
+        </div>
+
+        <div>
+          <label className="block text-[14px] font-semibold text-gray-700 mb-1.5 ml-1">Password / App Password</label>
+          <div className="relative group">
+            <input
+              type={showPassword ? "text" : "password"}
+              name="password"
+              value={form.password}
+              onChange={handleChange}
+              className="w-full bg-white border border-gray-200 hover:border-violet-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none px-4 py-3 pr-11 rounded-xl text-[14px] text-gray-800 transition-all shadow-sm"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-3 text-gray-400 hover:text-violet-500 transition-colors bg-white px-1"
+            >
+              {showPassword ? <FiEyeOff className="text-lg" /> : <FiEye className="text-lg" />}
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-5 pt-1">
+          <div>
+            <label className="block text-[14px] font-semibold text-gray-700 mb-1.5 ml-1">SMTP Host</label>
+            <input
+              type="text"
+              name="host"
+              placeholder="smtp.example.com"
+              value={form.host}
+              onChange={handleChange}
+              className="w-full bg-gray-50/50 border border-gray-200 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none px-4 py-3 rounded-xl text-[14px] text-gray-800 transition-all shadow-sm"
+            />
+          </div>
+
+          <div>
+            <label className="block text-[14px] font-semibold text-gray-700 mb-1.5 ml-1">Port</label>
+            <input
+              type="number"
+              name="port"
+              value={form.port}
+              onChange={handleChange}
+              className="w-full bg-gray-50/50 border border-gray-200 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none px-4 py-3 rounded-xl text-[14px] text-gray-800 transition-all shadow-sm"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="flex justify-end gap-3 px-7 py-5 bg-gray-50/80 border-t border-gray-100 backdrop-blur-md">
+        <button
+          onClick={onClose}
+          className="px-6 py-2.5 text-[14px] font-semibold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:text-gray-900 transition-colors shadow-sm"
+        >
+          Cancel
+        </button>
+
+        <button
+          onClick={handleSubmit}
+          className="px-6 py-2.5 text-[14px] font-semibold bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-xl shadow-lg shadow-violet-500/30 hover:shadow-xl hover:shadow-violet-500/40 hover:from-violet-700 hover:to-indigo-700 transform active:scale-95 transition-all"
+        >
+          Save Connection
+        </button>
       </div>
     </div>
-
-    <div className="flex justify-end gap-3 px-6 py-4 border-t bg-gray-50">
-      <button
-        onClick={onClose}
-        className="px-4 py-2 border rounded text-sm"
-      >
-        Cancel
-      </button>
-
-      <button
-        onClick={handleSubmit}
-        className="px-4 py-2 bg-indigo-600 text-white rounded text-sm"
-      >
-        Save Connection
-      </button>
-    </div>
   </div>
-</div>
-
-
 );
 };
 
