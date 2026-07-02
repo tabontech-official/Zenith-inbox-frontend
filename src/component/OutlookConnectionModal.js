@@ -11,7 +11,7 @@ const OutlookConnectionModal = ({
   connectionData = null,
   onUpdated,
 }) => {
-  const [connectionType, setConnectionType] = useState("other");
+  const [connectionType, setConnectionType] = useState("microsoft");
   const [showPassword, setShowPassword] = useState(false);
   const [status, setStatus] = useState("active");
   const [submitting, setSubmitting] = useState(false);
@@ -41,7 +41,7 @@ const OutlookConnectionModal = ({
         });
         setStatus(connectionData.status || "active");
       } else {
-        setConnectionType("other");
+        setConnectionType("microsoft");
         setForm({
           name: "My Outlook Connection",
           provider: "smtp",

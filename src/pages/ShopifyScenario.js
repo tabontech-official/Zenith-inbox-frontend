@@ -62,6 +62,8 @@ import { UserContext } from "../component/UserContext";
 import WebhookModal from "../component/WebhookModal";
 import ConnectionModal from "../component/ConnectionModal";
 import OutlookConnectionModal from "../component/OutlookConnectionModal";
+import CreateConnectionTypeModal from "../component/CreateConnectionTypeModal";
+import SetupOtherSMTPModal from "../component/SetupOtherSMTPModal";
 import EmailInspector from "./EmailInspector";
 
 const ShopifyScenariosPage = () => {
@@ -142,6 +144,8 @@ const ShopifyScenariosPage = () => {
   const [ccInput, setCcInput] = useState("");
   const [bccInput, setBccInput] = useState("");
   const [showWebhookInfo, setShowWebhookInfo] = useState(false);
+  const [showCreateConnectionModal, setShowCreateConnectionModal] = useState(false);
+  const [showSMTPModal, setShowSMTPModal] = useState(false);
   const [scenarioId, setScenarioId] = useState(null);
   const [scenarioName, setScenarioName] = useState("");
   const [scenarioDescription, setScenarioDescription] = useState("");
@@ -2832,10 +2836,10 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                         )}
 
                         <FlowNode
-                          icon={Cloud}
-                          title="Webhooks"
+                          icon={Mail}
+                          title="Get Email"
                           showValidation={showValidation}
-                          subtitle="Custom mailhook"
+                          subtitle="Mail connection"
                           color="border-[#8A8CF4]"
                           number={1}
                           isFirst={true}
@@ -2843,10 +2847,24 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                             showValidation
                               ? (completedSteps.find((v) => v.id === "webhook")
                                   ?.passed ?? null)
-                              : Boolean(user?.mailhook)
+                              : Boolean(connections?.length > 0)
                           }
                           isWebhook={true}
-                          onEdit={() => setShowWebhookInfo(true)}
+                          onEdit={() => setShowCreateConnectionModal(true)}
+                        />
+                        <CreateConnectionTypeModal
+                          isOpen={showCreateConnectionModal}
+                          onClose={() => setShowCreateConnectionModal(false)}
+                          onSelectType={(type) => {
+                            setShowCreateConnectionModal(false);
+                            if (type === "Others (IMAP)") {
+                              setShowSMTPModal(true);
+                            } else if (type === "Google Restricted") {
+                              setShowGmailModal(true);
+                            } else if (type === "Microsoft SMTP/IMAP OAuth") {
+                              setShowOutlookModal(true);
+                            }
+                          }}
                         />
                       </div>
                       <div className="w-0.5 h-12 bg-gray-300 relative">
@@ -3585,6 +3603,14 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
               setShowWebhookInfo={setShowWebhookInfo}
               webhookUrl={webhookUrl}
               loading={loading}
+            />
+            <SetupOtherSMTPModal
+              isOpen={showSMTPModal}
+              onClose={() => setShowSMTPModal(false)}
+              onSuccess={(data) => {
+                setShowSMTPModal(false);
+                fetchConnections();
+              }}
             />
             <ConnectionModal
               isOpen={showGmailModal}
