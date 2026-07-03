@@ -77,11 +77,11 @@ const CreateConnectionTypeModal = ({ isOpen, onClose, onSelectType }) => {
   ];
 
   const providerOptions = [
-    "Hotmail",
+    // "Hotmail",
     "Outlook.com",
-    "Seznam.cz",
-    "Yandex",
-    "Zoho Mail",
+    // "Seznam.cz",
+    // "Yandex",
+    // "Zoho Mail",
     "Other"
   ];
 
@@ -208,14 +208,40 @@ const CreateConnectionTypeModal = ({ isOpen, onClose, onSelectType }) => {
                   </div>
                   
                   <div className="pt-6 flex justify-end">
-                    <button 
-                      className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/30 text-white px-7 py-2.5 rounded-xl font-semibold transition-all transform active:scale-95 hover:shadow-xl hover:shadow-blue-500/40"
-                      onClick={() => {
-                        resetStateAndClose();
-                      }}
-                    >
-                      Connect
-                    </button>
+                onClick={async () => {
+  try {
+    const res = await fetch(
+      "https://email-syncing-backend.vercel.app/api/connection/create",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          provider: "hotmail",   // 🔥 ONLY HOTMAIL FOR NOW
+          connectionName: connectionName,
+          username: username,
+          password: password,
+        }),
+      }
+    );
+
+    const data = await res.json();
+
+    if (data.success) {
+      console.success("Hotmail connection created!");
+
+      resetStateAndClose();
+
+      // refresh list
+      // fetchConnections();
+    } else {
+      console.error(data.message || "Failed to create connection");
+    }
+  } catch (err) {
+    console.error("Server error while creating connection");
+  }
+}}
                   </div>
                 </div>
               )}
