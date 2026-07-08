@@ -307,37 +307,56 @@ const PrivacyPolicy = () => {
             </section>
 
             {/* 3 */}
-            <section>
-              <h2 className="text-lg font-semibold text-slate-900 mb-2">
-                3. Google User Data
-              </h2>
+           <section>
+  <h2 className="text-lg font-semibold text-slate-900 mb-2">
+    3. Google User Data
+  </h2>
 
-              <p>
-                When you connect your Google account, Replex Engine may access
-                only the data you authorize during the OAuth consent process.
-                This may include your Google account email address, basic profile
-                information, and Gmail access required to read and send emails
-                when explicitly requested by you.
-              </p>
+  <p>
+    When you connect your Google account, Replex Engine accesses only the
+    Google data that you explicitly authorize through the OAuth consent
+    process. This may include your Google account email address, basic profile
+    information, and Gmail data required to provide email automation and
+    conversation management features.
+  </p>
 
-              <p className="mt-3">
-                We use Google user data only to provide user-requested features
-                such as reading emails and sending messages. We do not
-                automatically modify, organize, or delete your Gmail data.
-              </p>
+  <p className="mt-3">
+    Replex Engine uses Gmail API access to send automated emails on your behalf
+    through your connected Gmail account. This includes sending initial emails,
+    scheduled follow-ups, and other messages based on workflows and templates
+    created by you.
+  </p>
 
-              <p className="mt-3">
-                We do not sell Google user data, do not use it for advertising,
-                and do not use it to train general AI models. Data is only used
-                to provide the requested functionality.
-              </p>
+  <p className="mt-3">
+    Replex Engine may access email threads and responses related to automated
+    email campaigns to identify replies, maintain conversation context, and
+    display email conversations within the platform. This allows users to view
+    and respond to conversations directly from Replex Engine.
+  </p>
 
-              <p className="mt-3">
-                Replex Engine complies with the Google API Services User Data
-                Policy, including Limited Use requirements.
-              </p>
-            </section>
+  <p className="mt-3">
+    We only access Gmail data necessary to provide the requested email
+    automation features. We do not access unrelated Gmail content, and we do
+    not automatically modify, organize, or delete Gmail messages.
+  </p>
 
+  <p className="mt-3">
+    We do not sell Google user data, use Google user data for advertising, or
+    use Google user data to train general AI models. Google user data is only
+    used to provide the features requested by the user.
+  </p>
+
+  <p className="mt-3">
+    Users can revoke Replex Engine's access to their Google account at any time
+    through their Google Account settings or by disconnecting their account
+    from Replex Engine.
+  </p>
+
+  <p className="mt-3">
+    Replex Engine complies with the Google API Services User Data Policy,
+    including Limited Use requirements.
+  </p>
+</section>
             {/* 4 */}
             <section>
               <h2 className="text-lg font-semibold text-slate-900 mb-2">
