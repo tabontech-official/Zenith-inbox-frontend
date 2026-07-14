@@ -303,7 +303,7 @@ const Sidebar = () => {
         </div>
       </nav>
 
-      {/* <div className="mt-auto space-y-2 border-t bg-white px-4 py-4">
+      <div className="mt-auto space-y-2 border-t bg-white px-4 py-4">
         {!loading && plan !== "pro" && <UpgradeBadge />}
 
         {!loading && plan === "pro" && (
@@ -339,7 +339,7 @@ const Sidebar = () => {
           <FiLogOut className="h-5 w-5 shrink-0 text-red-600" />
           <span>Logout</span>
         </button>
-      </div> */}
+      </div>
     </>
   );
 
