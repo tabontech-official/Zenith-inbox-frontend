@@ -144,6 +144,10 @@ const ShopifyScenariosPage = () => {
   const [ccInput, setCcInput] = useState("");
   const [bccInput, setBccInput] = useState("");
   const [showWebhookInfo, setShowWebhookInfo] = useState(false);
+  const [showIncomingLeadsModal, setShowIncomingLeadsModal] = useState(false);
+  const [incomingLeadsAppType, setIncomingLeadsAppType] = useState("Gmail");
+  const [incomingLeadsConnection, setIncomingLeadsConnection] = useState("");
+  const [incomingLeadsSubjectFilter, setIncomingLeadsSubjectFilter] = useState("");
   const [showCreateConnectionModal, setShowCreateConnectionModal] = useState(false);
   const [showSMTPModal, setShowSMTPModal] = useState(false);
   const [scenarioId, setScenarioId] = useState(null);
@@ -894,6 +898,10 @@ const ShopifyScenariosPage = () => {
             title.toLowerCase().includes("template") ||
             module?.app?.name?.toLowerCase() === "template"
           ) {
+            onEdit && onEdit();
+            return;
+          }
+          if (title.toLowerCase().includes("incoming leads")) {
             onEdit && onEdit();
             return;
           }
@@ -2837,7 +2845,7 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
 
                         <FlowNode
                           icon={Mail}
-                          title="Get Email"
+                          title="Incoming Leads"
                           showValidation={showValidation}
                           subtitle="Mail connection"
                           color="border-[#8A8CF4]"
@@ -2850,7 +2858,7 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                               : Boolean(connections?.length > 0)
                           }
                           isWebhook={true}
-                          onEdit={() => setShowCreateConnectionModal(true)}
+                          onEdit={() => setShowIncomingLeadsModal(true)}
                         />
                         <CreateConnectionTypeModal
                           isOpen={showCreateConnectionModal}
@@ -3589,6 +3597,92 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                 )}
               </div>
             </div>
+
+            {showIncomingLeadsModal && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-xl shadow-2xl w-[500px] max-h-[80vh] overflow-hidden">
+                  <div className="p-6 border-b bg-gradient-to-r from-purple-600 to-purple-500 text-white flex justify-between items-center">
+                    <h3 className="font-semibold text-lg">Incoming Leads</h3>
+                    <button
+                      onClick={() => setShowIncomingLeadsModal(false)}
+                      className="hover:bg-white hover:bg-opacity-20 p-1 rounded"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                  <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Select Application <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <select
+                          value={incomingLeadsAppType}
+                          onChange={(e) => {
+                            setIncomingLeadsAppType(e.target.value);
+                            fetchConnections();
+                          }}
+                          className="w-full border border-gray-300 rounded-lg px-4 py-2 pr-20 focus:ring-2 focus:ring-purple-500 focus:border-transparent appearance-none"
+                        >
+                          <option value="Gmail">Gmail</option>
+                          <option value="Email">Email (SMTP/Outlook)</option>
+                        </select>
+                        <button
+                          onClick={() => {
+                            if (incomingLeadsAppType === "Email") {
+                              setShowOutlookModal(true);
+                            } else {
+                              setShowGmailModal(true);
+                            }
+                          }}
+                          className="absolute right-0 top-0 bottom-0 px-4 text-sm font-medium rounded-r-lg border-l bg-purple-600 text-white border-l-gray-300 hover:bg-purple-700 transition-all duration-200"
+                        >
+                          Add
+                        </button>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-2">
+                        Choose the application type and click <b>Add</b> to connect a new account.
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Subject Filter
+                      </label>
+                      <input
+                        type="text"
+                        readOnly
+                        value={
+                          incomingLeadsSubjectFilter ||
+                          "shopify partner directory: new service inquiry from"
+                        }
+                        className="w-full border border-gray-300 rounded-lg px-4 py-2 bg-gray-100 text-gray-700 cursor-not-allowed text-sm font-medium outline-none"
+                      />
+                      <p className="text-xs text-amber-600 font-medium mt-2 flex items-center gap-1">
+                        <span>💡</span>
+                        <span>
+                          Do not add "Re:", "Fw:", or any prefix at the start of the subject.
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                  <div className="p-6 border-t bg-gray-50 flex justify-end space-x-3">
+                    <button
+                      onClick={() => setShowIncomingLeadsModal(false)}
+                      className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => setShowIncomingLeadsModal(false)}
+                      className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                    >
+                      Save Module
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
             <OutlookConnectionModal
               isOpen={showOutlookModal}
               onClose={() => setShowOutlookModal(false)}
