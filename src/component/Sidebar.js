@@ -1201,7 +1201,10 @@ const Sidebar = ({ onOpenMailhook, onOpenGmail, onOpenOutlook }) => {
                 <span>+ Outlook / SMTP</span>
               </button>
             </div>
-          ) : isSectionActive(["/inbox"]) || isActive("/inbox") ? null : (
+          ) : isSectionActive(["/inbox"]) ||
+            isActive("/inbox") ||
+            location.pathname.includes("/scenarios/others") ||
+            location.pathname.includes("/scenarios/shopify") ? null : (
             <div ref={newScenarioMenuRef} className="relative flex">
               <button
                 type="button"

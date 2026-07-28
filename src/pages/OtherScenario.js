@@ -1108,464 +1108,429 @@ const OthersScenariosPage = () => {
 
   return (
     <ReactFlowProvider>
-      <div className="flex">
-        <div className=" min-h-screen bg-gray-100">
-          <Sidebar />
-        </div>
+      <div className="flex h-screen overflow-hidden bg-[#FAF8F5] font-sans antialiased text-slate-900">
+        <Sidebar />
 
-        <div className="flex-1 pt-[60px]  min-h-screen bg-gray-50">
-          <div className="border-b bg-white/90 backdrop-blur-sm shadow-sm">
-            <div className="px-6 py-1 flex items-center justify-between">
-              <div className="mt-0.5">
-                <input
-                  type="text"
-                  value={scenarioName}
-                  onChange={(e) => setScenarioName(e.target.value)}
-                  className="text-xl sm:text-xl font-semibold text-gray-800 border-none outline-none focus:ring-0 w-full"
-                  placeholder="Scenario Name"
-                />
+        <main className="flex flex-1 flex-col overflow-hidden min-w-0 pt-[60px]">
+          {/* Top Header Bar */}
+          <div className="sticky top-0 z-30 border-b border-[#EBE8E1] bg-[#FAF8F5] px-6 py-3.5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-slate-400">
+                    Scenarios /
+                  </span>
+                  <input
+                    type="text"
+                    value={scenarioName}
+                    onChange={(e) => setScenarioName(e.target.value)}
+                    className="text-base font-bold text-slate-900 bg-transparent border-none outline-none focus:ring-0"
+                    placeholder="Custom Scenario Name"
+                  />
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[#E6F4EA] px-2.5 py-0.5 text-[11px] font-semibold text-[#137333]">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#34A853]"></span>
+                    Live
+                  </span>
+                </div>
 
-                <p className="text-sm text-gray-500 mt-1">
-                  Configure your automation workflow
-                </p>
+                <div className="mt-1 flex items-center gap-2 text-xs text-slate-500 font-medium">
+                  <span>Custom Automation Builder</span>
+                  <span className="text-slate-300">|</span>
+                  <span
+                    className={
+                      isActive
+                        ? "font-semibold text-[#137333]"
+                        : "font-semibold text-slate-400"
+                    }
+                  >
+                    {isActive ? "✓ Scenario Active" : "Scenario Inactive"}
+                  </span>
+                </div>
               </div>
 
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3 shrink-0">
                 <button
                   onClick={saveScenario}
-                  className="
-          px-5 py-2 rounded-lg 
-          bg-blue-600 text-white text-sm font-medium
-          hover:bg-blue-700 
-          shadow-sm transition
-        "
+                  className="rounded-[8px] bg-[#111110] px-4 py-2 text-xs font-semibold text-white shadow-2xs hover:bg-black transition"
                 >
                   {id ? "Update Scenario" : "Create Scenario"}
                 </button>
 
                 <button
                   onClick={() => setShowRunTestModal(true)}
-                  className="
-    flex items-center gap-2
-    px-5 py-2 rounded-lg 
-    bg-green-600 text-white text-sm font-medium
-    hover:bg-green-700 
-    shadow-sm transition
-  "
+                  className="inline-flex items-center gap-1.5 rounded-[8px] border border-[#E0DDD5] bg-white px-4 py-2 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 transition"
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-4 w-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13 10V3L4 14h7v7l9-11h-7z"
-                    />
-                  </svg>
+                  <Sparkles size={13} className="text-emerald-600" />
                   Run Test
                 </button>
 
-                <div className="flex items-center gap-3 px-4 py-2 border rounded-full bg-white shadow-sm">
-                  <span className="text-sm font-medium text-gray-800">
-                    Activate Scenario
+                <div className="flex items-center gap-2 rounded-full border border-[#E0DDD5] bg-white px-3 py-1 shadow-2xs">
+                  <span className="text-xs font-semibold text-slate-700">
+                    {isActive ? "On" : "Off"}
                   </span>
-
-                  <button
-                    onClick={() => {
-                      if (!isActive) {
-                        const ok = validateBeforeActivate();
-                        if (!ok) return;
-                      }
-                      setIsActive(!isActive);
-                    }}
-                    className={`
-            relative inline-flex h-5 w-10 items-center rounded-full transition
-            ${isActive ? "bg-indigo-600" : "bg-gray-300"}
-          `}
-                  >
-                    <span
-                      className={`
-              inline-block h-4 w-4 transform rounded-full bg-white transition
-              ${isActive ? "translate-x-5" : "translate-x-1"}
-            `}
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={isActive}
+                      onChange={() => {
+                        if (!isActive) {
+                          const ok = validateBeforeActivate();
+                          if (!ok) return;
+                        }
+                        setIsActive(!isActive);
+                      }}
+                      className="sr-only peer"
                     />
-                  </button>
-
-                  <span
-                    className={`text-sm font-semibold ${
-                      isActive ? "text-green-600" : "text-gray-400"
-                    }`}
-                  >
-                    {isActive ? "ON" : "OFF"}
-                  </span>
+                    <div className="w-8 h-4 bg-slate-300 peer-checked:bg-[#137333] rounded-full transition-colors"></div>
+                    <div className="absolute left-0.5 top-0.5 w-3 h-3 bg-white rounded-full transition-transform peer-checked:translate-x-4"></div>
+                  </label>
                 </div>
               </div>
             </div>
           </div>
 
-          <div style={{ height: "100%", width: "100%", overflow: "hidden" }}>
-            <ReactFlow
-              nodes={rfNodes.map((n) => ({
-                ...n,
-                data: {
-                  ...n.data,
-                  highlight: highlightedNodes.includes(n.id),
-                  success: validNodes.includes(n.id),
-                  executing: executingNode === n.id, // 🔥 add this
-                },
-              }))}
-              edges={rfEdges}
-              nodeTypes={nodeTypes}
-              onNodesChange={(chg) =>
-                setRfNodes((nds) => applyNodeChanges(chg, nds))
-              }
-              onEdgesChange={(chg) =>
-                setRfEdges((eds) => applyEdgeChanges(chg, eds))
-              }
-              onConnect={onConnect}
-              onNodeClick={handleNodeClick}
-              onEdgeContextMenu={handleEdgeContextMenu}
-              fitView
-            >
-              <Controls />
-              <MiniMap />
-              <Background gap={16} />
-            </ReactFlow>
+          {/* Main Canvas Body */}
+          <div className="flex-1 overflow-hidden bg-[#FAF8F5] relative">
+            <div className="absolute inset-0 bg-[radial-gradient(#D5D1C8_1px,transparent_1px)] [background-size:16px_16px] opacity-40 pointer-events-none"></div>
+
+            <div className="h-full w-full relative z-10">
+              <ReactFlow
+                nodes={rfNodes.map((n) => ({
+                  ...n,
+                  data: {
+                    ...n.data,
+                    highlight: highlightedNodes.includes(n.id),
+                    success: validNodes.includes(n.id),
+                    executing: executingNode === n.id,
+                  },
+                }))}
+                edges={rfEdges}
+                nodeTypes={nodeTypes}
+                onNodesChange={(chg) =>
+                  setRfNodes((nds) => applyNodeChanges(chg, nds))
+                }
+                onEdgesChange={(chg) =>
+                  setRfEdges((eds) => applyEdgeChanges(chg, eds))
+                }
+                onConnect={onConnect}
+                onNodeClick={handleNodeClick}
+                onEdgeContextMenu={handleEdgeContextMenu}
+                fitView
+              >
+                <Controls />
+                <MiniMap />
+                <Background gap={16} />
+              </ReactFlow>
+            </div>
+
+            {/* Floating Action Bar */}
+            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-md shadow-lg border border-[#EBE8E1] rounded-full px-6 py-2.5 flex items-center gap-6 z-50 text-xs font-semibold text-slate-700">
+              <button
+                onClick={organizeNodes}
+                className="flex items-center gap-2 text-slate-800 hover:text-black transition"
+              >
+                <ListOrdered size={16} className="text-purple-600" />
+                Organize
+              </button>
+
+              <div className="w-[1px] h-4 bg-[#E0DDD5]"></div>
+
+              <button
+                onClick={fetchTestEmail}
+                className="flex items-center gap-2 text-slate-800 hover:text-black transition"
+              >
+                <MailCheck size={16} className="text-emerald-600" />
+                Test Email
+              </button>
+            </div>
           </div>
-          <div
-            className="
-    fixed bottom-6 left-1/2 -translate-x-1/2
-    bg-white/90 backdrop-blur-md
-    shadow-xl border border-gray-200
-    rounded-full px-6 py-3
-    flex items-center gap-6
-    z-50
-"
-          >
-            <button
-              onClick={organizeNodes}
-              className="
-      flex items-center gap-2
-      text-purple-700 font-medium
-      hover:text-purple-900
-      transition
-    "
-            >
-              <ListOrdered size={18} />
-              Organize
-            </button>
-
-            {/* Divider */}
-            <div className="w-[1px] h-6 bg-gray-300"></div>
-
-            {/* Test Email */}
-            <button
-              onClick={fetchTestEmail}
-              className="
-    flex items-center gap-2
-    text-green-700 font-medium
-    hover:text-green-900
-    transition
-  "
-            >
-              <MailCheck size={18} />
-              Test Email
-            </button>
-          </div>
-          {showTestEmailModal && (
-            <TestEmailModal
-              email={testEmail}
-              onClose={() => setShowTestEmailModal(false)}
-            />
-          )}
-
-          {showEdgeModal && selectedEdge && (
-            <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center animate-fadeIn z-50">
-              <div className="bg-white/90 p-6 rounded-2xl shadow-xl w-80 space-y-6 border border-white/30 animate-scaleIn">
-                {/* Title */}
-                <div className="flex justify-between items-center">
-                  <h2 className="text-xl font-semibold text-gray-800">
-                    Connection Options
-                  </h2>
-                  <button
-                    onClick={() => setShowEdgeModal(false)}
-                    className="text-gray-600 hover:text-red-500 transition"
-                  >
-                    <FiX size={22} />
-                  </button>
-                </div>
-
-                {/* Buttons List */}
-                <div className="space-y-3">
-                  {/* Unlink */}
-                  <button
-                    className="w-full p-3 border rounded-xl bg-red-50 hover:bg-red-100 hover:border-red-300
-          transition-all flex items-center gap-3"
-                    onClick={() => {
-                      setRfEdges((edges) =>
-                        edges.filter((e) => e.id !== selectedEdge.id),
-                      );
-                      setShowEdgeModal(false);
-                    }}
-                  >
-                    <FiX size={20} className="text-red-500" />
-                    Unlink Connection
-                  </button>
-
-                  {/* Template */}
-                  <button
-                    className="w-full p-3 border rounded-xl bg-purple-50 hover:bg-purple-100 hover:border-purple-300 
-          transition-all flex items-center gap-3"
-                    onClick={() => {
-                      handleAddEmailTemplateFromEdge(selectedEdge);
-                      setShowEdgeModal(false);
-                    }}
-                  >
-                    <FiFileText size={20} className="text-purple-600" />
-                    Add Email Template
-                  </button>
-
-                  {/* Delay */}
-                  <button
-                    className="w-full p-3 border rounded-xl bg-yellow-50 hover:bg-yellow-100 hover:border-yellow-300 
-          transition-all flex items-center gap-3"
-                    onClick={() => {
-                      handleAddDelayFromEdge(selectedEdge);
-                      setShowEdgeModal(false);
-                    }}
-                  >
-                    <FiClock size={20} className="text-yellow-600" />
-                    Add Delay
-                  </button>
-
-                  {/* Condition */}
-                  <button
-                    className="w-full p-3 border rounded-xl bg-blue-50 hover:bg-blue-100 hover:border-blue-300 
-          transition-all flex items-center gap-3"
-                    onClick={() => {
-                      handleAddConditionFromEdge(selectedEdge);
-                      setShowEdgeModal(false);
-                    }}
-                  >
-                    <FiFilter size={20} className="text-blue-600" />
-                    Add Condition
-                  </button>
-                </div>
-
-                {/* Cancel */}
-                <button
-                  className="w-full p-3 bg-gray-200 rounded-xl hover:bg-gray-300 transition-all"
-                  onClick={() => setShowEdgeModal(false)}
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          )}
-
-          {showModuleModal && (
-            <div className="fixed inset-0 backdrop-blur-sm bg-black/40 flex justify-center items-center animate-fadeIn">
-              <div className="bg-white/90 p-6 rounded-2xl shadow-xl w-80 space-y-6 border border-white/30 animate-scaleIn">
-                {/* Title */}
-                <div className="flex justify-between items-center">
-                  <h2 className="text-xl font-semibold text-gray-800">
-                    Select Module
-                  </h2>
-                  <button
-                    onClick={() => setShowModuleModal(false)}
-                    className="text-gray-600 hover:text-red-500 transition"
-                  >
-                    <FiX size={22} />
-                  </button>
-                </div>
-
-                {/* Options */}
-                <div className="space-y-3">
-                  {/* Email */}
-                  <button
-                    className="w-full p-3 border rounded-xl bg-gray-50 hover:bg-blue-100 hover:border-blue-400 
-          transition-all flex items-center gap-3"
-                    onClick={() => addModule("gmailNode")}
-                  >
-                    <FiMail size={20} className="text-blue-500" /> Email
-                  </button>
-
-                  {/* Template Node */}
-                  <button
-                    className="w-full p-3 border rounded-xl bg-gray-50 hover:bg-purple-100 hover:border-purple-400 
-          transition-all flex items-center gap-3"
-                    onClick={() => addModule("templateNode")}
-                  >
-                    <FiFileText size={20} className="text-purple-500" />
-                    Email Template
-                  </button>
-
-                  {/* Delay */}
-                  <button
-                    className="w-full p-3 border rounded-xl bg-gray-50 hover:bg-yellow-100 hover:border-yellow-400 
-          transition-all flex items-center gap-3"
-                    onClick={() => addModule("delayNode")}
-                  >
-                    <FiClock size={20} className="text-yellow-500" /> Delay
-                  </button>
-
-                  {/* Condition */}
-                  <button
-                    className="w-full p-3 border rounded-xl bg-gray-50 hover:bg-green-100 hover:border-green-400 
-          transition-all flex items-center gap-3"
-                    onClick={() => addModule("conditionNode")}
-                  >
-                    <FiFilter size={20} className="text-green-500" /> Condition
-                  </button>
-                </div>
-
-                {/* Cancel */}
-                <button
-                  className="w-full p-3 bg-gray-200 rounded-xl hover:bg-gray-300 transition-all"
-                  onClick={() => setShowModuleModal(false)}
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          )}
-
-          {showEmailModal && (
-            <EmailModal
-              node={editingNode}
-              connections={connections}
-              onClose={() => setShowEmailModal(false)}
-              openGmailModal={() => setShowGmailModal(true)}
-              openOutlookModal={() => setShowOutlookModal(true)}
-              templates={otherActiveTemplates}
-              showTemplateOption={isTemplateAvailable} // <-- NEW
-              onSave={(data) => {
-                console.log("🟧 MODULE CONFIG SAVED:", {
-                  nodeId: editingNode.id,
-                  type: editingNode.type,
-                  savedConfig: data,
-                });
-
-                setRfNodes((prev) =>
-                  prev.map((n) =>
-                    n.id === editingNode.id
-                      ? { ...n, data: { ...n.data, config: data } }
-                      : n,
-                  ),
-                );
-
-                setShowEmailModal(false);
-              }}
-            />
-          )}
-
-          {showDelayModal && (
-            <DelayModal
-              node={editingNode}
-              onClose={() => setShowDelayModal(false)}
-              onSave={(data) => {
-                setRfNodes((prev) =>
-                  prev.map((n) =>
-                    n.id === editingNode.id
-                      ? { ...n, data: { ...n.data, config: data } }
-                      : n,
-                  ),
-                );
-                setShowDelayModal(false);
-              }}
-            />
-          )}
-
-          {showFilterModal && (
-            <FilterModal
-              node={editingNode}
-              onClose={() => setShowFilterModal(false)}
-              onSave={(data) => {
-                setRfNodes((prev) =>
-                  prev.map((n) =>
-                    n.id === editingNode.id
-                      ? { ...n, data: { ...n.data, config: data } }
-                      : n,
-                  ),
-                );
-                setShowFilterModal(false);
-              }}
-            />
-          )}
-          {showWebhookModal && (
-            <WebhookModal
-              showWebhookInfo={showWebhookModal}
-              setShowWebhookInfo={setShowWebhookModal}
-              webhookUrl={webhookUrl}
-              loading={false}
-            />
-          )}
-          <ConnectionModal
-            isOpen={showGmailModal}
-            onClose={() => setShowGmailModal(false)}
-            onSuccess={() => {
-              fetchConnections();
-              setShowGmailModal(false);
-            }}
-          />
-
-          <OutlookConnectionModal
-            isOpen={showOutlookModal}
-            onClose={() => setShowOutlookModal(false)}
-            onSuccess={() => {
-              fetchConnections();
-              setShowOutlookModal(false);
-            }}
-          />
-          {showRunTestModal && (
-            <RunTestModal
-              onClose={() => setShowRunTestModal(false)}
-              runScenarioExecutionAnimation={runScenarioExecutionAnimation}
-              onTestSuccess={async () => {
-                await fetchTestEmail(); // fetch latest test email
-                setShowTestEmailModal(true); // open TestEmailModal
-              }}
-            />
-          )}
-
-          {showDeleteConfirm && (
-            <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 backdrop-blur-sm">
-              <div className="bg-white p-6 rounded-xl shadow-xl w-80">
-                <h2 className="text-lg font-semibold text-gray-800">
-                  Delete Module?
-                </h2>
-                <p className="text-gray-600 mt-2">
-                  Are you sure you want to delete this module?
-                </p>
-
-                <div className="flex justify-end gap-3 mt-5">
-                  <button
-                    className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300"
-                    onClick={() => {
-                      setShowDeleteConfirm(false);
-                      setNodeToDelete(null);
-                    }}
-                  >
-                    Cancel
-                  </button>
-
-                  <button
-                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-                    onClick={performDeleteNode}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
+        </main>
       </div>
+      {showTestEmailModal && (
+        <TestEmailModal
+          email={testEmail}
+          onClose={() => setShowTestEmailModal(false)}
+        />
+      )}
+
+      {showEdgeModal && selectedEdge && (
+        <div className="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white p-6 rounded-[20px] shadow-2xl w-80 space-y-5 border border-[#EBE8E1]">
+            {/* Title */}
+            <div className="flex justify-between items-center">
+              <h2 className="text-base font-bold text-slate-900">
+                Connection Options
+              </h2>
+              <button
+                type="button"
+                onClick={() => setShowEdgeModal(false)}
+                className="text-slate-400 hover:text-slate-700 transition"
+              >
+                <FiX size={18} />
+              </button>
+            </div>
+
+            {/* Buttons List */}
+            <div className="space-y-2.5">
+              <button
+                type="button"
+                className="w-full p-3 border border-red-200 rounded-[12px] bg-red-50 hover:bg-red-100 text-red-700 text-xs font-semibold transition-all flex items-center gap-3 cursor-pointer"
+                onClick={() => {
+                  setRfEdges((edges) =>
+                    edges.filter((e) => e.id !== selectedEdge.id),
+                  );
+                  setShowEdgeModal(false);
+                }}
+              >
+                <FiX size={16} className="text-red-600" />
+                Unlink Connection
+              </button>
+
+              <button
+                type="button"
+                className="w-full p-3 border border-purple-200 rounded-[12px] bg-purple-50 hover:bg-purple-100 text-purple-800 text-xs font-semibold transition-all flex items-center gap-3 cursor-pointer"
+                onClick={() => {
+                  handleAddEmailTemplateFromEdge(selectedEdge);
+                  setShowEdgeModal(false);
+                }}
+              >
+                <FiFileText size={16} className="text-purple-600" />
+                Add Email Template
+              </button>
+
+              <button
+                type="button"
+                className="w-full p-3 border border-amber-200 rounded-[12px] bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-semibold transition-all flex items-center gap-3 cursor-pointer"
+                onClick={() => {
+                  handleAddDelayFromEdge(selectedEdge);
+                  setShowEdgeModal(false);
+                }}
+              >
+                <FiClock size={16} className="text-amber-600" />
+                Add Delay
+              </button>
+
+              <button
+                type="button"
+                className="w-full p-3 border border-blue-200 rounded-[12px] bg-blue-50 hover:bg-blue-100 text-blue-800 text-xs font-semibold transition-all flex items-center gap-3 cursor-pointer"
+                onClick={() => {
+                  handleAddConditionFromEdge(selectedEdge);
+                  setShowEdgeModal(false);
+                }}
+              >
+                <FiFilter size={16} className="text-blue-600" />
+                Add Condition
+              </button>
+            </div>
+
+            {/* Cancel */}
+            <button
+              type="button"
+              className="w-full p-2.5 bg-slate-100 border border-slate-200 rounded-[8px] text-xs font-semibold text-slate-700 hover:bg-slate-200 transition cursor-pointer"
+              onClick={() => setShowEdgeModal(false)}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showModuleModal && (
+        <div className="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white p-6 rounded-[20px] shadow-2xl w-80 space-y-5 border border-[#EBE8E1]">
+            {/* Title */}
+            <div className="flex justify-between items-center">
+              <h2 className="text-base font-bold text-slate-900">
+                Select Module
+              </h2>
+              <button
+                type="button"
+                onClick={() => setShowModuleModal(false)}
+                className="text-slate-400 hover:text-slate-700 transition"
+              >
+                <FiX size={18} />
+              </button>
+            </div>
+
+            {/* Options */}
+            <div className="space-y-2.5">
+              <button
+                type="button"
+                className="w-full p-3 border border-slate-200 rounded-[12px] bg-slate-50 hover:bg-blue-50 hover:border-blue-300 text-slate-800 text-xs font-semibold transition-all flex items-center gap-3 cursor-pointer"
+                onClick={() => addModule("gmailNode")}
+              >
+                <FiMail size={18} className="text-blue-600" /> Email
+              </button>
+
+              <button
+                type="button"
+                className="w-full p-3 border border-slate-200 rounded-[12px] bg-slate-50 hover:bg-purple-50 hover:border-purple-300 text-slate-800 text-xs font-semibold transition-all flex items-center gap-3 cursor-pointer"
+                onClick={() => addModule("templateNode")}
+              >
+                <FiFileText size={18} className="text-purple-600" />
+                Email Template
+              </button>
+
+              <button
+                type="button"
+                className="w-full p-3 border border-slate-200 rounded-[12px] bg-slate-50 hover:bg-amber-50 hover:border-amber-300 text-slate-800 text-xs font-semibold transition-all flex items-center gap-3 cursor-pointer"
+                onClick={() => addModule("delayNode")}
+              >
+                <FiClock size={18} className="text-amber-600" /> Delay
+              </button>
+
+              <button
+                type="button"
+                className="w-full p-3 border border-slate-200 rounded-[12px] bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 text-slate-800 text-xs font-semibold transition-all flex items-center gap-3 cursor-pointer"
+                onClick={() => addModule("conditionNode")}
+              >
+                <FiFilter size={18} className="text-emerald-600" /> Condition
+              </button>
+            </div>
+
+            {/* Cancel */}
+            <button
+              type="button"
+              className="w-full p-2.5 bg-slate-100 border border-slate-200 rounded-[8px] text-xs font-semibold text-slate-700 hover:bg-slate-200 transition cursor-pointer"
+              onClick={() => setShowModuleModal(false)}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showEmailModal && (
+        <EmailModal
+          node={editingNode}
+          connections={connections}
+          onClose={() => setShowEmailModal(false)}
+          openGmailModal={() => setShowGmailModal(true)}
+          openOutlookModal={() => setShowOutlookModal(true)}
+          templates={otherActiveTemplates}
+          showTemplateOption={isTemplateAvailable}
+          onSave={(data) => {
+            console.log("🟧 MODULE CONFIG SAVED:", {
+              nodeId: editingNode.id,
+              type: editingNode.type,
+              savedConfig: data,
+            });
+
+            setRfNodes((prev) =>
+              prev.map((n) =>
+                n.id === editingNode.id
+                  ? { ...n, data: { ...n.data, config: data } }
+                  : n,
+              ),
+            );
+
+            setShowEmailModal(false);
+          }}
+        />
+      )}
+
+      {showDelayModal && (
+        <DelayModal
+          node={editingNode}
+          onClose={() => setShowDelayModal(false)}
+          onSave={(data) => {
+            setRfNodes((prev) =>
+              prev.map((n) =>
+                n.id === editingNode.id
+                  ? { ...n, data: { ...n.data, config: data } }
+                  : n,
+              ),
+            );
+            setShowDelayModal(false);
+          }}
+        />
+      )}
+
+      {showFilterModal && (
+        <FilterModal
+          node={editingNode}
+          onClose={() => setShowFilterModal(false)}
+          onSave={(data) => {
+            setRfNodes((prev) =>
+              prev.map((n) =>
+                n.id === editingNode.id
+                  ? { ...n, data: { ...n.data, config: data } }
+                  : n,
+              ),
+            );
+            setShowFilterModal(false);
+          }}
+        />
+      )}
+      {showWebhookModal && (
+        <WebhookModal
+          showWebhookInfo={showWebhookModal}
+          setShowWebhookInfo={setShowWebhookModal}
+          webhookUrl={webhookUrl}
+          loading={false}
+        />
+      )}
+      <ConnectionModal
+        isOpen={showGmailModal}
+        onClose={() => setShowGmailModal(false)}
+        onSuccess={() => {
+          fetchConnections();
+          setShowGmailModal(false);
+        }}
+      />
+
+      <OutlookConnectionModal
+        isOpen={showOutlookModal}
+        onClose={() => setShowOutlookModal(false)}
+        onSuccess={() => {
+          fetchConnections();
+          setShowOutlookModal(false);
+        }}
+      />
+      {showRunTestModal && (
+        <RunTestModal
+          onClose={() => setShowRunTestModal(false)}
+          runScenarioExecutionAnimation={runScenarioExecutionAnimation}
+          onTestSuccess={async () => {
+            await fetchTestEmail();
+            setShowTestEmailModal(true);
+          }}
+        />
+      )}
+
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white p-6 rounded-[20px] shadow-2xl w-80 space-y-4 border border-[#EBE8E1]">
+            <h2 className="text-base font-bold text-slate-900">
+              Delete Module?
+            </h2>
+            <p className="text-xs leading-relaxed text-slate-500">
+              Are you sure you want to delete this module?
+            </p>
+
+            <div className="flex justify-end gap-2.5 mt-5">
+              <button
+                type="button"
+                className="px-4 py-2 bg-slate-100 border border-slate-200 rounded-[8px] text-xs font-semibold text-slate-700 hover:bg-slate-200 transition cursor-pointer"
+                onClick={() => {
+                  setShowDeleteConfirm(false);
+                  setNodeToDelete(null);
+                }}
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                className="px-4 py-2 bg-red-600 text-white rounded-[8px] text-xs font-semibold hover:bg-red-700 transition cursor-pointer"
+                onClick={performDeleteNode}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </ReactFlowProvider>
   );
 };
