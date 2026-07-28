@@ -256,7 +256,7 @@ const EmailDetailPage = () => {
     <div className="flex bg-gray-50 min-h-screen">
       <Sidebar />
 
-      <div className="flex-1 flex flex-col md:ml-64 transition-all duration-300">
+      <div className="flex-1 flex flex-col  transition-all duration-300">
         <main className="flex-1 p-6 flex gap-6 lead-conversation-view">
         <div className="flex-1 space-y-6">
           <div className="mb-10 border-b border-gray-200 pb-6">

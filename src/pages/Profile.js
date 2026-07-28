@@ -214,7 +214,7 @@ const handleChange = (e) => {
     <div className="flex min-h-screen bg-[#f4f7fc] text-[#334155] font-sans antialiased">
       <Sidebar />
 
-      <div className="flex-1 flex flex-col md:ml-64">
+      <div className="flex-1 flex flex-col ">
         <div className="hidden sm:block">
           <Navbar />
         </div>

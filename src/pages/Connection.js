@@ -173,8 +173,8 @@ const ConnectionsPage = () => {
   return (
     <div className="flex">
       <Sidebar />
-      <div className="flex-1 flex flex-col md:ml-64 transition-all duration-300">
-        <header className="flex flex-col md:flex-row md:items-center justify-between px-4 py-1 bg-white border-b border-gray-100 shadow-sm gap-4 sticky top-0 z-10">
+      <div className="flex-1 flex flex-col  transition-all duration-300">
+        <header className="flex flex-col pt-[60px] md:flex-row md:items-center justify-between px-4 py-1 bg-white border-b border-gray-100 shadow-sm gap-4 sticky top-0 z-10">
 
   <div className="flex items-center gap-4">
     <div className="hidden sm:flex w-12 h-12 bg-indigo-50 rounded-xl items-center justify-center text-indigo-600">

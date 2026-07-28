@@ -136,7 +136,7 @@
 
 //   if (loading)
 //     return (
-//       <div className="min-h-screen bg-gray-50 md:ml-64 flex items-center justify-center">
+//       <div className="min-h-screen bg-gray-50  flex items-center justify-center">
 //         <div className="flex flex-col items-center gap-4">
 //           <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
 //           <div className="text-sm font-medium text-gray-500 tracking-wide">
@@ -155,7 +155,7 @@
 //   ];
 
 //   return (
-//     <div className="min-h-screen bg-slate-50 md:ml-64 flex">
+//     <div className="min-h-screen bg-slate-50  flex">
 //       <Sidebar />
 //       <div className="flex-1 max-w-7xl mx-auto w-full">
 //         <div className="sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-gray-200 px-8 py-5 flex justify-between items-center shadow-sm">
@@ -623,7 +623,7 @@ const AdminLandingPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 md:ml-64 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50  flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
           <div className="text-sm font-medium text-gray-500 tracking-wide">
@@ -647,7 +647,7 @@ const AdminLandingPage = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 md:ml-64 flex">
+    <div className="min-h-screen bg-slate-50  flex">
       <Sidebar />
 
       <div className="flex-1 max-w-7xl mx-auto w-full">

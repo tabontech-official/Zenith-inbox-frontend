@@ -1109,11 +1109,11 @@ const OthersScenariosPage = () => {
   return (
     <ReactFlowProvider>
       <div className="flex">
-        <div className="w-64 min-h-screen bg-gray-100">
+        <div className=" min-h-screen bg-gray-100">
           <Sidebar />
         </div>
 
-        <div className="flex-1 min-h-screen bg-gray-50">
+        <div className="flex-1 pt-[60px]  min-h-screen bg-gray-50">
           <div className="border-b bg-white/90 backdrop-blur-sm shadow-sm">
             <div className="px-6 py-1 flex items-center justify-between">
               <div className="mt-0.5">

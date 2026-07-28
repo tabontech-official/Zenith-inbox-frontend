@@ -254,7 +254,7 @@ const AdminProductPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 md:ml-64 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50  flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
           <div className="text-sm font-medium text-gray-500 tracking-wide">
@@ -275,7 +275,7 @@ const AdminProductPage = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 md:ml-64 flex">
+    <div className="min-h-screen bg-slate-50  flex">
       <Sidebar />
 
       <div className="flex-1 max-w-7xl mx-auto w-full">

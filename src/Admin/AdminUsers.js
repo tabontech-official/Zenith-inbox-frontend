@@ -427,7 +427,7 @@ const handleLoginAsUser = async (userId) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] md:ml-64 flex font-sans">
+    <div className="min-h-screen bg-[#F8FAFC]  flex font-sans">
       <Sidebar />
 
       {/* CUSTOM CONFIRMATION MODAL */}

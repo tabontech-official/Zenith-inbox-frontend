@@ -699,7 +699,12 @@ const Sidebar = () => {
         location.pathname === path || location.pathname.startsWith(`${path}/`),
     );
 
-  const inboxCount = user?.unreadEmails || user?.unreadCount || 3;
+  const inboxCount =
+    typeof user?.unreadEmails === "number"
+      ? user.unreadEmails
+      : typeof user?.unreadCount === "number"
+        ? user.unreadCount
+        : 0;
 
   const userName =
     user?.name ||
@@ -1040,12 +1045,12 @@ const Sidebar = () => {
               linkRef={leadRef}
             />
 
-            <DesktopNavLink
+            {/* <DesktopNavLink
               to="/analytics"
               label="Analytics"
               Icon={FiBarChart2}
               active={isSectionActive(["/analytics"])}
-            />
+            /> */}
 
             <DesktopNavLink
               to="/connection"
@@ -1206,12 +1211,12 @@ const Sidebar = () => {
               badge={inboxCount}
             />
 
-            <MobileNavLink
+            {/* <MobileNavLink
               to="/analytics"
               label="Analytics"
               Icon={FiBarChart2}
               active={isSectionActive(["/analytics"])}
-            />
+            /> */}
 
             <MobileNavLink
               to="/connection"

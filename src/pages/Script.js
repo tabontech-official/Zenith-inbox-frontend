@@ -74,7 +74,7 @@ const AdminScriptsPage = () => {
     <div className="flex min-h-screen bg-[#f4f7fc] text-slate-700">
       <Sidebar />
 
-      <div className="flex-1 flex flex-col md:ml-64">
+      <div className="flex-1 flex flex-col ">
         <main className="flex-1 p-6 lg:p-8 max-w-[1200px] w-full mx-auto space-y-6">
           <div className="flex flex-col sm:flex-row justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <div>

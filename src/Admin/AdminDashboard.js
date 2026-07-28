@@ -47,7 +47,7 @@ const AdminDashboard = () => {
   const totalPages = Math.ceil(recentUsers.length / usersPerPage);
 
   return (
-    <div className="min-h-screen bg-gray-50 md:ml-64 flex">
+    <div className="min-h-screen bg-gray-50  flex">
       <Sidebar />
 
       <div className="flex-1 p-6">

@@ -161,14 +161,14 @@ const AdminUserEmails = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 md:ml-64 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50  flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] md:ml-64 flex font-sans">
+    <div className="min-h-screen bg-[#F8FAFC]  flex font-sans">
       <Sidebar />
 
       <div className="flex-1 p-4 md:p-8">

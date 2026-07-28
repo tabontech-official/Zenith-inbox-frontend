@@ -17,7 +17,7 @@ if panel_onclick_old in code:
     code = code.replace(panel_onclick_old, panel_onclick_new)
 
 # 3. Restructure the main render
-render_start = """      <div className="flex-1 flex flex-col md:ml-64 ml-0 transition-all duration-300">
+render_start = """      <div className="flex-1 flex flex-col  ml-0 transition-all duration-300">
         {selectedHistoryLog ? (() => {"""
 
 render_end = """          );
@@ -25,7 +25,7 @@ render_end = """          );
 
 pattern = re.escape(render_start) + r".*?" + re.escape(render_end)
 
-new_render = """      <div className="flex-1 flex flex-col md:ml-64 ml-0 transition-all duration-300 h-screen overflow-hidden">
+new_render = """      <div className="flex-1 flex flex-col  ml-0 transition-all duration-300 h-screen overflow-hidden">
         {historyViewMode === "table" ? (
           <div className="flex-1 bg-gray-50 flex flex-col h-full overflow-hidden">
             {/* Header */}
