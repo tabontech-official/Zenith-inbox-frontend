@@ -659,10 +659,11 @@ import {
 } from "react-icons/fi";
 import { jwtDecode } from "jwt-decode";
 
+import { FaGoogle, FaMicrosoft, FaEnvelope } from "react-icons/fa";
 import SidebarTooltip from "./SidebarTooltip";
 import { UserContext } from "./UserContext";
 
-const Sidebar = () => {
+const Sidebar = ({ onOpenMailhook, onOpenGmail, onOpenOutlook }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useContext(UserContext);
@@ -677,6 +678,85 @@ const Sidebar = () => {
 
   // Limit restriction state
   const [isLimitModalOpen, setIsLimitModalOpen] = useState(false);
+  const [showScenarioSelectionModal, setShowScenarioSelectionModal] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [upgradeReason, setUpgradeReason] = useState("shopify");
+  const [shopifyScenarioCount, setShopifyScenarioCount] = useState(0);
+  const [customScenarioCount, setCustomScenarioCount] = useState(0);
+  const [loadingCounts, setLoadingCounts] = useState(false);
+
+  const openNewScenarioModal = async () => {
+    setIsNewScenarioMenuOpen(false);
+    setIsMobileMenuOpen(false);
+    setShowScenarioSelectionModal(true);
+    setLoadingCounts(true);
+
+    const uid = localStorage.getItem("userid");
+    if (!uid) {
+      setLoadingCounts(false);
+      return;
+    }
+
+    try {
+      // 1. Fetch Shopify Scenario details
+      const resShopify = await fetch(
+        "https://email-syncing-backend.vercel.app/scenario/details",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: uid }),
+        },
+      );
+      const dataShopify = await resShopify.json();
+      const hasShopify = Boolean(dataShopify && dataShopify._id);
+      setShopifyScenarioCount(hasShopify ? 1 : 0);
+
+      // 2. Fetch Custom Scenarios
+      const resCustom = await fetch(
+        `https://email-syncing-backend.vercel.app/scenario/all?userId=${uid}`,
+      );
+      const dataCustom = await resCustom.json();
+      let countCustom = 0;
+      if (dataCustom && Array.isArray(dataCustom.scenarios)) {
+        countCustom = dataCustom.scenarios.filter(
+          (s) => s.type === "custom" || s.type === "other" || s.type === "Custom",
+        ).length;
+      } else if (Array.isArray(dataCustom)) {
+        countCustom = dataCustom.filter(
+          (s) => s.type === "custom" || s.type === "other" || s.type === "Custom",
+        ).length;
+      }
+      setCustomScenarioCount(countCustom);
+    } catch (err) {
+      console.error("Error checking scenario limits:", err);
+    } finally {
+      setLoadingCounts(false);
+    }
+  };
+
+  const handleSelectShopifyScenario = () => {
+    if (shopifyScenarioCount >= 1) {
+      setShowScenarioSelectionModal(false);
+      setUpgradeReason("shopify");
+      setShowUpgradeModal(true);
+    } else {
+      setShowScenarioSelectionModal(false);
+      localStorage.removeItem("scenarioId");
+      localStorage.removeItem("scenarioActive");
+      navigate("/scenarios/shopify");
+    }
+  };
+
+  const handleSelectCustomScenario = () => {
+    if (customScenarioCount >= 2) {
+      setShowScenarioSelectionModal(false);
+      setUpgradeReason("custom");
+      setShowUpgradeModal(true);
+    } else {
+      setShowScenarioSelectionModal(false);
+      navigate("/scenarios/others");
+    }
+  };
 
   const profileMenuRef = useRef(null);
   const scenarioMenuRef = useRef(null);
@@ -1083,57 +1163,65 @@ const Sidebar = () => {
 
         {/* Right section */}
         <div className="hidden items-center gap-3 md:flex">
-          <div ref={newScenarioMenuRef} className="relative flex">
-            {/* Main button: direct Shopify scenario */}
-            <Link
-              to="/scenarios/shopify"
-              onClick={(e) => handleScenarioNavigation(e, "shopify")}
-              className="flex h-9 items-center gap-2 rounded-l-[8px] bg-[#11110f] px-4 text-[12px] font-semibold text-white transition hover:bg-black"
-            >
-              <FiPlus className="h-4 w-4" />
-              <span>New scenario</span>
-            </Link>
+          {isSectionActive(["/connections", "/connection"]) || isActive("/connections") || isActive("/connection") ? (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  if (onOpenMailhook) onOpenMailhook();
+                  else window.dispatchEvent(new CustomEvent("openMailhookModal"));
+                }}
+                className="flex h-9 items-center gap-1.5 rounded-[8px] border border-zinc-300 bg-white px-3.5 text-[12px] font-semibold text-zinc-800 shadow-2xs transition hover:bg-zinc-50"
+              >
+                <FaEnvelope className="h-3.5 w-3.5 text-purple-600" />
+                <span>+ Mailhook</span>
+              </button>
 
-            {/* Dropdown toggle */}
-            <button
-              type="button"
-              onClick={() =>
-                setIsNewScenarioMenuOpen((previousValue) => !previousValue)
-              }
-              className="flex h-9 w-9 items-center justify-center rounded-r-[8px] border-l border-white/20 bg-[#11110f] text-white transition hover:bg-black"
-              aria-label="Open scenario menu"
-              aria-expanded={isNewScenarioMenuOpen}
-            >
-              <FiChevronDown
-                className={`h-4 w-4 transition-transform ${
-                  isNewScenarioMenuOpen ? "rotate-180" : ""
-                }`}
-              />
-            </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (onOpenGmail) onOpenGmail();
+                  else window.dispatchEvent(new CustomEvent("openGmailModal"));
+                }}
+                className="flex h-9 items-center gap-1.5 rounded-[8px] bg-[#111110] px-3.5 text-[12px] font-semibold text-white shadow-2xs transition hover:bg-black"
+              >
+                <FaGoogle className="h-3.5 w-3.5 text-red-400" />
+                <span>+ Connect Gmail</span>
+              </button>
 
-            {/* Dropdown */}
-            {isNewScenarioMenuOpen && (
-              <div className="absolute right-0 top-[44px] z-50 w-52 overflow-hidden rounded-[8px] border border-zinc-200 bg-white py-2 shadow-lg">
-                <Link
-                  to="/scenarios/shopify"
-                  onClick={(e) => handleScenarioNavigation(e, "shopify")}
-                  className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-100 hover:text-black"
-                >
-                  <FiZap className="h-4 w-4" />
-                  <span>Shopify Scenario</span>
-                </Link>
+              <button
+                type="button"
+                onClick={() => {
+                  if (onOpenOutlook) onOpenOutlook();
+                  else window.dispatchEvent(new CustomEvent("openOutlookModal"));
+                }}
+                className="flex h-9 items-center gap-1.5 rounded-[8px] border border-zinc-300 bg-white px-3.5 text-[12px] font-semibold text-zinc-800 shadow-2xs transition hover:bg-zinc-50"
+              >
+                <FaMicrosoft className="h-3.5 w-3.5 text-blue-600" />
+                <span>+ Outlook / SMTP</span>
+              </button>
+            </div>
+          ) : isSectionActive(["/inbox"]) || isActive("/inbox") ? null : (
+            <div ref={newScenarioMenuRef} className="relative flex">
+              <button
+                type="button"
+                onClick={openNewScenarioModal}
+                className="flex h-9 items-center gap-2 rounded-l-[8px] bg-[#11110f] px-4 text-[12px] font-semibold text-white transition hover:bg-black"
+              >
+                <FiPlus className="h-4 w-4" />
+                <span>New scenario</span>
+              </button>
 
-                <Link
-                  to="/scenarios/others"
-                  onClick={(e) => handleScenarioNavigation(e, "custom")}
-                  className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-100 hover:text-black"
-                >
-                  <FiSettings className="h-4 w-4" />
-                  <span>Custom Scenario</span>
-                </Link>
-              </div>
-            )}
-          </div>
+              <button
+                type="button"
+                onClick={openNewScenarioModal}
+                className="flex h-9 w-9 items-center justify-center rounded-r-[8px] border-l border-white/20 bg-[#11110f] text-white transition hover:bg-black"
+                aria-label="Open scenario menu"
+              >
+                <FiChevronDown className="h-4 w-4" />
+              </button>
+            </div>
+          )}
 
           <div ref={profileMenuRef} className="relative">
             <button
@@ -1388,6 +1476,179 @@ const Sidebar = () => {
                 className="rounded-lg bg-zinc-950 px-5 py-2.5 text-xs font-medium text-white transition hover:bg-zinc-800"
               >
                 Got It
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Scenario Type Selection Modal */}
+      {showScenarioSelectionModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-[16px] shadow-2xl flex flex-col overflow-hidden border border-zinc-200 max-w-xl w-full">
+            {/* Header */}
+            <div className="flex justify-between items-center px-6 py-4 bg-[#111111] text-white">
+              <div>
+                <h2 className="text-base font-bold flex items-center gap-2">
+                  <FiPlus className="text-amber-400" />
+                  Create New Scenario
+                </h2>
+                <p className="text-xs text-zinc-400 mt-0.5">
+                  Select a scenario type to build for your workspace
+                </p>
+              </div>
+              <button
+                onClick={() => setShowScenarioSelectionModal(false)}
+                className="text-zinc-400 hover:text-white p-1 rounded-md transition"
+              >
+                <FiX size={18} />
+              </button>
+            </div>
+
+            {/* Body Options */}
+            <div className="p-6 space-y-4 bg-zinc-50">
+              {loadingCounts ? (
+                <div className="flex flex-col items-center justify-center py-10 text-zinc-500">
+                  <div className="animate-spin rounded-full h-7 w-7 border-2 border-zinc-900 border-t-transparent mb-3"></div>
+                  <p className="text-xs font-medium">Checking plan limits...</p>
+                </div>
+              ) : (
+                <>
+                  {/* Shopify Scenario Option */}
+                  <div
+                    onClick={handleSelectShopifyScenario}
+                    className="group relative bg-white border border-zinc-200 rounded-[14px] p-5 hover:border-zinc-900 hover:shadow-md cursor-pointer transition flex items-start gap-4"
+                  >
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+                      <FiZap size={22} />
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className="font-bold text-zinc-900 text-sm group-hover:text-black">
+                          Shopify Partner Directory Scenario
+                        </h3>
+                        <span
+                          className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
+                            shopifyScenarioCount >= 1
+                              ? "bg-amber-100 text-amber-800 border border-amber-200"
+                              : "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                          }`}
+                        >
+                          {shopifyScenarioCount >= 1 ? "1 of 1 Used (Limit)" : "0 of 1 Used"}
+                        </span>
+                      </div>
+                      <p className="text-xs text-zinc-500 mt-1 leading-relaxed">
+                        Capture directory inquiry leads automatically and trigger personalized email response flows.
+                      </p>
+                      <p className="text-[11px] font-semibold text-zinc-400 mt-2">
+                        Plan Limit: <span className="text-zinc-700">Max 1 scenario</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Custom Scenario Option */}
+                  <div
+                    onClick={handleSelectCustomScenario}
+                    className="group relative bg-white border border-zinc-200 rounded-[14px] p-5 hover:border-zinc-900 hover:shadow-md cursor-pointer transition flex items-start gap-4"
+                  >
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                      <FiSettings size={22} />
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className="font-bold text-zinc-900 text-sm group-hover:text-black">
+                          Custom Workflow Scenario
+                        </h3>
+                        <span
+                          className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
+                            customScenarioCount >= 2
+                              ? "bg-amber-100 text-amber-800 border border-amber-200"
+                              : "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                          }`}
+                        >
+                          {customScenarioCount >= 2 ? "2 of 2 Used (Limit)" : `${customScenarioCount} of 2 Used`}
+                        </span>
+                      </div>
+                      <p className="text-xs text-zinc-500 mt-1 leading-relaxed">
+                        Build custom multi-branch triggers, delay filters, and custom webhook connections.
+                      </p>
+                      <p className="text-[11px] font-semibold text-zinc-400 mt-2">
+                        Plan Limit: <span className="text-zinc-700">Max 2 scenarios</span>
+                      </p>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Plan Upgradation Modal */}
+      {showUpgradeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-[16px] shadow-2xl flex flex-col overflow-hidden border border-amber-200 max-w-md w-full text-center p-6 relative">
+            <button
+              onClick={() => setShowUpgradeModal(false)}
+              className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-700 p-1 rounded-md transition"
+            >
+              <FiX size={18} />
+            </button>
+
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-100 text-amber-700 mb-4 shadow-xs">
+              <FiAlertTriangle size={28} />
+            </div>
+
+            <h2 className="text-lg font-bold text-zinc-900">
+              Plan Limit Reached — Upgrade Required
+            </h2>
+
+            <p className="text-xs text-zinc-600 mt-2 leading-relaxed">
+              {upgradeReason === "shopify" ? (
+                <>
+                  You have reached the maximum limit of <span className="font-bold text-amber-700">1 Shopify Scenario</span> on your current plan. To create additional Shopify scenarios, please upgrade to the Pro plan.
+                </>
+              ) : (
+                <>
+                  You have reached the maximum limit of <span className="font-bold text-amber-700">2 Custom Scenarios</span> on your current plan. To create additional custom scenarios, please upgrade to the Pro plan.
+                </>
+              )}
+            </p>
+
+            {/* Pro Features List */}
+            <div className="mt-5 rounded-xl bg-zinc-50 border border-zinc-200/80 p-4 text-left space-y-2 text-xs">
+              <p className="font-bold text-zinc-800 text-[11px] uppercase tracking-wider mb-1">
+                Pro Plan Includes:
+              </p>
+              <div className="flex items-center gap-2 text-zinc-700 font-medium">
+                <span className="text-emerald-500 font-bold">✓</span> Unlimited Shopify & Custom Scenarios
+              </div>
+              <div className="flex items-center gap-2 text-zinc-700 font-medium">
+                <span className="text-emerald-500 font-bold">✓</span> Instant 10-second polling frequency
+              </div>
+              <div className="flex items-center gap-2 text-zinc-700 font-medium">
+                <span className="text-emerald-500 font-bold">✓</span> Priority SMTP & Gmail webhook delivery
+              </div>
+            </div>
+
+            <div className="mt-6 space-y-2.5">
+              <button
+                onClick={() => {
+                  setShowUpgradeModal(false);
+                  navigate("/pricing");
+                }}
+                className="w-full rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 py-3 text-xs font-bold text-black shadow-md hover:brightness-105 transition"
+              >
+                Upgrade to Pro Plan
+              </button>
+
+              <button
+                onClick={() => setShowUpgradeModal(false)}
+                className="w-full rounded-xl border border-zinc-200 bg-white py-2.5 text-xs font-semibold text-zinc-600 hover:bg-zinc-100 transition"
+              >
+                Cancel
               </button>
             </div>
           </div>

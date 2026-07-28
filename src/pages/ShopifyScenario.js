@@ -2992,7 +2992,11 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                   <div className="rounded-[20px] bg-gradient-to-b from-slate-950 via-zinc-900 to-black text-white p-5 border border-slate-800 shadow-xl relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-2xl pointer-events-none"></div>
                     {(() => {
-                      const isInboxConnected = Boolean(incomingLeadsConnection);
+                      const isInboxConnected = Boolean(
+                        incomingLeadsConnection &&
+                          connections &&
+                          connections.some((c) => c._id === incomingLeadsConnection),
+                      );
                       const isTriggerConfirmed = true;
                       const isTemplatesReviewed = Boolean(
                         selectedTemplate ||
@@ -3003,7 +3007,12 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                       const allModules = routerBranches.flatMap((b) => b.modules || []);
                       const unconfiguredEmailModulesCount = allModules.filter((m) => {
                         const isDelay = m.type === "Delay" || m.app?.name === "Delay" || m.app?.displayName === "Delay" || Boolean(m.delayValue);
-                        return !isDelay && !m.connectionId;
+                        const hasValidConnection = Boolean(
+                          m.connectionId &&
+                            connections &&
+                            connections.some((c) => c._id === m.connectionId),
+                        );
+                        return !isDelay && !hasValidConnection;
                       }).length;
 
                       const isSenderConnected = unconfiguredEmailModulesCount === 0 && allModules.length > 0;
@@ -3012,7 +3021,7 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                         {
                           label: "Connect inbox",
                           isComplete: isInboxConnected,
-                          warning: !isInboxConnected ? "Inbox connection missing" : null,
+                          warning: !isInboxConnected ? "Inbox connection missing — select Gmail account" : null,
                         },
                         {
                           label: "Confirm trigger filter",
@@ -3028,7 +3037,7 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                           warning: !isSenderConnected
                             ? unconfiguredEmailModulesCount > 0
                               ? `${unconfiguredEmailModulesCount} node${unconfiguredEmailModulesCount > 1 ? "s" : ""} unconfigured`
-                              : "Connection missing — connect Gmail"
+                              : "Sender connection missing — connect Gmail"
                             : null,
                         },
                       ];
@@ -3155,8 +3164,8 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                   <div className="flex items-start gap-4 overflow-x-auto pb-4 pt-1 no-scrollbar">
                     {/* CARD 1: Incoming Leads */}
                     {(() => {
-                      const isIncConfigured = Boolean(incomingLeadsConnection);
                       const activeConn = connections.find((c) => c._id === incomingLeadsConnection);
+                      const isIncConfigured = Boolean(incomingLeadsConnection && activeConn);
                       return (
                         <div
                           onClick={() => setShowIncomingLeadsModal(true)}
@@ -3330,8 +3339,9 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                             m.app?.name === "Initial Email" ||
                             m.template === "Initial Email",
                         );
+                      const activeInitialConn = connections.find((c) => c._id === initialMod?.connectionId);
                       const isSaved = Boolean(
-                        initialMod && initialMod.connectionId
+                        initialMod && initialMod.connectionId && activeInitialConn
                       );
 
                       return (

@@ -8,7 +8,13 @@ import {
   FiMail,
   FiRefreshCw,
   FiSend,
+  FiCheckCircle,
+  FiClock,
+  FiExternalLink,
+  FiUser,
+  FiZap,
 } from "react-icons/fi";
+import { FaGoogle, FaMicrosoft } from "react-icons/fa";
 
 const API_BASE_URL = "https://email-syncing-backend.vercel.app/mailhook";
 
@@ -23,7 +29,7 @@ const Inbox = () => {
   const [leadStatuses, setLeadStatuses] = useState({});
   const [replyText, setReplyText] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const [activeTab, setActiveTab] = useState("all"); // 'all', 'awaiting', 'auto_replied'
+  const [activeTab, setActiveTab] = useState("all"); // 'all', 'awaiting', 'auto_replied', 'secured'
   const [modal, setModal] = useState({
     open: false,
     type: "info",
@@ -163,10 +169,6 @@ const Inbox = () => {
     return clean.split("@")[0];
   };
 
-  const getDisplayAddress = (address = "") => {
-    return cleanAddress(address);
-  };
-
   const getDisplayRecipient = (email) => {
     const possibleEmails = [
       email?.recipientAddress,
@@ -193,18 +195,18 @@ const Inbox = () => {
     const now = new Date();
     const diffInSeconds = Math.floor((now - date) / 1000);
     if (isNaN(diffInSeconds) || diffInSeconds < 0) return "";
-    if (diffInSeconds < 60) return `${diffInSeconds}s`;
+    if (diffInSeconds < 60) return `${diffInSeconds}s ago`;
     const diffInMinutes = Math.floor(diffInSeconds / 60);
-    if (diffInMinutes < 60) return `${diffInMinutes}m`;
+    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
     const diffInHours = Math.floor(diffInMinutes / 60);
-    if (diffInHours < 24) return `${diffInHours}h`;
+    if (diffInHours < 24) return `${diffInHours}h ago`;
     const diffInDays = Math.floor(diffInHours / 24);
-    return `${diffInDays}d`;
+    return `${diffInDays}d ago`;
   };
 
   const getInitials = (address = "") => {
     const name = getNameFromAddress(address);
-    if (!name || name === "Unknown") return "MK";
+    if (!name || name === "Unknown") return "LD";
     const parts = name.trim().split(/\s+/);
     if (parts.length >= 2) {
       return (parts[0][0] + parts[1][0]).toUpperCase();
@@ -233,13 +235,13 @@ const Inbox = () => {
     }
 
     return {
-      company: company ? `${company} Co.` : "Velvet Thread Co.",
+      company: company ? `${company}` : "General Lead",
       snippet:
         bodyText.length > 0
-          ? `"${bodyText.slice(0, 50)}${bodyText.length > 50 ? "..." : ""}"`
+          ? `${bodyText.slice(0, 65)}${bodyText.length > 65 ? "..." : ""}`
           : safeText(email.subject)
-          ? `"${safeText(email.subject)}"`
-          : '"Looking for theme customization..."',
+          ? `${safeText(email.subject)}`
+          : "Inquiry message received",
     };
   };
 
@@ -271,13 +273,6 @@ const Inbox = () => {
       if (next.has(emailId)) next.delete(emailId);
       else next.add(emailId);
       return next;
-    });
-  };
-
-  const toggleSelectAll = () => {
-    setSelectedLeadIds((prev) => {
-      if (prev.size === filteredEmails.length) return new Set();
-      return new Set(filteredEmails.map((email) => email._id));
     });
   };
 
@@ -368,8 +363,12 @@ const Inbox = () => {
             email._id === selectedEmail._id
               ? {
                   ...email,
-                  children: [
-                    ...(email.conversation || email.children || []),
+                  conversation: [
+                    ...(email.conversation || email.replies || []),
+                    sentEmail,
+                  ],
+                  replies: [
+                    ...(email.replies || email.conversation || []),
                     sentEmail,
                   ],
                 }
@@ -379,7 +378,7 @@ const Inbox = () => {
 
         setSelectedEmail((prev) => ({
           ...prev,
-          children: [...(prev.children || []), sentEmail],
+          replies: [...(prev.replies || []), sentEmail],
         }));
       }
 
@@ -422,7 +421,7 @@ const Inbox = () => {
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
 
-      const linkColor = isDark ? "#F59E0B" : "#1a73e8";
+      const linkColor = isDark ? "#60A5FA" : "#2563EB";
       content = content.replace(
         /(https?:\/\/[^\s<]+)/g,
         `<a href="$1" target="_blank" rel="noreferrer" style="color:${linkColor};text-decoration:underline;font-weight:500">$1</a>`,
@@ -436,8 +435,8 @@ const Inbox = () => {
       content = content.replace(/\n/g, "<br/>");
     }
 
-    const textColor = isDark ? "#ffffff" : "#202124";
-    const labelColor = isDark ? "#f3f4f6" : "#202124";
+    const textColor = isDark ? "#F3F4F6" : "#1E293B";
+    const labelColor = isDark ? "#FFFFFF" : "#0F172A";
 
     content = content.replace(
       /(Full Name:|Business Email:|Country:|Service:|Budget:|Store Name:|Store URL:|Problem & Goal:)/g,
@@ -445,7 +444,7 @@ const Inbox = () => {
     );
 
     return `
-      <div class="email-body-content" style="font-family: system-ui, -apple-system, sans-serif; font-size: 14px; line-height: 1.6; color: ${textColor}; max-width: 100%; word-break: break-word; overflow-wrap: break-word;">
+      <div class="email-body-content" style="font-family: system-ui, -apple-system, sans-serif; font-size: 13.5px; line-height: 1.6; color: ${textColor}; max-width: 100%; word-break: break-word; overflow-wrap: break-word;">
         ${content}
       </div>
     `;
@@ -459,6 +458,13 @@ const Inbox = () => {
   // Counts for filter tabs
   const awaitingCount = emails.filter(
     (e) => e.direction === "incoming" || e.leadStatus === "new_lead",
+  ).length;
+
+  const autoRepliedCount = emails.filter(
+    (e) =>
+      e.direction === "outgoing" ||
+      (e.replies && e.replies.length > 0) ||
+      e.stepType === "Auto Reply",
   ).length;
 
   const filteredEmails = emails.filter((email) => {
@@ -484,6 +490,8 @@ const Inbox = () => {
         (email.replies && email.replies.length > 0) ||
         email.stepType === "Auto Reply"
       );
+    } else if (activeTab === "secured") {
+      return email.leadStatus === "secured";
     }
 
     return true;
@@ -494,10 +502,10 @@ const Inbox = () => {
       <Sidebar />
 
       {modal.open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className="w-full max-w-md rounded-[16px] bg-white p-6 shadow-2xl border border-zinc-200">
             <div
-              className={`mb-4 flex h-12 w-12 items-center justify-center rounded-full ${
+              className={`mb-4 flex h-12 w-12 items-center justify-center rounded-xl ${
                 modal.type === "error"
                   ? "bg-red-50 text-red-600"
                   : modal.type === "confirm"
@@ -505,22 +513,18 @@ const Inbox = () => {
                   : "bg-blue-50 text-blue-600"
               }`}
             >
-              {modal.type === "error"
-                ? "!"
-                : modal.type === "confirm"
-                ? "?"
-                : "i"}
+              <FiMail size={22} />
             </div>
 
-            <h3 className="text-lg font-bold text-slate-900">{modal.title}</h3>
-            <p className="mt-2 text-sm leading-6 text-slate-500">
+            <h3 className="text-base font-bold text-slate-900">{modal.title}</h3>
+            <p className="mt-1.5 text-xs leading-relaxed text-slate-500">
               {modal.message}
             </p>
 
-            <div className="mt-6 flex justify-end gap-3">
+            <div className="mt-6 flex justify-end gap-2.5">
               <button
                 onClick={closeModal}
-                className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                className="rounded-[8px] border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
               >
                 Cancel
               </button>
@@ -528,14 +532,14 @@ const Inbox = () => {
               {modal.type === "confirm" ? (
                 <button
                   onClick={modal.onConfirm}
-                  className="rounded-full bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
+                  className="rounded-[8px] bg-red-600 px-4 py-2 text-xs font-semibold text-white hover:bg-red-700 transition"
                 >
                   Delete
                 </button>
               ) : (
                 <button
                   onClick={closeModal}
-                  className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-black"
+                  className="rounded-[8px] bg-[#111111] px-4 py-2 text-xs font-semibold text-white hover:bg-black transition"
                 >
                   OK
                 </button>
@@ -545,23 +549,29 @@ const Inbox = () => {
         </div>
       )}
 
-      <main className="flex min-w-0 flex-1 overflow-hidden bg-[#FAF8F5]">
+      {/* Main Container with Top Padding to prevent Header Overlap */}
+      <main className="flex min-w-0 flex-1 overflow-hidden bg-[#FAF8F5] pt-[60px]">
         {/* LEFT PANEL: Leads List */}
         <section
           className={`${
             isMobileView && selectedEmail ? "hidden" : "flex"
-          } w-full flex-col border-r border-[#EBE8E1] bg-[#FAF8F5] md:w-[350px] lg:w-[380px] shrink-0 min-h-0`}
+          } w-full flex-col border-r border-[#EBE8E1] bg-[#FAF8F5] md:w-[360px] lg:w-[390px] shrink-0 min-h-0`}
         >
           {/* Header Area */}
           <div className="p-5 pb-3 border-b border-[#EBE8E1]">
             <div className="flex items-center justify-between">
-              <h1 className="text-xl font-bold tracking-tight text-slate-900">
-                Leads
-              </h1>
+              <div>
+                <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                  Inbox / Overview
+                </span>
+                <h1 className="text-lg font-bold tracking-tight text-slate-900 mt-0.5">
+                  Lead Inbox
+                </h1>
+              </div>
 
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#E6F4EA] px-2.5 py-1 text-xs font-semibold text-[#137333]">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#E6F4EA] px-2.5 py-1 text-[11px] font-semibold text-[#137333]">
                 <span className="h-2 w-2 rounded-full bg-[#34A853]"></span>
-                Automation live
+                Live Poll 60s
               </span>
             </div>
 
@@ -569,55 +579,55 @@ const Inbox = () => {
             <div className="mt-4 flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
               <button
                 onClick={() => setActiveTab("all")}
-                className={`rounded-full px-3.5 py-1 text-xs font-medium transition ${
+                className={`rounded-[8px] px-3 py-1.5 text-xs font-semibold transition ${
                   activeTab === "all"
-                    ? "bg-[#111111] text-white"
+                    ? "bg-[#111111] text-white shadow-2xs"
                     : "bg-[#EFECE6] text-slate-700 hover:bg-[#E5E2DC]"
                 }`}
               >
-                All
+                All ({emails.length})
               </button>
 
               <button
                 onClick={() => setActiveTab("awaiting")}
-                className={`rounded-full px-3.5 py-1 text-xs font-medium transition whitespace-nowrap ${
+                className={`rounded-[8px] px-3 py-1.5 text-xs font-semibold transition whitespace-nowrap ${
                   activeTab === "awaiting"
-                    ? "bg-[#111111] text-white"
+                    ? "bg-[#111111] text-white shadow-2xs"
                     : "bg-[#EFECE6] text-slate-700 hover:bg-[#E5E2DC]"
                 }`}
               >
-                Awaiting you · {awaitingCount}
+                Awaiting ({awaitingCount})
               </button>
 
               <button
                 onClick={() => setActiveTab("auto_replied")}
-                className={`rounded-full px-3.5 py-1 text-xs font-medium transition whitespace-nowrap ${
+                className={`rounded-[8px] px-3 py-1.5 text-xs font-semibold transition whitespace-nowrap ${
                   activeTab === "auto_replied"
-                    ? "bg-[#111111] text-white"
+                    ? "bg-[#111111] text-white shadow-2xs"
                     : "bg-[#EFECE6] text-slate-700 hover:bg-[#E5E2DC]"
                 }`}
               >
-                Auto-replied
+                Auto-Replied ({autoRepliedCount})
               </button>
             </div>
 
             {/* Search Bar & Action Controls */}
             <div className="mt-3 flex items-center gap-2">
               <div className="relative flex-1">
-                <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm" />
+                <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
                 <input
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search leads..."
-                  className="h-9 w-full rounded-full border border-[#E5E2DC] bg-[#F0EEE9] pl-9 pr-3 text-xs outline-none transition placeholder:text-slate-400 focus:border-slate-400 focus:bg-white"
+                  placeholder="Search leads by name, email..."
+                  className="h-8.5 w-full rounded-[8px] border border-[#E5E2DC] bg-[#F0EEE9] pl-8.5 pr-3 text-xs outline-none transition placeholder:text-slate-400 focus:border-slate-400 focus:bg-white"
                 />
               </div>
 
               <button
                 onClick={fetchEmails}
                 title="Refresh Inbox"
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-[#E5E2DC] bg-[#F0EEE9] text-slate-600 transition hover:bg-[#E5E2DC]"
+                className="flex h-8.5 w-8.5 items-center justify-center rounded-[8px] border border-[#E5E2DC] bg-[#F0EEE9] text-slate-600 transition hover:bg-[#E5E2DC] shrink-0"
               >
                 <FiRefreshCw
                   className={`text-xs ${loading ? "animate-spin" : ""}`}
@@ -627,7 +637,7 @@ const Inbox = () => {
               {selectedLeadIds.size > 0 && (
                 <button
                   onClick={() => handleDeleteLeads([...selectedLeadIds])}
-                  className="flex h-9 items-center gap-1 rounded-full bg-red-50 px-2.5 text-xs font-semibold text-red-600 hover:bg-red-100"
+                  className="flex h-8.5 items-center gap-1 rounded-[8px] bg-red-50 border border-red-200 px-2.5 text-xs font-semibold text-red-600 hover:bg-red-100 shrink-0"
                 >
                   <FiTrash2 className="text-xs" />
                   ({selectedLeadIds.size})
@@ -641,18 +651,18 @@ const Inbox = () => {
             {loading && (
               <div className="flex h-40 items-center justify-center">
                 <div className="flex flex-col items-center gap-2 text-slate-400">
-                  <FiRefreshCw className="animate-spin text-lg" />
-                  <p className="text-xs font-medium">Loading leads...</p>
+                  <FiRefreshCw className="animate-spin text-lg text-slate-700" />
+                  <p className="text-xs font-semibold text-slate-600">Loading leads...</p>
                 </div>
               </div>
             )}
 
             {!loading && filteredEmails.length === 0 && (
               <div className="flex h-60 flex-col items-center justify-center px-6 text-center text-slate-400">
-                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-[#EFECE6]">
-                  <FiMail className="text-slate-500" />
+                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-[#EFECE6]">
+                  <FiMail className="text-slate-600" />
                 </div>
-                <p className="text-xs font-semibold text-slate-700">
+                <p className="text-xs font-bold text-slate-700">
                   No leads found
                 </p>
                 <p className="mt-1 text-[11px] text-slate-400">
@@ -666,14 +676,20 @@ const Inbox = () => {
                 const isSelected = selectedEmail?._id === email._id;
                 const name = getNameFromAddress(email.senderAddress);
                 const { company, snippet } = getCompanyAndSnippet(email);
-                const timeAgo = formatTimeAgo(email.date) || `${idx + 1}m`;
+                const timeAgo = formatTimeAgo(email.date) || `${idx + 1}m ago`;
 
-                // Determine badge type based on status/direction
+                // Status Badges
                 let badgeContent = null;
                 if (email.leadStatus === "closed") {
                   badgeContent = (
-                    <span className="inline-flex rounded-full bg-[#FCE8E6] px-2.5 py-0.5 text-[11px] font-medium text-[#C5221F]">
-                      Reply failed · retrying
+                    <span className="inline-flex rounded-full bg-red-50 border border-red-200 px-2 py-0.5 text-[10px] font-semibold text-red-700">
+                      Closed
+                    </span>
+                  );
+                } else if (email.leadStatus === "secured") {
+                  badgeContent = (
+                    <span className="inline-flex rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-semibold text-emerald-800">
+                      🏆 Secured
                     </span>
                   );
                 } else if (
@@ -681,8 +697,8 @@ const Inbox = () => {
                   email.leadStatus === "new_lead"
                 ) {
                   badgeContent = (
-                    <span className="inline-flex rounded-full bg-[#FEF3C7] px-2.5 py-0.5 text-[11px] font-medium text-[#92400E]">
-                      Awaiting your reply
+                    <span className="inline-flex rounded-full bg-amber-50 border border-amber-200 px-2 py-0.5 text-[10px] font-semibold text-amber-800">
+                      ⏳ Awaiting reply
                     </span>
                   );
                 } else if (
@@ -690,14 +706,14 @@ const Inbox = () => {
                   (email.replies && email.replies.length > 0)
                 ) {
                   badgeContent = (
-                    <span className="inline-flex rounded-full bg-[#E6F4EA] px-2.5 py-0.5 text-[11px] font-medium text-[#137333]">
-                      Auto-replied · {timeAgo}
+                    <span className="inline-flex rounded-full bg-[#E6F4EA] border border-emerald-200 px-2 py-0.5 text-[10px] font-semibold text-[#137333]">
+                      ✓ Auto-replied
                     </span>
                   );
                 } else {
                   badgeContent = (
-                    <span className="inline-flex rounded-full bg-[#EFECE6] px-2.5 py-0.5 text-[11px] font-medium text-[#5F6368]">
-                      No reply yet · day 2 nudge queued
+                    <span className="inline-flex rounded-full bg-slate-100 border border-slate-200 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
+                      New Lead
                     </span>
                   );
                 }
@@ -706,23 +722,23 @@ const Inbox = () => {
                   <button
                     key={email._id}
                     onClick={() => handleEmailClick(email)}
-                    className={`group relative flex w-full flex-col border-b border-[#EBE8E1] px-5 py-4 text-left transition ${
+                    className={`group relative flex w-full flex-col border-b border-[#EBE8E1] px-5 py-3.5 text-left transition ${
                       isSelected
                         ? "bg-[#F2EFE8] border-l-4 border-l-black"
                         : "bg-transparent hover:bg-[#F4F1EA] border-l-4 border-l-transparent"
                     }`}
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-bold text-slate-900 text-sm truncate pr-2">
+                      <span className="font-bold text-slate-900 text-xs truncate pr-2">
                         {name}
                       </span>
-                      <span className="text-xs text-slate-400 font-medium shrink-0">
+                      <span className="text-[10px] text-slate-400 font-medium shrink-0">
                         {timeAgo}
                       </span>
                     </div>
 
                     <p className="mt-1 truncate text-xs text-slate-500 font-normal leading-relaxed">
-                      <span className="font-semibold text-slate-700">
+                      <span className="font-semibold text-slate-800">
                         {company}
                       </span>{" "}
                       · {snippet}
@@ -753,7 +769,7 @@ const Inbox = () => {
         >
           {selectedEmail ? (
             <div className="flex min-h-0 flex-1 flex-col">
-              {/* Header */}
+              {/* Top Detail Header */}
               <div className="shrink-0 border-b border-[#EBE8E1] bg-[#FAF8F5] px-6 py-4">
                 {isMobileView && (
                   <button
@@ -766,41 +782,37 @@ const Inbox = () => {
 
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#A3B899] text-xs font-bold text-slate-800 uppercase tracking-wider">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#111111] text-xs font-bold text-white uppercase tracking-wider shadow-2xs">
                       {getInitials(selectedEmail.senderAddress)}
                     </div>
 
                     <div>
-                      <h2 className="text-base font-bold text-slate-900 flex items-center gap-1.5 flex-wrap">
+                      <h2 className="text-sm font-bold text-slate-900 flex items-center gap-1.5 flex-wrap">
                         <span>
                           {getNameFromAddress(selectedEmail.senderAddress)}
                         </span>
                         <span className="text-slate-300 font-normal">·</span>
-                        <span>
-                          {getCompanyAndSnippet(selectedEmail).company}
+                        <span className="text-slate-600 font-medium">
+                          {selectedEmail.senderAddress}
                         </span>
                       </h2>
 
-                      <p className="text-xs text-slate-400 font-normal mt-0.5">
-                        via Shopify Partner Directory · Theme customization · est.
-                        budget $3-5k
+                      <p className="text-xs text-slate-500 font-medium mt-0.5">
+                        Subject: <span className="text-slate-800 font-semibold">{selectedEmail.subject || "No Subject"}</span>
                       </p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0">
-                    <span className="inline-flex rounded-full bg-[#FEF3C7] px-3 py-1 text-xs font-medium text-[#92400E]">
-                      Hot — replied in 4 min
-                    </span>
-
                     <a
                       href={`https://mail.google.com/mail/u/0/#search/${encodeURIComponent(
                         selectedEmail.senderAddress || "",
                       )}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex items-center rounded-full border border-[#E0DDD5] bg-white px-3.5 py-1 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 transition"
+                      className="inline-flex items-center gap-1 rounded-[8px] border border-[#E0DDD5] bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 transition"
                     >
+                      <FiExternalLink size={12} />
                       Open in Gmail
                     </a>
 
@@ -809,7 +821,7 @@ const Inbox = () => {
                       onChange={(e) =>
                         handleStatusChange(selectedEmail._id, e.target.value)
                       }
-                      className="h-7 rounded-full border border-[#E0DDD5] bg-white px-2.5 text-xs font-medium text-slate-700 outline-none"
+                      className="h-8.5 rounded-[8px] border border-[#E0DDD5] bg-white px-3 text-xs font-semibold text-slate-800 outline-none hover:bg-slate-50 transition"
                     >
                       {leadStatusOptions.map((status) => (
                         <option key={status.value} value={status.value}>
@@ -820,7 +832,7 @@ const Inbox = () => {
 
                     <button
                       onClick={() => handleDeleteLeads([selectedEmail._id])}
-                      className="flex h-7 w-7 items-center justify-center rounded-full border border-red-200 bg-red-50 text-red-600 hover:bg-red-100"
+                      className="flex h-8.5 w-8.5 items-center justify-center rounded-[8px] border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition"
                       title="Delete Lead"
                     >
                       <FiTrash2 className="text-xs" />
@@ -830,7 +842,7 @@ const Inbox = () => {
               </div>
 
               {/* Thread Messages List */}
-              <div className="min-h-0 flex-1 overflow-y-auto px-8 py-6 space-y-6">
+              <div className="min-h-0 flex-1 overflow-y-auto px-6 lg:px-8 py-6 space-y-6">
                 {getThreadMessages(selectedEmail).map((message, index) => {
                   const isIncoming = message.direction === "incoming";
                   const senderName = getNameFromAddress(
@@ -849,11 +861,14 @@ const Inbox = () => {
                         key={`${message._id}-${index}`}
                         className="flex flex-col items-start space-y-1.5"
                       >
-                        <p className="text-xs text-slate-400 font-medium px-1">
-                          {senderName} · {msgTime} · via directory inquiry
+                        <p className="text-[11px] text-slate-400 font-medium px-1 flex items-center gap-1.5">
+                          <FiUser size={12} className="text-slate-500" />
+                          <span className="font-semibold text-slate-700">{senderName}</span>
+                          <span>·</span>
+                          <span>{msgTime}</span>
                         </p>
 
-                        <div className="w-full max-w-[85%] rounded-[20px] border border-[#EAE7E0] bg-white p-5 text-sm leading-relaxed text-slate-800 shadow-2xs">
+                        <div className="w-full max-w-[85%] rounded-[18px] border border-[#EAE7E0] bg-white p-5 text-sm leading-relaxed text-slate-800 shadow-2xs">
                           <div
                             dangerouslySetInnerHTML={{
                               __html: formatEmailBody(
@@ -873,18 +888,14 @@ const Inbox = () => {
                       key={`${message._id}-${index}`}
                       className="flex flex-col items-end space-y-1.5"
                     >
-                      <div className="flex items-center gap-1.5 text-xs font-medium text-[#137333] px-1">
-                        <span className="text-emerald-600 font-bold">✦</span>
-                        <span>Auto-reply</span>
-                        <span className="text-slate-300">·</span>
-                        <span>Priority template</span>
-                        <span className="text-slate-300">·</span>
-                        <span>sent in 38s</span>
+                      <div className="flex items-center gap-1.5 text-[11px] font-semibold text-[#137333] px-1">
+                        <FiZap size={12} className="text-emerald-600" />
+                        <span>Auto-reply sent</span>
                         <span className="text-slate-300">·</span>
                         <span className="text-slate-400">{msgTime}</span>
                       </div>
 
-                      <div className="w-full max-w-[85%] rounded-[22px] bg-[#111111] p-5 text-sm leading-relaxed text-white shadow-md">
+                      <div className="w-full max-w-[85%] rounded-[18px] bg-[#111111] p-5 text-sm leading-relaxed text-white shadow-md">
                         <div
                           dangerouslySetInnerHTML={{
                             __html: formatEmailBody(
@@ -901,58 +912,85 @@ const Inbox = () => {
 
                 {/* Hand-off Divider */}
                 <div className="my-6 flex justify-center">
-                  <span className="rounded-full bg-[#EFECE6] px-4 py-1.5 text-xs font-medium text-[#78716C]">
-                    Automation handed off — this thread is yours now
+                  <span className="rounded-full bg-[#EFECE6] border border-[#E0DDD5] px-4 py-1.5 text-xs font-semibold text-slate-600 shadow-2xs">
+                    ✦ Automation handed off — thread ready for custom replies
                   </span>
                 </div>
               </div>
 
               {/* Bottom Reply Bar */}
               <div className="border-t border-[#EBE8E1] bg-[#FAF8F5] p-4">
-                <div className="flex items-center gap-3 max-w-5xl mx-auto">
-                  <input
-                    type="text"
-                    value={replyText}
-                    onChange={(e) => setReplyText(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSendThreadReply();
-                      }
-                    }}
-                    placeholder={`Reply to ${getNameFromAddress(
-                      selectedEmail.senderAddress,
-                    )}... (sends from ${
-                      getDisplayRecipient(selectedEmail) || "wahid@thefold.tech"
-                    })`}
-                    className="h-12 flex-1 rounded-full border border-[#E5E2DC] bg-[#F0EEE9] px-6 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-slate-400 focus:bg-white"
-                  />
+                <div className="flex flex-col gap-2 max-w-5xl mx-auto">
+                  {/* Quick Reply Pills */}
+                  <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+                    <span className="text-[11px] font-semibold text-slate-400 whitespace-nowrap">
+                      Quick Templates:
+                    </span>
+                    <button
+                      onClick={() => setReplyText("Hi, thanks for reaching out! We received your request and would love to connect.")}
+                      className="rounded-full border border-[#E0DDD5] bg-white px-3 py-1 text-[11px] font-medium text-slate-700 hover:bg-slate-100 transition whitespace-nowrap"
+                    >
+                      Greeting & Intro
+                    </button>
+                    <button
+                      onClick={() => setReplyText("Just checking in to see if you had any questions regarding our initial estimate?")}
+                      className="rounded-full border border-[#E0DDD5] bg-white px-3 py-1 text-[11px] font-medium text-slate-700 hover:bg-slate-100 transition whitespace-nowrap"
+                    >
+                      Follow-up Nudge
+                    </button>
+                    <button
+                      onClick={() => setReplyText("Could you please share your store URL and preferred project timeline?")}
+                      className="rounded-full border border-[#E0DDD5] bg-white px-3 py-1 text-[11px] font-medium text-slate-700 hover:bg-slate-100 transition whitespace-nowrap"
+                    >
+                      Ask Details
+                    </button>
+                  </div>
 
-                  <button
-                    onClick={handleSendThreadReply}
-                    disabled={!replyText.trim() || replySending}
-                    className="h-12 rounded-full bg-[#111111] px-7 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50 flex items-center justify-center shrink-0"
-                  >
-                    {replySending ? (
-                      <FiRefreshCw className="animate-spin text-sm" />
-                    ) : (
-                      "Send"
-                    )}
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="text"
+                      value={replyText}
+                      onChange={(e) => setReplyText(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSendThreadReply();
+                        }
+                      }}
+                      placeholder={`Reply to ${getNameFromAddress(
+                        selectedEmail.senderAddress,
+                      )}...`}
+                      className="h-11 flex-1 rounded-[8px] border border-[#E5E2DC] bg-[#F0EEE9] px-4 text-xs text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-slate-400 focus:bg-white"
+                    />
+
+                    <button
+                      onClick={handleSendThreadReply}
+                      disabled={!replyText.trim() || replySending}
+                      className="h-11 rounded-[8px] bg-[#111111] px-6 text-xs font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50 flex items-center justify-center gap-1.5 shrink-0"
+                    >
+                      {replySending ? (
+                        <FiRefreshCw className="animate-spin text-xs" />
+                      ) : (
+                        <>
+                          <FiSend size={13} />
+                          <span>Send Reply</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
           ) : (
             <div className="flex flex-1 flex-col items-center justify-center bg-[#FAF8F5] px-6 text-center">
-              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#EFECE6] text-slate-400">
+              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white border border-[#EBE8E1] text-slate-500 shadow-2xs">
                 <FiMail size={24} />
               </div>
-              <h3 className="text-base font-semibold text-slate-700">
-                Select a lead
+              <h3 className="text-base font-bold text-slate-900">
+                Select a Lead Thread
               </h3>
-              <p className="mt-1 max-w-sm text-xs text-slate-400">
-                Choose a lead from the list to view the complete message thread
-                and reply.
+              <p className="mt-1 max-w-sm text-xs text-slate-500 leading-relaxed">
+                Choose a lead from the left list to view their message thread, status history, and send direct replies.
               </p>
             </div>
           )}
