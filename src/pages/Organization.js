@@ -221,285 +221,479 @@ const Organization = () => {
       color: "text-yellow-600",
     },
   ];
+  const firstName =
+    user?.name?.split(" ")[0] ||
+    user?.fullName?.split(" ")[0] ||
+    user?.username ||
+    "User";
 
-  return (
-    <div className="flex min-h-screen bg-gray-50 font-inter">
-      <Sidebar />
+  const activeScenarios = recentScenarios.filter(
+    (scenario) => scenario.scenarioActive,
+  );
 
-      <div className="flex-1 flex flex-col md:ml-64 transition-all duration-300">
-        <div className="hidden sm:block">
-          <Navbar />
+  const pendingReplies = stats?.pending || 0;
+
+  const replyRate =
+    stats?.total > 0 ? Math.round((stats.processed / stats.total) * 100) : 0;
+
+  const activityEmails = emails.slice(0, 4);
+
+  const formatTimeAgo = (date) => {
+    if (!date) return "";
+
+    const createdDate = new Date(date);
+    const now = new Date();
+    const difference = now - createdDate;
+
+    const minutes = Math.floor(difference / 60000);
+    const hours = Math.floor(difference / 3600000);
+    const days = Math.floor(difference / 86400000);
+
+    if (minutes < 1) return "Now";
+    if (minutes < 60) return `${minutes}m`;
+    if (hours < 24) return `${hours}h`;
+
+    return `${days}d`;
+  };
+
+  const getScenarioRoute = (scenario) => {
+    return scenario.type === "shopify"
+      ? `/scenarios/shopify/${scenario._id}`
+      : `/scenarios/others/${scenario._id}`;
+  };
+ return (
+  <div className="min-h-screen bg-gray-50 font-inter text-gray-900">
+    <Sidebar />
+
+    <main className="min-h-screen pt-[60px]">
+      {/* System status bar */}
+      <div className="border-b border-gray-200 bg-white">
+        <div className="flex min-h-[30px] items-center justify-between gap-4 px-6 text-[11px] text-gray-500">
+          <div className="flex min-w-0 items-center divide-x divide-gray-200">
+            <div className="flex items-center gap-1.5 pr-4 font-medium text-green-700">
+              <span className="relative flex h-3 w-3 items-center justify-center">
+                <span className="absolute h-3 w-3 rounded-full bg-green-200" />
+                <span className="relative h-2 w-2 rounded-full bg-green-500" />
+              </span>
+
+              <span>All systems live</span>
+            </div>
+
+            <div className="hidden px-4 sm:block">
+              Inbox connected
+              {user?.email ? ` · ${user.email}` : ""}
+            </div>
+
+            <div className="hidden px-4 md:block">
+              Filter matched {stats?.processed || 0} leads today
+            </div>
+
+            <div className="hidden px-4 lg:block">
+              Last poll 42s ago
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              fetchEmails();
+              fetchRecentScenarios();
+            }}
+            className="shrink-0 font-semibold text-indigo-600 underline underline-offset-2 hover:text-indigo-700"
+          >
+            Run health check
+          </button>
+        </div>
+      </div>
+
+      <div className="px-5 py-7 sm:px-7 lg:px-10">
+        {/* Heading and filters */}
+        <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+          <div>
+            <h1 className="text-[24px] font-semibold leading-tight tracking-[-0.035em] text-gray-900">
+              Good morning, {firstName}
+            </h1>
+
+            <p className="mt-1 text-[13px] text-gray-500">
+              Your automations answered {stats?.processed || 0} leads while
+              you slept.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              className="h-8 rounded-full bg-gray-200 px-4 text-[11px] font-semibold text-black shadow-sm transition hover:bg-gray-200"
+            >
+              7 days
+            </button>
+
+            <button
+              type="button"
+              className="h-8 rounded-full border border-gray-200 bg-white px-4 text-[11px] font-semibold text-gray-700 shadow-sm transition hover:border-gray-300  hover:bg-gray-200"
+            >
+              30 days
+            </button>
+
+            <button
+              type="button"
+              className="h-8 rounded-full border border-gray-200 bg-white px-4 text-[11px] font-semibold text-gray-700 shadow-sm transition hover:border-gray-300  hover:bg-gray-200"
+            >
+              90 days
+            </button>
+          </div>
         </div>
 
-        <main className="flex-1 p-6 sm:p-10 overflow-auto">
-          <motion.div
-            className="flex flex-col sm:flex-row justify-between sm:items-center mb-8 sm:mb-10"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <div>
-              <h1 className="text-4xl  font-bold leading-tight">
-                 Dashboard
-              </h1>
-              <p className="text-gray-500 mt-1 text-base">
-                Comprehensive overview of your email automation workflow.
-              </p>
-            </div>
-          </motion.div>
+        {/* Statistics */}
+        <section className="mb-7 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {/* Leads captured */}
+          <div className="min-h-[123px] rounded-[18px] border border-gray-200 bg-white px-5 py-5 shadow-sm">
+            <p className="text-[12px] font-medium text-gray-500">
+              Leads captured
+            </p>
 
-          <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-10">
-            {statCards.map((item, i) => (
-              <motion.div
-                key={i}
-                className="p-6 rounded-2xl shadow-lg transition-all transform hover:-translate-y-1 hover:shadow-xl bg-white border border-gray-200"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.05 * i, duration: 0.4 }}
-              >
-                <div className="flex justify-between items-start">
-                  <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">
-                    {item.label}
-                  </p>
-                  <StatIcon icon={item.icon} colorClass={item.color} />
-                </div>
-                <h2 className="text-4xl font-bold mt-3 text-gray-900 leading-none">
-                  {item.value}
-                </h2>
-              </motion.div>
-            ))}
-          </section>
+            <p className="mt-2 text-[32px] font-bold leading-none tracking-tight text-gray-900">
+              {stats?.total || 0}
+            </p>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <motion.div
-              className="lg:col-span-2 space-y-8"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-            >
-              <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
-                <div className="flex justify-between items-center pb-4 border-b border-gray-100 mb-4">
-                  <h3 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
-                    <FiZap className="text-indigo-600 w-5 h-5" /> Recent
-                    Scenarios
-                  </h3>
-                  <button
-                    onClick={() => navigate("/scenarios/all")}
-                    className="text-sm text-indigo-600 font-semibold hover:text-indigo-500 transition flex items-center gap-1"
-                  >
-                    View All <FiArrowRight className="w-4 h-4" />
-                  </button>
-                </div>
-
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead className="text-xs font-semibold uppercase text-gray-500 border-b border-gray-100">
-                      <tr>
-                        <th className="py-3 px-3 text-left">Scenario Name</th>
-                        <th className="py-3 px-3 text-left">Type</th>
-                        <th className="py-3 px-3 text-left">Status</th>
-                        <th className="py-3 px-3 text-left">Created</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {scenariosLoading ? (
-                        <tr>
-                          <td
-                            colSpan={4}
-                            className="py-8 text-center text-gray-500"
-                          >
-                            Loading scenarios...
-                          </td>
-                        </tr>
-                      ) : recentScenarios.length > 0 ? (
-                        recentScenarios.map((s, i) => (
-                          <motion.tr
-                            key={s._id}
-                            className="border-b border-gray-100 last:border-none hover:bg-indigo-50 transition duration-150 cursor-pointer"
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.05 * i, duration: 0.3 }}
-                            onClick={() =>
-                              navigate(
-                                s.type === "shopify"
-                                  ? `/scenarios/shopify/${s._id}`
-                                  : `/scenarios/others/${s._id}`,
-                              )
-                            }
-                          >
-                            <td className="py-4 px-3 font-medium text-gray-900">
-                              {s.name || "Untitled Scenario"}
-                            </td>
-                            <td className="py-4 px-3 capitalize text-gray-600">
-                              {s.type || "N/A"}
-                            </td>
-                            <td className="py-4 px-3">
-                              <StatusBadge
-                                status="Active"
-                                isActive={s.scenarioActive}
-                              />
-                            </td>
-                            <td className="py-4 px-3 text-gray-500 whitespace-nowrap">
-                              {new Date(s.createdAt).toLocaleDateString(
-                                "en-US",
-                                {
-                                  year: "numeric",
-                                  month: "short",
-                                  day: "numeric",
-                                },
-                              )}
-                            </td>
-                          </motion.tr>
-                        ))
-                      ) : (
-                        <tr>
-                          <td
-                            colSpan={4}
-                            className="py-8 text-center text-gray-400 italic"
-                          >
-                            No recent scenarios found. Create one to get
-                            started!
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {/* <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
-                <h3 className="text-xl font-semibold mb-4 flex items-center gap-2 text-gray-800 pb-4 border-b border-gray-100">
-                  <FiMail className="text-indigo-600 w-5 h-5" /> Recent Emails
-                </h3>
-
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead className="text-xs font-semibold uppercase text-gray-500 border-b border-gray-100">
-                      <tr>
-                        <th className="py-3 px-3 text-left w-1/4">From</th>
-                        <th className="py-3 px-3 text-left w-2/4">Subject</th>
-                        <th className="py-3 px-3 text-left w-1/4">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {loading ? (
-                        <tr>
-                          <td
-                            colSpan={3}
-                            className="py-8 text-center text-gray-500"
-                          >
-                            Loading emails...
-                          </td>
-                        </tr>
-                      ) : rootEmails.length > 0 ? (
-                        rootEmails.map((email, i) => {
-                          const root = email.rootEmail || email;
-                          const status = getEmailStatus(
-                            email.statuses || root.statuses,
-                          );
-
-                          return (
-                            <motion.tr
-                              key={i}
-                              onClick={() => fetchEmailById(root._id)}
-                              className="border-b border-gray-100 last:border-none hover:bg-indigo-50 transition duration-150 cursor-pointer"
-                              initial={{ opacity: 0, x: -10 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: 0.1 * i, duration: 0.5 }}
-                            >
-                              <td className="py-4 px-3 font-medium text-gray-900">
-                                {root.senderAddress || "N/A"}
-                              </td>
-                              <td className="py-4 px-3 text-gray-600 truncate max-w-xs">
-                                {root.subject || "No Subject"}
-                              </td>
-                              <td className="py-4 px-3">
-                                <StatusBadge status={status} isActive={true} />
-                              </td>
-                            </motion.tr>
-                          );
-                        })
-                      ) : (
-                        <tr>
-                          <td
-                            colSpan={3}
-                            className="py-8 text-center text-gray-400 italic"
-                          >
-                            No recent emails found in your inbox.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-
-                <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-100">
-                  <button
-                    disabled={page === 1}
-                    onClick={() => setPage((p) => Math.max(p - 1, 1))}
-                    className={`flex items-center gap-1 px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-sm ${
-                      page === 1
-                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                        : "bg-indigo-50 text-indigo-700 hover:bg-indigo-100"
-                    }`}
-                  >
-                    <FiArrowLeft className="w-4 h-4" /> Previous
-                  </button>
-
-                  <span className="text-gray-600 text-sm font-medium">
-                    Page {page} of {totalPages}
-                  </span>
-
-                  <button
-                    disabled={page === totalPages}
-                    onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
-                    className={`flex items-center gap-1 px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-sm ${
-                      page === totalPages
-                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                        : "bg-indigo-50 text-indigo-700 hover:bg-indigo-100"
-                    }`}
-                  >
-                    Next <FiArrowRight className="w-4 h-4" />
-                  </button>
-                </div>
-              </div> */}
-            </motion.div>
-
-            <motion.div
-              className="lg:col-span-1 bg-white rounded-2xl shadow-lg border border-gray-200 p-6 h-fit sticky top-6"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-            >
-              <h3 className="text-xl font-semibold mb-5 text-gray-800 flex items-center gap-2 border-b pb-4 border-gray-100">
-                <FiZap className="text-indigo-600 w-5 h-5" /> Quick Actions
-              </h3>
-              <div className="flex flex-col space-y-4">
-                <button
-                  onClick={() => navigate("/connection")}
-                  className="flex items-center justify-center gap-2 bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 transition transform hover:-translate-y-px shadow-md shadow-indigo-200"
-                >
-                  <FiMail className="w-5 h-5" /> Connect New Inbox
-                </button>
-                <button
-                  onClick={() => navigate("/templates")}
-                  className="flex items-center justify-center gap-2 bg-white text-gray-700 py-3 rounded-xl font-medium border border-gray-300 hover:bg-gray-50 transition"
-                >
-                  <FiEdit className="w-5 h-5" /> Manage Templates
-                </button>
-                <button
-                  onClick={() => navigate("/scenarios/others")}
-                  className="flex items-center justify-center gap-2 bg-white text-gray-700 py-3 rounded-xl font-medium border border-gray-300 hover:bg-gray-50 transition"
-                >
-                  <FiPlusCircle className="w-5 h-5" /> Create New Scenario
-                </button>
-              </div>
-            </motion.div>
+            <p className="mt-3 text-[11px] font-medium text-green-700">
+              ↑ 18% vs last week
+            </p>
           </div>
-        </main>
+
+          {/* Average response */}
+          <div className="min-h-[123px] rounded-[18px] border border-gray-200 bg-white px-5 py-5 shadow-sm">
+            <p className="text-[12px] font-medium text-gray-500">
+              Avg first response
+            </p>
+
+            <p className="mt-2 text-[32px] font-bold leading-none tracking-tight text-gray-900">
+              42
+              <span className="ml-0.5 text-[15px]">s</span>
+            </p>
+
+            <p className="mt-3 text-[11px] font-semibold text-indigo-600">
+              Directory average: 9 hours
+            </p>
+          </div>
+
+          {/* Reply rate */}
+          <div className="min-h-[123px] rounded-[18px] border border-gray-200 bg-white px-5 py-5 shadow-sm">
+            <p className="text-[12px] font-medium text-gray-500">
+              Reply rate
+            </p>
+
+            <p className="mt-2 text-[32px] font-bold leading-none tracking-tight text-gray-900">
+              {replyRate}%
+            </p>
+
+            <p className="mt-3 text-[11px] font-medium text-green-700">
+              ↑ 9 pts since automation
+            </p>
+          </div>
+
+          {/* Awaiting reply */}
+          <div className="min-h-[123px] rounded-[18px] border border-gray-200 bg-white px-5 py-5 shadow-sm">
+            <p className="text-[12px] font-medium text-gray-500">
+              Awaiting your reply
+            </p>
+
+            <p className="mt-2 text-[32px] font-bold leading-none tracking-tight text-gray-900">
+              {pendingReplies}
+            </p>
+
+            <button
+              type="button"
+              onClick={() => navigate("/inbox")}
+              className="mt-3 flex items-center gap-1 text-[11px] font-semibold text-indigo-600 transition hover:text-indigo-700"
+            >
+              Open inbox
+              <FiArrowRight className="h-3 w-3" />
+            </button>
+          </div>
+        </section>
+
+        {/* Main dashboard columns */}
+        <section className="grid grid-cols-1 gap-4 xl:grid-cols-[1.5fr_1fr]">
+          {/* Scenarios */}
+          <div>
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-[13px] font-semibold text-gray-900">
+                Scenarios
+              </h2>
+
+              <button
+                type="button"
+                onClick={() => navigate("/scenarios/all")}
+                className="text-[11px] font-semibold text-indigo-600 transition hover:text-indigo-700"
+              >
+                View all
+              </button>
+            </div>
+
+            <div className="space-y-2.5">
+              {scenariosLoading ? (
+                <div className="flex h-[72px] items-center justify-center rounded-[17px] border border-gray-200 bg-white text-sm text-gray-500 shadow-sm">
+                  Loading scenarios...
+                </div>
+              ) : recentScenarios.length > 0 ? (
+                recentScenarios.slice(0, 3).map((scenario) => {
+                  const isPaused = !scenario.scenarioActive;
+
+                  const isAttention =
+                    scenario.status === "failed" ||
+                    scenario.connectionStatus === "disconnected";
+
+                  return (
+                    <button
+                      type="button"
+                      key={scenario._id}
+                      onClick={() => navigate(getScenarioRoute(scenario))}
+                      className={`flex min-h-[72px] w-full items-center gap-4 rounded-[17px] border px-5 py-3 text-left transition ${
+                        isAttention
+                          ? "border-yellow-300 bg-white shadow-sm hover:bg-yellow-50/40"
+                          : isPaused
+                            ? "border-dashed border-gray-300 bg-gray-50 opacity-70"
+                            : "border-gray-200 bg-white shadow-sm hover:border-indigo-200 hover:bg-indigo-50/40"
+                      }`}
+                    >
+                      {/* Icon */}
+                      <span
+                        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
+                          isAttention
+                            ? "bg-yellow-100 text-yellow-700"
+                            : isPaused
+                              ? "bg-gray-100 text-gray-400"
+                              : "bg-indigo-50 text-indigo-600"
+                        }`}
+                      >
+                        {isAttention ? (
+                          <FiAlertTriangle className="h-4 w-4" />
+                        ) : isPaused ? (
+                          <FiClock className="h-4 w-4" />
+                        ) : (
+                          <FiMail className="h-4 w-4" />
+                        )}
+                      </span>
+
+                      {/* Content */}
+                      <span className="min-w-0 flex-1">
+                        <span
+                          className={`block truncate text-[14px] font-semibold ${
+                            isPaused ? "text-gray-500" : "text-gray-900"
+                          }`}
+                        >
+                          {scenario.name || "Untitled Scenario"}
+                        </span>
+
+                        <span
+                          className={`mt-0.5 block truncate text-[11px] ${
+                            isAttention
+                              ? "text-yellow-700"
+                              : "text-gray-500"
+                          }`}
+                        >
+                          {isAttention
+                            ? "Sender disconnected — replies are queued, not sent"
+                            : isPaused
+                              ? "Paused — rules kept"
+                              : `${scenario.type || "Custom"} · Created ${formatTimeAgo(
+                                  scenario.createdAt,
+                                )} ago`}
+                        </span>
+                      </span>
+
+                      {/* Active scenario */}
+                      {!isPaused && !isAttention && (
+                        <>
+                          <div className="hidden h-7 items-end gap-[3px] sm:flex">
+                            {[8, 14, 10, 20, 16, 25].map(
+                              (height, barIndex) => (
+                                <span
+                                  key={barIndex}
+                                  className={`w-[4px] rounded-sm ${
+                                    barIndex === 5
+                                      ? "bg-indigo-600"
+                                      : "bg-indigo-200"
+                                  }`}
+                                  style={{ height }}
+                                />
+                              ),
+                            )}
+                          </div>
+
+                          <span className="flex items-center gap-1.5 rounded-full bg-green-100 px-3 py-1.5 text-[10px] font-semibold text-green-700">
+                            <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+                            Live
+                          </span>
+                        </>
+                      )}
+
+                      {/* Needs attention */}
+                      {isAttention && (
+                        <>
+                          <span
+                            role="button"
+                            tabIndex={0}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              navigate("/connection");
+                            }}
+                            onKeyDown={(event) => {
+                              if (
+                                event.key === "Enter" ||
+                                event.key === " "
+                              ) {
+                                event.stopPropagation();
+                                navigate("/connection");
+                              }
+                            }}
+                            className="rounded-full bg-indigo-600 px-4 py-2 text-[10px] font-semibold text-white transition hover:bg-indigo-700"
+                          >
+                            Reconnect
+                          </span>
+
+                          <span className="hidden items-center gap-1.5 rounded-full bg-yellow-100 px-3 py-1.5 text-[10px] font-semibold text-yellow-700 sm:flex">
+                            <span className="h-1.5 w-1.5 rounded-full bg-yellow-500" />
+                            Needs attention
+                          </span>
+                        </>
+                      )}
+
+                      {/* Paused */}
+                      {isPaused && (
+                        <span className="rounded-full bg-gray-200 px-3 py-1.5 text-[10px] font-semibold text-gray-500">
+                          Paused
+                        </span>
+                      )}
+                    </button>
+                  );
+                })
+              ) : (
+                <div className="flex min-h-[150px] flex-col items-center justify-center rounded-[17px] border border-dashed border-gray-300 bg-white px-6 text-center shadow-sm">
+                  <FiZap className="mb-3 h-6 w-6 text-indigo-400" />
+
+                  <p className="text-sm font-semibold text-gray-800">
+                    No scenarios found
+                  </p>
+
+                  <button
+                    type="button"
+                    onClick={() => navigate("/scenarios/shopify")}
+                    className="mt-2 text-xs font-semibold text-indigo-600 transition hover:text-indigo-700"
+                  >
+                    Create your first scenario
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Latest activity */}
+          <div>
+            <h2 className="mb-3 text-[13px] font-semibold text-gray-900">
+              Latest activity
+            </h2>
+
+            <div className="min-h-[244px] rounded-[18px] border border-gray-200 bg-white px-5 py-1 shadow-sm">
+              {loading ? (
+                <div className="flex min-h-[230px] items-center justify-center text-sm text-gray-500">
+                  Loading activity...
+                </div>
+              ) : activityEmails.length > 0 ? (
+                activityEmails.map((email, index) => {
+                  const root = email.rootEmail || email;
+
+                  const status = getEmailStatus(
+                    email.statuses || root.statuses,
+                  );
+
+                  const sender =
+                    root.senderName ||
+                    root.senderAddress?.split("@")[0] ||
+                    "Unknown sender";
+
+                  const initials = sender
+                    .split(" ")
+                    .map((word) => word.charAt(0))
+                    .join("")
+                    .slice(0, 2)
+                    .toUpperCase();
+
+                  const failed = status === "Failed";
+
+                  return (
+                    <button
+                      type="button"
+                      key={root._id || index}
+                      onClick={() => navigate("/inbox")}
+                      className="flex w-full items-center gap-3 border-b border-gray-100 py-3 text-left transition hover:bg-indigo-50/50 last:border-b-0"
+                    >
+                      <span
+                        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[9px] font-bold ${
+                          failed
+                            ? "bg-red-50 text-red-600"
+                            : index % 3 === 0
+                              ? "bg-green-100 text-green-700"
+                              : index % 3 === 1
+                                ? "bg-yellow-100 text-yellow-700"
+                                : "bg-indigo-100 text-indigo-700"
+                        }`}
+                      >
+                        {failed ? "!" : initials}
+                      </span>
+
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[12px] text-gray-900">
+                          <strong>{sender}</strong>
+
+                          {!failed &&
+                            ` · ${
+                              status === "Processed"
+                                ? "auto-replied"
+                                : "replied"
+                            }`}
+                        </span>
+
+                        <span className="mt-0.5 block truncate text-[10px] text-gray-500">
+                          {failed
+                            ? "Run failed · rate limit on send"
+                            : root.subject || "Email automation activity"}
+                        </span>
+
+                        {failed && (
+                          <span className="mt-1 inline-block text-[10px] font-semibold text-red-600 underline underline-offset-2">
+                            View & retry →
+                          </span>
+                        )}
+                      </span>
+
+                      <span className="shrink-0 text-[9px] text-gray-400">
+                        {formatTimeAgo(root.date || root.createdAt)}
+                      </span>
+                    </button>
+                  );
+                })
+              ) : (
+                <div className="flex min-h-[230px] flex-col items-center justify-center text-center">
+                  <FiMail className="mb-2 h-6 w-6 text-indigo-300" />
+
+                  <p className="text-sm font-medium text-gray-700">
+                    No recent activity
+                  </p>
+
+                  <p className="mt-1 text-xs text-gray-400">
+                    New email activity will appear here.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
       </div>
-    </div>
-  );
+    </main>
+  </div>
+);
 };
 
 export default Organization;
