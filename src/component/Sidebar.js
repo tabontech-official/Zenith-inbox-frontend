@@ -648,6 +648,7 @@ import {
   FiChevronDown,
   FiGrid,
   FiInbox,
+  FiLink,
   FiLogOut,
   FiMenu,
   FiPlus,
@@ -1045,6 +1046,13 @@ const Sidebar = () => {
               Icon={FiBarChart2}
               active={isSectionActive(["/analytics"])}
             />
+
+            <DesktopNavLink
+              to="/connection"
+              label="Connections"
+              Icon={FiLink}
+              active={isSectionActive(["/connection"])}
+            />
           </nav>
         </div>
 
@@ -1203,6 +1211,13 @@ const Sidebar = () => {
               label="Analytics"
               Icon={FiBarChart2}
               active={isSectionActive(["/analytics"])}
+            />
+
+            <MobileNavLink
+              to="/connection"
+              label="Connections"
+              Icon={FiLink}
+              active={isSectionActive(["/connection"])}
             />
 
             <MobileNavLink

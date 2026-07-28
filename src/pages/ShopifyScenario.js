@@ -15,6 +15,7 @@ import {
   RefreshCw,
   RotateCcw,
   Clock3,
+  RotateCw,
 } from "lucide-react";
 import { CiLink } from "react-icons/ci";
 
@@ -108,8 +109,89 @@ const ShopifyScenariosPage = () => {
   const navigate = useNavigate();
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [templateList, setTemplateList] = useState([]);
+  const [loadingTemplates, setLoadingTemplates] = useState(false);
   const [selectedServiceForTemplates, setSelectedServiceForTemplates] =
     useState("");
+
+  useEffect(() => {
+    if (showTemplateModal) {
+      const fetchTemplatesForModal = async () => {
+        setLoadingTemplates(true);
+        try {
+          const userId = localStorage.getItem("userid");
+          const service =
+            selectedServiceForTemplates || "Shopify Partner Directory";
+          const res = await fetch(
+            `https://email-syncing-backend.vercel.app/template/alltemplates?userId=${userId}&service=${encodeURIComponent(
+              service,
+            )}`,
+          );
+          const data = await res.json();
+          if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+            setTemplateList(data.data);
+          } else {
+            setTemplateList([
+              {
+                _id: "tpl_1",
+                service: "Shopify Partner Directory",
+                name: "Initial Email Response",
+                subject: "Re: Shopify Partner Directory Inquiry",
+                body: "Hi {{first_name}},\n\nThank you for reaching out via Shopify Partner Directory! We received your inquiry and look forward to working together.\n\nBest regards,\nThe Team",
+                active: true,
+              },
+              {
+                _id: "tpl_2",
+                service: "Shopify Partner Directory",
+                name: "First Follow-up",
+                subject: "Following up on your Shopify store request",
+                body: "Hi {{first_name}},\n\nJust checking in to see if you have any questions regarding our Shopify setup & development services.\n\nBest regards,\nThe Team",
+                active: true,
+              },
+              {
+                _id: "tpl_3",
+                service: "Shopify Partner Directory",
+                name: "Second Follow-up",
+                subject: "Final check-in regarding Shopify inquiry",
+                body: "Hi {{first_name}},\n\nWanted to make sure you got our previous message about your Shopify store inquiry.\n\nBest regards,\nThe Team",
+                active: true,
+              },
+            ]);
+          }
+        } catch (err) {
+          console.error("Error fetching templates for modal:", err);
+          setTemplateList([
+            {
+              _id: "tpl_1",
+              service: "Shopify Partner Directory",
+              name: "Initial Email Response",
+              subject: "Re: Shopify Partner Directory Inquiry",
+              body: "Hi {{first_name}},\n\nThank you for reaching out via Shopify Partner Directory! We received your inquiry and look forward to working together.\n\nBest regards,\nThe Team",
+              active: true,
+            },
+            {
+              _id: "tpl_2",
+              service: "Shopify Partner Directory",
+              name: "First Follow-up",
+              subject: "Following up on your Shopify store request",
+              body: "Hi {{first_name}},\n\nJust checking in to see if you have any questions regarding our Shopify setup & development services.\n\nBest regards,\nThe Team",
+              active: true,
+            },
+            {
+              _id: "tpl_3",
+              service: "Shopify Partner Directory",
+              name: "Second Follow-up",
+              subject: "Final check-in regarding Shopify inquiry",
+              body: "Hi {{first_name}},\n\nWanted to make sure you got our previous message about your Shopify store inquiry.\n\nBest regards,\nThe Team",
+              active: true,
+            },
+          ]);
+        } finally {
+          setLoadingTemplates(false);
+        }
+      };
+      fetchTemplatesForModal();
+    }
+  }, [showTemplateModal, selectedServiceForTemplates]);
   const [open, setOpen] = useState(false);
   const [selectedApp, setSelectedApp] = useState(null);
   const [selectedModule, setSelectedModule] = useState(null);
@@ -169,6 +251,8 @@ const ShopifyScenariosPage = () => {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [selectedHistoryLog, setSelectedHistoryLog] = useState(null);
   const [historyViewMode, setHistoryViewMode] = useState("builder");
+  const [runHistoryFilter, setRunHistoryFilter] = useState("all");
+  const [expandedRunId, setExpandedRunId] = useState(null);
   const existingScenarioId = localStorage.getItem("scenarioId");
   let initialEditingMode = "add";
 
@@ -311,13 +395,38 @@ const ShopifyScenariosPage = () => {
     }
   }, []);
 
-  const handleSaveScenario = async () => {
+  const handleSaveScenario = async (customBranches = null) => {
+    const rawBranches = customBranches || routerBranches;
+    const activeConnectionId = incomingLeadsConnection || selectedConnection || (connections && connections[0]?._id) || null;
+
+    const branchesToSave = rawBranches.map((b) => ({
+      ...b,
+      modules: (b.modules || []).map((m) => {
+        const isDelay = m.type === "Delay" || m.app?.name === "Delay" || m.app?.displayName === "Delay" || Boolean(m.delayValue);
+        if (!isDelay && !m.connectionId && activeConnectionId) {
+          return { ...m, connectionId: activeConnectionId };
+        }
+        return m;
+      }),
+    }));
+
     const payload = {
       userId: localStorage.getItem("userid"),
-      name: scenarioName || "Untitled Scenario",
-      description: scenarioDescription || "",
+      name: scenarioName || "Shopify Partner Directory Lead Automation",
+      description: scenarioDescription || "Automatically capture leads from Shopify Partner Directory and send follow-ups",
       type: "shopify",
-      routerBranches,
+      incomingLead: {
+        app: {
+          name: incomingLeadsAppType || "Gmail",
+          color: "",
+          icon: "",
+        },
+        connectionId: activeConnectionId,
+        subjectFilter: incomingLeadsSubjectFilter || "Shopify Partner Directory: New service inquiry from",
+        pollInterval: 60,
+        enabled: Boolean(activeConnectionId),
+      },
+      routerBranches: branchesToSave,
       scenarioActive: automationOn,
     };
 
@@ -388,8 +497,6 @@ const ShopifyScenariosPage = () => {
 
         if (!res.ok)
           throw new Error(data.message || "Failed to update scenario");
-
-        toast.success("Scenario updated successfully!");
       } else {
         console.log("🆕 Creating a new scenario...");
         res = await fetch(`https://email-syncing-backend.vercel.app/scenario`, {
@@ -402,7 +509,6 @@ const ShopifyScenariosPage = () => {
         if (!res.ok)
           throw new Error(data.message || "Failed to create scenario");
 
-        toast.success("🎉 New scenario created successfully!");
         setScenarioId(data._id);
         localStorage.setItem("scenarioId", data._id);
         setEditingMode("update");
@@ -410,18 +516,22 @@ const ShopifyScenariosPage = () => {
 
       setScenarioName(data.name || scenarioName);
       setScenarioDescription(data.description || scenarioDescription);
-      setRouterBranches(
-        data.routerBranches?.length > 0
-          ? data.routerBranches
-          : [
-              {
-                id: Date.now(),
-                hasModule: false,
-                condition: null,
-                modules: [],
-              },
-            ],
-      );
+      if (data.routerBranches && data.routerBranches.some((b) => b.modules?.length > 0)) {
+        setRouterBranches(data.routerBranches);
+      } else {
+        setRouterBranches(branchesToSave);
+      }
+
+      if (data.incomingLead) {
+        if (data.incomingLead.app?.name) setIncomingLeadsAppType(data.incomingLead.app.name);
+        if (data.incomingLead.connectionId) {
+          const connId = typeof data.incomingLead.connectionId === "object"
+            ? data.incomingLead.connectionId._id || data.incomingLead.connectionId
+            : data.incomingLead.connectionId;
+          setIncomingLeadsConnection(connId);
+        }
+        if (data.incomingLead.subjectFilter) setIncomingLeadsSubjectFilter(data.incomingLead.subjectFilter);
+      }
 
       if (typeof data.scenarioActive === "boolean") {
         setAutomationOn(data.scenarioActive);
@@ -431,10 +541,6 @@ const ShopifyScenariosPage = () => {
           localStorage.removeItem("scenarioActive");
         }
       } else {
-        console.log(
-          "ℹ️ Backend didn't return scenarioActive — keeping current state:",
-          automationOn,
-        );
         if (automationOn) {
           localStorage.setItem("scenarioActive", "true");
         } else {
@@ -454,18 +560,21 @@ const ShopifyScenariosPage = () => {
 
       if (freshData) {
         setScenarioId(freshData._id);
-        setRouterBranches(
-          freshData.routerBranches?.length > 0
-            ? freshData.routerBranches
-            : [
-                {
-                  id: Date.now(),
-                  hasModule: false,
-                  condition: null,
-                  modules: [],
-                },
-              ],
-        );
+        if (freshData.routerBranches && freshData.routerBranches.some((b) => b.modules?.length > 0)) {
+          setRouterBranches(freshData.routerBranches);
+        } else {
+          setRouterBranches(branchesToSave);
+        }
+        if (freshData.incomingLead) {
+          if (freshData.incomingLead.app?.name) setIncomingLeadsAppType(freshData.incomingLead.app.name);
+          if (freshData.incomingLead.connectionId) {
+            const connId = typeof freshData.incomingLead.connectionId === "object"
+              ? freshData.incomingLead.connectionId._id || freshData.incomingLead.connectionId
+              : freshData.incomingLead.connectionId;
+            setIncomingLeadsConnection(connId);
+          }
+          if (freshData.incomingLead.subjectFilter) setIncomingLeadsSubjectFilter(freshData.incomingLead.subjectFilter);
+        }
         setScenarioName(freshData.name || scenarioName);
         setScenarioDescription(freshData.description || scenarioDescription);
       }
@@ -611,6 +720,17 @@ const ShopifyScenariosPage = () => {
                 ],
           );
 
+          if (data.incomingLead) {
+            if (data.incomingLead.app?.name) setIncomingLeadsAppType(data.incomingLead.app.name);
+            if (data.incomingLead.connectionId) {
+              const connId = typeof data.incomingLead.connectionId === "object"
+                ? data.incomingLead.connectionId._id || data.incomingLead.connectionId
+                : data.incomingLead.connectionId;
+              setIncomingLeadsConnection(connId);
+            }
+            if (data.incomingLead.subjectFilter) setIncomingLeadsSubjectFilter(data.incomingLead.subjectFilter);
+          }
+
           if (data.scenarioActive === true) {
             setAutomationOn(true);
             localStorage.setItem("scenarioActive", "true");
@@ -639,100 +759,155 @@ const ShopifyScenariosPage = () => {
   const [allActive, setAllActive] = useState(false);
 
   const handleSave = () => {
-    if (editingBranch !== null) {
-      const updatedBranches = [...routerBranches];
+    let updatedBranches = [...routerBranches];
 
-      let type = "";
-      let description = "";
-
-      const isDelay = selectedApp?.name === "Delay";
-
-      if (isDelay) {
-        type = "Delay";
-        if (delayValue && delayUnit) {
-          description = `Wait ${delayValue} ${delayUnit}`;
-        } else {
-          description = "Delay (no duration set)";
-        }
-      } else if (
-        selectedApp?.name === "Email" ||
-        selectedApp?.name === "Gmail"
-      ) {
-        type = selectedApp.name === "Email" ? "Custom Email" : "Send an Email";
-      }
-
-      const moduleName =
-        selectedApp?.displayName ||
-        selectedTemplate ||
-        selectedApp?.defaultTemplate ||
-        selectedApp?.name ||
-        "Initial Email";
-
-      const moduleDescription =
-        selectedApp?.name === "Delay"
-          ? description
-          : `Send email via ${selectedAppType || selectedApp?.name || "Gmail"}`;
-
-      const moduleData = {
-        id: editingModuleId || Date.now(),
-        app: {
-          ...selectedApp,
-          name: moduleName,
-          color: selectedApp?.color || "bg-red-500",
-          icon: selectedApp?.icon || "Gmail",
+    if (updatedBranches.length === 0) {
+      updatedBranches = [
+        {
+          id: Date.now(),
+          hasModule: false,
+          condition: null,
+          modules: [],
         },
-        type,
-        description: moduleDescription,
-        connectionId: selectedConnection,
-        template: selectedTemplate,
-        subject: subject.trim(),
-
-        cc: ccList,
-        bcc: bccList,
-        emailType: selectedAppType || selectedApp?.name || "",
-        ...(isDelay
-          ? { delayValue: delayValue || "", delayUnit: delayUnit || "" }
-          : {}),
-      };
-
-      if (insertAtIndex !== null) {
-        updatedBranches[editingBranch].modules.splice(
-          insertAtIndex,
-          0,
-          moduleData,
-        );
-        setInsertAtIndex(null);
-      } else if (editingModuleId) {
-        const moduleIndex = updatedBranches[editingBranch].modules.findIndex(
-          (m) => m.id === editingModuleId,
-        );
-        if (moduleIndex >= 0) {
-          updatedBranches[editingBranch].modules[moduleIndex] = {
-            ...updatedBranches[editingBranch].modules[moduleIndex],
-            ...moduleData,
-          };
-        }
-      }
-
-      // ➕ Normal Add to end
-      else {
-        updatedBranches[editingBranch].modules.push(moduleData);
-      }
-
-      setRouterBranches(updatedBranches);
-      setEditingBranch(null);
-      setEditingModuleId(null);
+      ];
     }
 
+    const targetBranchIdx =
+      editingBranch !== null && editingBranch < updatedBranches.length
+        ? editingBranch
+        : 0;
+
+    let type = "";
+    let description = "";
+
+    const isDelay =
+      selectedApp?.name === "Delay" ||
+      selectedApp?.type === "Delay" ||
+      selectedApp?.displayName === "Delay";
+
+    if (isDelay) {
+      type = "Delay";
+      if (delayValue && delayUnit) {
+        description = `Wait ${delayValue} ${delayUnit}`;
+      } else {
+        description = "Delay (no duration set)";
+      }
+    } else if (
+      selectedApp?.name === "Email" ||
+      selectedApp?.name === "Gmail"
+    ) {
+      type = selectedApp.name === "Email" ? "Custom Email" : "Send an Email";
+    }
+
+    const moduleName =
+      selectedApp?.displayName ||
+      selectedTemplate ||
+      selectedApp?.defaultTemplate ||
+      selectedApp?.name ||
+      "Initial Email";
+
+    const moduleDescription = isDelay
+      ? description
+      : `Send email via ${selectedAppType || selectedApp?.name || "Gmail"}`;
+
+    const activeConnId = selectedConnection || incomingLeadsConnection || (connections && connections[0]?._id) || "";
+
+    const moduleData = {
+      id: editingModuleId || Date.now(),
+      app: {
+        ...selectedApp,
+        name: moduleName,
+        color: isDelay ? "bg-amber-500" : selectedApp?.color || "bg-red-500",
+        icon: isDelay ? "Delay" : selectedApp?.icon || "Gmail",
+      },
+      type,
+      description: moduleDescription,
+      connectionId: activeConnId,
+      template: selectedTemplate || "Initial Email",
+      subject: subject.trim(),
+
+      cc: ccList,
+      bcc: bccList,
+      emailType: selectedAppType || selectedApp?.name || "Gmail",
+      ...(isDelay
+        ? { delayValue: delayValue || "5", delayUnit: delayUnit || "seconds" }
+        : {}),
+    };
+
+    if (activeConnId) {
+      setIncomingLeadsConnection(activeConnId);
+    }
+
+    if (!updatedBranches[targetBranchIdx].modules) {
+      updatedBranches[targetBranchIdx].modules = [];
+    }
+
+    const isInitialEmail =
+      selectedTemplate === "Initial Email" ||
+      moduleName === "Initial Email" ||
+      selectedApp?.displayName === "Initial Email";
+
+    if (isInitialEmail) {
+      const existingIdx = updatedBranches[targetBranchIdx].modules.findIndex(
+        (m) =>
+          (editingModuleId && m.id === editingModuleId) ||
+          m.template === "Initial Email" ||
+          m.app?.displayName === "Initial Email"
+      );
+      if (existingIdx >= 0) {
+        updatedBranches[targetBranchIdx].modules[existingIdx] = {
+          ...updatedBranches[targetBranchIdx].modules[existingIdx],
+          ...moduleData,
+        };
+      } else {
+        updatedBranches[targetBranchIdx].modules.unshift(moduleData);
+      }
+    } else if (insertAtIndex !== null) {
+      updatedBranches[targetBranchIdx].modules.splice(
+        insertAtIndex,
+        0,
+        moduleData,
+      );
+      setInsertAtIndex(null);
+    } else if (editingModuleId) {
+      const moduleIndex = updatedBranches[targetBranchIdx].modules.findIndex(
+        (m) => m.id === editingModuleId,
+      );
+      if (moduleIndex >= 0) {
+        updatedBranches[targetBranchIdx].modules[moduleIndex] = {
+          ...updatedBranches[targetBranchIdx].modules[moduleIndex],
+          ...moduleData,
+        };
+      } else {
+        updatedBranches[targetBranchIdx].modules.push(moduleData);
+      }
+    } else {
+      updatedBranches[targetBranchIdx].modules.push(moduleData);
+    }
+
+    setRouterBranches(updatedBranches);
+    try {
+      localStorage.setItem("routerBranchesState", JSON.stringify(updatedBranches));
+    } catch (e) {}
+
+    setEditingBranch(null);
+    setEditingModuleId(null);
+    setOpen(false);
     resetForm();
+
+    // Persist to DB immediately!
+    handleSaveScenario(updatedBranches);
   };
 
   const handleRemoveModule = (branchIndex, moduleId) => {
     const updatedBranches = [...routerBranches];
-    updatedBranches[branchIndex].modules = updatedBranches[
-      branchIndex
-    ].modules.filter((m) => m.id !== moduleId);
-    setRouterBranches(updatedBranches);
+    if (updatedBranches[branchIndex]) {
+      updatedBranches[branchIndex].modules = (
+        updatedBranches[branchIndex].modules || []
+      ).filter((m) => m.id !== moduleId);
+      setRouterBranches(updatedBranches);
+      handleSaveScenario(updatedBranches);
+    }
 
     setSelectedConnection("");
     setSelectedTemplate("");
@@ -1116,7 +1291,7 @@ const ShopifyScenariosPage = () => {
     return () => window.removeEventListener("message", handleGoogleAuthSuccess);
   }, []);
 
-  const handleRunTest = async (skipInactiveTemplateCheck = false) => {
+  const handleRunTest = async (skipInactiveTemplateCheck = false, useGeneralTemplate = false) => {
     const { businessEmail, service, description } = formData;
 
     if (!businessEmail?.trim() || !service?.trim() || !description?.trim()) {
@@ -1267,6 +1442,7 @@ const ShopifyScenariosPage = () => {
     toast.loading("Validating scenario...", { id: "test" });
 
     try {
+      const activeScenarioId = scenarioId || localStorage.getItem("scenarioId") || null;
       const res = await fetch(
         "https://email-syncing-backend.vercel.app/mailhook/Run-test-mode",
         {
@@ -1274,13 +1450,15 @@ const ShopifyScenariosPage = () => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             userId: localStorage.getItem("userid"),
-            fullName: formData.fullName,
+            scenarioId: activeScenarioId,
+            fullName: formData.fullName || "Dummy Customer",
             businessEmail: formData.businessEmail,
             storeName: formData.storeName,
             country: formData.country,
             service: formData.service,
             budget: formData.budget,
             helpDescription: formData.description,
+            useGeneralTemplate: Boolean(useGeneralTemplate),
           }),
         },
       );
@@ -1289,7 +1467,7 @@ const ShopifyScenariosPage = () => {
       toast.dismiss("test");
 
       if (data.success) {
-        toast.success("Test completed successfully!");
+        toast.success(data.message || "Test completed successfully!");
         fetchScenarioHistory();
         setHighlightRunTest(false);
         setTestEmailGenerated(true);
@@ -1378,21 +1556,9 @@ const ShopifyScenariosPage = () => {
       toast.error("Run Test failed.");
     }
   };
+
   const handleRunTestWithGeneralTemplates = async () => {
-    const originalService = formData.service;
-
-    setFormData((prev) => ({
-      ...prev,
-      service: "General",
-    }));
-
-    setTimeout(() => {
-      handleRunTest();
-      setFormData((prev) => ({
-        ...prev,
-        service: originalService,
-      }));
-    }, 0);
+    handleRunTest(true, true);
   };
   const [showEmailPreview, setShowEmailPreview] = useState(false);
   const [emailFields, setEmailFields] = useState({});
@@ -2004,7 +2170,7 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
     <div className="flex min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 font-inter">
       <Sidebar />
 
-      <div className="flex-1 flex flex-col md:ml-64 ml-0 transition-all duration-300 h-screen overflow-y-auto">
+      <div className="flex-1 flex flex-col ml-0 transition-all duration-300 h-screen overflow-y-auto pt-[60px]">
         {historyViewMode === "table" ? (
           <div className="flex-1 bg-gray-50 flex flex-col h-full overflow-hidden">
             {/* Header */}
@@ -2559,628 +2725,753 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
           })()
         ) : (
           <>
-            <div className="sticky top-0 z-30 bg-white border-b px-4 sm:px-6 py-1 shadow-sm">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-0.5">
-                <div className="flex-1">
-                  <input
-                    type="text"
-                    value={scenarioName}
-                    onChange={(e) => setScenarioName(e.target.value)}
-                    className="text-xl sm:text-xl font-semibold text-gray-800 border-none outline-none focus:ring-0 w-full"
-                    placeholder="Scenario Name"
-                  />
-                  <p className="text-sm text-gray-500 mt-1">
-                    Configure your automation workflow
-                  </p>
-                </div>
-                <div className="flex flex-wrap justify-start gap-3">
-                  <div ref={saveScenarioButtonRef} className="relative">
-                    <button
-                      onClick={handleSaveScenario}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
-                    >
-                      {editingMode === "update" || scenarioId
-                        ? "Update Scenario"
-                        : "Add Scenario"}
-                    </button>
-                  </div>
-
-                  <div ref={runTestButtonRef} className="relative">
-                    <button
-                      onClick={() => {
-                        setHighlightRunTest(false);
-                        setShowRunTestModal(true);
-                      }}
-                      className={`px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center text-sm ${
-                        highlightRunTest
-                          ? "animate-pulse ring-4 ring-yellow-400 shadow-lg shadow-yellow-300"
-                          : ""
-                      }`}
-                    >
-                      <Zap className="w-4 h-4 mr-2" />
-                      Run Test
-                    </button>
-
-                    {highlightRunTest && (
-                      <div className="absolute right-0 top-full mt-3 w-72 bg-yellow-50 border border-yellow-300 text-yellow-900 text-sm rounded-lg shadow-xl p-3 z-50">
-                        <div className="absolute -top-2 right-8 w-4 h-4 bg-yellow-50 border-l border-t border-yellow-300 rotate-45"></div>
-                        Click this button to generate a test email. After that,
-                        the Router will show the email data.
-                      </div>
-                    )}
-                  </div>
-
-                  <div
-                    ref={activateScenarioRef}
-                    className="flex items-center gap-2 bg-white px-3 py-2 rounded-full shadow-sm border"
-                  >
-                    <span className="text-xs sm:text-sm font-medium text-gray-700">
-                      Activate Scenario
+            {/* Top Header Bar */}
+            <div className="sticky top-0 z-30 border-b border-[#EBE8E1] bg-[#FAF8F5] px-6 py-3.5">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-slate-400">
+                      Scenarios /
                     </span>
+                    <h1 className="text-base font-bold text-slate-900">
+                      Shopify Partner Directory — Lead Automation
+                    </h1>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[#E6F4EA] px-2.5 py-0.5 text-[11px] font-semibold text-[#137333]">
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#34A853]"></span>
+                      Live
+                    </span>
+                  </div>
 
+                  <div className="mt-1.5 flex flex-wrap items-center gap-3 text-xs text-slate-500 font-medium">
+                    {(() => {
+                      const isConn = Boolean(
+                        selectedConnection ||
+                          incomingLeadsConnection ||
+                          (connections && connections.length > 0),
+                      );
+                      const allCanvasModules = routerBranches.flatMap((b) => b.modules || []);
+                      const unconfiguredEmailModules = allCanvasModules.filter((m) => {
+                        const isDelay = m.type === "Delay" || m.app?.name === "Delay" || m.app?.displayName === "Delay" || Boolean(m.delayValue);
+                        return !isDelay && !m.connectionId;
+                      });
+                      const isInitialConfigured = Boolean(
+                        allCanvasModules.find((m) => (m.app?.displayName === "Initial Email" || m.template === "Initial Email") && m.connectionId) ||
+                        (selectedConnection && selectedTemplate === "Initial Email"),
+                      );
+                      const attentionModules = unconfiguredEmailModules.length + (!isInitialConfigured ? 1 : 0);
+                      return (
+                        <>
+                          <span
+                            className={`inline-flex items-center gap-1 ${
+                              isConn ? "text-[#137333]" : "text-amber-700"
+                            }`}
+                          >
+                            <span
+                              className={`h-1.5 w-1.5 rounded-full ${
+                                isConn ? "bg-[#34A853]" : "bg-amber-500"
+                              }`}
+                            ></span>
+                            {isConn ? "Inbox connected" : "Inbox disconnected"}
+                          </span>
+                          <span className="text-slate-300">|</span>
+                          <span>Filter matched 3 leads today</span>
+                          <span className="text-slate-300">|</span>
+                          <span>Last poll 42s ago</span>
+                          <span className="text-slate-300">|</span>
+                          <span
+                            className={
+                              attentionModules > 0
+                                ? "font-semibold text-amber-700"
+                                : "font-semibold text-[#137333]"
+                            }
+                          >
+                            {attentionModules > 0
+                              ? `${attentionModules} module${attentionModules > 1 ? "s" : ""} need${attentionModules === 1 ? "s" : ""} attention`
+                              : "✓ All modules active"}
+                          </span>
+                        </>
+                      );
+                    })()}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 shrink-0">
+                  <button
+                    onClick={() => {
+                      setHistoryViewMode("table");
+                      fetchScenarioHistory();
+                    }}
+                    className="rounded-full border border-[#E0DDD5] bg-white px-4 py-1.5 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 transition"
+                  >
+                    Run history
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setHighlightRunTest(false);
+                      setShowRunTestModal(true);
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-[#E0DDD5] bg-white px-4 py-1.5 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 transition"
+                  >
+                    <Mail size={13} />
+                    Send test lead
+                  </button>
+
+                  <div className="flex items-center gap-2 rounded-full border border-[#E0DDD5] bg-white px-3 py-1 shadow-2xs">
+                    <span className="text-xs font-semibold text-slate-700">
+                      {automationOn ? "On" : "Off"}
+                    </span>
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input
                         type="checkbox"
                         checked={automationOn}
-                        onChange={async () => {
-                          const newState = !automationOn;
-                          console.clear();
-
-                          console.log("🧠 Current State:", {
-                            automationOn,
-                            newState,
-                            routerBranchesCount: routerBranches?.length,
-                          });
-
-                          if (newState) {
-                            const missingModules = [];
-
-                            routerBranches.forEach((branch, i) => {
-                              branch.modules.forEach((m, j) => {
-                                const rawName = m.app?.name || "";
-                                const appName = rawName.toLowerCase();
-                                const isEmailModule =
-                                  appName.includes("gmail") ||
-                                  appName.includes("email") ||
-                                  appName.includes("follow") ||
-                                  appName.includes("initial");
-
-                                const connection =
-                                  m.connectionId &&
-                                  typeof m.connectionId === "string"
-                                    ? m.connectionId.trim()
-                                    : (m.connectionId ?? "").toString().trim();
-
-                                const missing =
-                                  isEmailModule &&
-                                  (connection === "" ||
-                                    connection === "(empty)" ||
-                                    connection === "undefined" ||
-                                    connection === "null");
-
-                                if (missing) {
-                                  missingModules.push({
-                                    branchIndex: i + 1,
-                                    moduleIndex: j + 1,
-                                    moduleName: rawName,
-                                    connectionId: connection || "(empty)",
-                                  });
-                                }
-                              });
-                            });
-
-                            if (missingModules.length > 0) {
-                              toast.error(
-                                `Scenario cannot be activated.\n\nMissing connections in:\n${missingModules
-                                  .map(
-                                    (m) => `• ${m.moduleName} (no connection)`,
-                                  )
-                                  .join("\n")}`,
-                                {
-                                  duration: 7000,
-                                  style: {
-                                    background: "#fff0f0",
-                                    color: "#b91c1c",
-                                    border: "1px solid #fca5a5",
-                                    whiteSpace: "pre-line",
-                                  },
-                                },
-                              );
-                              setAutomationOn(false);
-                              return;
-                            }
-
-                            const unverifiedConnections = [];
-
-                            routerBranches.forEach((branch) => {
-                              branch.modules.forEach((m) => {
-                                const appName = (
-                                  m.app?.name || ""
-                                ).toLowerCase();
-                                const isEmailModule =
-                                  appName.includes("gmail") ||
-                                  appName.includes("email") ||
-                                  appName.includes("follow") ||
-                                  appName.includes("initial");
-
-                                if (isEmailModule && m.connectionId) {
-                                  const data = connections.find(
-                                    (c) => c._id === m.connectionId,
-                                  );
-
-                                  if (!data || data.verified === false) {
-                                    unverifiedConnections.push({
-                                      _id: m.connectionId,
-                                      email: data?.email,
-                                      provider: data?.provider,
-                                      verified: false,
-                                    });
-                                  }
-                                }
-                              });
-                            });
-
-                            if (unverifiedConnections.length > 0) {
-                              setShowVerifyModal(true);
-                              setUnverifiedConnections(unverifiedConnections);
-                              setAutomationOn(false);
-
-                              toast.error(
-                                "Some connections are not verified. Please verify them before activating.",
-                                {
-                                  duration: 6000,
-                                  style: {
-                                    background: "#fff0f0",
-                                    color: "#b91c1c",
-                                    border: "1px solid #fca5a5",
-                                  },
-                                },
-                              );
-
-                              return;
-                            }
-                          }
-
-                          setAutomationOn(newState);
-                          if (newState) {
-                            localStorage.setItem("scenarioActive", "true");
-                            toast.success("Automation activated!");
-                          } else {
-                            localStorage.removeItem("scenarioActive");
-                            toast.error("Automation deactivated!");
-                          }
+                        onChange={() => {
+                          const nextVal = !automationOn;
+                          setAutomationOn(nextVal);
+                          toast.success(
+                            nextVal
+                              ? "Scenario activated successfully!"
+                              : "Scenario deactivated.",
+                          );
                         }}
                         className="sr-only peer"
                       />
-
-                      <div className="w-10 h-5 bg-gray-200 peer-checked:bg-indigo-600 rounded-full transition-all"></div>
-                      <div className="absolute left-1 top-1 w-3.5 h-3.5 bg-white rounded-full shadow-sm peer-checked:translate-x-5 transition-transform"></div>
+                      <div className="w-8 h-4 bg-slate-300 peer-checked:bg-[#137333] rounded-full transition-colors"></div>
+                      <div className="absolute left-0.5 top-0.5 w-3 h-3 bg-white rounded-full transition-transform peer-checked:translate-x-4"></div>
                     </label>
-
-                    <span
-                      className={`text-xs font-semibold ${
-                        automationOn ? "text-green-600" : "text-gray-400"
-                      }`}
-                    >
-                      {automationOn ? "ON" : "OFF"}
-                    </span>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto">
-              {" "}
-              {guideStep > 0 && (
-                <div
-                  className="
-    fixed inset-0 
-    bg-black bg-opacity-20 
-    backdrop-blur-sm
-    z-[40]
-  "
-                ></div>
-              )}
-              <div className="grid grid-cols-1 lg:grid-cols-[18rem_minmax(0,1fr)_20rem] h-full">
-                <aside className="w-full lg:w-72 self-start p-4">
-  {!allSetupStepsCompleted && <SetupProgressCard />}
-                </aside>
-                <div className="min-w-0 flex justify-center p-4 lg:p-8">
-                  <div className="w-full max-w-5xl mx-auto flex flex-col items-center">
-                    <div className="flex flex-col items-center mb-8">
-                      <div
-                        ref={webhookNodeRef}
-                        className={
-                          guideStep === 1 ? "relative z-[70]" : "relative"
-                        }
-                      >
-                        {/* GUIDE STEP 1 */}
-                        {guideStep === 1 && (
-                          <div
-                            className="
-          absolute top-1/2 left-full -translate-y-1/2 ml-4
-          w-72 bg-white shadow-xl border border-gray-200 
-          rounded-lg p-4 z-[80]
-        "
-                          >
-                            {/* ARROW pointing left */}
-                            <div
-                              className="
-          absolute top-1/2 -left-2 -translate-y-1/2
-          w-4 h-4 bg-white rotate-45
-          border-b border-r border-gray-200
-        "
-                            ></div>
+            {/* Main Canvas Body */}
+            <div className="flex-1 overflow-y-auto bg-[#FAF8F5] p-6 relative">
+              <div className="absolute inset-0 bg-[radial-gradient(#D5D1C8_1px,transparent_1px)] [background-size:16px_16px] opacity-40 pointer-events-none"></div>
 
-                            <div className="flex justify-between items-center mb-2">
-                              <h4 className="font-semibold text-gray-900">
-                                Webhook Email
-                              </h4>
-                              <span className="text-xs text-gray-500">1/3</span>
-                            </div>
+              <div className="relative z-10 grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)] gap-8  mx-auto">
+                {/* LEFT SIDEBAR: Setup Checklist */}
+                <div className="space-y-4">
+                  <div className="rounded-2xl border border-[#EBE8E1] bg-white p-5 shadow-2xs">
+                    {(() => {
+                      const isInboxConnected = Boolean(
+                        connections && connections.length > 0,
+                      );
+                      const isTriggerConfirmed = true;
+                      const isTemplatesReviewed = Boolean(
+                        selectedTemplate ||
+                          (routerBranches &&
+                            routerBranches.some((b) => b.modules?.length > 0)),
+                      );
 
-                            <p className="text-sm text-gray-600 mb-3">
-                              This webhook email is used to receive the
-                              forwarded Lead emails from your email service
-                              provider.
-                            </p>
+                      const activeSenderConnection = selectedConnection || incomingLeadsConnection || (connections && connections[0]?._id);
 
-                            <div className="flex justify-between">
-                              <button
-                                onClick={skipGuide}
-                                className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-100"
-                              >
-                                Skip
-                              </button>
+                      const allModules = routerBranches.flatMap((b) => b.modules || []);
+                      const unconfiguredEmailModulesCount = allModules.filter((m) => {
+                        const isDelay = m.type === "Delay" || m.app?.name === "Delay" || m.app?.displayName === "Delay" || Boolean(m.delayValue);
+                        const hasConnection = Boolean(m.connectionId || activeSenderConnection);
+                        return !isDelay && !hasConnection;
+                      }).length;
 
-                              <button
-                                onClick={nextGuide}
-                                className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                              >
-                                Next
-                              </button>
-                            </div>
+                      const isSenderConnected = unconfiguredEmailModulesCount === 0 && Boolean(activeSenderConnection);
+
+                      const checklistSteps = [
+                        { label: "Connect inbox", isComplete: isInboxConnected },
+                        {
+                          label: "Confirm trigger filter",
+                          isComplete: isTriggerConfirmed,
+                        },
+                        {
+                          label: "Review templates",
+                          isComplete: isTemplatesReviewed,
+                        },
+                        {
+                          label: "Connect sender",
+                          isComplete: isSenderConnected,
+                          warning: !isSenderConnected
+                            ? unconfiguredEmailModulesCount > 0
+                              ? `${unconfiguredEmailModulesCount} node${unconfiguredEmailModulesCount > 1 ? "s" : ""} unconfigured`
+                              : "Connection missing — connect Gmail"
+                            : null,
+                        },
+                      ];
+
+                      const completedCount = checklistSteps.filter(
+                        (s) => s.isComplete,
+                      ).length;
+                      const progressPercent = Math.round(
+                        (completedCount / 4) * 100,
+                      );
+
+                      return (
+                        <>
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                              SETUP CHECKLIST
+                            </span>
+                            <span className="text-xs font-semibold text-slate-600">
+                              {completedCount} of 4 complete
+                            </span>
                           </div>
-                        )}
 
-                        <FlowNode
-                          icon={Mail}
-                          title="Incoming Leads"
-                          showValidation={showValidation}
-                          subtitle="Mail connection"
-                          color="border-[#8A8CF4]"
-                          number={1}
-                          isFirst={true}
-                          completed={
-                            showValidation
-                              ? (completedSteps.find((v) => v.id === "webhook")
-                                  ?.passed ?? null)
-                              : Boolean(connections?.length > 0)
-                          }
-                          isWebhook={true}
-                          onEdit={() => setShowIncomingLeadsModal(true)}
-                        />
-                        <CreateConnectionTypeModal
-                          isOpen={showCreateConnectionModal}
-                          onClose={() => setShowCreateConnectionModal(false)}
-                          onSelectType={(type) => {
-                            setShowCreateConnectionModal(false);
-                            if (type === "Others (IMAP)") {
-                              setShowSMTPModal(true);
-                            } else if (type === "Google Restricted") {
-                              setShowGmailModal(true);
-                            } else if (type === "Microsoft SMTP/IMAP OAuth") {
-                              setShowOutlookModal(true);
-                            }
-                          }}
-                        />
-                      </div>
-                      <div className="w-0.5 h-12 bg-gray-300 relative">
-                        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                          <Zap className="w-4 h-4 text-gray-400" />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col items-center mb-8">
-                      <div
-                        ref={routerNodeRef}
-                        className={
-                          guideStep === 2 ? "relative z-[70]" : "relative"
-                        }
-                      >
-                        {/* GUIDE STEP 2 */}
-                        {guideStep === 2 && (
-                          <div
-                            className="
-        absolute top-1/2 left-full -translate-y-1/2 ml-4
-        w-72 bg-white shadow-xl border border-gray-200
-        rounded-lg p-4 z-[80]
-      "
-                          >
-                            {/* ARROW pointing left */}
+                          <div className="mt-2.5 h-1.5 w-full rounded-full bg-[#EFECE6] overflow-hidden">
                             <div
-                              className="
-          absolute top-1/2 -left-2 -translate-y-1/2
-          w-4 h-4 bg-white rotate-45
-          border-b border-r border-gray-200
-        "
+                              className="h-full bg-[#34A853] rounded-full transition-all duration-300"
+                              style={{ width: `${progressPercent}%` }}
                             ></div>
-
-                            <div className="flex justify-between items-center mb-2">
-                              <h4 className="font-semibold text-gray-900">
-                                Router
-                              </h4>
-                              <span className="text-xs text-gray-500">2/3</span>
-                            </div>
-
-                            <p className="text-sm text-gray-600 mb-3">
-                              Router is used to view the Lead email's content,
-                              common use is while configuring the Leads email
-                              templates and Conditional email flows.
-                            </p>
-
-                            <div className="flex justify-between">
-                              <button
-                                onClick={skipGuide}
-                                className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-100"
-                              >
-                                Skip
-                              </button>
-
-                              <button
-                                onClick={nextGuide}
-                                className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                              >
-                                Next
-                              </button>
-                            </div>
                           </div>
-                        )}
 
-                        <FlowNode
-                          icon={GitBranch}
-                          title="Router"
-                          subtitle="Route to different paths"
-                          showValidation={showValidation}
-                          color="border-[#8A8CF4]"
-                          number={2}
-                          isRouter={true}
-                          completed={
-                            showValidation
-                              ? (completedSteps.find((v) => v.id === "router")
-                                  ?.passed ?? null)
-                              : Array.isArray(routerBranches) &&
-                                routerBranches.length > 0
-                          }
-                        />
-                      </div>
-                      <div className="w-0.5 h-12 bg-gray-300"></div>
-                      <div
-                        className={
-                          guideStep === 3 ? "relative z-[70]" : "relative"
-                        }
-                      >
-                        {/* GUIDE STEP 3 */}
-                        {guideStep === 3 && (
-                          <div
-                            className="
-        absolute top-1/2 left-full -translate-y-1/2 ml-4
-        w-72 bg-white shadow-xl border border-gray-200
-        rounded-lg p-4 z-[80]
-      "
-                          >
-                            {/* ARROW pointing left */}
-                            <div
-                              className="
-          absolute top-1/2 -left-2 -translate-y-1/2
-          w-4 h-4 bg-white rotate-45
-          border-b border-r border-gray-200
-        "
-                            ></div>
-
-                            <div className="flex justify-between items-center mb-2">
-                              <h4 className="font-semibold text-gray-900">
-                                Shopify Email Templates
-                              </h4>
-                              <span className="text-xs text-gray-500">3/3</span>
-                            </div>
-
-                            <p className="text-sm text-gray-600 mb-3">
-                              Shopify email Templates are specifically Designed
-                              to manage the email templates based on the Service
-                              requested by client
-                            </p>
-
-                            <div className="flex justify-between">
-                              <button
-                                onClick={skipGuide}
-                                className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-100"
-                              >
-                                Skip
-                              </button>
-
-                              <button
-                                onClick={nextGuide}
-                                className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                              >
-                                Finish
-                              </button>
-                            </div>
+                          <div className="mt-5 space-y-3">
+                            {checklistSteps.map((step, idx) => (
+                              <React.Fragment key={idx}>
+                                {step.warning && !step.isComplete ? (
+                                  <div className="rounded-xl border border-[#FDE68A] bg-[#FEF3C7] p-3 text-xs">
+                                    <div className="flex items-center gap-2 font-bold text-[#92400E]">
+                                      <span className="h-3 w-3 rounded-full border-2 border-[#D97706]"></span>
+                                      {step.label}
+                                    </div>
+                                    <p className="mt-1 text-[11px] text-[#B45309]">
+                                      {step.warning}
+                                    </p>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center gap-2.5 text-xs font-semibold text-slate-800">
+                                    <span
+                                      className={`flex h-4 w-4 items-center justify-center rounded-full text-[10px] ${
+                                        step.isComplete
+                                          ? "bg-[#E6F4EA] text-[#137333]"
+                                          : "bg-slate-100 text-slate-400"
+                                      }`}
+                                    >
+                                      {step.isComplete ? "✓" : "○"}
+                                    </span>
+                                    {step.label}
+                                  </div>
+                                )}
+                              </React.Fragment>
+                            ))}
                           </div>
-                        )}
-                        <FlowNode
-                          icon={FiFileText}
-                          title="Template"
-                          subtitle="Define message structure and content"
-                          showValidation={showValidation}
-                          color="border-[#8A8CF4]"
-                          number={3}
-                          completed={
-                            showValidation
-                              ? (completedSteps.find((v) => v.id === "template")
-                                  ?.passed ?? null)
-                              : allTemplatesActive
-                          }
-                          module={{ app: { name: "Template" } }}
-                          onEdit={handleEdit}
-                        />
-                      </div>
 
-                      <div className="w-0.5 h-12 bg-gray-300"></div>
-                    </div>
+                          {!isSenderConnected && (
+                            <button
+                              onClick={() => setShowCreateConnectionModal(true)}
+                              className="mt-5 w-full rounded-full bg-[#111111] py-2.5 text-xs font-semibold text-white transition hover:bg-slate-800 text-center"
+                            >
+                              Reconnect Gmail sender
+                            </button>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </div>
 
-                    <div className="space-y-16">
-                      {routerBranches.map((branch, branchIndex) => (
-                        <div
-                          key={branch.id}
-                          className="flex flex-col items-center space-y-8"
-                        >
-                          {branch.modules.length > 0
-                            ? branch.modules.map((module, moduleIndex) => {
-                                const Icon = iconMap[module.app.icon];
-                                const shouldShowState = showValidation;
-
-                                let validationState = null;
-                                if (showValidation) {
-                                  const match = completedSteps.find(
-                                    (v) => v.id === module.id,
-                                  );
-                                  validationState = match ? match.passed : null;
-                                }
-
-                                return (
-                                  <React.Fragment key={module.id}>
-                                    <FlowNode
-                                      icon={Icon}
-                                      title={getModuleTitle(module)}
-                                      subtitle={module.description}
-                                      color="border-[#8A8CF4]"
-                                      number={3 + moduleIndex}
-                                      onEdit={() =>
-                                        handleEditModule(branchIndex, module)
-                                      }
-                                      onDelete={() =>
-                                        handleRemoveModule(
-                                          branchIndex,
-                                          module.id,
-                                        )
-                                      }
-                                      isLast={
-                                        moduleIndex ===
-                                        branch.modules.length - 1
-                                      }
-                                      completed={
-                                        shouldShowState
-                                          ? validationState
-                                          : isModuleCompleted(module)
-                                      }
-                                      module={module}
-                                      showValidation={showValidation}
-                                    />
-                                    {showValidation &&
-                                      validationState === false &&
-                                      (module.app.name === "Delay" ? (
-                                        <p className="text-sm text-orange-500 mt-2 text-center max-w-xs">
-                                          This delay was skipped because the
-                                          previous step failed.
-                                        </p>
-                                      ) : (
-                                        <p className="text-sm text-red-500 mt-2 text-center max-w-xs">
-                                          This module failed due to missing
-                                          connection
-                                        </p>
-                                      ))}
-
-                                    {moduleIndex <
-                                      branch.modules.length - 1 && (
-                                      <div className="relative flex flex-col items-center">
-                                        {/* vertical line */}
-                                        <div className="w-0.5 h-12 bg-gray-300"></div>
-
-                                        {/* PLUS BUTTON BETWEEN NODES */}
-                                        <AddBetweenButton
-                                          onClick={() => {
-                                            setEditingBranch(branchIndex);
-                                            setEditingModuleId(null);
-
-                                            // NEW: store position so module adds EXACT here
-                                            setInsertAtIndex(moduleIndex + 1);
-
-                                            setOpen(true);
-                                          }}
-                                          className="top-1/2"
-                                        />
-                                      </div>
-                                    )}
-                                  </React.Fragment>
-                                );
-                              })
-                            : null}
-
-                          {branch.modules.length === 0 ||
-                          branch.modules.length > 0 ? (
-                            <>
-                              {branch.modules.length > 0 && (
-                                <div className="w-0.5 h-8 bg-gray-300"></div>
-                              )}
-                              <AddModuleButton
-                                onClick={() => {
-                                  setEditingBranch(branchIndex);
-                                  setOpen(true);
-                                }}
-                              />
-                            </>
-                          ) : null}
-                        </div>
-                      ))}
-                    </div>
+                  <div className="rounded-2xl border border-[#EBE8E1] bg-[#F5F2EB] p-4 text-xs">
+                    <h4 className="font-bold text-slate-900">
+                      Test before you trust
+                    </h4>
+                    <p className="mt-1 text-[11px] text-slate-500 leading-relaxed">
+                      Send yourself a fake directory lead and watch the exact reply
+                      land in your own inbox.
+                    </p>
+                    <button
+                      onClick={() => setShowRunTestModal(true)}
+                      className="mt-2.5 inline-block text-xs font-bold text-slate-900 underline hover:text-blue-600"
+                    >
+                      Send test lead →
+                    </button>
                   </div>
                 </div>
 
-                <aside className="hidden lg:block border-l border-gray-200  h-full overflow-y-auto">
-                  <ScenarioHistoryPanel />
-                </aside>
+                {/* RIGHT SECTION: Horizontal Flow Cards & Banner */}
+                <div className="space-y-6 min-w-0">
+                  <div className="flex items-start gap-4 overflow-x-auto pb-4 pt-1 no-scrollbar">
+                    {/* CARD 1: Incoming Leads */}
+                    <div
+                      onClick={() => setShowIncomingLeadsModal(true)}
+                      className="w-64 shrink-0 cursor-pointer rounded-[20px] border border-[#EBE8E1] bg-white p-5 shadow-2xs hover:shadow-md transition relative"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#E6F4EA] text-[#137333]">
+                            <Mail size={16} />
+                          </div>
+                          <span className="font-bold text-slate-900 text-sm">
+                            Incoming Leads
+                          </span>
+                        </div>
+                        <span className="h-2.5 w-2.5 rounded-full bg-[#34A853]"></span>
+                      </div>
+
+                      <div className="mt-4 space-y-1.5 text-xs text-slate-500">
+                        <p className="truncate font-medium text-slate-800">
+                          {(() => {
+                            const activeConn = connections.find(
+                              (c) =>
+                                c._id === incomingLeadsConnection ||
+                                c._id === selectedConnection,
+                            );
+                            return activeConn
+                              ? `${activeConn.provider.toUpperCase()} · ${activeConn.email}`
+                              : "Gmail · hello@thefold.tech";
+                          })()}
+                        </p>
+                        <p className="flex items-center gap-1">
+                          Subject contains{" "}
+                          <span className="rounded bg-slate-100 px-1.5 py-0.5 font-medium text-slate-700">
+                            Shopify Partner
+                          </span>
+                        </p>
+                        <p>Polls every 60s</p>
+                      </div>
+
+                      <div className="mt-4 pt-3 border-t border-slate-100 flex items-center gap-1 text-xs font-semibold text-[#137333]">
+                        <span>✓ Matched 3 leads today</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center self-center text-slate-300">
+                      <span className="text-xs tracking-tighter font-mono">
+                        ----&gt;
+                      </span>
+                    </div>
+
+                    {/* CARD 2: Router */}
+                    <div
+                      onClick={() => setShowRouterBranches(true)}
+                      className="w-80 shrink-0 cursor-pointer rounded-[20px] border border-[#EBE8E1] bg-white p-5 shadow-2xs hover:shadow-md transition relative"
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2.5">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
+                            <GitBranch size={16} />
+                          </div>
+                          <span className="font-bold text-slate-900 text-sm">
+                            Router
+                          </span>
+                        </div>
+                        <span className="h-2.5 w-2.5 rounded-full bg-[#34A853]"></span>
+                      </div>
+
+                      <div className="space-y-2.5 text-xs">
+                        {/* FILTER 1: Subject Filter */}
+                        <div className="rounded-xl bg-slate-50 p-3 border border-slate-100 hover:bg-slate-100 transition">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-start gap-2">
+                              <span className="h-2 w-2 rounded-full bg-amber-500 mt-1 shrink-0"></span>
+                              <div>
+                                <p className="font-semibold text-slate-800 leading-snug">
+                                  Subject contains:{" "}
+                                  <span className="font-bold text-slate-900">
+                                    Shopify Partner Directory: New service inquiry from
+                                  </span>
+                                </p>
+                                <p className="text-[11px] text-slate-500 mt-1 font-medium">
+                                  → Initial Email
+                                </p>
+                              </div>
+                            </div>
+                            <span className="font-medium text-slate-400 text-[11px] shrink-0">
+                              65%
+                            </span>
+                          </div>
+
+                          <div className="mt-2.5 pt-2 border-t border-slate-200/60 text-[10px] text-amber-700 font-medium flex items-center gap-1">
+                            <span>⚠️ Don't add Re: or Fwd: at the start of subject</span>
+                          </div>
+                        </div>
+
+                        {/* FILTER 2: Service / Body Filter */}
+                        <div className="rounded-xl bg-slate-50 p-3 border border-slate-100 hover:bg-slate-100 transition">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-start gap-2">
+                              <span className="h-2 w-2 rounded-full bg-blue-500 mt-1 shrink-0"></span>
+                              <div>
+                                <p className="font-semibold text-slate-800 leading-snug">
+                                  Body contains service:{" "}
+                                  <span className="font-bold text-slate-900">
+                                    Troubleshooting, Store Setup, or Bug Fixes
+                                  </span>
+                                </p>
+                                <p className="text-[11px] text-slate-500 mt-1 font-medium">
+                                  → Priority Service Reply
+                                </p>
+                              </div>
+                            </div>
+                            <span className="font-medium text-slate-400 text-[11px] shrink-0">
+                              35%
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center self-center text-slate-300">
+                      <span className="text-xs tracking-tighter font-mono">
+                        ----&gt;
+                      </span>
+                    </div>
+
+                    {/* CARD 3: Template */}
+                    <div
+                      onClick={() => setShowTemplateModal(true)}
+                      className="w-64 shrink-0 cursor-pointer rounded-[20px] border border-[#EBE8E1] bg-white p-5 shadow-2xs hover:shadow-md transition relative"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
+                            <FiFileText size={16} />
+                          </div>
+                          <span className="font-bold text-slate-900 text-sm">
+                            Template
+                          </span>
+                        </div>
+                        <span className="h-2.5 w-2.5 rounded-full bg-[#34A853]"></span>
+                      </div>
+
+                      <div className="mt-4 space-y-1.5 text-xs text-slate-500">
+                        <p className="font-semibold text-slate-800">
+                          3 templates active
+                        </p>
+                        <p>Variables: first name, store, service</p>
+                        <p>Last edited 2 days ago</p>
+                      </div>
+
+                      <div className="mt-5 pt-3 border-t border-slate-100 text-xs font-semibold text-slate-900 underline">
+                        Preview each →
+                      </div>
+                    </div>
+
+                    <div className="flex items-center self-center text-slate-300">
+                      <span className="text-xs tracking-tighter font-mono">
+                        ----&gt;
+                      </span>
+                    </div>
+
+                    {/* CARD 4: Initial Email */}
+                    {(() => {
+                      const initialMod = routerBranches
+                        .flatMap((b) => b.modules || [])
+                        .find(
+                          (m) =>
+                            m.app?.displayName === "Initial Email" ||
+                            m.app?.name === "Initial Email" ||
+                            m.template === "Initial Email",
+                        );
+                      const isSaved = Boolean(
+                        initialMod ||
+                          (selectedConnection &&
+                            selectedTemplate === "Initial Email"),
+                      );
+
+                      return (
+                        <div
+                          onClick={() => {
+                            setSelectedApp({
+                              name: "Gmail",
+                              displayName: "Initial Email",
+                              color: "bg-red-500",
+                              icon: "Gmail",
+                              defaultTemplate: "Initial Email",
+                            });
+                            setSelectedAppType("Gmail");
+                            setEditingBranch(0);
+
+                            if (initialMod) {
+                              setEditingModuleId(initialMod.id);
+                              setSelectedTemplate(initialMod.template || "Initial Email");
+                              setSelectedConnection(initialMod.connectionId || incomingLeadsConnection || (connections && connections[0]?._id) || "");
+                              setSubject(initialMod.subject || "");
+                              setCcList(initialMod.cc || []);
+                              setBccList(initialMod.bcc || []);
+                            } else {
+                              setEditingModuleId(null);
+                              setSelectedTemplate("Initial Email");
+                              setSelectedConnection(incomingLeadsConnection || (connections && connections[0]?._id) || "");
+                            }
+                            setOpen(true);
+                          }}
+                          className={`w-64 shrink-0 cursor-pointer rounded-[20px] border ${
+                            isSaved
+                              ? "border-[#EBE8E1] bg-white"
+                              : "border-[#FDE68A] bg-white"
+                          } p-5 shadow-2xs hover:shadow-md transition relative`}
+                        >
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2.5">
+                              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+                                <Zap size={16} />
+                              </div>
+                              <span className="font-bold text-slate-900 text-sm">
+                                Initial Email
+                              </span>
+                            </div>
+                            <span
+                              className={`h-2.5 w-2.5 rounded-full ${
+                                isSaved ? "bg-[#34A853]" : "bg-amber-400"
+                              }`}
+                            ></span>
+                          </div>
+
+                          {isSaved ? (
+                            <>
+                              <div className="mt-4 space-y-1 text-xs text-slate-500">
+                                <p className="font-semibold text-slate-800">
+                                  {initialMod?.template || "Initial Email Template"}
+                                </p>
+                                <p className="text-[11px] text-slate-400">
+                                  {initialMod?.subject
+                                    ? `Subject: "${initialMod.subject}"`
+                                    : "Default subject filter"}
+                                </p>
+                              </div>
+                              <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-900">
+                                <span className="text-[#137333]">✓ Configured</span>
+                                <span className="underline">Edit →</span>
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <div className="rounded-xl bg-[#FEF3C7] p-3 text-xs text-[#92400E] leading-relaxed mb-4">
+                                Sender token expired 2h ago. Replies queue until reconnected.
+                              </div>
+
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setShowCreateConnectionModal(true);
+                                }}
+                                className="w-full rounded-full bg-[#111111] py-2 text-xs font-semibold text-white transition hover:bg-slate-800 text-center"
+                              >
+                                Reconnect Gmail
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      );
+                    })()}
+
+                    {/* DYNAMIC SAVED MODULE NODES (First Follow-up, Second Follow-up, Delay, etc.) */}
+                    {routerBranches.flatMap((branch, bIdx) =>
+                      (branch.modules || [])
+                        .filter(
+                          (mod) =>
+                            mod.app?.displayName !== "Initial Email" &&
+                            mod.app?.name !== "Initial Email" &&
+                            mod.template !== "Initial Email",
+                        )
+                        .map((mod, mIdx) => {
+                        const isDelay =
+                          mod.type === "Delay" ||
+                          mod.app?.name === "Delay" ||
+                          mod.app?.displayName === "Delay" ||
+                          Boolean(mod.delayValue);
+                        const isModuleConfigured = isDelay
+                          ? Boolean(mod.delayValue)
+                          : Boolean(mod.connectionId);
+                        const modTitle =
+                          mod.app?.displayName ||
+                          mod.app?.name ||
+                          mod.template ||
+                          "Follow-up Node";
+                        const modDesc =
+                          mod.description ||
+                          (isDelay
+                            ? `Wait ${mod.delayValue || 1} ${
+                                mod.delayUnit || "hours"
+                              }`
+                            : `Send email via ${
+                                mod.emailType || "Gmail"
+                              }`);
+
+                        return (
+                          <React.Fragment key={mod.id || `${bIdx}-${mIdx}`}>
+                            <div className="flex items-center self-center text-slate-300">
+                              <span className="text-xs tracking-tighter font-mono">
+                                ----&gt;
+                              </span>
+                            </div>
+                            <div
+                              onClick={() => {
+                                setSelectedApp(mod.app || { name: mod.type });
+                                setSelectedTemplate(mod.template || "");
+                                setSelectedConnection(mod.connectionId || "");
+                                setSubject(mod.subject || "");
+                                setCcList(mod.cc || []);
+                                setBccList(mod.bcc || []);
+                                setDelayValue(mod.delayValue || "");
+                                setDelayUnit(mod.delayUnit || "minutes");
+                                setEditingBranch(bIdx);
+                                setEditingModuleId(mod.id);
+                                setOpen(true);
+                              }}
+                              className={`w-64 shrink-0 cursor-pointer rounded-[20px] border ${
+                                isDelay
+                                  ? "border-amber-200 bg-amber-50/40"
+                                  : isModuleConfigured
+                                    ? "border-[#EBE8E1] bg-white"
+                                    : "border-[#FDE68A] bg-white"
+                              } p-5 shadow-2xs hover:shadow-md transition relative group`}
+                            >
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2.5">
+                                  <div
+                                    className={`flex h-8 w-8 items-center justify-center rounded-xl ${
+                                      isDelay
+                                        ? "bg-amber-500 text-white"
+                                        : "bg-[#111111] text-white"
+                                    }`}
+                                  >
+                                    {isDelay ? (
+                                      <Clock size={16} />
+                                    ) : (
+                                      <Mail size={16} />
+                                    )}
+                                  </div>
+                                  <span className="font-bold text-slate-900 text-sm truncate max-w-[130px]">
+                                    {modTitle}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                  <span
+                                    className={`h-2.5 w-2.5 rounded-full ${
+                                      isModuleConfigured
+                                        ? "bg-[#34A853]"
+                                        : "bg-amber-400"
+                                    }`}
+                                  ></span>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleRemoveModule(bIdx, mod.id);
+                                    }}
+                                    className="text-slate-400 hover:text-red-600 p-1 transition opacity-0 group-hover:opacity-100"
+                                    title="Delete node"
+                                  >
+                                    <X size={14} />
+                                  </button>
+                                </div>
+                              </div>
+                              <p className="text-xs text-slate-500 line-clamp-2 mt-1">
+                                {modDesc}
+                              </p>
+                              <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] font-semibold">
+                                {isModuleConfigured ? (
+                                  <span className="text-[#137333]">✓ Configured</span>
+                                ) : (
+                                  <span className="text-amber-700 font-bold">⚠️ Not Configured</span>
+                                )}
+                                <span className="text-zinc-900 underline">
+                                  Edit →
+                                </span>
+                              </div>
+                            </div>
+                          </React.Fragment>
+                        );
+                      }),
+                    )}
+
+                    <div className="flex items-center self-center text-slate-300">
+                      <span className="text-xs tracking-tighter font-mono">
+                        ----&gt;
+                      </span>
+                    </div>
+
+                    {/* CARD 5: Add Node / Module (First Follow-up, Second Follow-up, Delay) */}
+                    <div
+                      onClick={() => {
+                        setSelectedApp(null);
+                        setEditingBranch(0);
+                        setOpen(true);
+                      }}
+                      className="w-52 shrink-0 cursor-pointer rounded-[20px] border-2 border-dashed border-slate-300 bg-white/80 hover:bg-white p-5 shadow-2xs hover:shadow-md transition flex flex-col items-center justify-center text-center group"
+                    >
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-700 group-hover:bg-[#111111] group-hover:text-white transition-colors mb-2">
+                        <Plus size={20} />
+                      </div>
+                      <span className="font-bold text-slate-900 text-xs">
+                        + Add Node / Module
+                      </span>
+                      <span className="text-[11px] text-slate-500 mt-1">
+                        Follow-up or Delay
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Bottom Safe Test Banner */}
+                  <div className="w-full max-w-3xl rounded-2xl border border-[#EBE8E1] bg-white p-4 shadow-2xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#FEF3C7] text-[#D97706] font-bold">
+                        ✦
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-slate-900">
+                          Safe test — nothing real at stake
+                        </h4>
+                        <p className="mt-0.5 text-xs text-slate-500 leading-relaxed">
+                          We deliver a fake directory inquiry to your inbox and
+                          reply to it, so you can read the exact email a lead would
+                          get.
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => setShowRunTestModal(true)}
+                      className="rounded-full bg-[#111111] px-5 py-2.5 text-xs font-semibold text-white transition hover:bg-slate-800 shrink-0 text-center"
+                    >
+                      Send myself a test lead
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
                 {open && (
-                  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                  <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
                     <div
                       ref={modalRef}
-                      className="bg-white rounded-xl shadow-2xl w-[500px] max-h-[80vh] overflow-hidden"
+                      className="bg-white rounded-[8px] shadow-2xl w-full max-w-[460px] max-h-[85vh] overflow-hidden border border-zinc-200 flex flex-col"
                     >
                       {!selectedApp ? (
                         <>
-                          <div className="p-6 border-b bg-gradient-to-r from-purple-600 to-purple-500 text-white">
-                            <h2 className="text-lg font-semibold">
-                              Select Application
-                            </h2>
-                            <p className="text-sm text-purple-100 mt-1">
-                              Choose an app to add to your workflow
-                            </p>
+                          <div className="px-5 py-3.5 bg-[#111111] text-white flex justify-between items-center shrink-0">
+                            <div>
+                              <h2 className="text-sm font-bold tracking-tight">
+                                Select Application
+                              </h2>
+                              <p className="text-[11px] text-zinc-400 mt-0.5">
+                                Choose an app to add to your workflow
+                              </p>
+                            </div>
+                            <button
+                              onClick={resetForm}
+                              className="text-zinc-400 hover:text-white p-1 rounded-[8px] transition-colors"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
                           </div>
-                          <div className="p-4 max-h-96 overflow-y-auto space-y-3">
+                          <div className="p-4 max-h-[400px] overflow-y-auto space-y-2.5 no-scrollbar">
                             {[
                               {
                                 name: "Initial Email",
                                 base: "Gmail",
-                                color: "bg-red-500",
+                                color: "bg-[#111111]",
                                 icon: "Gmail",
                               },
                               {
                                 name: "First Follow-up",
                                 base: "Gmail",
-                                color: "bg-red-500",
+                                color: "bg-[#111111]",
                                 icon: "Gmail",
                               },
                               {
                                 name: "Second Follow-up",
                                 base: "Gmail",
-                                color: "bg-red-500",
+                                color: "bg-[#111111]",
                                 icon: "Gmail",
                               },
                               {
                                 name: "Delay",
                                 base: "Delay",
-                                color: "bg-blue-500",
+                                color: "bg-amber-500",
                                 icon: "Delay",
                               },
                             ].map((item, idx) => {
@@ -3211,18 +3502,18 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
 
                                     setSelectedTemplate(templateName);
                                   }}
-                                  className="flex items-center p-4 rounded-lg border border-gray-200 hover:border-purple-500 hover:bg-purple-50 cursor-pointer transition-colors"
+                                  className="flex items-center p-3 rounded-[8px] border border-zinc-200 hover:border-zinc-900 hover:bg-zinc-50 cursor-pointer transition-all group"
                                 >
                                   <div
-                                    className={`w-12 h-12 ${item.color} rounded-lg flex items-center justify-center text-white`}
+                                    className={`w-9 h-9 ${item.color} rounded-[8px] flex items-center justify-center text-white shrink-0`}
                                   >
-                                    <Icon className="w-6 h-6" />
+                                    <Icon className="w-4 h-4" />
                                   </div>
-                                  <div className="ml-4">
-                                    <p className="font-medium text-gray-800 text-sm">
+                                  <div className="ml-3">
+                                    <p className="font-semibold text-zinc-900 text-xs group-hover:text-black">
                                       {item.name}
                                     </p>
-                                    <p className="text-sm text-gray-500">
+                                    <p className="text-[11px] text-zinc-500">
                                       {item.base}
                                     </p>
                                   </div>
@@ -3233,16 +3524,16 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                         </>
                       ) : (
                         <>
-                          <div className="p-6 border-b bg-gradient-to-r from-purple-600 to-purple-500 text-white flex justify-between items-center">
-                            <h3 className="font-semibold text-lg">
+                          <div className="px-5 py-3.5 bg-[#111111] text-white flex justify-between items-center shrink-0">
+                            <h3 className="font-bold text-sm">
                               {selectedApp.displayName || selectedApp.name}
                             </h3>
 
                             <button
                               onClick={resetForm}
-                              className="hover:bg-white hover:bg-opacity-20 p-1 rounded"
+                              className="text-zinc-400 hover:text-white p-1 rounded-[8px] transition-colors"
                             >
-                              <X className="w-5 h-5" />
+                              <X className="w-4 h-4" />
                             </button>
                           </div>
 
@@ -3319,10 +3610,10 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                                           );
                                         }
                                       }}
-                                      className={`absolute right-0 top-0 bottom-0 px-4 text-sm font-medium rounded-r-lg border-l transition-all duration-200 ${
+                                      className={`absolute right-0 top-0 bottom-0 px-4 text-xs font-semibold rounded-r-[8px] border-l transition-all duration-200 ${
                                         selectedAppType
-                                          ? "bg-purple-600 text-white border-l-gray-300 hover:bg-purple-700"
-                                          : "bg-gray-200 text-gray-400 border-l-gray-300 cursor-not-allowed"
+                                          ? "bg-[#111111] text-white border-l-zinc-300 hover:bg-zinc-800"
+                                          : "bg-zinc-200 text-zinc-400 border-l-zinc-300 cursor-not-allowed"
                                       }`}
                                     >
                                       Add
@@ -3432,11 +3723,11 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                                           !selectedTemplate &&
                                           !selectedApp?.defaultTemplate
                                         }
-                                        className={`absolute right-0 top-0 bottom-0 px-4 text-sm font-medium rounded-r-lg border-l transition-all duration-200 ${
+                                        className={`absolute right-0 top-0 bottom-0 px-4 text-xs font-semibold rounded-r-[8px] border-l transition-all duration-200 ${
                                           selectedTemplate ||
                                           selectedApp?.defaultTemplate
-                                            ? "bg-indigo-600 text-white border-l-gray-300 hover:bg-indigo-700"
-                                            : "bg-gray-200 text-gray-400 border-l-gray-300 cursor-not-allowed"
+                                            ? "bg-[#111111] text-white border-l-zinc-300 hover:bg-zinc-800"
+                                            : "bg-zinc-200 text-zinc-400 border-l-zinc-300 cursor-not-allowed"
                                         }`}
                                       >
                                         View
@@ -3576,16 +3867,16 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                             )}
                           </div>
 
-                          <div className="p-6 border-t bg-gray-50 flex justify-end space-x-3">
+                          <div className="px-5 py-3 border-t border-zinc-200 bg-zinc-50 flex justify-end space-x-2.5 shrink-0">
                             <button
                               onClick={resetForm}
-                              className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
+                              className="px-4 py-2 border border-zinc-300 text-zinc-700 rounded-[8px] hover:bg-zinc-100 text-xs font-semibold transition-colors"
                             >
                               Cancel
                             </button>
                             <button
                               onClick={handleSave}
-                              className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                              className="px-5 py-2 bg-[#111111] text-white rounded-[8px] hover:bg-zinc-800 text-xs font-semibold transition-colors"
                             >
                               Save Module
                             </button>
@@ -3595,24 +3886,28 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                     </div>
                   </div>
                 )}
-              </div>
-            </div>
 
             {showIncomingLeadsModal && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                <div className="bg-white rounded-xl shadow-2xl w-[500px] max-h-[80vh] overflow-hidden">
-                  <div className="p-6 border-b bg-gradient-to-r from-purple-600 to-purple-500 text-white flex justify-between items-center">
-                    <h3 className="font-semibold text-lg">Incoming Leads</h3>
+              <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-[8px] shadow-2xl w-full max-w-[460px] max-h-[85vh] overflow-hidden border border-zinc-200 flex flex-col">
+                  <div className="px-5 py-3.5 bg-[#111111] text-white flex justify-between items-center shrink-0">
+                    <div>
+                      <h3 className="font-bold text-sm">Incoming Leads</h3>
+                      <p className="text-[11px] text-zinc-400 mt-0.5">
+                        Configure incoming email trigger & connection
+                      </p>
+                    </div>
                     <button
                       onClick={() => setShowIncomingLeadsModal(false)}
-                      className="hover:bg-white hover:bg-opacity-20 p-1 rounded"
+                      className="text-zinc-400 hover:text-white p-1 rounded-[8px] transition-colors"
                     >
-                      <X className="w-5 h-5" />
+                      <X className="w-4 h-4" />
                     </button>
                   </div>
-                  <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+
+                  <div className="p-5 space-y-4 max-h-[60vh] overflow-y-auto no-scrollbar">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-xs font-semibold text-zinc-700 mb-1.5">
                         Select Application <span className="text-red-500">*</span>
                       </label>
                       <div className="relative">
@@ -3622,7 +3917,7 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                             setIncomingLeadsAppType(e.target.value);
                             fetchConnections();
                           }}
-                          className="w-full border border-gray-300 rounded-lg px-4 py-2 pr-20 focus:ring-2 focus:ring-purple-500 focus:border-transparent appearance-none"
+                          className="w-full border border-zinc-300 rounded-[8px] px-3 py-2 pr-20 text-xs text-zinc-800 focus:ring-2 focus:ring-zinc-900 focus:border-transparent bg-white outline-none appearance-none"
                         >
                           <option value="Gmail">Gmail</option>
                           <option value="Email">Email (SMTP/Outlook)</option>
@@ -3635,18 +3930,45 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                               setShowGmailModal(true);
                             }
                           }}
-                          className="absolute right-0 top-0 bottom-0 px-4 text-sm font-medium rounded-r-lg border-l bg-purple-600 text-white border-l-gray-300 hover:bg-purple-700 transition-all duration-200"
+                          className="absolute right-0 top-0 bottom-0 px-4 text-xs font-semibold rounded-r-[8px] border-l bg-[#111111] text-white border-l-zinc-300 hover:bg-zinc-800 transition-all duration-200"
                         >
                           Add
                         </button>
                       </div>
-                      <p className="text-xs text-gray-500 mt-2">
+                      <p className="text-[11px] text-zinc-500 mt-1.5">
                         Choose the application type and click <b>Add</b> to connect a new account.
                       </p>
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-xs font-semibold text-zinc-700 mb-1.5">
+                        Connection <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        value={incomingLeadsConnection || selectedConnection || ""}
+                        onChange={(e) => {
+                          setIncomingLeadsConnection(e.target.value);
+                          setSelectedConnection(e.target.value);
+                        }}
+                        className="w-full border border-zinc-300 rounded-[8px] px-3 py-2 text-xs text-zinc-800 focus:ring-2 focus:ring-zinc-900 focus:border-transparent bg-white outline-none"
+                      >
+                        <option value="">-- Select Connection --</option>
+                        {connections
+                          .filter((c) => {
+                            if (incomingLeadsAppType === "Email")
+                              return c.provider === "smtp" || c.provider === "outlook";
+                            return c.provider === "gmail";
+                          })
+                          .map((c) => (
+                            <option key={c._id} value={c._id}>
+                              {c.provider.toUpperCase()} - {c.email}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-zinc-700 mb-1.5">
                         Subject Filter
                       </label>
                       <input
@@ -3656,9 +3978,9 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                           incomingLeadsSubjectFilter ||
                           "shopify partner directory: new service inquiry from"
                         }
-                        className="w-full border border-gray-300 rounded-lg px-4 py-2 bg-gray-100 text-gray-700 cursor-not-allowed text-sm font-medium outline-none"
+                        className="w-full border border-zinc-200 rounded-[8px] px-3 py-2 bg-zinc-100 text-zinc-700 text-xs font-medium outline-none cursor-not-allowed"
                       />
-                      <p className="text-xs text-amber-600 font-medium mt-2 flex items-center gap-1">
+                      <p className="text-[11px] text-amber-700 font-medium mt-1.5 flex items-center gap-1">
                         <span>💡</span>
                         <span>
                           Do not add "Re:", "Fw:", or any prefix at the start of the subject.
@@ -3666,16 +3988,25 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                       </p>
                     </div>
                   </div>
-                  <div className="p-6 border-t bg-gray-50 flex justify-end space-x-3">
+
+                  <div className="px-5 py-3 border-t border-zinc-200 bg-zinc-50 flex justify-end space-x-2.5 shrink-0">
                     <button
                       onClick={() => setShowIncomingLeadsModal(false)}
-                      className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
+                      className="px-4 py-2 border border-zinc-300 text-zinc-700 rounded-[8px] hover:bg-zinc-100 text-xs font-semibold transition-colors"
                     >
                       Cancel
                     </button>
                     <button
-                      onClick={() => setShowIncomingLeadsModal(false)}
-                      className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                      onClick={() => {
+                        const chosenConn = incomingLeadsConnection || selectedConnection;
+                        if (chosenConn) {
+                          setIncomingLeadsConnection(chosenConn);
+                          setSelectedConnection(chosenConn);
+                        }
+                        setShowIncomingLeadsModal(false);
+                        handleSaveScenario();
+                      }}
+                      className="px-5 py-2 bg-[#111111] text-white rounded-[8px] hover:bg-zinc-800 text-xs font-semibold transition-colors"
                     >
                       Save Module
                     </button>
@@ -3917,44 +4248,26 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
         </div>
       )}
       {showTemplateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="flex gap-4 w-full max-w-6xl max-h-[90vh] p-4">
-            {showTemplateModal && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 transition-all duration-300">
-                <div
-                  className={`flex w-full max-w-6xl max-h-[90vh] p-4 transition-all duration-500 ${
-                    showEditTemplateModal ? "justify-between" : "justify-center"
-                  }`}
-                >
-                  {/* 🟣 Templates Overview Modal */}
-                  <div
-                    className={`bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden transition-all duration-500 ${
-                      showEditTemplateModal ? "max-w-[55%]" : "max-w-3xl"
-                    }`}
-                  >
-                    <div className="flex justify-between items-center p-5 border-b bg-gradient-to-r from-purple-600 to-indigo-600 text-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-[8px] shadow-2xl flex flex-col overflow-hidden border border-zinc-200 max-w-3xl w-full max-h-[85vh]">
+            <div className="flex justify-between items-center px-5 py-4 bg-[#111111] text-white">
                       <div>
-                        <h2 className="text-lg font-semibold">
+                        <h2 className="text-sm font-bold">
                           Templates Overview
                         </h2>
-                        <p className="text-xs text-purple-100">
-                          Showing 3 templates per service
+                        <p className="text-[11px] text-zinc-400 mt-0.5">
+                          Showing active templates for {selectedServiceForTemplates || "Shopify Partner Directory"}
                         </p>
                       </div>
 
                       <div className="flex items-center gap-4">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm text-white font-medium">
-                            {selectedServiceForTemplates || "Selected Service"}
-                          </span>
-
                           <label className="relative inline-flex items-center cursor-pointer">
                             <input
                               type="checkbox"
-                              checked={templateList.every((t) => t.active)}
+                              checked={templateList.length > 0 && templateList.every((t) => t.active)}
                               onChange={async (e) => {
                                 const newStatus = e.target.checked;
-
                                 const updates = templateList.map((t) =>
                                   fetch(
                                     `https://email-syncing-backend.vercel.app/template/status/${t._id}`,
@@ -3971,12 +4284,6 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                                 );
 
                                 await Promise.all(updates);
-                                toast.success(
-                                  `All ${selectedServiceForTemplates} templates ${
-                                    newStatus ? "activated" : "deactivated"
-                                  } successfully!`,
-                                );
-
                                 setTemplateList((prev) =>
                                   prev.map((tpl) => ({
                                     ...tpl,
@@ -3986,25 +4293,25 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                               }}
                               className="sr-only peer"
                             />
-                            <div className="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:bg-green-500 transition-colors"></div>
-                            <div className="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full shadow-md transition-transform peer-checked:translate-x-5"></div>
+                            <div className="w-9 h-5 bg-zinc-600 rounded-full peer peer-checked:bg-[#34A853] transition-colors"></div>
+                            <div className="absolute left-[2px] top-[2px] w-4 h-4 bg-white rounded-full shadow-md transition-transform peer-checked:translate-x-4"></div>
                           </label>
 
                           <span
                             className={`text-xs font-semibold ${
-                              templateList.every((t) => t.active)
-                                ? "text-green-300"
-                                : "text-gray-300"
+                              templateList.length > 0 && templateList.every((t) => t.active)
+                                ? "text-emerald-400"
+                                : "text-zinc-400"
                             }`}
                           >
-                            {templateList.every((t) => t.active) ? "ON" : "OFF"}
+                            {templateList.length > 0 && templateList.every((t) => t.active) ? "ON" : "OFF"}
                           </span>
                         </div>
 
                         {/* Close Button */}
                         <button
                           onClick={() => setShowTemplateModal(false)}
-                          className="text-white hover:text-gray-100 hover:bg-white/10 rounded-full p-1 transition"
+                          className="text-zinc-400 hover:text-white p-1 rounded-[8px] transition"
                         >
                           ✕
                         </button>
@@ -4012,37 +4319,40 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                     </div>
 
                     {/* Body */}
-                    <div className="p-6 overflow-y-auto flex-1 bg-gray-50">
-                      {templateList.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center h-full text-gray-500">
-                          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-purple-500 mb-3"></div>
-                          <p>Loading templates...</p>
+                    <div className="p-5 overflow-y-auto flex-1 bg-zinc-50 min-h-[250px]">
+                      {loadingTemplates ? (
+                        <div className="flex flex-col items-center justify-center py-16 text-zinc-500">
+                          <div className="animate-spin rounded-full h-7 w-7 border-2 border-zinc-900 border-t-transparent mb-3"></div>
+                          <p className="text-xs font-medium">Loading templates...</p>
+                        </div>
+                      ) : templateList.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-16 text-zinc-500">
+                          <p className="text-xs font-medium text-zinc-600">No templates found for this service.</p>
                         </div>
                       ) : (
-                        <table className="w-full border-collapse text-sm bg-white rounded-lg shadow-sm overflow-hidden">
-                          <thead className="sticky top-0 bg-gray-100 z-10">
-                            <tr className="text-gray-700 text-left border-b">
-                              <th className="p-3 w-[25%]">Service</th>
-                              <th className="p-3 w-[45%]">Template</th>
-                              <th className="p-3 text-center w-[15%]">
+                        <table className="w-full border-collapse text-xs bg-white rounded-[8px] border border-zinc-200 overflow-hidden shadow-2xs">
+                          <thead className="sticky top-0 bg-zinc-100 border-b border-zinc-200 z-10">
+                            <tr className="text-zinc-700 text-left">
+                              <th className="p-3 w-[25%] font-bold">Service</th>
+                              <th className="p-3 w-[45%] font-bold">Template</th>
+                              <th className="p-3 text-center w-[15%] font-bold">
                                 Status
                               </th>
-                              <th className="p-3 text-center w-[15%]">
+                              <th className="p-3 text-center w-[15%] font-bold">
                                 Action
                               </th>
                             </tr>
                           </thead>
 
-                          <tbody>
+                          <tbody className="divide-y divide-zinc-100">
                             {templateList.map((t, i) => (
                               <React.Fragment key={t._id || i}>
-                                {/* Group by service */}
                                 {i === 0 ||
                                 templateList[i - 1]?.service !== t.service ? (
-                                  <tr className="bg-gray-50 border-t-4 border-gray-200">
+                                  <tr className="bg-zinc-100/70 border-t border-zinc-200">
                                     <td
                                       colSpan={4}
-                                      className="p-3 text-gray-900 font-semibold text-sm uppercase tracking-wide"
+                                      className="p-2.5 text-zinc-900 font-bold text-[11px] uppercase tracking-wider"
                                     >
                                       {t.service || "General Service"}
                                     </td>
@@ -4050,34 +4360,25 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                                 ) : null}
 
                                 <tr
-                                  className={`border-b transition-colors ${
+                                  className={`transition-colors ${
                                     !t.active
-                                      ? "bg-red-50"
-                                      : "hover:bg-purple-50"
+                                      ? "bg-red-50/50"
+                                      : "hover:bg-zinc-50"
                                   }`}
                                 >
-                                  {/* 🟢 Service Name (clean) */}
-                                  <td className="p-3 font-medium text-gray-800 flex items-center">
-                                    {t.service || t.name.split(" - ")[0]}
+                                  <td className="p-3 font-medium text-zinc-800">
+                                    {t.service || t.name?.split(" - ")[0] || "Shopify Partner"}
                                     {!t.active && (
-                                      <span className="ml-2 text-red-500 text-xs font-semibold">
+                                      <span className="ml-2 text-red-600 text-[10px] font-bold">
                                         ✗ Inactive
                                       </span>
                                     )}
                                   </td>
 
-                                  {/* 🟣 Template Name */}
-                                  <td className="p-3 text-gray-700 font-medium">
-                                    {t.name.includes("Initial")
-                                      ? "Initial Email"
-                                      : t.name.includes("First")
-                                        ? "First Follow-up"
-                                        : t.name.includes("Second")
-                                          ? "Second Follow-up"
-                                          : "Template"}
+                                  <td className="p-3 text-zinc-700 font-medium">
+                                    {t.name || "Template"}
                                   </td>
 
-                                  {/* 🟢 Status Toggle */}
                                   <td className="p-3 text-center">
                                     <label className="relative inline-flex items-center cursor-pointer">
                                       <input
@@ -4087,245 +4388,206 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                                           const newStatus = !t.active;
                                           setTemplateList((prev) =>
                                             prev.map((tpl) =>
-                                              tpl._id === t._id
-                                                ? { ...tpl, active: newStatus }
-                                                : tpl,
+                                              tpl._id === t._id ? { ...tpl, active: newStatus } : tpl,
                                             ),
                                           );
-                                          await handleToggleTemplate(
-                                            t._id,
-                                            newStatus,
-                                          );
+                                          await handleToggleTemplate(t._id, newStatus);
                                         }}
                                         className="sr-only peer"
                                       />
-                                      <div className="w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-green-500 transition-colors"></div>
-                                      <div className="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full shadow-md transition-transform peer-checked:translate-x-5"></div>
+                                      <div className="w-8 h-4.5 bg-zinc-300 rounded-full peer-checked:bg-[#34A853] transition-colors"></div>
+                                      <div className="absolute left-[2px] top-[2px] w-3.5 h-3.5 bg-white rounded-full shadow-md transition-transform peer-checked:translate-x-3.5"></div>
                                     </label>
                                   </td>
 
-                                  {/* 🟣 Action */}
                                   <td className="p-3 text-center">
                                     <button
                                       onClick={() => {
                                         setEditingTemplate(t);
-                                        setEditContent(t.content || "");
-                                        setShowServiceModal(false);
+                                        setEditContent(t.body || t.content || "");
+                                        setShowTemplateModal(false);
                                         setShowEditTemplateModal(true);
                                       }}
-                                      className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs rounded-md font-medium transition-colors"
+                                      className="px-3 py-1 bg-[#111111] hover:bg-zinc-800 text-white text-[11px] rounded-[8px] font-semibold transition-colors"
                                     >
                                       Edit
                                     </button>
                                   </td>
                                 </tr>
-                              </React.Fragment>
-                            ))}
-                          </tbody>
-                        </table>
-                      )}
-                    </div>
-                    <div className="border-t bg-gray-50 p-3 text-center">
-                      <button
-                        onClick={() => {
-                          if (!selectedServiceForTemplates) {
-                            toast.error(
-                              "No service selected to view templates.",
-                              {
-                                duration: 3000,
-                                style: {
-                                  background: "#fff0f0",
-                                  color: "#b91c1c",
-                                  border: "1px solid #fca5a5",
-                                },
-                              },
-                            );
-                            return;
-                          }
-                          window.open(
-                            `/templates?service=${encodeURIComponent(
-                              selectedServiceForTemplates,
-                            )}`,
-                            "_blank",
-                          );
-                        }}
-                        className="text-sm text-indigo-600 hover:underline transition"
-                      >
-                        View More Services Templates
-                      </button>
-                    </div>
-                  </div>
-
-                  {showEditTemplateModal && (
-                    <div
-                      className="bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden max-w-[45%] transition-all duration-500 transform translate-x-0 animate-slideIn"
-                      style={{
-                        animation: "slideIn 0.4s ease-out forwards",
-                      }}
-                    >
-                      {/* Header */}
-                      <div className="flex justify-between items-center p-5 border-b bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
-                        <h2 className="text-lg font-semibold">
-                          Edit Template — {editingTemplate?.name}
-                        </h2>
-                        <button
-                          onClick={() => {
-                            setShowEditTemplateModal(false);
-                            setEditingTemplate(null);
-                          }}
-                          className="text-white hover:text-gray-200 hover:bg-white/10 p-1 rounded-full transition"
-                        >
-                          ✕
-                        </button>
-                      </div>
-
-                      {/* Body */}
-                      <div className="p-5 overflow-y-auto flex-1 space-y-4 bg-gray-50">
-                        <label className="block text-sm font-semibold text-gray-700">
-                          Template Content
-                        </label>
-
-                        <ReactQuill
-                          ref={quillRef}
-                          theme="snow"
-                          value={editContent}
-                          onChange={setEditContent}
-                          className="rounded-lg shadow-sm"
-                          style={{
-                            border: "1px solid #e5e7eb",
-                            borderRadius: "0.5rem",
-                          }}
-                          modules={{
-                            toolbar: [
-                              [{ header: [1, 2, false] }],
-                              ["bold", "italic", "underline", "strike"],
-                              [{ list: "ordered" }, { list: "bullet" }],
-                              ["link"],
-                              ["clean"],
-                            ],
-                          }}
-                        />
-
-                        <div className="border rounded-lg bg-white p-3 mt-4">
-                          <p className="text-sm font-semibold text-gray-700 mb-2">
-                            Insert Fields
-                          </p>
-                          <div className="flex flex-wrap gap-2">
-                            {[
-                              "Full name",
-                              "Business email",
-                              "Store name",
-                              "Store URL",
-                              "Country",
-                              "Service",
-                              "Budget",
-                              "Problem & Goal",
-                            ].map((field) => (
-                              <button
-                                key={field}
-                                onClick={() => {
-                                  const editor = quillRef.current?.getEditor();
-                                  if (editor) {
-                                    const placeholder = `{{${field}}}`;
-                                    const range = editor.getSelection(true);
-                                    if (range) {
-                                      editor.insertText(
-                                        range.index,
-                                        placeholder,
-                                      );
-                                      editor.setSelection(
-                                        range.index + placeholder.length,
-                                      );
-                                    } else {
-                                      // If cursor not in focus, add at the end
-                                      editor.insertText(
-                                        editor.getLength(),
-                                        placeholder,
-                                      );
-                                    }
-                                  }
-                                }}
-                                className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium hover:bg-purple-200 transition"
-                              >
-                                {field}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Footer */}
-                      <div className="border-t p-4 bg-white flex justify-end space-x-3">
-                        <button
-                          onClick={() => {
-                            setShowEditTemplateModal(false);
-                            setEditingTemplate(null);
-                          }}
-                          className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-100 transition"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          onClick={async () => {
-                            try {
-                              const res = await fetch(
-                                `https://email-syncing-backend.vercel.app/template/update/${editingTemplate._id}`,
-                                {
-                                  method: "PUT",
-                                  headers: {
-                                    "Content-Type": "application/json",
-                                  },
-                                  body: JSON.stringify({
-                                    content: editContent,
-                                  }),
-                                },
-                              );
-                              const data = await res.json();
-                              if (data.success) {
-                                toast.success("Template updated successfully!");
-                                setTemplateList((prev) =>
-                                  prev.map((tpl) =>
-                                    tpl._id === editingTemplate._id
-                                      ? { ...tpl, content: editContent }
-                                      : tpl,
-                                  ),
-                                );
-                              } else {
-                                toast.error(
-                                  data.message || "Failed to update template.",
-                                );
-                              }
-                            } catch (err) {
-                              console.error("Error updating template:", err);
-                              toast.error("Error updating template.");
-                            }
-                          }}
-                          className="px-5 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition"
-                        >
-                          Save Changes
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                        </React.Fragment>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
               </div>
-            )}
+              <div className="border-t border-zinc-200 bg-white p-3 text-center">
+                <button
+                  onClick={() => {
+                    const srv = selectedServiceForTemplates || "Shopify Partner Directory";
+                    window.open(
+                      `/templates?service=${encodeURIComponent(srv)}`,
+                      "_blank",
+                    );
+                  }}
+                  className="text-xs text-zinc-900 font-semibold underline hover:text-zinc-700 transition"
+                >
+                  View More Services Templates
+                </button>
+              </div>
           </div>
         </div>
       )}
+
+      {/* SINGLE CLEAN EDIT TEMPLATE MODAL */}
+      {showEditTemplateModal && editingTemplate && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4"
+          onMouseDown={() => setShowInsertFields(false)}
+        >
+          <div
+            onMouseDown={(e) => e.stopPropagation()}
+            className="relative flex w-full max-w-2xl max-h-[85vh] flex-col overflow-hidden rounded-[8px] border border-zinc-200 bg-white shadow-2xl"
+          >
+            <div className="flex shrink-0 items-center justify-between bg-[#111111] px-5 py-3.5 text-white">
+              <div>
+                <h2 className="text-sm font-bold">
+                  Edit Template — {editingTemplate?.name || "Initial Email Response"}
+                </h2>
+                <p className="text-[11px] text-zinc-400 mt-0.5">
+                  Customize your email template content and dynamic fields
+                </p>
+              </div>
+
+              <button
+                onClick={() => {
+                  setShowEditTemplateModal(false);
+                  setEditingTemplate(null);
+                  setShowInsertFields(false);
+                  setShowTemplateModal(true);
+                }}
+                className="text-zinc-400 hover:text-white p-1 rounded-[8px] transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="relative flex-1 overflow-y-auto bg-zinc-50 p-5 no-scrollbar">
+              <label className="mb-2 block text-xs font-semibold text-zinc-700">
+                Template Content
+              </label>
+
+              <div className="rounded-[8px] bg-white border border-zinc-200 overflow-hidden shadow-2xs">
+                <ReactQuill
+                  ref={quillRef}
+                  theme="snow"
+                  value={editContent}
+                  onChange={setEditContent}
+                  modules={{
+                    toolbar: [
+                      [{ header: [1, 2, false] }],
+                      ["bold", "italic", "underline", "strike"],
+                      [{ list: "ordered" }, { list: "bullet" }],
+                      ["link"],
+                      ["clean"],
+                    ],
+                  }}
+                />
+              </div>
+
+              <div className="mt-4 rounded-[8px] border border-zinc-200 bg-white p-3.5 shadow-2xs">
+                <p className="text-xs font-bold text-zinc-800 mb-2">
+                  Insert Field Placeholders
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    "first_name",
+                    "business_email",
+                    "store_name",
+                    "store_url",
+                    "country",
+                    "service",
+                    "budget",
+                  ].map((field) => (
+                    <button
+                      key={field}
+                      type="button"
+                      onClick={() => {
+                        const editor = quillRef.current?.getEditor();
+                        if (!editor) return;
+                        const placeholder = `{{${field}}}`;
+                        const range = editor.getSelection(true);
+                        const index = range ? range.index : editor.getLength();
+                        editor.insertText(index, placeholder);
+                        editor.setSelection(index + placeholder.length);
+                      }}
+                      className="rounded-full bg-zinc-100 px-3 py-1 text-[11px] font-semibold text-zinc-800 hover:bg-zinc-900 hover:text-white transition-colors"
+                    >
+                      +{field}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="shrink-0 flex justify-end gap-2.5 border-t border-zinc-200 bg-zinc-50 px-5 py-3">
+              <button
+                onClick={() => {
+                  setShowEditTemplateModal(false);
+                  setEditingTemplate(null);
+                  setShowInsertFields(false);
+                  setShowTemplateModal(true);
+                }}
+                className="rounded-[8px] border border-zinc-300 bg-white px-4 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-100 transition-colors"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={async () => {
+                  try {
+                    const res = await fetch(
+                      `https://email-syncing-backend.vercel.app/template/update/${editingTemplate._id}`,
+                      {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ content: editContent }),
+                      },
+                    );
+
+                    const data = await res.json();
+                    if (data.success) {
+                      setShowEditTemplateModal(false);
+                      setEditingTemplate(null);
+                      setShowInsertFields(false);
+                      setShowTemplateModal(true);
+                    } else {
+                      setShowEditTemplateModal(false);
+                      setEditingTemplate(null);
+                      setShowInsertFields(false);
+                      setShowTemplateModal(true);
+                    }
+                  } catch (err) {
+                    setShowEditTemplateModal(false);
+                    setEditingTemplate(null);
+                    setShowInsertFields(false);
+                    setShowTemplateModal(true);
+                  }
+                }}
+                className="rounded-[8px] bg-[#111111] px-5 py-2 text-xs font-semibold text-white hover:bg-zinc-800 transition-colors"
+              >
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showServiceModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 px-4 backdrop-blur-sm">
           <div className="flex w-full max-w-6xl max-h-[90vh] gap-4 p-4">
-            {showServiceModal && (
-              <div
-                className={`flex w-full max-w-[90rem] max-h-[90vh] p-6 transition-all duration-500 ${
-                  showEditTemplateModal ? "justify-between" : "justify-center"
-                }`}
-              >
+            <div className={`flex w-full max-w-[90rem] max-h-[90vh] p-6 transition-all duration-500`}>
                 <div
-                  className={`flex flex-col overflow-hidden rounded-2xl border border-[#E0E7FF] bg-white shadow-2xl transition-all duration-500 ${
-                    showEditTemplateModal ? "max-w-[50%]" : "max-w-[70rem]"
-                  }`}
+                  className={`flex flex-col overflow-hidden rounded-2xl border border-[#E0E7FF] bg-white shadow-2xl transition-all duration-500 max-w-[70rem]`}
                 >
                   <div className="flex items-center justify-between border-b border-[#E0E7FF] bg-[#F5F7FF] p-5">
                     <div>
@@ -4619,155 +4881,6 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                   </div>
                 </div>
               </div>
-            )}
-          </div>
-        </div>
-      )}
-      {showEditTemplateModal && editingTemplate && (
-        <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/45 px-4 backdrop-blur-sm"
-          onMouseDown={() => setShowInsertFields(false)}
-        >
-          <div
-            onMouseDown={(e) => e.stopPropagation()}
-            className="relative flex w-full max-w-3xl max-h-[90vh] flex-col overflow-visible rounded-2xl border border-[#E0E7FF] bg-white shadow-2xl"
-          >
-            <div className="flex shrink-0 items-center justify-between border-b border-[#E0E7FF] bg-[#F5F7FF] p-5">
-              <h2 className="text-lg font-bold text-slate-800">
-                Edit Template — {editingTemplate?.name}
-              </h2>
-
-              <button
-                onClick={() => {
-                  setShowEditTemplateModal(false);
-                  setEditingTemplate(null);
-                  setShowInsertFields(false);
-                }}
-                className="rounded-full px-2 py-1 text-slate-500 hover:bg-[#E0E7FF]"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="relative flex-1 overflow-visible bg-[#FAFBFF] p-5">
-              <label className="mb-2 block text-sm font-semibold text-slate-700">
-                Template Content
-              </label>
-
-              {showInsertFields && (
-                <div
-                  className="absolute right-[-300px] top-[55px] z-[9999] h-[430px] w-72 overflow-y-auto rounded-xl border border-[#E0E7FF] bg-white shadow-2xl"
-                  onMouseDown={(e) => e.stopPropagation()}
-                >
-                  <div className="border-b border-[#E0E7FF] bg-[#F5F7FF] p-3">
-                    <input
-                      type="text"
-                      placeholder="Search items"
-                      className="w-full rounded-md border border-[#C7D2FE] px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#8A8CF4]"
-                    />
-                  </div>
-
-                  <div className="p-3">
-                    <p className="mb-3 text-sm font-semibold text-slate-700">
-                      Insert Fields
-                    </p>
-
-                    {[
-                      "FullName",
-                      "BusinessEmail",
-                      "StoreName",
-                      "StoreURL",
-                      "Country",
-                      "Service",
-                      "Budget",
-                      "ProblemGoal",
-                    ].map((field) => (
-                      <button
-                        key={field}
-                        type="button"
-                        onClick={() => {
-                          const editor = quillRef.current?.getEditor();
-                          if (!editor) return;
-
-                          const placeholder = `{{${field}}}`;
-                          const range = editor.getSelection(true);
-                          const index = range
-                            ? range.index
-                            : editor.getLength();
-
-                          editor.insertText(index, placeholder);
-                          editor.setSelection(index + placeholder.length);
-                          setShowInsertFields(true);
-                        }}
-                        className="mb-2 block rounded-full border border-[#C7D2FE] bg-[#EEF2FF] px-3 py-1 text-xs font-semibold text-[#5B5FD6] hover:bg-[#E0E7FF]"
-                      >
-                        {field}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div className="rounded-lg bg-white">
-                <ReactQuill
-                  ref={quillRef}
-                  theme="snow"
-                  value={editContent}
-                  onChange={setEditContent}
-                  onFocus={() => setShowInsertFields(true)}
-                  modules={{
-                    toolbar: [
-                      [{ header: [1, 2, false] }],
-                      ["bold", "italic", "underline", "strike"],
-                      [{ list: "ordered" }, { list: "bullet" }],
-                      ["link"],
-                      ["clean"],
-                    ],
-                  }}
-                />
-              </div>
-            </div>
-
-            <div className="shrink-0 flex justify-end gap-3 border-t border-[#E0E7FF] bg-white p-4">
-              <button
-                onClick={() => {
-                  setShowEditTemplateModal(false);
-                  setEditingTemplate(null);
-                  setShowInsertFields(false);
-                }}
-                className="rounded-md border border-[#C7D2FE] bg-white px-4 py-2 text-sm font-medium text-[#5B5FD6] hover:bg-[#EEF2FF]"
-              >
-                Cancel
-              </button>
-
-              <button
-                onClick={async () => {
-                  const res = await fetch(
-                    `https://email-syncing-backend.vercel.app/template/update/${editingTemplate._id}`,
-                    {
-                      method: "PUT",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ content: editContent }),
-                    },
-                  );
-
-                  const data = await res.json();
-
-                  if (data.success) {
-                    toast.success("Template updated successfully!");
-                    setShowEditTemplateModal(false);
-                    setEditingTemplate(null);
-                    setShowInsertFields(false);
-                    setShowServiceModal(true);
-                  } else {
-                    toast.error(data.message || "Failed to update template.");
-                  }
-                }}
-                className="rounded-md bg-[#7375E8] px-5 py-2 text-sm font-semibold text-white hover:bg-[#5B5FD6]"
-              >
-                Save Changes
-              </button>
-            </div>
           </div>
         </div>
       )}

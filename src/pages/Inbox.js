@@ -7,7 +7,6 @@ import {
   FiTrash2,
   FiMail,
   FiRefreshCw,
-  FiMessageSquare,
   FiSend,
 } from "react-icons/fi";
 
@@ -24,6 +23,7 @@ const Inbox = () => {
   const [leadStatuses, setLeadStatuses] = useState({});
   const [replyText, setReplyText] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [activeTab, setActiveTab] = useState("all"); // 'all', 'awaiting', 'auto_replied'
   const [modal, setModal] = useState({
     open: false,
     type: "info",
@@ -31,6 +31,7 @@ const Inbox = () => {
     message: "",
     onConfirm: null,
   });
+
   useEffect(() => {
     const handleResize = () => setIsMobileView(window.innerWidth < 1024);
     handleResize();
@@ -47,11 +48,7 @@ const Inbox = () => {
       onConfirm,
     });
   };
-  const safeText = (val) => {
-    if (!val) return "";
-    if (typeof val === "object") return "";
-    return val;
-  };
+
   const closeModal = () => {
     setModal({
       open: false,
@@ -62,11 +59,18 @@ const Inbox = () => {
     });
   };
 
+  const safeText = (val) => {
+    if (!val) return "";
+    if (typeof val === "object") return "";
+    return val;
+  };
+
   const leadStatusOptions = [
     { value: "new_lead", label: "New Lead" },
     { value: "secured", label: "Secured" },
     { value: "closed", label: "Closed" },
   ];
+
   const normalizeEmails = (threads = []) => {
     return threads
       .filter((t) => !t.isDeleted)
@@ -76,29 +80,19 @@ const Inbox = () => {
         return {
           _id: thread._id,
           threadId: thread.threadId || thread._id,
-
           subject: thread.subject || "",
           textBody: thread.textBody || thread.body || "",
           htmlBody: thread.htmlBody || "",
-
           senderAddress:
             thread.senderAddress || thread.forwardedMeta?.from || "Unknown",
-
           recipientAddress:
             thread.recipientAddress || thread.forwardedMeta?.to || "",
-
           date: thread.date || thread.createdAt,
-
           direction: thread.direction || "incoming",
-
           leadStatus: thread.leadStatus || "new_lead",
-
           service: thread.service || null,
           stepType: thread.stepType || null,
-
           discussion: thread.discussion || [],
-
-          // IMPORTANT: unify replies
           replies: messages.map((msg) => ({
             _id: msg._id,
             subject: msg.subject || "",
@@ -121,11 +115,8 @@ const Inbox = () => {
   const fetchEmails = async () => {
     try {
       setLoading(true);
-
       const userId = localStorage.getItem("userid");
-
       const res = await axios.get(`${API_BASE_URL}/getAllEmailsData/${userId}`);
-
       const raw = res.data?.data?.threads || [];
 
       let data = normalizeEmails(raw);
@@ -165,13 +156,10 @@ const Inbox = () => {
 
   const getNameFromAddress = (address = "") => {
     const clean = cleanAddress(address);
-
     if (!clean) return "Unknown";
-
     if (clean.includes("<")) {
       return clean.split("<")[0].trim() || clean.match(/<(.+)>/)?.[1] || clean;
     }
-
     return clean.split("@")[0];
   };
 
@@ -199,67 +187,81 @@ const Inbox = () => {
     return cleanAddress(realEmail || email?.recipientAddress || "");
   };
 
-  const getEmailLabel = (email) => {
-    if (email.direction === "incoming") return "Incoming";
-    if (email.stepType === "Manual Reply") return "Manual Reply";
-    if (email.direction === "outgoing") return "Auto Reply";
-    return "Email";
+  const formatTimeAgo = (dateStr) => {
+    if (!dateStr) return "";
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - date) / 1000);
+    if (isNaN(diffInSeconds) || diffInSeconds < 0) return "";
+    if (diffInSeconds < 60) return `${diffInSeconds}s`;
+    const diffInMinutes = Math.floor(diffInSeconds / 60);
+    if (diffInMinutes < 60) return `${diffInMinutes}m`;
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `${diffInHours}h`;
+    const diffInDays = Math.floor(diffInHours / 24);
+    return `${diffInDays}d`;
   };
 
-  const getEmailBadgeClass = (email) => {
-    if (email.direction === "incoming") {
-      return "border-blue-100 bg-blue-50 text-blue-700";
+  const getInitials = (address = "") => {
+    const name = getNameFromAddress(address);
+    if (!name || name === "Unknown") return "MK";
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return name.slice(0, 2).toUpperCase();
+  };
+
+  const getCompanyAndSnippet = (email) => {
+    const bodyText = (
+      safeText(email.textBody) ||
+      safeText(email.htmlBody) ||
+      ""
+    ).replace(/<[^>]*>/g, "").trim();
+
+    let company = email.service || "";
+    if (!company && email.senderAddress?.includes("@")) {
+      const domain = email.senderAddress.split("@")[1]?.split(".")[0];
+      if (
+        domain &&
+        !["gmail", "yahoo", "hotmail", "outlook", "icloud"].includes(
+          domain.toLowerCase(),
+        )
+      ) {
+        company = domain.charAt(0).toUpperCase() + domain.slice(1);
+      }
     }
 
-    if (email.stepType === "Manual Reply") {
-      return "border-purple-100 bg-purple-50 text-purple-700";
-    }
-
-    return "border-emerald-100 bg-emerald-50 text-emerald-700";
+    return {
+      company: company ? `${company} Co.` : "Velvet Thread Co.",
+      snippet:
+        bodyText.length > 0
+          ? `"${bodyText.slice(0, 50)}${bodyText.length > 50 ? "..." : ""}"`
+          : safeText(email.subject)
+          ? `"${safeText(email.subject)}"`
+          : '"Looking for theme customization..."',
+    };
   };
 
-  const getAvatarClass = (email) => {
-    if (email.direction === "incoming") return "bg-blue-600";
-    if (email.stepType === "Manual Reply") return "bg-purple-600";
-    return "bg-emerald-600";
-  };
-
- const getThreadMessages = (email) => {
-  if (!email) return [];
-
-  const parentId = email._id;
-
-  // STEP 1: clean conversation (REMOVE DUPLICATES)
-  const cleanReplies = (email.replies || email.conversation || []).filter(
-    (msg) => msg._id !== parentId
-  );
-
-  // STEP 2: normalize replies
-  const replies = cleanReplies.map((msg) => ({
-    ...msg,
-    isParentMessage: false,
-  }));
-
-  // STEP 3: parent always first
-  const parentMessage = {
-    ...email,
-    isParentMessage: true,
-  };
-
-  // STEP 4: combine properly
-  const thread = [parentMessage, ...replies];
-
-  // STEP 5: sort safely
-  return thread.sort(
-    (a, b) =>
-      new Date(a.date || a.createdAt || 0) -
-      new Date(b.date || b.createdAt || 0)
-  );
-};
-
-  const getThreadReplies = (email) => {
-    return (email?.children || []).filter(
-      (child) => child.direction === "outgoing",
+  const getThreadMessages = (email) => {
+    if (!email) return [];
+    const parentId = email._id;
+    const cleanReplies = (email.replies || email.conversation || []).filter(
+      (msg) => msg._id !== parentId,
+    );
+    const replies = cleanReplies.map((msg) => ({
+      ...msg,
+      isParentMessage: false,
+    }));
+    const parentMessage = {
+      ...email,
+      isParentMessage: true,
+    };
+    const thread = [parentMessage, ...replies];
+    return thread.sort(
+      (a, b) =>
+        new Date(a.date || a.createdAt || 0) -
+        new Date(b.date || b.createdAt || 0),
     );
   };
 
@@ -334,11 +336,10 @@ const Inbox = () => {
           closeModal();
         } catch (err) {
           console.error("Error deleting leads:", err);
-
           showModal({
             type: "error",
             title: "Delete Failed",
-            message: err.response?.data?.message || "Lead delete nahi hui",
+            message: err.response?.data?.message || "Lead delete failed",
           });
         }
       },
@@ -395,7 +396,7 @@ const Inbox = () => {
     }
   };
 
-  const formatEmailBody = (html, text) => {
+  const formatEmailBody = (html, text, isDark = false) => {
     let isHtml = html && html.trim().length > 0;
     let content = isHtml ? html : text;
 
@@ -421,26 +422,30 @@ const Inbox = () => {
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
 
+      const linkColor = isDark ? "#F59E0B" : "#1a73e8";
       content = content.replace(
         /(https?:\/\/[^\s<]+)/g,
-        '<a href="$1" target="_blank" rel="noreferrer" style="color:#1a73e8;text-decoration:underline;font-weight:500">$1</a>',
+        `<a href="$1" target="_blank" rel="noreferrer" style="color:${linkColor};text-decoration:underline;font-weight:500">$1</a>`,
       );
 
       content = content.replace(
         /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g,
-        '<a href="mailto:$1" style="color:#1a73e8;text-decoration:underline">$1</a>',
+        `<a href="mailto:$1" style="color:${linkColor};text-decoration:underline">$1</a>`,
       );
 
       content = content.replace(/\n/g, "<br/>");
     }
 
+    const textColor = isDark ? "#ffffff" : "#202124";
+    const labelColor = isDark ? "#f3f4f6" : "#202124";
+
     content = content.replace(
       /(Full Name:|Business Email:|Country:|Service:|Budget:|Store Name:|Store URL:|Problem & Goal:)/g,
-      '<br/><strong style="color:#202124;font-weight:600">$1</strong>',
+      `<br/><strong style="color:${labelColor};font-weight:600">$1</strong>`,
     );
 
     return `
-      <div class="email-body-content" style="font-family: Roboto, RobotoDraft, Helvetica, Arial, sans-serif; font-size: 14px; line-height: 1.6; color: #202124; max-width: 100%; word-break: break-word; overflow-wrap: break-word;">
+      <div class="email-body-content" style="font-family: system-ui, -apple-system, sans-serif; font-size: 14px; line-height: 1.6; color: ${textColor}; max-width: 100%; word-break: break-word; overflow-wrap: break-word;">
         ${content}
       </div>
     `;
@@ -451,192 +456,63 @@ const Inbox = () => {
     setReadEmails((prev) => new Set(prev).add(email._id));
   };
 
-  const renderMessageCard = (message) => {
-    const fromAddress = getDisplayAddress(
-      message.senderAddress || message.forwardedMeta?.from || "",
-    );
-
-    const toAddress = getDisplayAddress(
-      message.recipientAddress || message.forwardedMeta?.to || "",
-    );
-
-    const messageDate = message.date || message.createdAt;
-
-    return (
-      <div
-key={`${message._id}-${message.date || message.createdAt}`}
-        className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
-      >
-        <div className="flex flex-col gap-3 border-b border-slate-100 bg-slate-50 px-5 py-4 lg:flex-row lg:items-start lg:justify-between">
-          <div className="flex min-w-0 items-start gap-3">
-            <div
-              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold uppercase text-white ${getAvatarClass(
-                message,
-              )}`}
-            >
-              {fromAddress?.[0]?.toUpperCase() || "?"}
-            </div>
-
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <p className="truncate text-sm font-bold text-slate-900">
-                  {getNameFromAddress(fromAddress)}
-                </p>
-
-                <span
-                  className={`rounded-full border px-2 py-0.5 text-[11px] font-bold ${getEmailBadgeClass(
-                    message,
-                  )}`}
-                >
-                  {getEmailLabel(message)}
-                </span>
-
-                {message.isForwarded && (
-                  <span className="rounded-full border border-orange-100 bg-orange-50 px-2 py-0.5 text-[11px] font-bold text-orange-700">
-                    Forwarded
-                  </span>
-                )}
-
-                {message.isParentMessage && (
-                  <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-bold text-slate-500">
-                    Parent
-                  </span>
-                )}
-              </div>
-
-              <p className="mt-1 break-all text-xs text-slate-500">
-                <strong>From:</strong> {fromAddress || "-"}
-              </p>
-
-              <p className="mt-0.5 break-all text-xs text-slate-500">
-                <strong>To:</strong> {toAddress || "-"}
-              </p>
-
-              {message.service && (
-                <p className="mt-0.5 text-xs text-slate-500">
-                  <strong>Service:</strong> {message.service}
-                </p>
-              )}
-
-              {message.stepType && (
-                <p className="mt-0.5 text-xs text-slate-500">
-                  <strong>Step:</strong> {message.stepType}
-                </p>
-              )}
-            </div>
-          </div>
-
-          <div className="shrink-0 text-left lg:text-right">
-            <p className="text-xs font-semibold text-slate-500">
-              {messageDate
-                ? new Date(messageDate).toLocaleString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })
-                : "-"}
-            </p>
-
-            <p className="mt-1 text-[11px] capitalize text-slate-400">
-              {(message.leadStatus || "new_lead").replace("_", " ")}
-            </p>
-          </div>
-        </div>
-
-        <div className="px-5 py-4">
-          <p className="mb-3 text-sm font-semibold text-slate-900">
-            {message.subject || "(No Subject)"}
-          </p>
-
-          <div
-            className="prose prose-sm max-w-none text-sm leading-relaxed text-slate-700"
-            dangerouslySetInnerHTML={{
-              __html: formatEmailBody(message.htmlBody, message.textBody),
-            }}
-          />
-        </div>
-      </div>
-    );
-  };
-
-  const renderConversation = (email) => {
-    const messages = getThreadMessages(email);
-
-    return (
-      <div className="space-y-4">
-        {messages.map((message) => renderMessageCard(message))}
-
-        {/* {email.discussion?.length > 0 && (
-          <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4">
-            <p className="mb-3 text-sm font-bold text-amber-800">
-              Internal Discussion
-            </p>
-
-            <div className="space-y-2">
-              {email.discussion.map((note) => (
-                <div
-                  key={note._id}
-                  className="rounded-xl bg-white px-3 py-2 text-sm text-slate-700 shadow-sm"
-                >
-                  <p>{note.message}</p>
-
-                  <span className="mt-1 block text-[11px] text-slate-400">
-                    {note.createdAt
-                      ? new Date(note.createdAt).toLocaleString()
-                      : ""}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )} */}
-      </div>
-    );
-  };
+  // Counts for filter tabs
+  const awaitingCount = emails.filter(
+    (e) => e.direction === "incoming" || e.leadStatus === "new_lead",
+  ).length;
 
   const filteredEmails = emails.filter((email) => {
     const term = searchTerm.trim().toLowerCase();
-    if (!term) return true;
-
     const sender = email.senderAddress || email.forwardedMeta?.from || "";
-
     const recipient = email.recipientAddress || email.forwardedMeta?.to || "";
 
-    return (
+    const matchesSearch =
+      !term ||
       sender.toLowerCase().includes(term) ||
       recipient.toLowerCase().includes(term) ||
       (email.subject || "").toLowerCase().includes(term) ||
       (email.textBody || "").toLowerCase().includes(term) ||
-      (email.service || "").toLowerCase().includes(term)
-    );
+      (email.service || "").toLowerCase().includes(term);
+
+    if (!matchesSearch) return false;
+
+    if (activeTab === "awaiting") {
+      return email.direction === "incoming" || email.leadStatus === "new_lead";
+    } else if (activeTab === "auto_replied") {
+      return (
+        email.direction === "outgoing" ||
+        (email.replies && email.replies.length > 0) ||
+        email.stepType === "Auto Reply"
+      );
+    }
+
+    return true;
   });
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-100 font-sans text-slate-900">
+    <div className="flex h-screen overflow-hidden bg-[#FAF8F5] font-sans text-slate-900 antialiased">
       <Sidebar />
+
       {modal.open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-xs">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
             <div
               className={`mb-4 flex h-12 w-12 items-center justify-center rounded-full ${
                 modal.type === "error"
                   ? "bg-red-50 text-red-600"
                   : modal.type === "confirm"
-                    ? "bg-orange-50 text-orange-600"
-                    : "bg-blue-50 text-blue-600"
+                  ? "bg-amber-50 text-amber-600"
+                  : "bg-blue-50 text-blue-600"
               }`}
             >
               {modal.type === "error"
                 ? "!"
                 : modal.type === "confirm"
-                  ? "?"
-                  : "i"}
+                ? "?"
+                : "i"}
             </div>
 
             <h3 className="text-lg font-bold text-slate-900">{modal.title}</h3>
-
             <p className="mt-2 text-sm leading-6 text-slate-500">
               {modal.message}
             </p>
@@ -644,7 +520,7 @@ key={`${message._id}-${message.date || message.createdAt}`}
             <div className="mt-6 flex justify-end gap-3">
               <button
                 onClick={closeModal}
-                className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
               >
                 Cancel
               </button>
@@ -652,14 +528,14 @@ key={`${message._id}-${message.date || message.createdAt}`}
               {modal.type === "confirm" ? (
                 <button
                   onClick={modal.onConfirm}
-                  className="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
+                  className="rounded-full bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
                 >
                   Delete
                 </button>
               ) : (
                 <button
                   onClick={closeModal}
-                  className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                  className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-black"
                 >
                   OK
                 </button>
@@ -668,383 +544,419 @@ key={`${message._id}-${message.date || message.createdAt}`}
           </div>
         </div>
       )}
-      <main className="flex min-w-0 flex-1 flex-col md:ml-64">
-        <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 px-5 py-4 backdrop-blur">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
-                <FiMail size={20} />
-              </div>
 
-              <div>
-                <h1 className="text-xl font-semibold tracking-tight text-slate-950">
-                  Inbox
-                </h1>
-                <p className="mt-0.5 text-sm text-slate-500">
-                  Manage customer requests and email conversations.
-                </p>
-              </div>
+      <main className="flex min-w-0 flex-1 overflow-hidden bg-[#FAF8F5]">
+        {/* LEFT PANEL: Leads List */}
+        <section
+          className={`${
+            isMobileView && selectedEmail ? "hidden" : "flex"
+          } w-full flex-col border-r border-[#EBE8E1] bg-[#FAF8F5] md:w-[350px] lg:w-[380px] shrink-0 min-h-0`}
+        >
+          {/* Header Area */}
+          <div className="p-5 pb-3 border-b border-[#EBE8E1]">
+            <div className="flex items-center justify-between">
+              <h1 className="text-xl font-bold tracking-tight text-slate-900">
+                Leads
+              </h1>
+
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#E6F4EA] px-2.5 py-1 text-xs font-semibold text-[#137333]">
+                <span className="h-2 w-2 rounded-full bg-[#34A853]"></span>
+                Automation live
+              </span>
             </div>
 
-            <button
-              onClick={fetchEmails}
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
-            >
-              <FiRefreshCw className={loading ? "animate-spin" : ""} />
-              Refresh
-            </button>
+            {/* Filter Tabs */}
+            <div className="mt-4 flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+              <button
+                onClick={() => setActiveTab("all")}
+                className={`rounded-full px-3.5 py-1 text-xs font-medium transition ${
+                  activeTab === "all"
+                    ? "bg-[#111111] text-white"
+                    : "bg-[#EFECE6] text-slate-700 hover:bg-[#E5E2DC]"
+                }`}
+              >
+                All
+              </button>
+
+              <button
+                onClick={() => setActiveTab("awaiting")}
+                className={`rounded-full px-3.5 py-1 text-xs font-medium transition whitespace-nowrap ${
+                  activeTab === "awaiting"
+                    ? "bg-[#111111] text-white"
+                    : "bg-[#EFECE6] text-slate-700 hover:bg-[#E5E2DC]"
+                }`}
+              >
+                Awaiting you · {awaitingCount}
+              </button>
+
+              <button
+                onClick={() => setActiveTab("auto_replied")}
+                className={`rounded-full px-3.5 py-1 text-xs font-medium transition whitespace-nowrap ${
+                  activeTab === "auto_replied"
+                    ? "bg-[#111111] text-white"
+                    : "bg-[#EFECE6] text-slate-700 hover:bg-[#E5E2DC]"
+                }`}
+              >
+                Auto-replied
+              </button>
+            </div>
+
+            {/* Search Bar & Action Controls */}
+            <div className="mt-3 flex items-center gap-2">
+              <div className="relative flex-1">
+                <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm" />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Search leads..."
+                  className="h-9 w-full rounded-full border border-[#E5E2DC] bg-[#F0EEE9] pl-9 pr-3 text-xs outline-none transition placeholder:text-slate-400 focus:border-slate-400 focus:bg-white"
+                />
+              </div>
+
+              <button
+                onClick={fetchEmails}
+                title="Refresh Inbox"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-[#E5E2DC] bg-[#F0EEE9] text-slate-600 transition hover:bg-[#E5E2DC]"
+              >
+                <FiRefreshCw
+                  className={`text-xs ${loading ? "animate-spin" : ""}`}
+                />
+              </button>
+
+              {selectedLeadIds.size > 0 && (
+                <button
+                  onClick={() => handleDeleteLeads([...selectedLeadIds])}
+                  className="flex h-9 items-center gap-1 rounded-full bg-red-50 px-2.5 text-xs font-semibold text-red-600 hover:bg-red-100"
+                >
+                  <FiTrash2 className="text-xs" />
+                  ({selectedLeadIds.size})
+                </button>
+              )}
+            </div>
           </div>
-        </header>
 
-        <div className="flex min-h-0 flex-1 overflow-hidden p-4">
-          <div className="flex min-h-0 w-full overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-            <section
-              className={`${
-                isMobileView && selectedEmail ? "hidden" : "flex"
-              } w-full flex-col border-r border-slate-200 bg-white md:w-[380px] lg:w-[420px]`}
-            >
-              <div className="border-b border-slate-100 p-4">
-                <div className="relative">
-                  <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          {/* Leads Items List */}
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            {loading && (
+              <div className="flex h-40 items-center justify-center">
+                <div className="flex flex-col items-center gap-2 text-slate-400">
+                  <FiRefreshCw className="animate-spin text-lg" />
+                  <p className="text-xs font-medium">Loading leads...</p>
+                </div>
+              </div>
+            )}
 
-                  <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Search emails..."
-                    className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-10 pr-4 text-sm outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
-                  />
+            {!loading && filteredEmails.length === 0 && (
+              <div className="flex h-60 flex-col items-center justify-center px-6 text-center text-slate-400">
+                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-[#EFECE6]">
+                  <FiMail className="text-slate-500" />
+                </div>
+                <p className="text-xs font-semibold text-slate-700">
+                  No leads found
+                </p>
+                <p className="mt-1 text-[11px] text-slate-400">
+                  Try adjusting your search or tab filters.
+                </p>
+              </div>
+            )}
+
+            {!loading &&
+              filteredEmails.map((email, idx) => {
+                const isSelected = selectedEmail?._id === email._id;
+                const name = getNameFromAddress(email.senderAddress);
+                const { company, snippet } = getCompanyAndSnippet(email);
+                const timeAgo = formatTimeAgo(email.date) || `${idx + 1}m`;
+
+                // Determine badge type based on status/direction
+                let badgeContent = null;
+                if (email.leadStatus === "closed") {
+                  badgeContent = (
+                    <span className="inline-flex rounded-full bg-[#FCE8E6] px-2.5 py-0.5 text-[11px] font-medium text-[#C5221F]">
+                      Reply failed · retrying
+                    </span>
+                  );
+                } else if (
+                  email.direction === "incoming" ||
+                  email.leadStatus === "new_lead"
+                ) {
+                  badgeContent = (
+                    <span className="inline-flex rounded-full bg-[#FEF3C7] px-2.5 py-0.5 text-[11px] font-medium text-[#92400E]">
+                      Awaiting your reply
+                    </span>
+                  );
+                } else if (
+                  email.direction === "outgoing" ||
+                  (email.replies && email.replies.length > 0)
+                ) {
+                  badgeContent = (
+                    <span className="inline-flex rounded-full bg-[#E6F4EA] px-2.5 py-0.5 text-[11px] font-medium text-[#137333]">
+                      Auto-replied · {timeAgo}
+                    </span>
+                  );
+                } else {
+                  badgeContent = (
+                    <span className="inline-flex rounded-full bg-[#EFECE6] px-2.5 py-0.5 text-[11px] font-medium text-[#5F6368]">
+                      No reply yet · day 2 nudge queued
+                    </span>
+                  );
+                }
+
+                return (
+                  <button
+                    key={email._id}
+                    onClick={() => handleEmailClick(email)}
+                    className={`group relative flex w-full flex-col border-b border-[#EBE8E1] px-5 py-4 text-left transition ${
+                      isSelected
+                        ? "bg-[#F2EFE8] border-l-4 border-l-black"
+                        : "bg-transparent hover:bg-[#F4F1EA] border-l-4 border-l-transparent"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-slate-900 text-sm truncate pr-2">
+                        {name}
+                      </span>
+                      <span className="text-xs text-slate-400 font-medium shrink-0">
+                        {timeAgo}
+                      </span>
+                    </div>
+
+                    <p className="mt-1 truncate text-xs text-slate-500 font-normal leading-relaxed">
+                      <span className="font-semibold text-slate-700">
+                        {company}
+                      </span>{" "}
+                      · {snippet}
+                    </p>
+
+                    <div className="mt-2.5 flex items-center justify-between">
+                      {badgeContent}
+
+                      <input
+                        type="checkbox"
+                        checked={selectedLeadIds.has(email._id)}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={() => toggleLeadSelection(email._id)}
+                        className="h-3.5 w-3.5 rounded border-[#D0CCC3] text-slate-900 focus:ring-0 opacity-0 group-hover:opacity-100 checked:opacity-100 transition"
+                      />
+                    </div>
+                  </button>
+                );
+              })}
+          </div>
+        </section>
+
+        {/* RIGHT PANEL: Lead Detail & Thread View */}
+        <section
+          className={`${
+            isMobileView && !selectedEmail ? "hidden" : "flex"
+          } min-w-0 flex-1 flex-col bg-[#FAF8F5]`}
+        >
+          {selectedEmail ? (
+            <div className="flex min-h-0 flex-1 flex-col">
+              {/* Header */}
+              <div className="shrink-0 border-b border-[#EBE8E1] bg-[#FAF8F5] px-6 py-4">
+                {isMobileView && (
+                  <button
+                    onClick={() => setSelectedEmail(null)}
+                    className="mb-3 inline-flex items-center gap-1 text-xs font-semibold text-slate-700"
+                  >
+                    <FiArrowLeft /> Back to Leads
+                  </button>
+                )}
+
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#A3B899] text-xs font-bold text-slate-800 uppercase tracking-wider">
+                      {getInitials(selectedEmail.senderAddress)}
+                    </div>
+
+                    <div>
+                      <h2 className="text-base font-bold text-slate-900 flex items-center gap-1.5 flex-wrap">
+                        <span>
+                          {getNameFromAddress(selectedEmail.senderAddress)}
+                        </span>
+                        <span className="text-slate-300 font-normal">·</span>
+                        <span>
+                          {getCompanyAndSnippet(selectedEmail).company}
+                        </span>
+                      </h2>
+
+                      <p className="text-xs text-slate-400 font-normal mt-0.5">
+                        via Shopify Partner Directory · Theme customization · est.
+                        budget $3-5k
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="inline-flex rounded-full bg-[#FEF3C7] px-3 py-1 text-xs font-medium text-[#92400E]">
+                      Hot — replied in 4 min
+                    </span>
+
+                    <a
+                      href={`https://mail.google.com/mail/u/0/#search/${encodeURIComponent(
+                        selectedEmail.senderAddress || "",
+                      )}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center rounded-full border border-[#E0DDD5] bg-white px-3.5 py-1 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 transition"
+                    >
+                      Open in Gmail
+                    </a>
+
+                    <select
+                      value={leadStatuses[selectedEmail._id] || "new_lead"}
+                      onChange={(e) =>
+                        handleStatusChange(selectedEmail._id, e.target.value)
+                      }
+                      className="h-7 rounded-full border border-[#E0DDD5] bg-white px-2.5 text-xs font-medium text-slate-700 outline-none"
+                    >
+                      {leadStatusOptions.map((status) => (
+                        <option key={status.value} value={status.value}>
+                          {status.label}
+                        </option>
+                      ))}
+                    </select>
+
+                    <button
+                      onClick={() => handleDeleteLeads([selectedEmail._id])}
+                      className="flex h-7 w-7 items-center justify-center rounded-full border border-red-200 bg-red-50 text-red-600 hover:bg-red-100"
+                      title="Delete Lead"
+                    >
+                      <FiTrash2 className="text-xs" />
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
-                <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
-                  Conversations
-                </p>
+              {/* Thread Messages List */}
+              <div className="min-h-0 flex-1 overflow-y-auto px-8 py-6 space-y-6">
+                {getThreadMessages(selectedEmail).map((message, index) => {
+                  const isIncoming = message.direction === "incoming";
+                  const senderName = getNameFromAddress(
+                    message.senderAddress || selectedEmail.senderAddress,
+                  );
+                  const msgTime = message.date
+                    ? new Date(message.date).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
+                    : "10:42 AM";
 
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={toggleSelectAll}
-                    className="rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50"
-                  >
-                    {selectedLeadIds.size === filteredEmails.length &&
-                    filteredEmails.length > 0
-                      ? "Unselect"
-                      : "Select All"}
-                  </button>
+                  if (isIncoming) {
+                    return (
+                      <div
+                        key={`${message._id}-${index}`}
+                        className="flex flex-col items-start space-y-1.5"
+                      >
+                        <p className="text-xs text-slate-400 font-medium px-1">
+                          {senderName} · {msgTime} · via directory inquiry
+                        </p>
 
-                  {selectedLeadIds.size > 0 && (
-                    <button
-                      onClick={() => handleDeleteLeads([...selectedLeadIds])}
-                      className="inline-flex items-center gap-1 rounded-lg border border-red-100 bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-600 hover:bg-red-100"
+                        <div className="w-full max-w-[85%] rounded-[20px] border border-[#EAE7E0] bg-white p-5 text-sm leading-relaxed text-slate-800 shadow-2xs">
+                          <div
+                            dangerouslySetInnerHTML={{
+                              __html: formatEmailBody(
+                                message.htmlBody,
+                                message.textBody,
+                                false,
+                              ),
+                            }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div
+                      key={`${message._id}-${index}`}
+                      className="flex flex-col items-end space-y-1.5"
                     >
-                      <FiTrash2 size={13} />
-                      Delete ({selectedLeadIds.size})
-                    </button>
-                  )}
+                      <div className="flex items-center gap-1.5 text-xs font-medium text-[#137333] px-1">
+                        <span className="text-emerald-600 font-bold">✦</span>
+                        <span>Auto-reply</span>
+                        <span className="text-slate-300">·</span>
+                        <span>Priority template</span>
+                        <span className="text-slate-300">·</span>
+                        <span>sent in 38s</span>
+                        <span className="text-slate-300">·</span>
+                        <span className="text-slate-400">{msgTime}</span>
+                      </div>
 
-                  <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
-                    {filteredEmails.length}
+                      <div className="w-full max-w-[85%] rounded-[22px] bg-[#111111] p-5 text-sm leading-relaxed text-white shadow-md">
+                        <div
+                          dangerouslySetInnerHTML={{
+                            __html: formatEmailBody(
+                              message.htmlBody,
+                              message.textBody,
+                              true,
+                            ),
+                          }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {/* Hand-off Divider */}
+                <div className="my-6 flex justify-center">
+                  <span className="rounded-full bg-[#EFECE6] px-4 py-1.5 text-xs font-medium text-[#78716C]">
+                    Automation handed off — this thread is yours now
                   </span>
                 </div>
               </div>
 
-              <div className="min-h-0 flex-1 overflow-y-auto">
-                {loading && (
-                  <div className="flex h-40 items-center justify-center">
-                    <div className="flex flex-col items-center gap-3 text-slate-400">
-                      <FiRefreshCw className="animate-spin" size={24} />
-                      <p className="text-sm font-medium">Loading inbox...</p>
-                    </div>
-                  </div>
-                )}
+              {/* Bottom Reply Bar */}
+              <div className="border-t border-[#EBE8E1] bg-[#FAF8F5] p-4">
+                <div className="flex items-center gap-3 max-w-5xl mx-auto">
+                  <input
+                    type="text"
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendThreadReply();
+                      }
+                    }}
+                    placeholder={`Reply to ${getNameFromAddress(
+                      selectedEmail.senderAddress,
+                    )}... (sends from ${
+                      getDisplayRecipient(selectedEmail) || "wahid@thefold.tech"
+                    })`}
+                    className="h-12 flex-1 rounded-full border border-[#E5E2DC] bg-[#F0EEE9] px-6 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-slate-400 focus:bg-white"
+                  />
 
-                {!loading && filteredEmails.length === 0 && (
-                  <div className="flex h-60 flex-col items-center justify-center px-6 text-center text-slate-400">
-                    <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100">
-                      <FiMail size={22} />
-                    </div>
-
-                    <p className="text-sm font-semibold text-slate-600">
-                      No emails found
-                    </p>
-
-                    <p className="mt-1 text-xs text-slate-400">
-                      Refresh your inbox or check email syncing.
-                    </p>
-                  </div>
-                )}
-
-                {!loading &&
-                  filteredEmails.map((email) => {
-                    const isRead = readEmails.has(email._id);
-                    const isSelected = selectedEmail?._id === email._id;
-
-                    return (
-                      <button
-                        key={email._id}
-                        onClick={() => handleEmailClick(email)}
-                        className={`group flex w-full flex-col border-b border-slate-100 px-4 py-4 text-left transition ${
-                          isSelected
-                            ? "bg-blue-50/70"
-                            : "bg-white hover:bg-slate-50"
-                        }`}
-                      >
-                        <div className="flex items-start gap-3">
-                          <input
-                            type="checkbox"
-                            checked={selectedLeadIds.has(email._id)}
-                            onClick={(e) => e.stopPropagation()}
-                            onChange={() => toggleLeadSelection(email._id)}
-                            className="mt-3 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                          />
-
-                          <div
-                            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold uppercase text-white ${
-                              isSelected ? "bg-blue-600" : "bg-slate-700"
-                            }`}
-                          >
-                            {(email.senderAddress ||
-                              email.forwardedMeta?.from ||
-                              "?")?.[0]?.toUpperCase()}
-                          </div>
-
-                          <div className="min-w-0 flex-1">
-                            <div className="mb-1 flex items-center justify-between gap-3">
-                              <span
-                                className={`truncate text-sm ${
-                                  !isRead
-                                    ? "font-bold text-slate-950"
-                                    : "font-semibold text-slate-700"
-                                }`}
-                              >
-                                {getNameFromAddress(email.senderAddress)}
-                              </span>
-
-                              <span className="shrink-0 text-xs font-medium text-slate-400">
-                                {email.date
-                                  ? new Date(email.date).toLocaleDateString(
-                                      [],
-                                      {
-                                        month: "short",
-                                        day: "numeric",
-                                      },
-                                    )
-                                  : ""}
-                              </span>
-                            </div>
-
-                            <p
-                              className={`truncate text-sm ${
-                                !isRead
-                                  ? "font-semibold text-slate-900"
-                                  : "font-medium text-slate-600"
-                              }`}
-                            >
-                              {safeText(email.subject)}
-                            </p>
-
-                            <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-400">
-                              {(
-                                safeText(email.textBody) ||
-                                safeText(email.htmlBody) ||
-                                ""
-                              )
-                                .replace(/<[^>]*>/g, "")
-                                .slice(0, 120) || "No preview available"}
-                            </p>
-
-                            <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                              <span className="inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold capitalize text-slate-600">
-                                {leadStatusOptions.find(
-                                  (option) =>
-                                    option.value === leadStatuses[email._id],
-                                )?.label || "New Lead"}
-                              </span>
-
-                              {(email.conversation || email.children || [])
-                                .length && (
-                                <span className="inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
-                                  {
-                                    (email.conversation || email.children || [])
-                                      .length
-                                  }{" "}
-                                  Reply
-                                  {(email.conversation || email.children || [])
-                                    .length > 1
-                                    ? "ies"
-                                    : ""}
-                                </span>
-                              )}
-
-                              {email.service && (
-                                <span className="inline-flex rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-700">
-                                  {email.service}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  })}
-              </div>
-            </section>
-
-            <section
-              className={`${
-                isMobileView && !selectedEmail ? "hidden" : "flex"
-              } min-w-0 flex-1 flex-col bg-slate-50`}
-            >
-              {selectedEmail ? (
-                <div className="flex min-h-0 flex-1 flex-col">
-                  <div className="shrink-0 border-b border-slate-200 bg-white px-6 py-5">
-                    {isMobileView && (
-                      <button
-                        onClick={() => setSelectedEmail(null)}
-                        className="mb-4 inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-blue-600"
-                      >
-                        <FiArrowLeft />
-                        Back to Inbox
-                      </button>
+                  <button
+                    onClick={handleSendThreadReply}
+                    disabled={!replyText.trim() || replySending}
+                    className="h-12 rounded-full bg-[#111111] px-7 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50 flex items-center justify-center shrink-0"
+                  >
+                    {replySending ? (
+                      <FiRefreshCw className="animate-spin text-sm" />
+                    ) : (
+                      "Send"
                     )}
-
-                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                      <div className="min-w-0">
-                        <h2 className="text-2xl font-semibold tracking-tight text-slate-950">
-                          {selectedEmail.subject || "No Subject"}
-                        </h2>
-
-                        <div className="mt-4 flex items-center gap-3">
-                          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-orange-500 text-sm font-bold uppercase text-white">
-                            {selectedEmail.senderAddress?.[0]?.toUpperCase() ||
-                              "?"}
-                          </div>
-
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-semibold text-slate-900">
-                              {selectedEmail.senderAddress}
-                            </p>
-
-                            <p className="truncate text-xs text-slate-500">
-                              To: {getDisplayRecipient(selectedEmail) || "-"}
-                            </p>
-
-                            {selectedEmail.service && (
-                              <p className="truncate text-xs text-slate-500">
-                                Service: {selectedEmail.service}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-wrap items-center gap-2">
-                        <select
-                          value={leadStatuses[selectedEmail._id] || "new_lead"}
-                          onChange={(e) =>
-                            handleStatusChange(
-                              selectedEmail._id,
-                              e.target.value,
-                            )
-                          }
-                          className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
-                        >
-                          {leadStatusOptions.map((status) => (
-                            <option key={status.value} value={status.value}>
-                              {status.label}
-                            </option>
-                          ))}
-                        </select>
-
-                        <button
-                          onClick={() => handleDeleteLeads([selectedEmail._id])}
-                          className="inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-red-100 bg-red-50 px-3 text-sm font-semibold text-red-600 transition hover:bg-red-100"
-                        >
-                          <FiTrash2 size={15} />
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="lead-conversation-view min-h-0 flex-1 overflow-y-auto bg-slate-50 px-5 py-6">
-                    <div className="mx-auto max-w-5xl space-y-4">
-                      {renderConversation(selectedEmail)}
-
-                      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                        <div className="mb-3 flex items-center gap-2 text-sm font-bold text-slate-800">
-                          <FiMessageSquare size={16} />
-                          Reply in same email thread
-                        </div>
-
-                        {/* <div className="mb-3 space-y-2">
-                          {getThreadReplies(selectedEmail).length === 0 ? (
-                            <p className="text-sm text-slate-400">
-                              No reply sent from here yet.
-                            </p>
-                          ) : (
-                            getThreadReplies(selectedEmail).map((item, index) => (
-                              <div
-                                key={`${item._id || item.createdAt}-${index}`}
-                                className="rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-700"
-                              >
-                                <div className="mb-1 flex flex-wrap items-center gap-2 text-[11px] font-semibold text-slate-400">
-                                  <span>From: {item.senderAddress || "-"}</span>
-                                  <span>To: {item.recipientAddress || "-"}</span>
-                                </div>
-
-                                <p>{item.textBody}</p>
-
-                                <span className="mt-1 block text-[11px] text-slate-400">
-                                  {new Date(
-                                    item.date || item.createdAt,
-                                  ).toLocaleString()}
-                                </span>
-                              </div>
-                            ))
-                          )}
-                        </div> */}
-
-                        <textarea
-                          value={replyText}
-                          onChange={(e) => setReplyText(e.target.value)}
-                          placeholder="Type email reply here..."
-                          rows={4}
-                          className="w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm outline-none focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
-                        />
-
-                        <button
-                          onClick={handleSendThreadReply}
-                          className="mt-3 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-                          disabled={!replyText.trim() || replySending}
-                        >
-                          <FiSend size={15} />
-                          {replySending ? "Sending..." : "Send Email Reply"}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
+                  </button>
                 </div>
-              ) : (
-                <div className="flex flex-1 flex-col items-center justify-center bg-slate-50 px-6 text-center">
-                  <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-3xl bg-white text-slate-300 shadow-sm">
-                    <FiMail size={32} />
-                  </div>
-
-                  <h3 className="text-base font-semibold text-slate-700">
-                    Select an email
-                  </h3>
-
-                  <p className="mt-1 max-w-sm text-sm text-slate-400">
-                    Choose a conversation from the inbox to view the full email
-                    thread.
-                  </p>
-                </div>
-              )}
-            </section>
-          </div>
-        </div>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-1 flex-col items-center justify-center bg-[#FAF8F5] px-6 text-center">
+              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#EFECE6] text-slate-400">
+                <FiMail size={24} />
+              </div>
+              <h3 className="text-base font-semibold text-slate-700">
+                Select a lead
+              </h3>
+              <p className="mt-1 max-w-sm text-xs text-slate-400">
+                Choose a lead from the list to view the complete message thread
+                and reply.
+              </p>
+            </div>
+          )}
+        </section>
       </main>
     </div>
   );
