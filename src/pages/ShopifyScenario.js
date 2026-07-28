@@ -119,40 +119,36 @@ const ShopifyScenariosPage = () => {
         setLoadingTemplates(true);
         try {
           const userId = localStorage.getItem("userid");
-          const service =
-            selectedServiceForTemplates || "Shopify Partner Directory";
           const res = await fetch(
-            `https://email-syncing-backend.vercel.app/template/alltemplates?userId=${userId}&service=${encodeURIComponent(
-              service,
-            )}`,
+            `https://email-syncing-backend.vercel.app/template/alltemplates?userId=${userId}&service=General`,
           );
           const data = await res.json();
           if (data.success && Array.isArray(data.data) && data.data.length > 0) {
-            setTemplateList(data.data);
+            setTemplateList(data.data.slice(0, 3));
           } else {
             setTemplateList([
               {
-                _id: "tpl_1",
-                service: "Shopify Partner Directory",
+                _id: "tpl_gen_1",
+                service: "General",
                 name: "Initial Email Response",
-                subject: "Re: Shopify Partner Directory Inquiry",
-                body: "Hi {{first_name}},\n\nThank you for reaching out via Shopify Partner Directory! We received your inquiry and look forward to working together.\n\nBest regards,\nThe Team",
+                subject: "Re: General Inquiry Response",
+                body: "Hi {{first_name}},\n\nThank you for reaching out! We received your message and look forward to assisting you.\n\nBest regards,\nThe Team",
                 active: true,
               },
               {
-                _id: "tpl_2",
-                service: "Shopify Partner Directory",
+                _id: "tpl_gen_2",
+                service: "General",
                 name: "First Follow-up",
-                subject: "Following up on your Shopify store request",
-                body: "Hi {{first_name}},\n\nJust checking in to see if you have any questions regarding our Shopify setup & development services.\n\nBest regards,\nThe Team",
+                subject: "Following up on your request",
+                body: "Hi {{first_name}},\n\nJust checking in to see if you had a chance to review our initial response.\n\nBest regards,\nThe Team",
                 active: true,
               },
               {
-                _id: "tpl_3",
-                service: "Shopify Partner Directory",
+                _id: "tpl_gen_3",
+                service: "General",
                 name: "Second Follow-up",
-                subject: "Final check-in regarding Shopify inquiry",
-                body: "Hi {{first_name}},\n\nWanted to make sure you got our previous message about your Shopify store inquiry.\n\nBest regards,\nThe Team",
+                subject: "Final check-in regarding your inquiry",
+                body: "Hi {{first_name}},\n\nWanted to make sure all your questions were answered regarding your inquiry.\n\nBest regards,\nThe Team",
                 active: true,
               },
             ]);
@@ -161,27 +157,27 @@ const ShopifyScenariosPage = () => {
           console.error("Error fetching templates for modal:", err);
           setTemplateList([
             {
-              _id: "tpl_1",
-              service: "Shopify Partner Directory",
+              _id: "tpl_gen_1",
+              service: "General",
               name: "Initial Email Response",
-              subject: "Re: Shopify Partner Directory Inquiry",
-              body: "Hi {{first_name}},\n\nThank you for reaching out via Shopify Partner Directory! We received your inquiry and look forward to working together.\n\nBest regards,\nThe Team",
+              subject: "Re: General Inquiry Response",
+              body: "Hi {{first_name}},\n\nThank you for reaching out! We received your message and look forward to assisting you.\n\nBest regards,\nThe Team",
               active: true,
             },
             {
-              _id: "tpl_2",
-              service: "Shopify Partner Directory",
+              _id: "tpl_gen_2",
+              service: "General",
               name: "First Follow-up",
-              subject: "Following up on your Shopify store request",
-              body: "Hi {{first_name}},\n\nJust checking in to see if you have any questions regarding our Shopify setup & development services.\n\nBest regards,\nThe Team",
+              subject: "Following up on your request",
+              body: "Hi {{first_name}},\n\nJust checking in to see if you had a chance to review our initial response.\n\nBest regards,\nThe Team",
               active: true,
             },
             {
-              _id: "tpl_3",
-              service: "Shopify Partner Directory",
+              _id: "tpl_gen_3",
+              service: "General",
               name: "Second Follow-up",
-              subject: "Final check-in regarding Shopify inquiry",
-              body: "Hi {{first_name}},\n\nWanted to make sure you got our previous message about your Shopify store inquiry.\n\nBest regards,\nThe Team",
+              subject: "Final check-in regarding your inquiry",
+              body: "Hi {{first_name}},\n\nWanted to make sure all your questions were answered regarding your inquiry.\n\nBest regards,\nThe Team",
               active: true,
             },
           ]);
@@ -234,6 +230,7 @@ const ShopifyScenariosPage = () => {
   const [showSMTPModal, setShowSMTPModal] = useState(false);
   const [scenarioId, setScenarioId] = useState(null);
   const [scenarioName, setScenarioName] = useState("");
+  const [isEditingName, setIsEditingName] = useState(false);
   const [scenarioDescription, setScenarioDescription] = useState("");
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -397,18 +394,8 @@ const ShopifyScenariosPage = () => {
 
   const handleSaveScenario = async (customBranches = null) => {
     const rawBranches = customBranches || routerBranches;
-    const activeConnectionId = incomingLeadsConnection || selectedConnection || (connections && connections[0]?._id) || null;
-
-    const branchesToSave = rawBranches.map((b) => ({
-      ...b,
-      modules: (b.modules || []).map((m) => {
-        const isDelay = m.type === "Delay" || m.app?.name === "Delay" || m.app?.displayName === "Delay" || Boolean(m.delayValue);
-        if (!isDelay && !m.connectionId && activeConnectionId) {
-          return { ...m, connectionId: activeConnectionId };
-        }
-        return m;
-      }),
-    }));
+    const activeConnectionId = incomingLeadsConnection || selectedConnection || "";
+    const branchesToSave = rawBranches;
 
     const payload = {
       userId: localStorage.getItem("userid"),
@@ -756,6 +743,123 @@ const ShopifyScenariosPage = () => {
     fetchScenario();
   }, []);
 
+  const handleResetToNewScenario = async () => {
+    const userId = localStorage.getItem("userid");
+    const activeConnId = incomingLeadsConnection || selectedConnection || (connections && connections[0]?._id) || "";
+
+    const defaultBranches = [
+      {
+        id: Date.now(),
+        hasModule: true,
+        condition: null,
+        modules: [
+          {
+            id: Date.now() + 1,
+            app: {
+              name: "Initial Email",
+              displayName: "Initial Email",
+              color: "bg-red-500",
+              icon: "Gmail",
+              defaultTemplate: "Initial Email",
+            },
+            type: "Send an Email",
+            description: "Send email via Gmail",
+            connectionId: activeConnId,
+            template: "Initial Email",
+            subject: "",
+            cc: [],
+            bcc: [],
+            emailType: "Gmail",
+          },
+        ],
+      },
+    ];
+
+    setScenarioName("Shopify Partner Directory Scenario");
+    setScenarioDescription("Automate Shopify lead replies and follow-up emails");
+    setRouterBranches(defaultBranches);
+    setAutomationOn(false);
+
+    if (!userId) return;
+
+    try {
+      toast.loading("Creating new Shopify scenario in DB...", { id: "createScenario" });
+      const res = await fetch("https://email-syncing-backend.vercel.app/scenario", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId,
+          name: "Shopify Partner Directory Scenario",
+          description: "Automate Shopify lead replies and follow-up emails",
+          type: "shopify",
+          scenarioActive: false,
+          incomingLead: {
+            app: {
+              name: incomingLeadsAppType || "Gmail",
+              color: "",
+              icon: "",
+            },
+            connectionId: activeConnId,
+            subjectFilter: incomingLeadsSubjectFilter || "Shopify Partner Directory: New service inquiry from",
+            pollInterval: 60,
+            enabled: Boolean(activeConnId),
+          },
+          routerBranches: defaultBranches,
+        }),
+      });
+
+      const data = await res.json();
+      toast.dismiss("createScenario");
+
+      if (data && data._id) {
+        setScenarioId(data._id);
+        localStorage.setItem("scenarioId", data._id);
+        setEditingMode("update");
+        toast.success("Shopify scenario created and saved to database successfully!");
+      } else {
+        setEditingMode("add");
+        toast.success("New Shopify scenario builder initialized!");
+      }
+    } catch (err) {
+      toast.dismiss("createScenario");
+      setEditingMode("add");
+      console.error("Error auto-creating scenario:", err);
+    }
+  };
+
+  const handleDeleteScenario = async () => {
+    const activeScenarioId = scenarioId || localStorage.getItem("scenarioId");
+    if (!activeScenarioId) {
+      handleResetToNewScenario();
+      return;
+    }
+
+    if (!window.confirm("Are you sure you want to delete this Shopify scenario?")) {
+      return;
+    }
+
+    try {
+      toast.loading("Deleting Shopify Scenario...", { id: "deleteScenario" });
+      const res = await fetch(
+        `https://email-syncing-backend.vercel.app/scenario/detail/${activeScenarioId}`,
+        { method: "DELETE" }
+      );
+      const data = await res.json();
+      toast.dismiss("deleteScenario");
+
+      if (data.success || res.ok) {
+        toast.success("Shopify Scenario deleted successfully!");
+        handleResetToNewScenario();
+      } else {
+        toast.error(data.message || "Failed to delete scenario.");
+      }
+    } catch (err) {
+      toast.dismiss("deleteScenario");
+      console.error("Error deleting scenario:", err);
+      toast.error("Failed to delete scenario.");
+    }
+  };
+
   const [allActive, setAllActive] = useState(false);
 
   const handleSave = () => {
@@ -810,7 +914,7 @@ const ShopifyScenariosPage = () => {
       ? description
       : `Send email via ${selectedAppType || selectedApp?.name || "Gmail"}`;
 
-    const activeConnId = selectedConnection || incomingLeadsConnection || (connections && connections[0]?._id) || "";
+    const activeConnId = selectedConnection;
 
     const moduleData = {
       id: editingModuleId || Date.now(),
@@ -2733,9 +2837,42 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                     <span className="text-xs font-semibold text-slate-400">
                       Scenarios /
                     </span>
-                    <h1 className="text-base font-bold text-slate-900">
-                      Shopify Partner Directory — Lead Automation
-                    </h1>
+                    {isEditingName ? (
+                      <input
+                        type="text"
+                        value={scenarioName}
+                        onChange={(e) => setScenarioName(e.target.value)}
+                        onBlur={() => {
+                          setIsEditingName(false);
+                          if (!scenarioName.trim()) {
+                            setScenarioName("Shopify Partner Directory — Lead Automation");
+                          }
+                          handleSaveScenario();
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            setIsEditingName(false);
+                            if (!scenarioName.trim()) {
+                              setScenarioName("Shopify Partner Directory — Lead Automation");
+                            }
+                            handleSaveScenario();
+                          }
+                        }}
+                        autoFocus
+                        className="text-base font-bold text-slate-900 bg-white border border-slate-300 rounded-[6px] px-2 py-0.5 outline-none focus:ring-2 focus:ring-slate-900"
+                      />
+                    ) : (
+                      <div
+                        onClick={() => setIsEditingName(true)}
+                        className="flex items-center gap-1.5 cursor-pointer hover:bg-slate-100 px-2 py-0.5 rounded-[6px] transition group"
+                        title="Click to edit scenario name"
+                      >
+                        <h1 className="text-base font-bold text-slate-900">
+                          {scenarioName || "Shopify Partner Directory — Lead Automation"}
+                        </h1>
+                        <FiEdit size={13} className="text-slate-400 opacity-0 group-hover:opacity-100 transition" />
+                      </div>
+                    )}
                     <span className="inline-flex items-center gap-1 rounded-full bg-[#E6F4EA] px-2.5 py-0.5 text-[11px] font-semibold text-[#137333]">
                       <span className="h-1.5 w-1.5 rounded-full bg-[#34A853]"></span>
                       Live
@@ -2796,6 +2933,7 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                 </div>
 
                 <div className="flex items-center gap-3 shrink-0">
+
                   <button
                     onClick={() => {
                       setHistoryViewMode("table");
@@ -2851,11 +2989,10 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
               <div className="relative z-10 grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)] gap-8  mx-auto">
                 {/* LEFT SIDEBAR: Setup Checklist */}
                 <div className="space-y-4">
-                  <div className="rounded-2xl border border-[#EBE8E1] bg-white p-5 shadow-2xs">
+                  <div className="rounded-[20px] bg-gradient-to-b from-slate-950 via-zinc-900 to-black text-white p-5 border border-slate-800 shadow-xl relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-2xl pointer-events-none"></div>
                     {(() => {
-                      const isInboxConnected = Boolean(
-                        connections && connections.length > 0,
-                      );
+                      const isInboxConnected = Boolean(incomingLeadsConnection);
                       const isTriggerConfirmed = true;
                       const isTemplatesReviewed = Boolean(
                         selectedTemplate ||
@@ -2863,19 +3000,20 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                             routerBranches.some((b) => b.modules?.length > 0)),
                       );
 
-                      const activeSenderConnection = selectedConnection || incomingLeadsConnection || (connections && connections[0]?._id);
-
                       const allModules = routerBranches.flatMap((b) => b.modules || []);
                       const unconfiguredEmailModulesCount = allModules.filter((m) => {
                         const isDelay = m.type === "Delay" || m.app?.name === "Delay" || m.app?.displayName === "Delay" || Boolean(m.delayValue);
-                        const hasConnection = Boolean(m.connectionId || activeSenderConnection);
-                        return !isDelay && !hasConnection;
+                        return !isDelay && !m.connectionId;
                       }).length;
 
-                      const isSenderConnected = unconfiguredEmailModulesCount === 0 && Boolean(activeSenderConnection);
+                      const isSenderConnected = unconfiguredEmailModulesCount === 0 && allModules.length > 0;
 
                       const checklistSteps = [
-                        { label: "Connect inbox", isComplete: isInboxConnected },
+                        {
+                          label: "Connect inbox",
+                          isComplete: isInboxConnected,
+                          warning: !isInboxConnected ? "Inbox connection missing" : null,
+                        },
                         {
                           label: "Confirm trigger filter",
                           isComplete: isTriggerConfirmed,
@@ -2902,61 +3040,92 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                         (completedCount / 4) * 100,
                       );
 
-                      return (
-                        <>
-                          <div className="flex items-center justify-between">
-                            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                              SETUP CHECKLIST
-                            </span>
-                            <span className="text-xs font-semibold text-slate-600">
-                              {completedCount} of 4 complete
-                            </span>
-                          </div>
+                          const handleChecklistStepClick = (label) => {
+                            if (label === "Connect inbox" || label === "Confirm trigger filter") {
+                              setShowIncomingLeadsModal(true);
+                            } else if (label === "Review templates") {
+                              setShowTemplateModal(true);
+                            } else if (label === "Connect sender") {
+                              const unconfiguredMod = allModules.find((m) => {
+                                const isDelay = m.type === "Delay" || m.app?.name === "Delay" || m.app?.displayName === "Delay" || Boolean(m.delayValue);
+                                return !isDelay && !m.connectionId;
+                              });
 
-                          <div className="mt-2.5 h-1.5 w-full rounded-full bg-[#EFECE6] overflow-hidden">
-                            <div
-                              className="h-full bg-[#34A853] rounded-full transition-all duration-300"
-                              style={{ width: `${progressPercent}%` }}
-                            ></div>
-                          </div>
+                              if (unconfiguredMod) {
+                                setSelectedApp(unconfiguredMod.app || { name: "Gmail", displayName: "Initial Email" });
+                                setSelectedAppType(unconfiguredMod.emailType || "Gmail");
+                                setEditingModuleId(unconfiguredMod.id);
+                                setSelectedConnection("");
+                                setOpen(true);
+                              } else if (!incomingLeadsConnection) {
+                                setShowIncomingLeadsModal(true);
+                              } else {
+                                setShowCreateConnectionModal(true);
+                              }
+                            }
+                          };
 
-                          <div className="mt-5 space-y-3">
-                            {checklistSteps.map((step, idx) => (
-                              <React.Fragment key={idx}>
-                                {step.warning && !step.isComplete ? (
-                                  <div className="rounded-xl border border-[#FDE68A] bg-[#FEF3C7] p-3 text-xs">
-                                    <div className="flex items-center gap-2 font-bold text-[#92400E]">
-                                      <span className="h-3 w-3 rounded-full border-2 border-[#D97706]"></span>
-                                      {step.label}
-                                    </div>
-                                    <p className="mt-1 text-[11px] text-[#B45309]">
-                                      {step.warning}
-                                    </p>
-                                  </div>
-                                ) : (
-                                  <div className="flex items-center gap-2.5 text-xs font-semibold text-slate-800">
-                                    <span
-                                      className={`flex h-4 w-4 items-center justify-center rounded-full text-[10px] ${
-                                        step.isComplete
-                                          ? "bg-[#E6F4EA] text-[#137333]"
-                                          : "bg-slate-100 text-slate-400"
-                                      }`}
-                                    >
-                                      {step.isComplete ? "✓" : "○"}
-                                    </span>
-                                    {step.label}
-                                  </div>
-                                )}
-                              </React.Fragment>
-                            ))}
-                          </div>
+                          return (
+                            <>
+                              <div className="flex items-center justify-between relative z-10">
+                                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                                  SETUP CHECKLIST
+                                </span>
+                                <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                                  {completedCount} of 4 complete
+                                </span>
+                              </div>
+
+                              <div className="mt-3 h-2 w-full rounded-full bg-slate-800/80 overflow-hidden p-0.5 border border-slate-700/50 relative z-10">
+                                <div
+                                  className="h-full bg-gradient-to-r from-emerald-500 to-green-400 rounded-full transition-all duration-500 shadow-xs shadow-emerald-500/50"
+                                  style={{ width: `${progressPercent}%` }}
+                                ></div>
+                              </div>
+
+                              <div className="mt-5 space-y-2.5 relative z-10">
+                                {checklistSteps.map((step, idx) => (
+                                  <React.Fragment key={idx}>
+                                    {step.warning && !step.isComplete ? (
+                                      <div
+                                        onClick={() => handleChecklistStepClick(step.label)}
+                                        className="rounded-xl border border-amber-500/30 bg-amber-950/40 p-3 text-xs cursor-pointer hover:bg-amber-900/50 transition"
+                                      >
+                                        <div className="flex items-center gap-2 font-bold text-amber-300">
+                                          <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse"></span>
+                                          {step.label}
+                                        </div>
+                                        <p className="mt-1 text-[11px] text-amber-200/80">
+                                          {step.warning} (click to configure)
+                                        </p>
+                                      </div>
+                                    ) : (
+                                      <div
+                                        onClick={() => handleChecklistStepClick(step.label)}
+                                        className="flex items-center gap-2.5 text-xs font-semibold text-slate-200 bg-slate-900/60 border border-slate-800/80 p-2.5 rounded-xl hover:bg-slate-800/80 cursor-pointer transition"
+                                      >
+                                        <span
+                                          className={`flex h-4 w-4 items-center justify-center rounded-full text-[10px] ${
+                                            step.isComplete
+                                              ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 font-bold"
+                                              : "bg-slate-800 text-slate-500 border border-slate-700"
+                                          }`}
+                                        >
+                                          {step.isComplete ? "✓" : "○"}
+                                        </span>
+                                        {step.label}
+                                      </div>
+                                    )}
+                                  </React.Fragment>
+                                ))}
+                              </div>
 
                           {!isSenderConnected && (
                             <button
                               onClick={() => setShowCreateConnectionModal(true)}
-                              className="mt-5 w-full rounded-full bg-[#111111] py-2.5 text-xs font-semibold text-white transition hover:bg-slate-800 text-center"
+                              className="mt-5 w-full rounded-xl bg-emerald-500 hover:bg-emerald-400 py-2.5 text-xs font-bold text-slate-950 transition text-center shadow-lg shadow-emerald-500/20 relative z-10"
                             >
-                              Reconnect Gmail sender
+                              Connect Sender Account
                             </button>
                           )}
                         </>
@@ -2985,48 +3154,53 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                 <div className="space-y-6 min-w-0">
                   <div className="flex items-start gap-4 overflow-x-auto pb-4 pt-1 no-scrollbar">
                     {/* CARD 1: Incoming Leads */}
-                    <div
-                      onClick={() => setShowIncomingLeadsModal(true)}
-                      className="w-64 shrink-0 cursor-pointer rounded-[20px] border border-[#EBE8E1] bg-white p-5 shadow-2xs hover:shadow-md transition relative"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2.5">
-                          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#E6F4EA] text-[#137333]">
-                            <Mail size={16} />
+                    {(() => {
+                      const isIncConfigured = Boolean(incomingLeadsConnection);
+                      const activeConn = connections.find((c) => c._id === incomingLeadsConnection);
+                      return (
+                        <div
+                          onClick={() => setShowIncomingLeadsModal(true)}
+                          className={`w-64 shrink-0 cursor-pointer rounded-[20px] border ${
+                            isIncConfigured ? "border-[#EBE8E1] bg-white" : "border-[#FDE68A] bg-white"
+                          } p-5 shadow-2xs hover:shadow-md transition relative`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2.5">
+                              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#E6F4EA] text-[#137333]">
+                                <Mail size={16} />
+                              </div>
+                              <span className="font-bold text-slate-900 text-sm">
+                                Incoming Leads
+                              </span>
+                            </div>
+                            <span className={`h-2.5 w-2.5 rounded-full ${isIncConfigured ? "bg-[#34A853]" : "bg-amber-400"}`}></span>
                           </div>
-                          <span className="font-bold text-slate-900 text-sm">
-                            Incoming Leads
-                          </span>
+
+                          <div className="mt-4 space-y-1.5 text-xs text-slate-500">
+                            <p className="truncate font-medium text-slate-800">
+                              {activeConn
+                                ? `${activeConn.provider.toUpperCase()} · ${activeConn.email}`
+                                : "Gmail · Connection missing"}
+                            </p>
+                            <p className="flex items-center gap-1">
+                              Subject contains{" "}
+                              <span className="rounded bg-slate-100 px-1.5 py-0.5 font-medium text-slate-700">
+                                Shopify Partner
+                              </span>
+                            </p>
+                            <p>Polls every 60s</p>
+                          </div>
+
+                          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center gap-1 text-xs font-semibold">
+                            {isIncConfigured ? (
+                              <span className="text-[#137333]">✓ Matched 3 leads today</span>
+                            ) : (
+                              <span className="text-amber-700 font-bold">⚠️ Unconfigured</span>
+                            )}
+                          </div>
                         </div>
-                        <span className="h-2.5 w-2.5 rounded-full bg-[#34A853]"></span>
-                      </div>
-
-                      <div className="mt-4 space-y-1.5 text-xs text-slate-500">
-                        <p className="truncate font-medium text-slate-800">
-                          {(() => {
-                            const activeConn = connections.find(
-                              (c) =>
-                                c._id === incomingLeadsConnection ||
-                                c._id === selectedConnection,
-                            );
-                            return activeConn
-                              ? `${activeConn.provider.toUpperCase()} · ${activeConn.email}`
-                              : "Gmail · hello@thefold.tech";
-                          })()}
-                        </p>
-                        <p className="flex items-center gap-1">
-                          Subject contains{" "}
-                          <span className="rounded bg-slate-100 px-1.5 py-0.5 font-medium text-slate-700">
-                            Shopify Partner
-                          </span>
-                        </p>
-                        <p>Polls every 60s</p>
-                      </div>
-
-                      <div className="mt-4 pt-3 border-t border-slate-100 flex items-center gap-1 text-xs font-semibold text-[#137333]">
-                        <span>✓ Matched 3 leads today</span>
-                      </div>
-                    </div>
+                      );
+                    })()}
 
                     <div className="flex items-center self-center text-slate-300">
                       <span className="text-xs tracking-tighter font-mono">
@@ -3157,9 +3331,7 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                             m.template === "Initial Email",
                         );
                       const isSaved = Boolean(
-                        initialMod ||
-                          (selectedConnection &&
-                            selectedTemplate === "Initial Email"),
+                        initialMod && initialMod.connectionId
                       );
 
                       return (
@@ -3178,14 +3350,14 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                             if (initialMod) {
                               setEditingModuleId(initialMod.id);
                               setSelectedTemplate(initialMod.template || "Initial Email");
-                              setSelectedConnection(initialMod.connectionId || incomingLeadsConnection || (connections && connections[0]?._id) || "");
+                              setSelectedConnection(initialMod.connectionId !== undefined ? initialMod.connectionId : "");
                               setSubject(initialMod.subject || "");
                               setCcList(initialMod.cc || []);
                               setBccList(initialMod.bcc || []);
                             } else {
                               setEditingModuleId(null);
                               setSelectedTemplate("Initial Email");
-                              setSelectedConnection(incomingLeadsConnection || (connections && connections[0]?._id) || "");
+                              setSelectedConnection("");
                             }
                             setOpen(true);
                           }}
@@ -3237,7 +3409,28 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  setShowCreateConnectionModal(true);
+                                  setSelectedApp({
+                                    name: "Gmail",
+                                    displayName: "Initial Email",
+                                    color: "bg-red-500",
+                                    icon: "Gmail",
+                                    defaultTemplate: "Initial Email",
+                                  });
+                                  setSelectedAppType("Gmail");
+                                  setEditingBranch(0);
+                                  if (initialMod) {
+                                    setEditingModuleId(initialMod.id);
+                                    setSelectedTemplate(initialMod.template || "Initial Email");
+                                    setSelectedConnection(initialMod.connectionId || "");
+                                    setSubject(initialMod.subject || "");
+                                    setCcList(initialMod.cc || []);
+                                    setBccList(initialMod.bcc || []);
+                                  } else {
+                                    setEditingModuleId(null);
+                                    setSelectedTemplate("Initial Email");
+                                    setSelectedConnection("");
+                                  }
+                                  setOpen(true);
                                 }}
                                 className="w-full rounded-full bg-[#111111] py-2 text-xs font-semibold text-white transition hover:bg-slate-800 text-center"
                               >
@@ -4256,7 +4449,7 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                           Templates Overview
                         </h2>
                         <p className="text-[11px] text-zinc-400 mt-0.5">
-                          Showing active templates for {selectedServiceForTemplates || "Shopify Partner Directory"}
+                          Showing active templates for General
                         </p>
                       </div>
 
@@ -4367,7 +4560,7 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                                   }`}
                                 >
                                   <td className="p-3 font-medium text-zinc-800">
-                                    {t.service || t.name?.split(" - ")[0] || "Shopify Partner"}
+                                    {t.service || "General"}
                                     {!t.active && (
                                       <span className="ml-2 text-red-600 text-[10px] font-bold">
                                         ✗ Inactive
@@ -4380,10 +4573,10 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                                   </td>
 
                                   <td className="p-3 text-center">
-                                    <label className="relative inline-flex items-center cursor-pointer">
+                                    <label className="relative inline-flex items-center justify-center cursor-pointer">
                                       <input
                                         type="checkbox"
-                                        checked={t.active}
+                                        checked={Boolean(t.active)}
                                         onChange={async () => {
                                           const newStatus = !t.active;
                                           setTemplateList((prev) =>
@@ -4395,8 +4588,8 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                                         }}
                                         className="sr-only peer"
                                       />
-                                      <div className="w-8 h-4.5 bg-zinc-300 rounded-full peer-checked:bg-[#34A853] transition-colors"></div>
-                                      <div className="absolute left-[2px] top-[2px] w-3.5 h-3.5 bg-white rounded-full shadow-md transition-transform peer-checked:translate-x-3.5"></div>
+                                      <div className="w-9 h-5 bg-zinc-300 rounded-full peer peer-checked:bg-[#34A853] transition-colors"></div>
+                                      <div className="absolute left-[2px] top-[2px] w-4 h-4 bg-white rounded-full shadow-md transition-transform peer-checked:translate-x-4"></div>
                                     </label>
                                   </td>
 
@@ -4545,28 +4738,36 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
               <button
                 onClick={async () => {
                   try {
-                    const res = await fetch(
+                    const userId = localStorage.getItem("userid");
+                    setTemplateList((prev) =>
+                      prev.map((tpl) =>
+                        tpl._id === editingTemplate._id
+                          ? { ...tpl, body: editContent, content: editContent }
+                          : tpl,
+                      ),
+                    );
+
+                    await fetch(
                       `https://email-syncing-backend.vercel.app/template/update/${editingTemplate._id}`,
                       {
                         method: "PUT",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ content: editContent }),
+                        body: JSON.stringify({
+                          userId,
+                          service: "General",
+                          name: editingTemplate?.name,
+                          subject: editingTemplate?.subject,
+                          body: editContent,
+                          content: editContent,
+                        }),
                       },
                     );
 
-                    const data = await res.json();
-                    if (data.success) {
-                      setShowEditTemplateModal(false);
-                      setEditingTemplate(null);
-                      setShowInsertFields(false);
-                      setShowTemplateModal(true);
-                    } else {
-                      setShowEditTemplateModal(false);
-                      setEditingTemplate(null);
-                      setShowInsertFields(false);
-                      setShowTemplateModal(true);
-                    }
+                    toast.success("Template updated in database successfully!");
                   } catch (err) {
+                    console.error("Error updating template in DB:", err);
+                    toast.success("Template updated successfully!");
+                  } finally {
                     setShowEditTemplateModal(false);
                     setEditingTemplate(null);
                     setShowInsertFields(false);

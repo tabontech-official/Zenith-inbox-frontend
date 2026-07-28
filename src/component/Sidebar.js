@@ -720,21 +720,41 @@ const Sidebar = () => {
     .slice(0, 2)
     .toUpperCase();
 
-  // Scenario limit check helper
-  const handleScenarioNavigation = (e, scenarioType) => {
-    // Determine limits from user context or backend state (Fallback to mock check if user counts aren't present)
-    const shopifyCount = user?.shopifyScenarioCount || 0;
-    const customCount = user?.customScenarioCount || 0;
+  const handleScenarioNavigation = async (e, scenarioType) => {
+    if (e) e.preventDefault();
+    setIsNewScenarioMenuOpen(false);
+    setIsMobileMenuOpen(false);
 
-    const isShopifyLimitReached = scenarioType === "shopify" && shopifyCount >= 1;
-    const isCustomLimitReached = scenarioType === "custom" && customCount >= 2;
+    if (scenarioType === "shopify") {
+      const userId = localStorage.getItem("userid");
+      if (!userId) {
+        navigate("/scenarios/shopify");
+        return;
+      }
 
-    // Check overall or specific limit restriction
-    if (isShopifyLimitReached || isCustomLimitReached || user?.hasReachedLimit) {
-      e.preventDefault();
-      setIsNewScenarioMenuOpen(false);
-      setIsMobileMenuOpen(false);
-      setIsLimitModalOpen(true);
+      try {
+        const res = await fetch(
+          "https://email-syncing-backend.vercel.app/scenario/details",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId }),
+          },
+        );
+        const data = await res.json();
+        if (data && data._id) {
+          localStorage.setItem("scenarioId", data._id);
+          navigate("/scenarios/shopify");
+        } else {
+          localStorage.removeItem("scenarioId");
+          localStorage.removeItem("scenarioActive");
+          navigate("/scenarios/shopify");
+        }
+      } catch (err) {
+        navigate("/scenarios/shopify");
+      }
+    } else {
+      navigate("/scenarios/others");
     }
   };
 
