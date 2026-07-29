@@ -133,11 +133,11 @@ const EmailModal = ({
               type="text"
               className="w-full border border-slate-200 bg-white rounded-[8px] px-3.5 py-2 text-xs font-medium text-slate-900 outline-none focus:border-slate-800 transition"
               value={subject}
-              placeholder="Shopify Partner Directory: New service inquiry from"
+              placeholder="e.g. Product Inquiry / New Lead Inquiry"
               onChange={(e) => setSubject(e.target.value)}
             />
             <p className="text-[11px] text-amber-700 mt-1.5 font-medium flex items-center gap-1">
-              <span>💡</span> Do not add "Re:", "Fw:", or any prefix at the start of the subject.
+              {/* <span>💡</span> Do not add "Re:", "Fw:", or any prefix at the start of the subject. */}
             </p>
           </div>
         </div>

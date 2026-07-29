@@ -42,7 +42,8 @@ import TestEmailModal from "../modals/TestEmailModal";
 import TemplateNode from "../nodes/TemplateNode";
 import BlankNode from "../nodes/BlankNode";
 import TemplateModal from "../modals/TemplateModal";
-import { Zap, Edit3 } from "lucide-react";
+import TestInstructionsModal from "../modals/TestInstructionsModal";
+import { Zap, Edit3, HelpCircle } from "lucide-react";
 
 const nodeTypes = {
   blankNode: BlankNode,
@@ -57,6 +58,7 @@ const nodeTypes = {
 
 const OthersScenariosPage = () => {
   const [showRunTestModal, setShowRunTestModal] = useState(false);
+  const [showTestInstructionsModal, setShowTestInstructionsModal] = useState(false);
 
   const navigate = useNavigate();
   const [highlightedNodes, setHighlightedNodes] = useState([]);
@@ -1254,6 +1256,14 @@ const OthersScenariosPage = () => {
 
               <div className="flex items-center gap-3 shrink-0">
                 <button
+                  onClick={() => setShowTestInstructionsModal(true)}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50/70 px-4 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 transition cursor-pointer"
+                >
+                  <HelpCircle size={14} className="text-indigo-600" />
+                  How to Test
+                </button>
+
+                <button
                   onClick={() => setShowWebhookModal(true)}
                   className="rounded-full border border-[#E0DDD5] bg-white px-4 py-1.5 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 transition flex items-center gap-1.5 cursor-pointer"
                 >
@@ -1465,6 +1475,38 @@ const OthersScenariosPage = () => {
                       </>
                     );
                   })()}
+                </div>
+
+                {/* LEFT SIDEBAR: Testing Instructions Card */}
+                <div className="rounded-[20px] bg-white p-5 border border-slate-200 shadow-sm space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
+                      <HelpCircle size={16} />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-900">Testing Guide</h4>
+                      <p className="text-[11px] text-slate-500 font-medium">How to test your flow</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 text-xs text-slate-600 pt-1 border-t border-slate-100">
+                    <div className="flex items-start gap-2">
+                      <span className="w-4 h-4 rounded-full bg-indigo-100 text-indigo-700 text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">1</span>
+                      <span>Click <b>Run Test</b> above to animate & validate node steps visually.</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="w-4 h-4 rounded-full bg-slate-100 text-slate-700 text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">2</span>
+                      <span>Or send a live email to your trigger address with subject filter e.g. <code className="bg-slate-100 px-1 py-0.5 rounded text-[10px]">Product Inquiry</code>.</span>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowTestInstructionsModal(true)}
+                    className="w-full mt-2 py-2 px-3 rounded-[10px] bg-[#111110] hover:bg-black text-white text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                  >
+                    <HelpCircle size={14} /> Open Full Guide
+                  </button>
                 </div>
               </div>
 
@@ -1834,6 +1876,13 @@ const OthersScenariosPage = () => {
             await fetchTestEmail();
             setShowTestEmailModal(true);
           }}
+        />
+      )}
+
+      {showTestInstructionsModal && (
+        <TestInstructionsModal
+          onClose={() => setShowTestInstructionsModal(false)}
+          onRunCanvasTest={runScenarioExecutionAnimation}
         />
       )}
 

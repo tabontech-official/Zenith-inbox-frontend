@@ -7,8 +7,8 @@ const GmailNode = ({ data, selected }) => {
   const isHighlighted = data?.highlight;
   const isSuccess = data?.success;
 
-  const connectedEmail = data?.config?.connectionEmail || "2014tabontech@gmail.com";
-  const subjectFilter = data?.config?.subject || "Shopify Partner";
+  const connectedEmail = data?.config?.connectionEmail || "your-email@domain.com";
+  const subjectFilter = data?.config?.subject || "Inquiry";
 
   return (
     <div className="relative group">
