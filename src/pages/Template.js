@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useContext } from "react";
 import Sidebar from "../component/Sidebar";
 import axios from "axios";
@@ -127,17 +126,6 @@ export default function Template() {
     return acc;
   }, {});
 
-  // const insertField = (placeholder) => {
-  //   const editor = quillRef.current.getEditor();
-  //   const range = editor.getSelection();
-  //   if (range) {
-  //     editor.insertText(range.index, placeholder);
-  //     editor.setSelection(range.index + placeholder.length);
-  //   } else {
-  //     editor.insertText(editor.getLength(), placeholder);
-  //   }
-  // };
-
   const insertField = (placeholder) => {
     const editor = quillRef.current?.getEditor();
     if (!editor) return;
@@ -153,6 +141,7 @@ export default function Template() {
     editor.insertText(index, placeholder, "user");
     editor.setSelection(index + placeholder.length, 0, "user");
   };
+
   const handleEdit = (template) => {
     setEditingId(template._id);
     setPlatform(template.platform);
@@ -254,9 +243,9 @@ export default function Template() {
   };
 
   const Loader = () => (
-    <div className="flex flex-col justify-center items-center py-10">
+    <div className="flex flex-col justify-center items-center py-12">
       <svg
-        className="animate-spin h-8 w-8 text-purple-600 mb-2"
+        className="animate-spin h-7 w-7 text-slate-900 mb-2"
         viewBox="0 0 24 24"
       >
         <circle
@@ -273,12 +262,12 @@ export default function Template() {
           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
         ></path>
       </svg>
-      <p className="text-sm text-purple-600 font-medium">
+      <p className="text-xs text-slate-600 font-semibold">
         Loading templates...
       </p>
     </div>
   );
-  const columnCount = isPro ? 6 : 5;
+
   useEffect(() => {
     if (user?.Ai !== undefined) {
       setAiEnabled(user.Ai);
@@ -289,38 +278,42 @@ export default function Template() {
     toast.error(
       "Auto response is enabled. Switch to manual mode to edit templates.",
     );
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#FAF8F5]">
       <Sidebar />
       <div className="w-full flex-1 pt-[60px]">
-        <header className="flex flex-col md:flex-row md:items-center justify-between px-4 py-1 bg-white border-b border-gray-100 shadow-sm gap-4">
-          <div className="flex items-center gap-4">
-            <div className="hidden sm:flex w-12 h-12 bg-indigo-50 rounded-xl items-center justify-center text-indigo-600">
-              <Layout size={24} />
-            </div>
-            <div>
-              <h1 className="text-2xl font-semibold text-gray-900 tracking-tight flex items-center gap-2">
-                Service Templates
-              </h1>
-              <p className="text-sm text-gray-500 mt-0.5 max-w-xs sm:max-w-none">
-                Manage and automate your Shopify service communication
-              </p>
+        {/* Main Header */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center shadow-2xs border border-slate-800">
+                <Layout className="w-5 h-5 text-emerald-400" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+                  Service Templates
+                </h1>
+                <p className="text-xs text-slate-500 font-normal mt-0.5">
+                  Manage and automate your Shopify service response templates
+                </p>
+              </div>
             </div>
           </div>
+        </div>
 
-        </header>
-
-        <div className="px-4 sm:px-8 py-4 bg-white border-b space-y-4">
-          <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-4">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4 gap-2">
+        {/* Filter Bar & Controls */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="bg-white rounded-[12px] border border-slate-200 p-4 shadow-2xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
               <div className="flex items-center gap-2">
-                <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
+                <label className="text-xs font-bold text-slate-700 whitespace-nowrap">
                   Filter by Service:
                 </label>
                 <select
                   value={selectedServiceFilter}
                   onChange={(e) => setSelectedServiceFilter(e.target.value)}
-                  className="border border-gray-300 rounded-lg px-3 py-1 text-sm focus:ring-2 focus:ring-purple-500 w-36 sm:w-40"
+                  className="border border-slate-300 rounded-[8px] px-3 py-1.5 text-xs font-semibold text-slate-800 bg-white focus:border-slate-800 outline-none shadow-2xs w-40 transition"
                 >
                   <option value="All">All Services</option>
                   {[
@@ -334,13 +327,13 @@ export default function Template() {
               </div>
 
               <div className="flex items-center gap-2">
-                <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
+                <label className="text-xs font-bold text-slate-700 whitespace-nowrap">
                   Filter by Sequence:
                 </label>
                 <select
                   value={selectedSequenceFilter}
                   onChange={(e) => setSelectedSequenceFilter(e.target.value)}
-                  className="border border-gray-300 rounded-lg px-3 py-1 text-sm focus:ring-2 focus:ring-purple-500 w-40 sm:w-44"
+                  className="border border-slate-300 rounded-[8px] px-3 py-1.5 text-xs font-semibold text-slate-800 bg-white focus:border-slate-800 outline-none shadow-2xs w-44 transition"
                 >
                   <option value="All">All Sequences</option>
                   {[
@@ -359,13 +352,13 @@ export default function Template() {
             </div>
 
             <div className="flex items-center justify-end">
-              <div className="flex items-center gap-3 px-4 py-2 bg-gray-50 rounded-xl border border-gray-100">
-                <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3 px-3.5 py-1.5 bg-slate-50 rounded-[10px] border border-slate-200">
+                <div className="flex items-center gap-1.5">
                   <Zap
-                    size={16}
-                    className={globalActive ? "text-amber-500" : "text-gray-400"}
+                    size={15}
+                    className={globalActive ? "text-emerald-600 fill-emerald-100" : "text-slate-400"}
                   />
-                  <span className="text-sm font-semibold text-gray-700 whitespace-nowrap">
+                  <span className="text-xs font-bold text-slate-800 whitespace-nowrap">
                     Template Status
                   </span>
                 </div>
@@ -384,14 +377,14 @@ export default function Template() {
                     className="sr-only peer"
                   />
                   <div
-                    className={`w-10 h-5 rounded-full transition-all duration-300 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all
-              ${aiEnabled
-                        ? "bg-gray-200"
+                    className={`w-9 h-5 rounded-full transition-all duration-300 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all
+                      ${aiEnabled
+                        ? "bg-slate-200"
                         : globalActive
-                          ? "bg-emerald-500 peer-checked:after:translate-x-5"
-                          : "bg-gray-200"
+                          ? "bg-emerald-600 peer-checked:after:translate-x-4"
+                          : "bg-slate-300"
                       }
-            `}
+                    `}
                   ></div>
                 </label>
               </div>
@@ -399,44 +392,43 @@ export default function Template() {
           </div>
 
           {viewType && (
-            <div className="bg-indigo-50 px-4 py-2 rounded-md text-sm text-indigo-700 border border-indigo-200 w-full sm:w-auto text-center sm:text-left">
-              Viewing all <b>{viewType}</b> templates
+            <div className="mt-3 bg-emerald-50 px-4 py-2 rounded-[8px] text-xs font-medium text-emerald-900 border border-emerald-200 flex items-center justify-between">
+              <span>Viewing all <strong>{viewType}</strong> templates</span>
               <button
                 onClick={() => navigate("/templates")}
-                className="ml-2 text-indigo-600 underline hover:text-indigo-800"
+                className="text-emerald-700 font-bold underline hover:text-emerald-900 cursor-pointer"
               >
-                Clear
+                Clear Filter
               </button>
             </div>
           )}
         </div>
 
-        <main className="w-full px-4 sm:px-6 lg:px-8 py-6">
-          <div className="bg-white shadow rounded-lg overflow-hidden">
+        {/* Content Table */}
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+          <div className="bg-white rounded-[12px] border border-slate-200 shadow-2xs overflow-hidden">
             <div className="hidden sm:block overflow-x-auto">
-              <table className="min-w-full border-collapse text-sm">
-                <thead className="bg-gray-100 border-b">
+              <table className="min-w-full border-collapse text-xs">
+                <thead className="bg-[#111110] text-white">
                   <tr>
                     {[
                       "Service Request",
                       "Sequence Type",
-                      "Template",
+                      "Template Preview",
                       "Status",
                       "Action",
-                    ]
-                      .filter(Boolean)
-                      .map((h) => (
-                        <th
-                          key={h}
-                          className="p-3 text-left text-xs sm:text-sm font-semibold text-gray-700 uppercase tracking-wide"
-                        >
-                          {h}
-                        </th>
-                      ))}
+                    ].map((h) => (
+                      <th
+                        key={h}
+                        className="px-4 py-3.5 text-left text-xs font-bold uppercase tracking-wider"
+                      >
+                        {h}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
 
-                <tbody>
+                <tbody className="divide-y divide-slate-100">
                   {loading ? (
                     <tr>
                       <td colSpan="5" className="text-center">
@@ -446,10 +438,10 @@ export default function Template() {
                   ) : Object.keys(groupedTemplates).length > 0 ? (
                     Object.entries(groupedTemplates).map(([srv, group]) => (
                       <React.Fragment key={srv}>
-                        <tr className="bg-gray-100">
+                        <tr className="bg-slate-100/90 border-t border-b border-slate-200">
                           <td
                             colSpan="5"
-                            className="p-3 font-semibold text-gray-800"
+                            className="px-4 py-2.5 font-bold text-slate-900 text-xs tracking-tight"
                           >
                             {srv}
                           </td>
@@ -458,40 +450,43 @@ export default function Template() {
                         {group.map((t) => (
                           <tr
                             key={t._id}
-                            className={`border-b transition ${aiEnabled ? "bg-gray-50 " : "hover:bg-gray-50"
-                              }`}
+                            className={`transition ${
+                              aiEnabled ? "bg-slate-50/50" : "hover:bg-slate-50/80"
+                            }`}
                             onClick={() => {
                               if (aiEnabled) {
                                 aiBlockToast();
                               }
                             }}
                           >
-                            <td className="p-3 text-sm">{t.service}</td>
+                            <td className="px-4 py-3 text-xs font-semibold text-slate-800">
+                              {t.service}
+                            </td>
 
-                            <td className="p-3 text-sm">
+                            <td className="px-4 py-3 text-xs font-semibold text-slate-800">
                               {formatSequenceName(t.name)}
                             </td>
 
-                            <td className="p-3 text-sm max-w-[220px]">
+                            <td className="px-4 py-3 text-xs max-w-[260px]">
                               {aiEnabled ? (
-                                <span className="inline-flex items-center gap-2 text-indigo-600 font-semibold">
-                                  <BoltIcon className="w-4 h-4 text-indigo-600" />
+                                <span className="inline-flex items-center gap-1.5 text-emerald-700 font-bold">
+                                  <BoltIcon className="w-3.5 h-3.5 text-emerald-600" />
                                   Auto Reply
-                                  <span className="text-xs text-gray-500">
+                                  <span className="text-[11px] text-slate-400 font-normal">
                                     (AI Enabled)
                                   </span>
                                 </span>
                               ) : (
-                                <span className="text-gray-600 truncate block">
+                                <span className="text-slate-600 truncate block font-normal">
                                   {t.content
                                     .replace(/<[^>]+>/g, "")
-                                    .slice(0, 80)}
+                                    .slice(0, 85)}
                                   ...
                                 </span>
                               )}
                             </td>
 
-                            <td className="p-3 text-center">
+                            <td className="px-4 py-3 text-center">
                               <label className="relative inline-flex items-center cursor-pointer">
                                 <input
                                   type="checkbox"
@@ -508,23 +503,24 @@ export default function Template() {
                                 />
 
                                 <div
-                                  className={`w-11 h-6 rounded-full transition-colors ${aiEnabled
-                                    ? "bg-gray-200 "
-                                    : "bg-gray-300 peer-checked:bg-green-500"
-                                    }`}
+                                  className={`w-9 h-5 rounded-full transition-colors ${
+                                    aiEnabled
+                                      ? "bg-slate-200"
+                                      : "bg-slate-300 peer-checked:bg-emerald-600"
+                                  }`}
                                 ></div>
 
                                 <div
-                                  className={`absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full shadow-md transition-transform ${!aiEnabled && t.active
-                                    ? "translate-x-5"
-                                    : ""
-                                    }`}
+                                  className={`absolute left-[2px] top-[2px] w-4 h-4 bg-white rounded-full shadow-xs transition-transform ${
+                                    !aiEnabled && t.active ? "translate-x-4" : ""
+                                  }`}
                                 ></div>
                               </label>
                             </td>
 
-                            <td className="p-3">
+                            <td className="px-4 py-3">
                               <button
+                                type="button"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   if (aiEnabled) {
@@ -533,10 +529,11 @@ export default function Template() {
                                   }
                                   handleEdit(t);
                                 }}
-                                className={`text-sm font-medium ${aiEnabled
-                                  ? "text-gray-400 "
-                                  : "text-indigo-600 hover:underline"
-                                  }`}
+                                className={`text-xs font-bold transition cursor-pointer ${
+                                  aiEnabled
+                                    ? "text-slate-400"
+                                    : "text-slate-900 hover:text-emerald-700 underline"
+                                }`}
                               >
                                 Edit
                               </button>
@@ -549,7 +546,7 @@ export default function Template() {
                     <tr>
                       <td
                         colSpan="5"
-                        className="p-6 text-center text-gray-500 text-sm"
+                        className="p-8 text-center text-slate-500 text-xs font-medium"
                       >
                         No templates found
                       </td>
@@ -559,46 +556,48 @@ export default function Template() {
               </table>
             </div>
 
-            <div className="block sm:hidden divide-y divide-gray-200">
+            {/* Mobile View */}
+            <div className="block sm:hidden divide-y divide-slate-200">
               {loading ? (
                 <Loader />
               ) : Object.keys(groupedTemplates).length > 0 ? (
                 Object.entries(groupedTemplates).map(([srv, group]) => (
-                  <div key={srv} className="bg-gray-50">
-                    <h3 className="px-4 py-2 font-semibold text-gray-800 text-sm bg-gray-100 border-b">
+                  <div key={srv} className="bg-slate-50">
+                    <h3 className="px-4 py-2.5 font-bold text-slate-900 text-xs bg-slate-100 border-b border-slate-200">
                       {srv}
                     </h3>
 
                     {group.map((t) => (
                       <div
                         key={t._id}
-                        className="p-4 bg-white border-b hover:bg-gray-50 transition"
+                        className="p-4 bg-white border-b border-slate-100 hover:bg-slate-50 transition"
                       >
                         <div className="flex justify-between items-center mb-2">
-                          <h4 className="font-semibold text-gray-900 text-sm">
+                          <h4 className="font-bold text-slate-900 text-xs">
                             {formatSequenceName(t.name)}
                           </h4>
                           <button
+                            type="button"
                             onClick={() => handleEdit(t)}
-                            className="text-indigo-600 text-xs font-medium hover:underline"
+                            className="text-slate-900 text-xs font-bold hover:underline cursor-pointer"
                           >
                             Edit
                           </button>
                         </div>
 
-                        <p className="text-xs text-gray-500 mb-2">
-                          <span className="font-medium text-gray-700">
+                        <p className="text-xs text-slate-500 mb-2">
+                          <span className="font-bold text-slate-700">
                             Service:
                           </span>{" "}
                           {t.service || "N/A"}
                         </p>
 
-                        <p className="text-xs text-gray-600 line-clamp-2 mb-3">
+                        <p className="text-xs text-slate-600 line-clamp-2 mb-3 font-normal">
                           {t.content.replace(/<[^>]+>/g, "").slice(0, 100)}...
                         </p>
 
                         <div className="flex items-center justify-between">
-                          <span className="text-xs text-gray-500 font-medium">
+                          <span className="text-xs text-slate-500 font-bold">
                             {t.active ? "Active" : "Inactive"}
                           </span>
 
@@ -609,8 +608,8 @@ export default function Template() {
                               onChange={() => handleToggle(t._id, t.active)}
                               className="sr-only peer"
                             />
-                            <div className="w-10 h-5 bg-gray-300 rounded-full peer-checked:bg-green-500 transition-colors"></div>
-                            <div className="absolute left-[2px] top-[2px] w-4 h-4 bg-white rounded-full shadow-md transition-transform peer-checked:translate-x-5"></div>
+                            <div className="w-9 h-5 bg-slate-300 rounded-full peer-checked:bg-emerald-600 transition-colors"></div>
+                            <div className="absolute left-[2px] top-[2px] w-4 h-4 bg-white rounded-full shadow-xs transition-transform peer-checked:translate-x-4"></div>
                           </label>
                         </div>
                       </div>
@@ -618,7 +617,7 @@ export default function Template() {
                   </div>
                 ))
               ) : (
-                <div className="p-6 text-center text-gray-500 text-sm">
+                <div className="p-8 text-center text-slate-500 text-xs font-medium">
                   No templates found
                 </div>
               )}
@@ -626,60 +625,70 @@ export default function Template() {
           </div>
         </main>
 
+        {/* Drawer Side Modal */}
         <div className="fixed inset-0 z-50 flex pointer-events-none">
           <div
-            className={`flex-1 bg-black transition-opacity duration-300 ${isDrawerOpen ? "opacity-40 pointer-events-auto" : "opacity-0"
-              }`}
+            className={`flex-1 bg-black/50 backdrop-blur-xs transition-opacity duration-300 ${
+              isDrawerOpen ? "opacity-100 pointer-events-auto" : "opacity-0"
+            }`}
             onClick={() => setIsDrawerOpen(false)}
           ></div>
 
           <div
-            className={`w-full sm:max-w-lg lg:max-w-xl bg-white shadow-2xl h-full flex flex-col transform transition-transform duration-300 ease-in-out pointer-events-auto ${isDrawerOpen ? "translate-x-0" : "translate-x-full"
-              }`}
+            className={`w-full sm:max-w-lg lg:max-w-xl bg-white shadow-2xl h-full flex flex-col transform transition-transform duration-300 ease-in-out pointer-events-auto ${
+              isDrawerOpen ? "translate-x-0" : "translate-x-full"
+            }`}
           >
-            <div className="flex justify-between items-center p-4 sm:p-6 border-b">
-              <h2 className="text-lg sm:text-xl font-bold text-gray-800 truncate">
-                {editingId ? "Edit Template" : "Create New Template"}
-              </h2>
+            {/* Drawer Dark Header Bar */}
+            <div className="flex justify-between items-center px-6 py-4 bg-[#111110] text-white shrink-0">
+              <div>
+                <h2 className="text-base font-bold text-white">
+                  {editingId ? "Edit Template" : "Create New Template"}
+                </h2>
+                <p className="text-xs text-slate-300 mt-0.5 font-normal">
+                  Customize automated email template response content
+                </p>
+              </div>
               <button
+                type="button"
                 onClick={() => setIsDrawerOpen(false)}
-                className="text-gray-400 hover:text-gray-600 text-xl sm:text-2xl"
+                className="text-slate-400 hover:text-white transition p-1 cursor-pointer"
               >
-                ✕
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
+            <div className="flex-1 overflow-y-auto p-6 space-y-5">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                <label className="block text-xs font-bold text-slate-800 mb-1.5">
                   Service Request
                 </label>
                 <input
                   type="text"
                   value={service || "Any (general)"}
                   readOnly
-                  className="w-full p-2 sm:p-3 border rounded-lg bg-gray-100 text-gray-700 text-sm sm:text-base"
+                  className="w-full p-3 border border-slate-200 rounded-[8px] bg-slate-100/80 text-slate-700 text-xs font-semibold"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                <label className="block text-xs font-bold text-slate-800 mb-1.5">
                   Sequence Type
                 </label>
                 <input
                   type="text"
                   value={sequenceType || "-"}
                   readOnly
-                  className="w-full p-2 sm:p-3 border rounded-lg bg-gray-100 text-gray-700 text-sm sm:text-base"
+                  className="w-full p-3 border border-slate-200 rounded-[8px] bg-slate-100/80 text-slate-700 text-xs font-semibold"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Template Response
+                <label className="block text-xs font-bold text-slate-800 mb-2">
+                  Template Response Body
                 </label>
 
-                <div className="border rounded-lg overflow-hidden">
+                <div className="border border-slate-300 rounded-[8px] overflow-hidden shadow-2xs">
                   <ReactQuill
                     ref={quillRef}
                     theme="snow"
@@ -689,9 +698,9 @@ export default function Template() {
                   />
                 </div>
 
-                <div className="mt-4 border rounded-lg bg-gray-50 p-3 sm:p-4">
-                  <h3 className="text-sm font-semibold text-gray-600 mb-2">
-                    Insert Fields
+                <div className="mt-4 border border-slate-200 rounded-[10px] bg-slate-50/80 p-4 shadow-2xs">
+                  <h3 className="text-xs font-bold text-slate-900 mb-2.5">
+                    Insert Field Variables
                   </h3>
                   <div className="flex flex-wrap gap-2">
                     {[
@@ -710,29 +719,32 @@ export default function Template() {
                         placeholder: "{{ProblemGoal}}",
                       },
                     ].map((field, idx) => (
-                      <span
+                      <button
                         key={idx}
+                        type="button"
                         onClick={() => insertField(field.placeholder)}
-                        className="px-3 py-1 bg-purple-100 text-purple-700 text-xs font-medium rounded cursor-pointer hover:bg-purple-200 transition"
+                        className="px-2.5 py-1 bg-white text-slate-800 text-xs font-bold rounded-[6px] border border-slate-300 hover:bg-slate-100 hover:border-slate-400 transition cursor-pointer shadow-2xs"
                       >
                         {field.label}
-                      </span>
+                      </button>
                     ))}
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="p-4 sm:p-5 border-t bg-white flex flex-col sm:flex-row justify-end gap-3">
+            <div className="p-5 border-t border-slate-200 bg-slate-50 flex justify-end gap-3 shrink-0">
               <button
+                type="button"
                 onClick={() => setIsDrawerOpen(false)}
-                className="w-full sm:w-auto px-5 py-2 text-sm font-medium text-gray-600 bg-gray-200 rounded-lg hover:bg-gray-300"
+                className="px-5 py-2.5 text-xs font-bold text-slate-700 bg-white border border-slate-300 rounded-[8px] hover:bg-slate-100 transition cursor-pointer"
               >
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={handleSaveTemplate}
-                className="w-full sm:w-auto px-5 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700"
+                className="px-5 py-2.5 text-xs font-bold text-white bg-[#111110] hover:bg-black rounded-[8px] transition cursor-pointer shadow-xs"
               >
                 {editingId ? "Update Template" : "Save Template"}
               </button>
@@ -740,35 +752,33 @@ export default function Template() {
           </div>
         </div>
       </div>
+
+      {/* Upgrade Modal */}
       {showUpgradeModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-          <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden transition-all transform">
-            <div className="h-2 bg-indigo-600 w-full" />
-
-            <button
-              onClick={() => setShowUpgradeModal(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <X size={20} />
-            </button>
-
-            <div className="p-8">
-              <div className="flex flex-col items-center text-center">
-                <div className="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center mb-4">
-                  <Sparkles className="text-indigo-600" size={32} />
-                </div>
-
-                <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+          <div className="relative bg-white rounded-[12px] shadow-2xl border border-slate-200 max-w-md w-full overflow-hidden">
+            <div className="flex justify-between items-center px-6 py-4 bg-[#111110] text-white">
+              <div className="flex items-center gap-2">
+                <Sparkles className="text-emerald-400" size={20} />
+                <h2 className="text-base font-bold text-white">
                   Unlock AI Templates
                 </h2>
-                <p className="mt-3 text-gray-500 leading-relaxed">
-                  Take your productivity to the next level. Generate
-                  high-converting emails in seconds with our{" "}
-                  <strong>Pro AI engine</strong>.
-                </p>
               </div>
+              <button
+                type="button"
+                onClick={() => setShowUpgradeModal(false)}
+                className="text-slate-400 hover:text-white transition cursor-pointer"
+              >
+                <X size={20} />
+              </button>
+            </div>
 
-              <div className="mt-6 space-y-3">
+            <div className="p-6">
+              <p className="text-xs text-slate-600 font-normal leading-relaxed">
+                Take your productivity to the next level. Generate high-converting emails in seconds with our <strong>Pro AI engine</strong>.
+              </p>
+
+              <div className="mt-5 space-y-2.5">
                 {[
                   "Unlimited AI Generations",
                   "Custom Brand Voice",
@@ -776,28 +786,30 @@ export default function Template() {
                 ].map((feature) => (
                   <div
                     key={feature}
-                    className="flex items-center gap-3 text-sm text-gray-600"
+                    className="flex items-center gap-2.5 text-xs font-semibold text-slate-800"
                   >
-                    <CheckCircle2 className="text-emerald-500" size={18} />
+                    <CheckCircle2 className="text-emerald-600 shrink-0" size={16} />
                     {feature}
                   </div>
                 ))}
               </div>
 
-              <div className="mt-8 flex flex-col gap-3">
+              <div className="mt-6 flex flex-col gap-2.5">
                 <button
+                  type="button"
                   onClick={() => {
                     setShowUpgradeModal(false);
                     navigate("/pricing");
                   }}
-                  className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl shadow-lg shadow-indigo-200 transition-all active:scale-[0.98]"
+                  className="w-full py-2.5 px-4 bg-[#111110] hover:bg-black text-white font-bold text-xs rounded-[8px] shadow-xs transition cursor-pointer"
                 >
                   Upgrade to Pro
                 </button>
 
                 <button
+                  type="button"
                   onClick={() => setShowUpgradeModal(false)}
-                  className="w-full py-2 text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors"
+                  className="w-full py-2 text-xs font-semibold text-slate-500 hover:text-slate-800 transition cursor-pointer"
                 >
                   Maybe later
                 </button>

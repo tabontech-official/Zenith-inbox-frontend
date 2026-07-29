@@ -646,6 +646,7 @@ import {
   FiAlertTriangle,
   FiBarChart2,
   FiChevronDown,
+  FiFileText,
   FiGrid,
   FiInbox,
   FiLink,
@@ -1137,6 +1138,13 @@ const Sidebar = ({ onOpenMailhook, onOpenGmail, onOpenOutlook }) => {
             </div>
 
             <DesktopNavLink
+              to="/templates"
+              label="Templates"
+              Icon={FiFileText}
+              active={isSectionActive(["/templates"])}
+            />
+
+            <DesktopNavLink
               to="/inbox"
               label="Inbox"
               Icon={FiInbox}
@@ -1144,13 +1152,6 @@ const Sidebar = ({ onOpenMailhook, onOpenGmail, onOpenOutlook }) => {
               badge={inboxCount}
               linkRef={leadRef}
             />
-
-            {/* <DesktopNavLink
-              to="/analytics"
-              label="Analytics"
-              Icon={FiBarChart2}
-              active={isSectionActive(["/analytics"])}
-            /> */}
 
             <DesktopNavLink
               to="/connection"
@@ -1315,6 +1316,13 @@ const Sidebar = ({ onOpenMailhook, onOpenGmail, onOpenOutlook }) => {
             />
 
             <MobileNavLink
+              to="/templates"
+              label="Templates"
+              Icon={FiFileText}
+              active={isSectionActive(["/templates"])}
+            />
+
+            <MobileNavLink
               to="/inbox"
               label="Inbox"
               Icon={FiInbox}
@@ -1396,8 +1404,26 @@ const Sidebar = ({ onOpenMailhook, onOpenGmail, onOpenOutlook }) => {
 
           <DesktopNavLink
             to="/admin/reports/scenarios"
-            label="Reports"
-            active={isSectionActive(["/admin/reports"])}
+            label="Scenarios"
+            active={isSectionActive(["/admin/reports/scenarios"])}
+          />
+
+          <DesktopNavLink
+            to="/admin/reports/templates"
+            label="Templates"
+            active={isSectionActive(["/admin/reports/templates"])}
+          />
+
+          <DesktopNavLink
+            to="/admin/reports/user-activity"
+            label="Activity"
+            active={isSectionActive(["/admin/reports/user-activity"])}
+          />
+
+          <DesktopNavLink
+            to="/admin/product-page"
+            label="CMS Products"
+            active={isSectionActive(["/admin/product-page"])}
           />
         </nav>
       </div>

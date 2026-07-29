@@ -3227,14 +3227,14 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                               <span className="h-2 w-2 rounded-full bg-amber-500 mt-1 shrink-0"></span>
                               <div>
                                 <p className="font-semibold text-slate-800 leading-snug">
-                                  Subject contains:{" "}
+                                If incoming leads subject contains:{" "}
                                   <span className="font-bold text-slate-900">
                                     Shopify Partner Directory: New service inquiry from
                                   </span>
                                 </p>
-                                <p className="text-[11px] text-slate-500 mt-1 font-medium">
+                                {/* <p className="text-[11px] text-slate-500 mt-1 font-medium">
                                   → Initial Email
-                                </p>
+                                </p> */}
                               </div>
                             </div>
                             <span className="font-medium text-slate-400 text-[11px] shrink-0">
@@ -3254,7 +3254,7 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                               <span className="h-2 w-2 rounded-full bg-blue-500 mt-1 shrink-0"></span>
                               <div>
                                 <p className="font-semibold text-slate-800 leading-snug">
-                                  Body contains service:{" "}
+                                 If incoming leads body contains service:{" "}
                                   <span className="font-bold text-slate-900">
                                     Troubleshooting, Store Setup, or Bug Fixes
                                   </span>
@@ -3613,10 +3613,10 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
               </div>
             </div>
                 {open && (
-                  <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+                  <div className="fixed inset-0 bg-black/10 backdrop-blur-xs flex items-center justify-center z-50 p-4">
                     <div
                       ref={modalRef}
-                      className="bg-white rounded-[8px] shadow-2xl w-full max-w-[460px] max-h-[85vh] overflow-hidden border border-zinc-200 flex flex-col"
+                      className="bg-white rounded-[8px]  w-full max-w-[460px] max-h-[85vh] overflow-hidden border  flex flex-col"
                     >
                       {!selectedApp ? (
                         <>
@@ -4076,8 +4076,8 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                 )}
 
             {showIncomingLeadsModal && (
-              <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-                <div className="bg-white rounded-[8px] shadow-2xl w-full max-w-[460px] max-h-[85vh] overflow-hidden border border-zinc-200 flex flex-col">
+              <div className="fixed inset-0 bg-black/10 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-[8px] w-full max-w-[460px] max-h-[85vh] overflow-hidden border flex flex-col">
                   <div className="px-5 py-3.5 bg-[#111111] text-white flex justify-between items-center shrink-0">
                     <div>
                       <h3 className="font-bold text-sm">Incoming Leads</h3>
@@ -4255,28 +4255,37 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
       )}
 
       {showRunTestModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
-            <div className="flex justify-between items-start border-b px-6 py-4">
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-fadeIn"
+          onClick={() => setShowRunTestModal(false)}
+        >
+          <div
+            className="bg-white rounded-[12px] shadow-2xl w-full max-w-lg border border-slate-200 overflow-hidden flex flex-col transform animate-slideUp"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Dark Top Header Bar */}
+            <div className="flex justify-between items-center bg-[#111110] text-white px-6 py-4">
               <div>
-                <h2 className="text-lg font-semibold text-gray-800">
+                <h2 className="text-base font-bold text-white">
                   Contact {user?.fullName || "Support Team"}
                 </h2>
-                <p className="text-sm text-gray-500 mt-1">
+                <p className="text-xs text-slate-300 mt-0.5 font-normal">
                   Fill out the details below to run a test scenario.
                 </p>
               </div>
               <button
+                type="button"
                 onClick={() => setShowRunTestModal(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-slate-400 hover:text-white transition cursor-pointer p-1"
+                aria-label="Close modal"
               >
-                ✕
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="px-6 py-5 space-y-4 overflow-y-auto max-h-[70vh]">
+            <div className="p-6 space-y-4 overflow-y-auto max-h-[70vh]">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-xs font-bold text-slate-800 mb-1.5">
                   Business Email <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -4286,39 +4295,39 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                     setFormData({ ...formData, businessEmail: e.target.value })
                   }
                   placeholder="Enter your business email"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none"
+                  className="w-full border border-slate-300 rounded-[8px] px-3.5 py-2 text-xs font-medium text-slate-900 focus:border-slate-800 focus:ring-0 outline-none shadow-2xs transition"
                 />
               </div>
 
               {/* Store Name (disabled, prefilled) */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-xs font-bold text-slate-800 mb-1.5">
                   Store Name
                 </label>
                 <input
                   type="text"
                   value={formData.storeName || "Dummy Store"}
                   disabled
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 bg-gray-100 text-gray-600 cursor-not-allowed"
+                  className="w-full border border-slate-200 rounded-[8px] px-3.5 py-2 bg-slate-100/80 text-xs font-medium text-slate-500 cursor-not-allowed"
                 />
               </div>
 
               {/* Country (disabled, prefilled) */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-xs font-bold text-slate-800 mb-1.5">
                   Country
                 </label>
                 <input
                   type="text"
                   value={formData.country || "USA"}
                   disabled
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 bg-gray-100 text-gray-600 cursor-not-allowed"
+                  className="w-full border border-slate-200 rounded-[8px] px-3.5 py-2 bg-slate-100/80 text-xs font-medium text-slate-500 cursor-not-allowed"
                 />
               </div>
 
               {/* Service (editable) */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-xs font-bold text-slate-800 mb-1.5">
                   Select a Service Offered by {user?.name || "the team"}
                 </label>
                 <select
@@ -4326,7 +4335,7 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                   onChange={(e) =>
                     setFormData({ ...formData, service: e.target.value })
                   }
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none"
+                  className="w-full border border-slate-300 rounded-[8px] px-3.5 py-2 text-xs font-medium text-slate-900 focus:border-slate-800 focus:ring-0 outline-none shadow-2xs transition"
                 >
                   <option value="">Select service</option>
                   <option>Troubleshooting</option>
@@ -4363,20 +4372,20 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
 
               {/* Budget (disabled, prefilled) */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-xs font-bold text-slate-800 mb-1.5">
                   Budget (USD)
                 </label>
                 <input
                   type="number"
                   value={formData.budget || 10000}
                   disabled
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 bg-gray-100 text-gray-600 cursor-not-allowed"
+                  className="w-full border border-slate-200 rounded-[8px] px-3.5 py-2 bg-slate-100/80 text-xs font-medium text-slate-500 cursor-not-allowed"
                 />
               </div>
 
               {/* Description (editable) */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-xs font-bold text-slate-800 mb-1.5">
                   Description
                 </label>
                 <textarea
@@ -4386,20 +4395,22 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                     setFormData({ ...formData, description: e.target.value })
                   }
                   placeholder="Describe your project, problem, or goal..."
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 resize-none focus:ring-2 focus:ring-green-500 focus:outline-none"
+                  className="w-full border border-slate-300 rounded-[8px] px-3.5 py-2 text-xs font-medium text-slate-900 resize-none focus:border-slate-800 focus:ring-0 outline-none shadow-2xs transition"
                 ></textarea>
               </div>
             </div>
 
             {/* Footer */}
-            <div className="border-t px-6 py-4 flex justify-end space-x-3">
+            <div className="border-t border-slate-200 px-6 py-4 bg-slate-50 flex justify-end space-x-3">
               <button
+                type="button"
                 onClick={() => setShowRunTestModal(false)}
-                className="px-4 py-2 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-100 transition"
+                className="px-5 py-2.5 text-xs font-bold text-slate-700 bg-white border border-slate-300 rounded-[8px] hover:bg-slate-100 transition cursor-pointer"
               >
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={() => {
                   // Validate before closing
                   const { businessEmail, service, description } = formData;
@@ -4427,7 +4438,7 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                   handleRunTest();
                   setShowRunTestModal(false);
                 }}
-                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition"
+                className="px-5 py-2.5 text-xs font-bold text-white bg-[#111110] hover:bg-black rounded-[8px] transition cursor-pointer shadow-xs"
               >
                 Generate Test Email
               </button>
@@ -4436,8 +4447,8 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
         </div>
       )}
       {showTemplateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-[8px] shadow-2xl flex flex-col overflow-hidden border border-zinc-200 max-w-3xl w-full max-h-[85vh]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/10 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-[8px]  flex flex-col overflow-hidden border  max-w-3xl w-full max-h-[85vh]">
             <div className="flex justify-between items-center px-5 py-4 bg-[#111111] text-white">
                       <div>
                         <h2 className="text-sm font-bold">
@@ -4629,12 +4640,12 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
       {/* SINGLE CLEAN EDIT TEMPLATE MODAL */}
       {showEditTemplateModal && editingTemplate && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/10 backdrop-blur-xs p-4"
           onMouseDown={() => setShowInsertFields(false)}
         >
           <div
             onMouseDown={(e) => e.stopPropagation()}
-            className="relative flex w-full max-w-2xl max-h-[85vh] flex-col overflow-hidden rounded-[8px] border border-zinc-200 bg-white shadow-2xl"
+            className="relative flex w-full max-w-2xl max-h-[85vh] flex-col overflow-hidden rounded-[8px] border  bg-white "
           >
             <div className="flex shrink-0 items-center justify-between bg-[#111111] px-5 py-3.5 text-white">
               <div>
