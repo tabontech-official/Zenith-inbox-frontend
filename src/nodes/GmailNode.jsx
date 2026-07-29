@@ -8,7 +8,10 @@ const GmailNode = ({ data, selected }) => {
   const isSuccess = data?.success;
 
   const connectedEmail = data?.config?.connectionEmail || "your-email@domain.com";
-  const subjectFilter = data?.config?.subject || "Inquiry";
+  const subjectFilter = data?.config?.subject || "";
+  const hasConnection = Boolean(data?.config?.connectionId);
+  const hasSubject = Boolean(data?.config?.subject && data?.config?.subject.trim());
+  const isFullyConfigured = hasConnection && hasSubject;
 
   return (
     <div className="relative group">
@@ -16,7 +19,7 @@ const GmailNode = ({ data, selected }) => {
         className={`
           relative 
           p-4 
-          bg-white 
+          bg-[#F4FBF7] 
           rounded-[22px] 
           border 
           shadow-xs 
@@ -24,12 +27,12 @@ const GmailNode = ({ data, selected }) => {
           w-[270px] 
           transition-all duration-200
           ${
-            selected
-              ? "border-indigo-500 ring-2 ring-indigo-200 shadow-md"
-              : isHighlighted
-              ? "border-red-400 ring-2 ring-red-100 bg-red-50/20"
-              : isSuccess
-              ? "border-emerald-400 ring-2 ring-emerald-100 bg-emerald-50/20"
+            data?.errorMessage || isHighlighted || (!hasSubject && hasConnection)
+              ? "border-red-500 ring-2 ring-red-200 bg-red-50/20 shadow-md"
+              : data?.executing
+              ? "border-amber-400 ring-2 ring-amber-300 bg-amber-50/20 shadow-md"
+              : selected || isSuccess
+              ? "border-emerald-500 ring-2 ring-emerald-200 bg-emerald-50/10 shadow-md"
               : "border-slate-200/90"
           }
         `}
@@ -89,38 +92,54 @@ const GmailNode = ({ data, selected }) => {
             </div>
           </div>
 
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-4 ring-emerald-50 shrink-0 group-hover:hidden"></span>
+          <span
+            className={`w-2.5 h-2.5 rounded-full ring-4 shrink-0 group-hover:hidden ${
+              isFullyConfigured
+                ? "bg-emerald-500 ring-emerald-50"
+                : "bg-amber-400 ring-amber-50"
+            }`}
+          ></span>
         </div>
 
         {/* Error Message */}
-        {data?.errorMessage && (
+        {(!hasSubject || data?.errorMessage) && (
           <div className="w-full flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 text-xs px-2.5 py-1.5 rounded-lg mb-2">
             <AlertCircle size={14} className="shrink-0 text-red-500" />
-            <span className="truncate">{data.errorMessage}</span>
+            <span className="truncate">
+              {data?.errorMessage || (!hasSubject ? "Subject filter missing" : "Setup Required")}
+            </span>
           </div>
         )}
 
-        {/* Details Body matching Image 2 */}
-        <div className="space-y-1 mt-2.5 text-xs">
+        {/* Details Body */}
+        <div className="space-y-1.5 mt-2 text-xs">
           <p className="font-semibold text-slate-700 truncate">
-            GMAIL · {connectedEmail}
+            {hasConnection ? `GMAIL · ${connectedEmail}` : "Select Email Connection"}
           </p>
+
           <div className="flex items-center gap-1 text-[11px] text-slate-500 font-medium">
             <span>Subject contains</span>
-            <span className="bg-slate-100 text-slate-800 font-bold px-1.5 py-0.5 rounded-[4px] border border-slate-200/70 truncate max-w-[130px]">
-              {subjectFilter}
+            <span className="bg-white text-slate-800 font-bold px-2 py-0.5 rounded-[4px] border border-slate-200/80 truncate max-w-[130px]">
+              {subjectFilter || "Not Set"}
             </span>
           </div>
-          <p className="text-[11px] text-slate-400 font-medium">
-            Polls every 60s
-          </p>
         </div>
 
         {/* Footer */}
-        <div className="pt-2 mt-2.5 border-t border-slate-100 flex items-center justify-between text-xs">
-          <span className="text-[11px] font-semibold text-emerald-600 flex items-center gap-1">
-            ✓ Matched 3 leads today
+        <div className="pt-2 mt-2.5 border-t border-slate-200/80 flex items-center justify-between text-xs">
+          <span className="text-[11px] font-medium text-slate-400">
+            Polls every 60s
           </span>
+
+          {isFullyConfigured ? (
+            <span className="text-[11px] font-semibold text-emerald-600 shrink-0">
+              ✓ Configured
+            </span>
+          ) : (
+            <span className="text-[11px] font-semibold text-amber-600 shrink-0">
+              ⚠ Setup Required
+            </span>
+          )}
         </div>
 
         {/* Add Node Button */}

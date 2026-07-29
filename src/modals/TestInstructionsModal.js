@@ -5,8 +5,8 @@ const TestInstructionsModal = ({ onClose, onRunCanvasTest }) => {
   const [activeTab, setActiveTab] = useState("canvas"); // "canvas" | "live"
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-      <div className="bg-white w-[580px] rounded-[16px] shadow-2xl border border-slate-200 overflow-hidden flex flex-col">
+    <div className="fixed inset-0 bg-black/20 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+      <div className="bg-white w-[580px] rounded-[8px] border  overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between bg-[#111110] text-white px-6 py-4 shrink-0">
           <div className="flex items-center gap-3">

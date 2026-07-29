@@ -1,6 +1,6 @@
 import React from "react";
 import { Handle, Position } from "reactflow";
-import { Eye, Plus, Zap, Code } from "lucide-react";
+import { Eye, Plus, Zap, Code, X } from "lucide-react";
 
 const WebhookNode = ({ data, selected }) => {
   const isExecuting = data?.executing;
@@ -9,6 +9,27 @@ const WebhookNode = ({ data, selected }) => {
 
   return (
     <div className="relative group">
+      {/* Delete Button (on hover) */}
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          data?.confirmDeleteNode?.(data?.id);
+        }}
+        className="
+          opacity-0 group-hover:opacity-100
+          absolute top-3 right-11
+          w-7 h-7 
+          rounded-lg 
+          bg-red-50 hover:bg-red-100 text-red-600 border border-red-200
+          flex items-center justify-center 
+          transition-all z-20 cursor-pointer
+        "
+        title="Delete Node"
+      >
+        <X size={14} />
+      </button>
+
       {/* Running Indicator */}
       {isExecuting && (
         <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-semibold text-indigo-600 animate-pulse bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-200">
@@ -20,7 +41,7 @@ const WebhookNode = ({ data, selected }) => {
         className={`
           relative 
           p-4 
-          bg-white 
+          bg-[#FFF5F5] 
           rounded-[22px] 
           border 
           shadow-xs 
@@ -28,12 +49,12 @@ const WebhookNode = ({ data, selected }) => {
           w-[270px] 
           transition-all duration-200
           ${
-            selected
-              ? "border-indigo-500 ring-2 ring-indigo-200 shadow-md"
-              : isHighlighted
-              ? "border-red-400 ring-2 ring-red-100 bg-red-50/20"
-              : isSuccess
-              ? "border-emerald-400 ring-2 ring-emerald-100 bg-emerald-50/20"
+            data?.errorMessage || isHighlighted
+              ? "border-red-500 ring-2 ring-red-200 bg-red-50/20 shadow-md"
+              : data?.executing
+              ? "border-amber-400 ring-2 ring-amber-300 bg-amber-50/20 shadow-md"
+              : selected || isSuccess
+              ? "border-emerald-500 ring-2 ring-emerald-200 bg-emerald-50/10 shadow-md"
               : "border-slate-200/90"
           }
         `}

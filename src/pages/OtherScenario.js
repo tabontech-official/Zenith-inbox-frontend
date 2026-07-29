@@ -181,14 +181,17 @@ const OthersScenariosPage = () => {
 
       const data = await res.json();
 
-      if (data.success) {
+      if (data.success && data.email) {
         setTestEmail(data.email);
         setShowTestEmailModal(true);
       } else {
-        toast.error(data.message || "No email found!");
+        toast.error(
+          "No incoming test email found yet. Send an email to your connected address to inspect real email logs.",
+          { duration: 4000 }
+        );
       }
     } catch (err) {
-      toast.error("Error fetching test email");
+      toast.error("No incoming test email found yet.");
     }
   };
   const handleRunTest = async () => {
@@ -1334,10 +1337,17 @@ const OthersScenariosPage = () => {
                         onClick: () => setShowWebhookModal(true),
                       });
                     } else if (emailNode) {
+                      const hasConn = Boolean(emailNode.data?.config?.connectionId);
+                      const hasSubj = Boolean(emailNode.data?.config?.subject && emailNode.data.config.subject.trim());
+                      const isComplete = hasConn && hasSubj;
+                      let warning = null;
+                      if (!hasConn) warning = "Select email connection";
+                      else if (!hasSubj) warning = "Subject filter missing";
+
                       checklistSteps.push({
                         label: "Configure Email Trigger",
-                        isComplete: Boolean(emailNode.data?.config?.connectionId),
-                        warning: !emailNode.data?.config?.connectionId ? "Select email connection" : null,
+                        isComplete,
+                        warning,
                         onClick: () => {
                           setEditingNode(emailNode);
                           setShowEmailModal(true);
@@ -1517,6 +1527,15 @@ const OthersScenariosPage = () => {
                     ...n,
                     data: {
                       ...n.data,
+                      confirmDeleteNode: (nodeId) => {
+                        setNodeToDelete(nodeId || n.id);
+                        setShowDeleteConfirm(true);
+                      },
+                      openWebhookModal: () => setShowWebhookModal(true),
+                      openModuleModal: (nodeId) => {
+                        setEditingNode({ id: nodeId || n.id, type: n.type });
+                        setShowModuleModal(true);
+                      },
                       highlight: highlightedNodes.includes(n.id),
                       success: validNodes.includes(n.id),
                       executing: executingNode === n.id,

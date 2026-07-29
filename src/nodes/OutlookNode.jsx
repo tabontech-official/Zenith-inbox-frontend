@@ -4,6 +4,8 @@ import { FaMicrosoft } from "react-icons/fa";
 import { Edit, Plus, X } from "lucide-react";
 
 const OutlookNode = ({ data, selected }) => {
+  const isHighlighted = data?.highlight;
+  const isSuccess = data?.success;
   return (
     <div className="relative group">
       <div
@@ -18,8 +20,12 @@ const OutlookNode = ({ data, selected }) => {
           w-[270px] 
           transition-all duration-200
           ${
-            selected
-              ? "border-indigo-500 ring-2 ring-indigo-200 shadow-md"
+            data?.errorMessage || isHighlighted
+              ? "border-red-500 ring-2 ring-red-200 bg-red-50/20 shadow-md"
+              : data?.executing
+              ? "border-amber-400 ring-2 ring-amber-300 bg-amber-50/20 shadow-md"
+              : selected || isSuccess
+              ? "border-emerald-500 ring-2 ring-emerald-200 bg-emerald-50/10 shadow-md"
               : "border-slate-200/90"
           }
         `}

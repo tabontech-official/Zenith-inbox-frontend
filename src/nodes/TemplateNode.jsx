@@ -8,6 +8,14 @@ const TemplateNode = ({ data, selected }) => {
   const isSuccess = data?.success;
 
   const connectionEmail = data?.config?.connectionEmail;
+  const hasTemplate = Boolean(
+    data?.config?.templateId ||
+      data?.config?.template ||
+      data?.config?.body ||
+      data?.config?.content
+  );
+  const hasConnection = Boolean(data?.config?.connectionId || connectionEmail);
+  const isFullyConfigured = hasTemplate && hasConnection;
 
   return (
     <div className="relative group">
@@ -18,7 +26,7 @@ const TemplateNode = ({ data, selected }) => {
         className={`
           relative 
           p-4 
-          bg-white 
+          bg-[#FAFAFD] 
           rounded-[22px] 
           border 
           shadow-xs 
@@ -27,12 +35,12 @@ const TemplateNode = ({ data, selected }) => {
           cursor-pointer
           transition-all duration-200
           ${
-            selected
-              ? "border-indigo-500 ring-2 ring-indigo-200 shadow-md"
-              : isHighlighted
-              ? "border-red-400 ring-2 ring-red-100 bg-red-50/20"
-              : isSuccess
-              ? "border-emerald-400 ring-2 ring-emerald-100 bg-emerald-50/20"
+            data?.errorMessage || isHighlighted
+              ? "border-red-500 ring-2 ring-red-200 bg-red-50/20 shadow-md"
+              : data?.executing
+              ? "border-amber-400 ring-2 ring-amber-300 bg-amber-50/20 shadow-md"
+              : selected || isSuccess
+              ? "border-emerald-500 ring-2 ring-emerald-200 bg-emerald-50/10 shadow-md"
               : "border-slate-200/90"
           }
         `}
@@ -51,7 +59,7 @@ const TemplateNode = ({ data, selected }) => {
             rounded-lg 
             bg-red-50 hover:bg-red-100 text-red-600 border border-red-200
             flex items-center justify-center 
-            transition-all z-20 cursor-pointer
+            transition-all z-30 cursor-pointer
           "
           title="Delete Node"
         >
@@ -90,12 +98,20 @@ const TemplateNode = ({ data, selected }) => {
                 Email Template
               </h3>
               <p className="text-[11px] font-medium text-slate-400">
-                {data?.config?.name || "Predefined Template"}
+                {hasTemplate
+                  ? data?.config?.name || "Selected Template"
+                  : "Predefined Template"}
               </p>
             </div>
           </div>
 
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-4 ring-emerald-50 shrink-0 group-hover:hidden"></span>
+          <span
+            className={`w-2.5 h-2.5 rounded-full ring-4 shrink-0 group-hover:hidden ${
+              isFullyConfigured
+                ? "bg-emerald-500 ring-emerald-50"
+                : "bg-amber-400 ring-amber-50"
+            }`}
+          ></span>
         </div>
 
         {/* Error Message */}
@@ -109,18 +125,28 @@ const TemplateNode = ({ data, selected }) => {
         {/* Sender Connection Display */}
         <div className="space-y-1 mt-2 text-xs">
           <p className="font-semibold text-slate-700 truncate">
-            {connectionEmail ? `SENDER · ${connectionEmail}` : "Select Sender Connection"}
+            {connectionEmail
+              ? `SENDER · ${connectionEmail}`
+              : "Select Sender Connection"}
           </p>
         </div>
 
         {/* Footer */}
-        <div className="pt-2 mt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-          <span className="text-[11px] font-medium text-slate-500 truncate max-w-[170px]">
-            {data?.config?.subject ? `Subject: ${data.config.subject}` : "Variables: {{first_name}}"}
+        <div className="pt-2 mt-2 border-t border-slate-200/80 flex items-center justify-between text-xs">
+          <span className="text-[11px] font-medium text-slate-500 truncate max-w-[140px]">
+            {data?.config?.subject
+              ? `Subject: ${data.config.subject}`
+              : "Variables: {{first_name}}"}
           </span>
-          <span className="text-[11px] font-semibold text-emerald-600 shrink-0">
-            ✓ Configured
-          </span>
+          {isFullyConfigured ? (
+            <span className="text-[11px] font-semibold text-emerald-600 shrink-0">
+              ✓ Configured
+            </span>
+          ) : (
+            <span className="text-[11px] font-semibold text-amber-600 shrink-0">
+              ⚠ Setup Required
+            </span>
+          )}
         </div>
 
         {/* Add Node Button */}

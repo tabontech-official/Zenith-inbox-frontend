@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { X, Plus, ArrowLeft, Sparkles } from "lucide-react";
+import { X, Plus, ArrowLeft, Sparkles, Edit3 } from "lucide-react";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import toast from "react-hot-toast";
@@ -15,14 +15,15 @@ const TemplateModal = ({
   const config = node?.data?.config || {};
   const userId = localStorage.getItem("userid");
 
-  const [mode, setMode] = useState("select"); // "select" | "create"
+  const [mode, setMode] = useState("select"); // "select" | "create" | "edit"
+  const [editingTemplateId, setEditingTemplateId] = useState(null);
   const [selectedTemplateId, setSelectedTemplateId] = useState(
     config.templateId || config.template || ""
   );
 
   const [connectionId, setConnectionId] = useState(config.connectionId || "");
 
-  // New template form fields
+  // New/Edit template form fields
   const [name, setName] = useState("");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
@@ -72,7 +73,24 @@ const TemplateModal = ({
     editor.setSelection(range.index + fieldValue.length);
   };
 
-  const handleCreateTemplate = async () => {
+  const handleStartEdit = (template) => {
+    if (!template) return;
+    setEditingTemplateId(template._id);
+    setName(template.name || "");
+    setSubject(template.subject || "");
+    setBody(template.body || template.content || "");
+    setMode("edit");
+  };
+
+  const handleStartCreate = () => {
+    setEditingTemplateId(null);
+    setName("");
+    setSubject("");
+    setBody("");
+    setMode("create");
+  };
+
+  const handleSaveOrUpdateTemplate = async () => {
     if (!name.trim()) {
       toast.error("Please enter a template name");
       return;
@@ -84,32 +102,63 @@ const TemplateModal = ({
 
     setIsSaving(true);
     try {
-      const res = await fetch(
-        "https://email-syncing-backend.vercel.app/template/save/other",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId,
-            name,
-            subject,
-            content: body,
-            body,
-          }),
-        }
-      );
+      let res;
+      let targetId = editingTemplateId;
+
+      if (editingTemplateId) {
+        // Update existing template
+        res = await fetch(
+          `https://email-syncing-backend.vercel.app/template/update/${editingTemplateId}`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name,
+              subject,
+              content: body,
+              body,
+            }),
+          }
+        );
+      } else {
+        // Create new template
+        res = await fetch(
+          "https://email-syncing-backend.vercel.app/template/save/other",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              userId,
+              name,
+              subject,
+              content: body,
+              body,
+            }),
+          }
+        );
+      }
 
       const data = await res.json();
-      if (data.success || data.template) {
-        toast.success("Template created successfully!");
+      if (data.success || data.template || data.updated) {
+        toast.success(
+          editingTemplateId
+            ? "Template updated successfully!"
+            : "Template created successfully!"
+        );
+
         if (fetchActiveTemplates) await fetchActiveTemplates();
 
-        const createdId = data.template?._id || data.data?._id || crypto.randomUUID();
+        const savedId =
+          data.template?._id ||
+          data.updated?._id ||
+          data.data?._id ||
+          editingTemplateId ||
+          crypto.randomUUID();
 
-        // Apply new template to node with selected sender connection
+        // Apply updated template to node with selected sender connection
         onSave({
-          templateId: createdId,
-          template: createdId,
+          templateId: savedId,
+          template: savedId,
           name,
           subject,
           content: body,
@@ -123,7 +172,7 @@ const TemplateModal = ({
       }
     } catch (err) {
       console.error(err);
-      toast.error("Error creating template");
+      toast.error("Error saving template");
     } finally {
       setIsSaving(false);
     }
@@ -151,17 +200,23 @@ const TemplateModal = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/10 backdrop-blur-xs flex items-center justify-center z-50 p-4">
       <div className="bg-white w-[560px] max-h-[88vh] flex flex-col rounded-[8px] border border-slate-200 overflow-hidden shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between bg-[#111110] text-white px-6 py-4 shrink-0">
+       <div className="flex items-center justify-between bg-[#111110] text-white px-6 py-4 shrink-0">
           <div>
             <h2 className="text-base font-bold text-white">
-              {mode === "select" ? "Select Email Template" : "Create New Template"}
+              {mode === "select"
+                ? "Select Email Template"
+                : mode === "edit"
+                ? `Edit Template — ${name}`
+                : "Create New Template"}
             </h2>
             <p className="text-xs text-slate-300 mt-0.5 font-normal">
               {mode === "select"
                 ? "Choose an active template and sender connection"
+                : mode === "edit"
+                ? "Modify and save your email template"
                 : "Design and save a reusable email template"}
             </p>
           </div>
@@ -208,7 +263,7 @@ const TemplateModal = ({
 
                   <button
                     type="button"
-                    onClick={() => setMode("create")}
+                    onClick={handleStartCreate}
                     className="inline-flex items-center gap-1 text-xs font-bold text-indigo-600 hover:text-indigo-800 cursor-pointer"
                   >
                     <Plus size={14} /> Create New Template
@@ -229,16 +284,27 @@ const TemplateModal = ({
                 </select>
               </div>
 
-              {/* Template Preview Card */}
+              {/* Template Preview Card with Edit Template Button */}
               {selectedTemplate ? (
                 <div className="border border-slate-200 rounded-[12px] bg-slate-50/70 p-4 space-y-2">
                   <div className="flex items-center justify-between border-b border-slate-200 pb-2">
                     <span className="text-xs font-bold text-slate-800">
                       {selectedTemplate.name}
                     </span>
-                    <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                      Active
-                    </span>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleStartEdit(selectedTemplate)}
+                        className="inline-flex items-center gap-1 text-xs font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-2.5 py-1 rounded-full transition cursor-pointer"
+                      >
+                        <Edit3 size={13} /> Edit Template
+                      </button>
+
+                      <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                        Active
+                      </span>
+                    </div>
                   </div>
 
                   {selectedTemplate.subject && (
@@ -379,10 +445,14 @@ const TemplateModal = ({
             <button
               type="button"
               disabled={isSaving}
-              onClick={handleCreateTemplate}
+              onClick={handleSaveOrUpdateTemplate}
               className="px-5 py-2 bg-[#111110] hover:bg-black text-white text-xs font-bold rounded-[8px] transition cursor-pointer flex items-center gap-1.5"
             >
-              {isSaving ? "Saving..." : "Save & Select Template"}
+              {isSaving
+                ? "Saving..."
+                : editingTemplateId
+                ? "Save & Apply Changes"
+                : "Save & Select Template"}
             </button>
           )}
         </div>
