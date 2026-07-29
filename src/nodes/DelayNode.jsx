@@ -1,277 +1,140 @@
-// import React from "react";
-// import { Handle } from "reactflow";
-// import { Clock, Edit, X, Plus } from "lucide-react";
-
-// const DelayNode = ({ data }) => {
-
-//   // --- Highlight Effect ---
-//   const highlightStyle = data?.highlight
-//   ? "border-red-500 shadow-[0_0_12px_rgba(255,0,0,0.6)] bg-gradient-to-br from-red-50 to-red-100"
-//   : data?.success
-//   ? "border-green-500 shadow-[0_0_12px_rgba(34,197,94,0.6)] bg-gradient-to-br from-green-50 to-green-100"
-//   : ""; // default
-
-//   return (
-//     <div
-//       className={`
-//         relative group
-//         px-5 py-5 
-//         rounded-2xl 
-//         border-2 
-//         shadow-[0_3px_10px_rgba(0,0,0,0.05)]
-//         w-[260px]
-//         transition-all
-//         ${highlightStyle}
-//       `}
-//     >
-
-//       {/* Delete Button */}
-//       <button
-//         onClick={(e) => {
-//           e.stopPropagation();
-//           data?.confirmDeleteNode(data.id);
-//         }}
-//         className="
-//           opacity-0 group-hover:opacity-100 
-//           absolute top-2 right-12
-//           w-7 h-7 
-//           rounded-lg 
-//           bg-red-500 text-white 
-//           flex items-center justify-center 
-//           shadow 
-//           transition
-//         "
-//       >
-//         <X size={16} />
-//       </button>
-
-//       {/* Edit Button */}
-//       <button
-//         onClick={(e) => {
-//           e.stopPropagation();
-//           data?.openModuleModal?.(data?.id);
-//         }}
-//         className="
-//           absolute top-2 right-2 
-//           w-8 h-8 
-//           border border-[#6aa9ff]/70 
-//           rounded-lg 
-//           flex items-center justify-center 
-//           bg-white 
-//           hover:bg-[#f2f7ff] 
-//           transition
-//         "
-//       >
-//         <Edit size={16} className="text-[#6aa9ff]" />
-//       </button>
-
-//       {/* Icon + Text */}
-//       <div className="flex items-center gap-4 mt-2">
-//         <div className="w-12 h-12 rounded-xl bg-[#e4efff] flex items-center justify-center">
-//           <Clock size={26} className="text-[#6aa9ff]" />
-//         </div>
-
-//         <div className="leading-tight">
-//           <h3 className="text-[17px] font-semibold text-gray-800">Delay</h3>
-//           <p className="text-[13px] text-gray-500 mt-[3px]">
-//             {data?.config?.delayValue || 5}{" "}
-//             {data?.config?.delayUnit || "seconds"}
-//           </p>
-//         </div>
-//       </div>
-
-//       {/* Handles */}
-//       <Handle
-//         type="target"
-//         position="top"
-//         className="!w-4 !h-2 !rounded-full !bg-gray-400 !border-2 !border-white"
-//       />
-//       <Handle
-//         type="source"
-//         position="bottom"
-//         className="!w-4 !h-2 !rounded-full !bg-gray-400 !border-2 !border-white"
-//       />
-
-//       {/* Bottom Center Add Button */}
-//       <button
-//         onClick={(e) => {
-//           e.stopPropagation();
-//           data?.openModuleModal?.(data?.id);
-//         }}
-//         className="
-//           absolute 
-//           left-1/2 
-//           bottom-[-15px] 
-//           -translate-x-1/2
-//           w-8 h-8 
-//           rounded-full 
-//           bg-white 
-//           border border-gray-300 
-//           flex items-center justify-center 
-//           shadow-md 
-//           hover:bg-gray-100 
-//           hover:scale-110 
-//           transition 
-//           z-10
-//         "
-//       >
-//         <Plus size={16} className="text-gray-700" />
-//       </button>
-
-//     </div>
-//   );
-// };
-
-// export default DelayNode;
 import React from "react";
-import { Handle } from "reactflow";
+import { Handle, Position } from "reactflow";
 import { Clock, Edit, X, Plus, AlertCircle } from "lucide-react";
 
-const DelayNode = ({ data }) => {
-  const highlightStyle = data?.highlight
-    ? "border-red-500 shadow-[0_0_12px_rgba(255,0,0,0.6)] bg-gradient-to-br from-red-50 to-red-100"
-    : data?.success
-    ? "border-green-500 shadow-[0_0_12px_rgba(34,197,94,0.6)] bg-gradient-to-br from-green-50 to-green-100"
-    : "";
+const DelayNode = ({ data, selected }) => {
+  const isHighlighted = data?.highlight;
+  const isSuccess = data?.success;
 
   return (
-    // <div
-    //   className={`
-    //     relative group
-    //     px-5 py-5 
-    //     rounded-2xl 
-    //     border-2 
-    //     shadow-[0_3px_10px_rgba(0,0,0,0.05)]
-    //     w-[260px]
-    //     transition-all
-    //     ${highlightStyle}
-    //   `}
-    // >
-       <div
-      className={`
-        relative group
-        px-5 py-5 
-        rounded-2xl 
-        bg-white 
-        border-2 
-        shadow-[0_3px_10px_rgba(0,0,0,0.05)]
-        w-[260px]
-        transition-all
-        ${highlightStyle}
-      `}
-    >
-
-
-      {/* ---- Delete Button ---- */}
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          data?.confirmDeleteNode(data.id);
-        }}
-        className="
-          opacity-0 group-hover:opacity-100
-          absolute top-3 right-14
-          w-7 h-7 
-          rounded-lg 
-          bg-red-500 text-white 
-          flex items-center justify-center 
-          shadow 
-          transition z-20
-        "
-      >
-        <X size={16} />
-      </button>
-
-      {/* ---- Edit Button ---- */}
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          data?.openModuleModal?.(data?.id);
-        }}
-        className="
-          absolute top-3 right-3 
-          w-8 h-8 
-          border border-blue-300 
-          rounded-lg 
-          flex items-center justify-center 
+    <div className="relative group">
+      <div
+        className={`
+          relative 
+          p-4 
           bg-white 
-          hover:bg-blue-50 
-          transition z-20
-        "
+          rounded-[22px] 
+          border 
+          shadow-xs 
+          hover:shadow-md
+          w-[270px] 
+          transition-all duration-200
+          ${
+            selected
+              ? "border-indigo-500 ring-2 ring-indigo-200 shadow-md"
+              : isHighlighted
+              ? "border-red-400 ring-2 ring-red-100 bg-red-50/20"
+              : isSuccess
+              ? "border-emerald-400 ring-2 ring-emerald-100 bg-emerald-50/20"
+              : "border-slate-200/90"
+          }
+        `}
       >
-        <Edit size={16} className="text-blue-500" />
-      </button>
+        {/* Delete Button (only on hover) */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            data?.confirmDeleteNode?.(data?.id);
+          }}
+          className="
+            opacity-0 group-hover:opacity-100
+            absolute top-3 right-11
+            w-7 h-7 
+            rounded-lg 
+            bg-red-50 hover:bg-red-100 text-red-600 border border-red-200
+            flex items-center justify-center 
+            transition-all z-20 cursor-pointer
+          "
+          title="Delete Node"
+        >
+          <X size={14} />
+        </button>
 
-      {/* ---- Error Message ---- */}
-      {data?.errorMessage && (
-        <div className="
-          w-full
-          flex items-center gap-2
-          bg-red-100 
-          border border-red-300 
-          text-red-700 
-          text-sm 
-          px-3 py-2 
-          rounded-lg 
-          mt-10
-        ">
-          <AlertCircle size={16} />
-          <span>{data.errorMessage}</span>
-        </div>
-      )}
+        {/* Edit Button */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            data?.openModuleModal?.(data?.id);
+          }}
+          className="
+            absolute top-3 right-3 
+            w-7 h-7 
+            rounded-lg bg-slate-50 hover:bg-slate-100 border border-slate-200/80 
+            flex items-center justify-center 
+            text-slate-500 hover:text-slate-900 
+            transition-colors z-20 cursor-pointer
+          "
+          title="Edit Delay"
+        >
+          <Edit size={14} />
+        </button>
 
-      {/* ---- Icon + Title ---- */}
-      <div className="flex items-center gap-4 mt-4">
-        <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center shadow-inner">
-          <Clock size={26} className="text-blue-500" />
+        {/* Header Row */}
+        <div className="flex items-center gap-3 mb-2.5">
+          <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 border border-amber-100/70 flex items-center justify-center shrink-0 shadow-2xs">
+            <Clock size={18} />
+          </div>
+
+          <div className="leading-tight">
+            <h3 className="text-sm font-bold text-slate-900">Delay</h3>
+            <p className="text-[11px] font-medium text-slate-400">
+              {data?.config?.delayValue || 5} {data?.config?.delayUnit || "seconds"}
+            </p>
+          </div>
         </div>
 
-        <div className="leading-tight">
-          <h3 className="text-[17px] font-semibold text-gray-800">Delay</h3>
-          <p className="text-[13px] text-gray-500 mt-[3px]">
-            {data?.config?.delayValue || 5} {data?.config?.delayUnit || "seconds"}
-          </p>
+        {/* Error Message */}
+        {data?.errorMessage && (
+          <div className="w-full flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 text-xs px-2.5 py-1.5 rounded-lg mb-2">
+            <AlertCircle size={14} className="shrink-0 text-red-500" />
+            <span className="truncate">{data.errorMessage}</span>
+          </div>
+        )}
+
+        {/* Footer */}
+        <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+          <span className="text-[11px] font-medium text-slate-500">
+            Pause execution flow
+          </span>
+          <span className="text-[11px] font-semibold text-emerald-600 shrink-0">
+            ✓ Configured
+          </span>
         </div>
+
+        {/* Add Node Button */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            data?.openModuleModal?.(data?.id);
+          }}
+          className="
+            absolute left-1/2 bottom-[-14px] -translate-x-1/2
+            w-7 h-7 rounded-full bg-white border border-slate-300
+            flex items-center justify-center shadow-xs 
+            hover:bg-slate-50 hover:scale-110 hover:border-slate-400 transition-all z-20 cursor-pointer
+          "
+          title="Add Module"
+        >
+          <Plus size={14} className="text-slate-700" />
+        </button>
+
+        {/* Handles */}
+        <Handle
+          type="target"
+          position={Position.Top}
+          className="!w-3 !h-2 !rounded-full !bg-slate-300 !border-2 !border-white hover:!bg-indigo-500 transition-colors"
+          style={{ top: -7 }}
+        />
+        <Handle
+          type="source"
+          position={Position.Bottom}
+          className="!w-3 !h-2 !rounded-full !bg-slate-300 !border-2 !border-white hover:!bg-indigo-500 transition-colors"
+          style={{ bottom: -7 }}
+        />
       </div>
-
-      {/* ---- Handles ---- */}
-      <Handle
-        type="target"
-        position="top"
-        className="!w-4 !h-2 !rounded-full !bg-gray-400 !border-2 !border-white"
-      />
-      <Handle
-        type="source"
-        position="bottom"
-        className="!w-4 !h-2 !rounded-full !bg-gray-400 !border-2 !border-white"
-      />
-
-      {/* ---- Add Button ---- */}
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          data?.openModuleModal?.(data?.id);
-        }}
-        className="
-          absolute 
-          left-1/2 
-          bottom-[-15px] 
-          -translate-x-1/2
-          w-8 h-8 
-          rounded-full 
-          bg-white 
-          border border-gray-300 
-          flex items-center justify-center 
-          shadow-md 
-          hover:bg-gray-100 
-          hover:scale-110 
-          transition 
-          z-10
-        "
-      >
-        <Plus size={16} className="text-gray-700" />
-      </button>
-
     </div>
   );
 };

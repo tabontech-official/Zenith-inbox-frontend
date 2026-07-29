@@ -1487,8 +1487,8 @@ const Sidebar = ({ onOpenMailhook, onOpenGmail, onOpenOutlook }) => {
 
       {/* Scenario Type Selection Modal */}
       {showScenarioSelectionModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-[16px] shadow-2xl flex flex-col overflow-hidden border border-zinc-200 max-w-xl w-full">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/10 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-[8PX]  flex flex-col overflow-hidden border  max-w-xl w-full">
             {/* Header */}
             <div className="flex justify-between items-center px-6 py-4 bg-[#111111] text-white">
               <div>

@@ -40,8 +40,12 @@ import { ListOrdered, MailCheck, Sparkles } from "lucide-react";
 import RunTestModal from "../modals/RunTestModal";
 import TestEmailModal from "../modals/TestEmailModal";
 import TemplateNode from "../nodes/TemplateNode";
+import BlankNode from "../nodes/BlankNode";
+import TemplateModal from "../modals/TemplateModal";
+import { Zap, Edit3 } from "lucide-react";
 
 const nodeTypes = {
+  blankNode: BlankNode,
   webhookNode: WebhookNode,
   // routerNode: RouterNode,
   gmailNode: GmailNode,
@@ -56,6 +60,7 @@ const OthersScenariosPage = () => {
 
   const navigate = useNavigate();
   const [highlightedNodes, setHighlightedNodes] = useState([]);
+  const [isEditingName, setIsEditingName] = useState(false);
 
   const { id } = useParams();
   const [showWebhookModal, setShowWebhookModal] = useState(false);
@@ -90,6 +95,24 @@ const OthersScenariosPage = () => {
 
         return newEdges;
       });
+
+      if (updatedNodes.length === 0) {
+        return [
+          {
+            id: "blank-1",
+            type: "blankNode",
+            position: { x: 200, y: 80 },
+            data: {
+              id: "blank-1",
+              label: "Add Initial Node",
+              openModuleModal: () => {
+                setEditingNode("blank-1");
+                setShowModuleModal(true);
+              },
+            },
+          },
+        ];
+      }
 
       return updatedNodes;
     });
@@ -242,88 +265,107 @@ const OthersScenariosPage = () => {
   };
 
   useEffect(() => {
-    const defaultWebhook = {
-      id: "webhook-1",
-      type: "webhookNode",
-      position: { x: 200, y: 80 },
-      data: {
-        id: "webhook-1",
-        label: "Webhook",
-        config: {},
-        deleteNode: () => deleteNode("webhook-1"),
-
-        openModuleModal: () => {
-          setEditingNode("webhook-1");
-          setShowModuleModal(true);
+    if (rfNodes.length === 0) {
+      setRfNodes([
+        {
+          id: "blank-1",
+          type: "blankNode",
+          position: { x: 200, y: 80 },
+          data: {
+            id: "blank-1",
+            label: "Add Initial Node",
+            openModuleModal: () => {
+              setEditingNode("blank-1");
+              setShowModuleModal(true);
+            },
+          },
         },
-
-        openWebhookModal: () => {
-          setShowWebhookModal(true);
-        },
-      },
-    };
-
-    setRfNodes([defaultWebhook]);
-  }, []);
+      ]);
+    }
+  }, [rfNodes.length]);
 
   const [showGmailModal, setShowGmailModal] = useState(false);
   const [showOutlookModal, setShowOutlookModal] = useState(false);
 
   const addModule = (type) => {
     const parentId = editingNode?.id || editingNode;
-
-    const nodeId = crypto.randomUUID();
-
+    const isReplacingBlank = rfNodes.length === 1 && rfNodes[0].type === "blankNode";
+    const nodeId = type === "webhookNode" ? "webhook-1" : crypto.randomUUID();
     const parentNode = rfNodes.find((n) => n.id === parentId);
 
-    const newNode = {
-      id: nodeId,
-      type,
-      position: {
-        x: parentNode ? parentNode.position.x : 200,
-        y: parentNode ? parentNode.position.y + 180 : 400,
-      },
-      data: {
+    const position = isReplacingBlank || !parentNode
+      ? { x: 200, y: 80 }
+      : { x: parentNode.position.x, y: parentNode.position.y + 180 };
+
+    let newNode;
+    if (type === "webhookNode") {
+      newNode = {
         id: nodeId,
-        label: type,
-        config: {},
-
-        deleteNode: () => deleteNode(nodeId),
-
-        openEditEmailModal: () => {
-          setEditingNode({ id: nodeId, type });
-          setShowEmailModal(true);
+        type: "webhookNode",
+        position,
+        data: {
+          id: nodeId,
+          label: "Webhook",
+          config: {},
+          deleteNode: () => deleteNode(nodeId),
+          openModuleModal: () => {
+            setEditingNode(nodeId);
+            setShowModuleModal(true);
+          },
+          openWebhookModal: () => {
+            setShowWebhookModal(true);
+          },
         },
-
-        confirmDeleteNode: () => {
-          setNodeToDelete(nodeId);
-          setShowDeleteConfirm(true);
+      };
+    } else {
+      newNode = {
+        id: nodeId,
+        type,
+        position,
+        data: {
+          id: nodeId,
+          label: type,
+          config: {},
+          deleteNode: () => deleteNode(nodeId),
+          openEditEmailModal: () => {
+            setEditingNode({ id: nodeId, type });
+            setShowEmailModal(true);
+          },
+          confirmDeleteNode: () => {
+            setNodeToDelete(nodeId);
+            setShowDeleteConfirm(true);
+          },
+          openModuleModal: () => {
+            setEditingNode({ id: nodeId, type });
+            setShowModuleModal(true);
+          },
+          openConditionModal: () => {
+            setEditingNode({ id: nodeId, type });
+            setShowFilterModal(true);
+          },
         },
+      };
+    }
 
-        openModuleModal: () => {
-          setEditingNode({ id: nodeId, type });
-          setShowModuleModal(true);
-        },
-
-        openConditionModal: () => {
-          setEditingNode({ id: nodeId, type });
-          setShowFilterModal(true);
-        },
-      },
-    };
-
-    setRfNodes((prev) => [...prev, newNode]);
-
-    if (parentId) {
-      setRfEdges((prev) => [
-        ...prev,
-        {
-          id: `edge-${parentId}-${nodeId}`,
-          source: parentId,
-          target: nodeId,
-          type: "smoothstep",
-        },
+    if (isReplacingBlank) {
+      setRfNodes([newNode]);
+      setRfEdges([]);
+    } else {
+      setRfNodes((prev) => [
+        ...prev.filter((n) => n.id !== parentId || n.type !== "blankNode"),
+        newNode,
       ]);
+      if (parentId && parentId !== "blank-1") {
+        setRfEdges((prev) => [
+          ...prev,
+          {
+            id: `edge-${parentId}-${nodeId}`,
+            source: parentId,
+            target: nodeId,
+            type: "smoothstep",
+          },
+        ]);
+      }
     }
 
     if (type === "conditionNode") {
@@ -331,7 +373,7 @@ const OthersScenariosPage = () => {
       setShowFilterModal(true);
     }
     if (type === "templateNode") {
-      fetchActiveTemplates(); // <-- ADD THIS
+      fetchActiveTemplates();
     }
 
     if (type === "delayNode") {
@@ -564,136 +606,159 @@ const OthersScenariosPage = () => {
   //   setRfEdges(edges);
   // };
 
-  const rebuildFlowFromScenario = (scenario) => {
-    const nodes = [];
-    const edges = [];
+  const rebuildFlowFromScenario = (data) => {
+    if (!data) return;
 
-    const START_X = 400;
-    const START_Y = 80;
-    const BRANCH_SPACING_X = 350;
-    const NODE_SPACING_Y = 180;
+    console.log("📥 REBUILDING FLOW FROM SAVED SCENARIO:", data);
 
-    // Webhook Node (center)
-    nodes.push({
-      id: "webhook-1",
-      type: "webhookNode",
-      position: { x: START_X, y: START_Y },
-      data: {
-        id: "webhook-1",
-        config: {},
-        deleteNode: () => deleteNode("webhook-1"),
-        openModuleModal: () => {
-          setEditingNode("webhook-1");
-          setShowModuleModal(true);
-        },
-        openWebhookModal: () => setShowWebhookModal(true),
-      },
-    });
-
-    scenario.routerBranches.forEach((branch, branchIndex) => {
-      const branchX =
-        START_X + (branchIndex === 0 ? -BRANCH_SPACING_X : BRANCH_SPACING_X);
-
-      let prevNodeId = "webhook-1";
-
-      branch.modules.forEach((mod, modIndex) => {
-        const yPos = START_Y + (modIndex + 1) * NODE_SPACING_Y;
-        const nodeType =
-          mod.type === "Condition"
-            ? "conditionNode"
-            : mod.type === "Delay"
-              ? "delayNode"
-              : mod.type === "Template"
-                ? "templateNode"
-                : "gmailNode";
-
-        const newNode = {
-          id: mod.id,
-          type: nodeType,
-          position: { x: branchX, y: yPos },
-          data: {
-            id: mod.id,
-            config: mod,
-            openModuleModal: () => {
-              setEditingNode({ id: mod.id, type: nodeType });
-              setShowModuleModal(true);
-            },
-            confirmDeleteNode: () => {
-              setNodeToDelete(mod.id);
-              setShowDeleteConfirm(true);
-            },
+    // 1. Direct restore if saved with rfNodes & rfEdges
+    if (data.rfNodes && data.rfNodes.length > 0) {
+      const restoredNodes = data.rfNodes.map((n) => ({
+        ...n,
+        data: {
+          ...n.data,
+          confirmDeleteNode: (nodeId) => {
+            setNodeToDelete(nodeId || n.id);
+            setShowDeleteConfirm(true);
           },
-        };
-
-        if (nodeType === "gmailNode") {
-          const isMongoId = /^[0-9a-fA-F]{24}$/.test(mod.template);
-          newNode.data.config = {
-            appType: mod.emailType || "",
-            emailType: mod.emailType || "",
-            to: mod.to || "",
-            subject: mod.subject || "",
-            cc: mod.cc || [],
-            bcc: mod.bcc || [],
-            connectionId: mod.connectionId || "",
-            templateId: isMongoId ? mod.template : null,
-            body: isMongoId ? "" : mod.template || "",
-          };
-          newNode.data.openEditEmailModal = () => {
-            setEditingNode({ id: mod.id, type: "gmailNode" });
+          openModuleModal: (nodeId) => {
+            setEditingNode({ id: nodeId || n.id, type: n.type });
+            setShowModuleModal(true);
+          },
+          openEditEmailModal: () => {
+            setEditingNode(n);
             setShowEmailModal(true);
-          };
-        }
-
-        // Template config
-        if (nodeType === "templateNode") {
-          newNode.data.config = {
-            templateId: mod.templateId || "",
-            name: mod.templateName || "",
-            content: mod.templateContent || "",
-          };
-          newNode.data.openTemplateModal = () => {
-            setEditingNode({ id: mod.id, type: "templateNode" });
+          },
+          openTemplateModal: () => {
+            setEditingNode(n);
+            fetchActiveTemplates();
             setShowTemplateModal(true);
-          };
-        }
-
-        // Condition config
-        if (nodeType === "conditionNode") {
-          newNode.data.config = mod.filter || { conditions: [] };
-          newNode.data.openConditionModal = () => {
-            setEditingNode({ id: mod.id, type: "conditionNode" });
-            setShowFilterModal(true);
-          };
-        }
-
-        // Delay config
-        if (nodeType === "delayNode") {
-          newNode.data.config = {
-            delayValue: mod.delayValue,
-            delayUnit: mod.delayUnit,
-          };
-          newNode.data.openEditModal = () => {
-            setEditingNode({ id: mod.id, type: "delayNode" });
+          },
+          openDelayModal: () => {
+            setEditingNode(n);
             setShowDelayModal(true);
-          };
-        }
+          },
+          openConditionModal: () => {
+            setEditingNode(n);
+            setShowFilterModal(true);
+          },
+          openWebhookModal: () => setShowWebhookModal(true),
+        },
+      }));
 
-        nodes.push(newNode);
+      // Sync incomingLead from DB if available
+      if (data.incomingLead && (data.incomingLead.connectionId || data.incomingLead.subjectFilter)) {
+        const connId =
+          data.incomingLead.connectionId?._id ||
+          data.incomingLead.connectionId;
+        const subj = data.incomingLead.subjectFilter || "";
 
-        // Connect edge
-        edges.push({
-          id: `edge-${prevNodeId}-${mod.id}`,
-          source: prevNodeId,
-          target: mod.id,
-          type: "smoothstep",
+        restoredNodes.forEach((n) => {
+          if (n.type === "gmailNode") {
+            if (!n.data.config) n.data.config = {};
+            if (connId && !n.data.config.connectionId) n.data.config.connectionId = connId;
+            if (subj && !n.data.config.subject) n.data.config.subject = subj;
+          }
         });
+      }
 
-        prevNodeId = mod.id;
+      setRfNodes(restoredNodes);
+      setRfEdges(data.rfEdges || []);
+      return;
+    }
+
+    // 2. Reconstruct from routerBranches
+    if (data.routerBranches && data.routerBranches.length > 0) {
+      const nodes = [];
+      const edges = [];
+
+      data.routerBranches.forEach((branch, branchIndex) => {
+        let prevNodeId = null;
+
+        (branch.modules || []).forEach((mod, modIndex) => {
+          const nodeType =
+            mod.nodeType ||
+            (mod.type === "Condition" || mod.type === "conditionNode"
+              ? "conditionNode"
+              : mod.type === "Delay" || mod.type === "delayNode"
+              ? "delayNode"
+              : mod.type === "Template" || mod.type === "templateNode"
+              ? "templateNode"
+              : mod.type === "Webhook" || mod.type === "webhookNode"
+              ? "webhookNode"
+              : "gmailNode");
+
+          const nodeId = mod.id || crypto.randomUUID();
+          const position = mod.position || {
+            x: 200 + branchIndex * 350,
+            y: 80 + modIndex * 180,
+          };
+
+          const newNode = {
+            id: nodeId,
+            type: nodeType,
+            position: position,
+            data: {
+              id: nodeId,
+              config: mod.config || {
+                ...mod,
+                templateId: mod.templateId || (mod.type === "Template" ? mod.template : null),
+                name: mod.templateName || mod.name || "",
+                content: mod.templateContent || mod.content || mod.body || "",
+                connectionId: mod.connectionId || "",
+                connectionEmail: mod.connectionEmail || "",
+                subject: mod.subject || "",
+                delayValue: mod.delayValue || null,
+                delayUnit: mod.delayUnit || null,
+              },
+              confirmDeleteNode: () => {
+                setNodeToDelete(nodeId);
+                setShowDeleteConfirm(true);
+              },
+              openModuleModal: () => {
+                setEditingNode({ id: nodeId, type: nodeType });
+                setShowModuleModal(true);
+              },
+              openEditEmailModal: () => {
+                setEditingNode({ id: nodeId, type: nodeType });
+                setShowEmailModal(true);
+              },
+              openTemplateModal: () => {
+                setEditingNode({ id: nodeId, type: nodeType });
+                fetchActiveTemplates();
+                setShowTemplateModal(true);
+              },
+              openDelayModal: () => {
+                setEditingNode({ id: nodeId, type: nodeType });
+                setShowDelayModal(true);
+              },
+              openConditionModal: () => {
+                setEditingNode({ id: nodeId, type: nodeType });
+                setShowFilterModal(true);
+              },
+              openWebhookModal: () => setShowWebhookModal(true),
+            },
+          };
+
+          nodes.push(newNode);
+
+          if (prevNodeId) {
+            edges.push({
+              id: `edge-${prevNodeId}-${nodeId}`,
+              source: prevNodeId,
+              target: nodeId,
+              type: "smoothstep",
+            });
+          }
+          prevNodeId = nodeId;
+        });
       });
-    });
 
-    setRfNodes(nodes);
-    setRfEdges(edges);
+      if (nodes.length > 0) {
+        setRfNodes(nodes);
+        setRfEdges(edges);
+      }
+    }
   };
 
   const [isTemplateAvailable, setIsTemplateAvailable] = useState(false);
@@ -753,9 +818,22 @@ const OthersScenariosPage = () => {
 
     const isTemplateConnected = checkIfTemplateBefore(node.id);
 
+    if (node.type === "blankNode") {
+      setShowModuleModal(true);
+    }
+
+    if (node.type === "webhookNode") {
+      setShowWebhookModal(true);
+    }
+
     if (node.type === "gmailNode") {
       setShowEmailModal(true);
-      setIsTemplateAvailable(isTemplateConnected); // <— new flag
+      setIsTemplateAvailable(isTemplateConnected);
+    }
+
+    if (node.type === "templateNode") {
+      fetchActiveTemplates();
+      setShowTemplateModal(true);
     }
 
     if (node.type === "delayNode") setShowDelayModal(true);
@@ -765,15 +843,35 @@ const OthersScenariosPage = () => {
   const saveScenario = async () => {
     const scenario = flowToScenario(rfNodes, rfEdges);
 
-    console.log("🟥 FINAL NODES:", rfNodes);
-    console.log("🟥 FINAL EDGES:", rfEdges);
-    console.log("🟥 FINAL SCENARIO (routerBranches):", scenario);
+    const gmailNode = rfNodes.find((n) => n.type === "gmailNode");
+    const gmailConfig = gmailNode?.data?.config || {};
+
+    const incomingLeadObj = {
+      app: {
+        name: gmailConfig.appType || gmailConfig.emailType || "Gmail",
+        color: "",
+        icon: "",
+      },
+      connectionId: gmailConfig.connectionId || null,
+      subjectFilter: gmailConfig.subject || "",
+      pollInterval: 60,
+      enabled: Boolean(gmailConfig.connectionId),
+    };
+
+    console.log("🟥 SAVING SCENARIO INCOMING LEAD:", incomingLeadObj);
+    console.log("🟥 SAVING SCENARIO NODES:", rfNodes);
+    console.log("🟥 SAVING SCENARIO EDGES:", rfEdges);
+    console.log("🟥 SAVING SCENARIO BRANCHES:", scenario);
+
     const payload = {
       userId,
       name: scenarioName,
       description: "",
       type: "other",
+      incomingLead: incomingLeadObj,
       routerBranches: scenario,
+      rfNodes: rfNodes,
+      rfEdges: rfEdges,
       scenarioActive: isActive,
     };
 
@@ -830,8 +928,14 @@ const OthersScenariosPage = () => {
 
       if (node.type === "gmailNode") {
         if (!cfg.connectionId) error = "Connection not selected";
-        else if (!cfg.subject) error = "Email subject missing";
-        else if (!cfg.body) error = "Email body missing";
+        else if (!cfg.subject) error = "Subject filter missing";
+      }
+
+      if (node.type === "templateNode") {
+        if (!cfg.templateId && !cfg.template && !cfg.content && !cfg.body)
+          error = "Template not selected";
+        else if (!cfg.connectionId)
+          error = "Sender connection missing";
       }
 
       if (node.type === "delayNode") {
@@ -1113,55 +1217,62 @@ const OthersScenariosPage = () => {
 
         <main className="flex flex-1 flex-col overflow-hidden min-w-0 pt-[60px]">
           {/* Top Header Bar */}
-          <div className="sticky top-0 z-30 border-b border-[#EBE8E1] bg-[#FAF8F5] px-6 py-3.5">
+          <div className="sticky top-0 z-30 border-b border-[#EBE8E1] bg-[#FAF8F5] px-6 py-3.5 shadow-2xs">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-semibold text-slate-400">
                     Scenarios /
                   </span>
-                  <input
-                    type="text"
-                    value={scenarioName}
-                    onChange={(e) => setScenarioName(e.target.value)}
-                    className="text-base font-bold text-slate-900 bg-transparent border-none outline-none focus:ring-0"
-                    placeholder="Custom Scenario Name"
-                  />
-                  <span className="inline-flex items-center gap-1 rounded-full bg-[#E6F4EA] px-2.5 py-0.5 text-[11px] font-semibold text-[#137333]">
+                  <div className="relative flex items-center group">
+                    <input
+                      type="text"
+                      value={scenarioName}
+                      placeholder="Custom Scenario — Automation Flow"
+                      onChange={(e) => setScenarioName(e.target.value)}
+                      className="text-base font-bold text-slate-900 bg-transparent hover:bg-slate-100/70 focus:bg-white border border-transparent hover:border-slate-200 focus:border-slate-300 rounded-[6px] px-2 py-0.5 outline-none transition-all w-[300px] sm:w-[360px] truncate focus:not-truncate cursor-pointer focus:cursor-text"
+                      title="Click to edit scenario name"
+                    />
+                  </div>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[#E6F4EA] px-2.5 py-0.5 text-[11px] font-semibold text-[#137333] shrink-0">
                     <span className="h-1.5 w-1.5 rounded-full bg-[#34A853]"></span>
                     Live
                   </span>
                 </div>
 
                 <div className="mt-1 flex items-center gap-2 text-xs text-slate-500 font-medium">
-                  <span>Custom Automation Builder</span>
-                  <span className="text-slate-300">|</span>
-                  <span
-                    className={
-                      isActive
-                        ? "font-semibold text-[#137333]"
-                        : "font-semibold text-slate-400"
-                    }
-                  >
-                    {isActive ? "✓ Scenario Active" : "Scenario Inactive"}
+                  <span className="inline-flex items-center gap-1 text-[#137333]">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#34A853]"></span>
+                    Mailhook Active
                   </span>
+                  <span className="text-slate-300">|</span>
+                  <span>{connections.length > 0 ? `${connections.length} Sender Accounts` : "No Sender Account"}</span>
+                  <span className="text-slate-300">|</span>
+                  <span>{rfNodes.filter(n => n.type !== "blankNode").length} Active Nodes</span>
                 </div>
               </div>
 
               <div className="flex items-center gap-3 shrink-0">
                 <button
-                  onClick={saveScenario}
-                  className="rounded-[8px] bg-[#111110] px-4 py-2 text-xs font-semibold text-white shadow-2xs hover:bg-black transition"
+                  onClick={() => setShowWebhookModal(true)}
+                  className="rounded-full border border-[#E0DDD5] bg-white px-4 py-1.5 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 transition flex items-center gap-1.5 cursor-pointer"
                 >
-                  {id ? "Update Scenario" : "Create Scenario"}
+                  <Zap size={14} className="text-amber-500" /> Webhook Info
                 </button>
 
                 <button
-                  onClick={() => setShowRunTestModal(true)}
-                  className="inline-flex items-center gap-1.5 rounded-[8px] border border-[#E0DDD5] bg-white px-4 py-2 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 transition"
+                  onClick={handleRunTest}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 transition cursor-pointer"
                 >
-                  <Sparkles size={13} className="text-emerald-600" />
+                  <Sparkles size={14} className="text-indigo-600" />
                   Run Test
+                </button>
+
+                <button
+                  onClick={saveScenario}
+                  className="rounded-full bg-slate-900 hover:bg-black px-5 py-1.5 text-xs font-semibold text-white shadow-xs transition cursor-pointer"
+                >
+                  {id ? "Update Scenario" : "Save Scenario"}
                 </button>
 
                 <div className="flex items-center gap-2 rounded-full border border-[#E0DDD5] bg-white px-3 py-1 shadow-2xs">
@@ -1190,58 +1301,233 @@ const OthersScenariosPage = () => {
           </div>
 
           {/* Main Canvas Body */}
-          <div className="flex-1 overflow-hidden bg-[#FAF8F5] relative">
+          <div className="flex-1 overflow-y-auto bg-[#FAF8F5] p-6 relative">
             <div className="absolute inset-0 bg-[radial-gradient(#D5D1C8_1px,transparent_1px)] [background-size:16px_16px] opacity-40 pointer-events-none"></div>
 
-            <div className="h-full w-full relative z-10">
-              <ReactFlow
-                nodes={rfNodes.map((n) => ({
-                  ...n,
-                  data: {
-                    ...n.data,
-                    highlight: highlightedNodes.includes(n.id),
-                    success: validNodes.includes(n.id),
-                    executing: executingNode === n.id,
-                  },
-                }))}
-                edges={rfEdges}
-                nodeTypes={nodeTypes}
-                onNodesChange={(chg) =>
-                  setRfNodes((nds) => applyNodeChanges(chg, nds))
-                }
-                onEdgesChange={(chg) =>
-                  setRfEdges((eds) => applyEdgeChanges(chg, eds))
-                }
-                onConnect={onConnect}
-                onNodeClick={handleNodeClick}
-                onEdgeContextMenu={handleEdgeContextMenu}
-                fitView
-              >
-                <Controls />
-                <MiniMap />
-                <Background gap={16} />
-              </ReactFlow>
-            </div>
+            <div className="relative z-10 grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)] gap-8 mx-auto">
+              {/* LEFT SIDEBAR: Setup Checklist */}
+              <div className="space-y-4">
+                <div className="rounded-[20px] bg-gradient-to-b from-slate-950 via-zinc-900 to-black text-white p-5 border border-slate-800 shadow-xl relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-2xl pointer-events-none"></div>
 
-            {/* Floating Action Bar */}
-            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-md shadow-lg border border-[#EBE8E1] rounded-full px-6 py-2.5 flex items-center gap-6 z-50 text-xs font-semibold text-slate-700">
-              <button
-                onClick={organizeNodes}
-                className="flex items-center gap-2 text-slate-800 hover:text-black transition"
-              >
-                <ListOrdered size={16} className="text-purple-600" />
-                Organize
-              </button>
+                  {(() => {
+                    const checklistSteps = [];
 
-              <div className="w-[1px] h-4 bg-[#E0DDD5]"></div>
+                    const webhookNode = rfNodes.find((n) => n.type === "webhookNode");
+                    const emailNode = rfNodes.find((n) => n.type === "gmailNode");
 
-              <button
-                onClick={fetchTestEmail}
-                className="flex items-center gap-2 text-slate-800 hover:text-black transition"
-              >
-                <MailCheck size={16} className="text-emerald-600" />
-                Test Email
-              </button>
+                    if (webhookNode) {
+                      checklistSteps.push({
+                        label: "Setup Webhook Trigger",
+                        isComplete: Boolean(webhookUrl),
+                        warning: !webhookUrl ? "Webhook URL missing" : null,
+                        onClick: () => setShowWebhookModal(true),
+                      });
+                    } else if (emailNode) {
+                      checklistSteps.push({
+                        label: "Configure Email Trigger",
+                        isComplete: Boolean(emailNode.data?.config?.connectionId),
+                        warning: !emailNode.data?.config?.connectionId ? "Select email connection" : null,
+                        onClick: () => {
+                          setEditingNode(emailNode);
+                          setShowEmailModal(true);
+                        },
+                      });
+                    } else {
+                      checklistSteps.push({
+                        label: "Add Initial Trigger Node",
+                        isComplete: false,
+                        warning: "Click to select trigger node",
+                        onClick: () => setShowModuleModal(true),
+                      });
+                    }
+
+                    checklistSteps.push({
+                      label: "Connect Sender Account",
+                      isComplete: connections && connections.length > 0,
+                      warning: !connections || connections.length === 0 ? "No sender connection" : null,
+                      onClick: () => setShowGmailModal(true),
+                    });
+
+                    rfNodes
+                      .filter((n) => n.type !== "blankNode" && n.type !== "webhookNode")
+                      .forEach((n) => {
+                        if (n.type === "gmailNode") {
+                          const isConn = Boolean(n.data?.config?.connectionId);
+                          checklistSteps.push({
+                            label: `Configure Email ${n.data?.config?.subject || ""}`,
+                            isComplete: isConn,
+                            warning: !isConn ? "Sender connection missing" : null,
+                            onClick: () => {
+                              setEditingNode(n);
+                              setShowEmailModal(true);
+                            },
+                          });
+                        } else if (n.type === "templateNode") {
+                          const hasTpl = Boolean(
+                            n.data?.config?.templateId || n.data?.config?.name
+                          );
+                          checklistSteps.push({
+                            label: `Review Template (${n.data?.config?.name || "Predefined"})`,
+                            isComplete: hasTpl,
+                            onClick: () => {
+                              fetchActiveTemplates();
+                              setShowTemplateModal(true);
+                            },
+                          });
+                        } else if (n.type === "delayNode") {
+                          const hasDelay = Boolean(n.data?.config?.delayValue);
+                          checklistSteps.push({
+                            label: `Configure Delay (${n.data?.config?.delayValue || 5} ${
+                              n.data?.config?.delayUnit || "seconds"
+                            })`,
+                            isComplete: hasDelay,
+                            onClick: () => {
+                              setEditingNode(n);
+                              setShowDelayModal(true);
+                            },
+                          });
+                        } else if (n.type === "conditionNode") {
+                          const hasFilter = Boolean(
+                            n.data?.config?.conditions?.length
+                          );
+                          checklistSteps.push({
+                            label: "Configure Filter Criteria",
+                            isComplete: hasFilter,
+                            onClick: () => {
+                              setEditingNode(n);
+                              setShowFilterModal(true);
+                            },
+                          });
+                        }
+                      });
+
+                    const completedCount = checklistSteps.filter((s) => s.isComplete).length;
+                    const progressPercent =
+                      checklistSteps.length > 0
+                        ? Math.round((completedCount / checklistSteps.length) * 100)
+                        : 0;
+
+                    return (
+                      <>
+                        <div className="flex items-center justify-between relative z-10 mb-2">
+                          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                            Setup Checklist
+                          </span>
+                          <span className="text-xs font-bold text-emerald-400 bg-emerald-950/80 border border-emerald-800/50 px-2 py-0.5 rounded-full">
+                            {progressPercent}% Complete
+                          </span>
+                        </div>
+
+                        {/* Progress Bar */}
+                        <div className="w-full bg-slate-800 rounded-full h-1.5 mb-5 overflow-hidden">
+                          <div
+                            className="bg-gradient-to-r from-emerald-500 to-teal-400 h-1.5 rounded-full transition-all duration-500"
+                            style={{ width: `${progressPercent}%` }}
+                          ></div>
+                        </div>
+
+                        <div className="space-y-2.5 relative z-10">
+                          {checklistSteps.map((step, idx) => (
+                            <div
+                              key={idx}
+                              onClick={step.onClick}
+                              className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-slate-900/80 transition cursor-pointer group border border-transparent hover:border-slate-800"
+                            >
+                              <div
+                                className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5 text-xs font-bold ${
+                                  step.isComplete
+                                    ? "bg-emerald-500 text-slate-950"
+                                    : "border border-slate-600 text-slate-400 group-hover:border-slate-400"
+                                }`}
+                              >
+                                {step.isComplete ? "✓" : idx + 1}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p
+                                  className={`text-xs font-semibold ${
+                                    step.isComplete
+                                      ? "text-slate-300 line-through decoration-slate-600 opacity-80"
+                                      : "text-slate-100"
+                                  }`}
+                                >
+                                  {step.label}
+                                </p>
+                                {step.warning && (
+                                  <p className="text-[10px] text-amber-400 mt-0.5 font-medium flex items-center gap-1">
+                                    <span>⚠</span> {step.warning}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+
+              {/* RIGHT SIDE: ReactFlow Canvas Container */}
+              <div className="bg-white/80 backdrop-blur-sm border border-slate-200/80 rounded-[24px] shadow-xl overflow-hidden h-[calc(100vh-170px)] relative">
+                <ReactFlow
+                  nodes={rfNodes.map((n) => ({
+                    ...n,
+                    data: {
+                      ...n.data,
+                      highlight: highlightedNodes.includes(n.id),
+                      success: validNodes.includes(n.id),
+                      executing: executingNode === n.id,
+                      openTemplateModal: () => {
+                        setEditingNode(n);
+                        fetchActiveTemplates();
+                        setShowTemplateModal(true);
+                      },
+                      openEditEmailModal: () => {
+                        setEditingNode(n);
+                        setShowEmailModal(true);
+                      },
+                    },
+                  }))}
+                  edges={rfEdges}
+                  nodeTypes={nodeTypes}
+                  onNodesChange={(chg) =>
+                    setRfNodes((nds) => applyNodeChanges(chg, nds))
+                  }
+                  onEdgesChange={(chg) =>
+                    setRfEdges((eds) => applyEdgeChanges(chg, eds))
+                  }
+                  onConnect={onConnect}
+                  onNodeClick={handleNodeClick}
+                  onEdgeContextMenu={handleEdgeContextMenu}
+                  fitView
+                >
+                  <Controls />
+                  <MiniMap />
+                  <Background gap={16} />
+                </ReactFlow>
+
+                {/* Floating Action Bar */}
+                <div className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-md shadow-lg border border-[#EBE8E1] rounded-full px-6 py-2.5 flex items-center gap-6 z-50 text-xs font-semibold text-slate-700">
+                  <button
+                    onClick={organizeNodes}
+                    className="flex items-center gap-2 text-slate-800 hover:text-black transition cursor-pointer"
+                  >
+                    <ListOrdered size={16} className="text-purple-600" />
+                    Organize
+                  </button>
+
+                  <div className="w-[1px] h-4 bg-[#E0DDD5]"></div>
+
+                  <button
+                    onClick={fetchTestEmail}
+                    className="flex items-center gap-2 text-slate-800 hover:text-black transition cursor-pointer"
+                  >
+                    <MailCheck size={16} className="text-emerald-600" />
+                    Test Email
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </main>
@@ -1336,66 +1622,99 @@ const OthersScenariosPage = () => {
       )}
 
       {showModuleModal && (
-        <div className="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white p-6 rounded-[20px] shadow-2xl w-80 space-y-5 border border-[#EBE8E1]">
-            {/* Title */}
-            <div className="flex justify-between items-center">
-              <h2 className="text-base font-bold text-slate-900">
-                Select Module
-              </h2>
+        <div className="fixed inset-0 z-[9999]  backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-[8px]  w-[420px] overflow-hidden border ">
+            {/* Header matching Image 1 */}
+            <div className="flex justify-between items-center bg-[#111110] text-white px-6 py-4">
+              <div>
+                <h2 className="text-base font-bold text-white">
+                  Select Application
+                </h2>
+                <p className="text-xs text-slate-400 mt-0.5 font-medium">
+                  Choose an app to add to your workflow
+                </p>
+              </div>
               <button
                 type="button"
                 onClick={() => setShowModuleModal(false)}
-                className="text-slate-400 hover:text-slate-700 transition"
+                className="text-slate-400 hover:text-white transition p-1 rounded-full cursor-pointer"
               >
                 <FiX size={18} />
               </button>
             </div>
 
-            {/* Options */}
-            <div className="space-y-2.5">
+            {/* Options List matching Image 1 */}
+            <div className="p-6 space-y-3">
               <button
                 type="button"
-                className="w-full p-3 border border-slate-200 rounded-[12px] bg-slate-50 hover:bg-blue-50 hover:border-blue-300 text-slate-800 text-xs font-semibold transition-all flex items-center gap-3 cursor-pointer"
+                className="w-full p-3.5 border border-slate-200/90 rounded-[16px] bg-white hover:border-slate-400 hover:shadow-2xs text-slate-800 text-xs font-bold transition-all flex items-center gap-3.5 cursor-pointer group"
                 onClick={() => addModule("gmailNode")}
               >
-                <FiMail size={18} className="text-blue-600" /> Email
+                <div className="w-10 h-10 rounded-xl bg-[#111110] text-white flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
+                  <FiMail size={20} />
+                </div>
+                <div className="text-left">
+                  <div className="text-slate-900 font-bold text-sm">Incoming Leads</div>
+                  <div className="text-xs text-slate-400 font-medium mt-0.5">Gmail / Email Connection</div>
+                </div>
               </button>
 
               <button
                 type="button"
-                className="w-full p-3 border border-slate-200 rounded-[12px] bg-slate-50 hover:bg-purple-50 hover:border-purple-300 text-slate-800 text-xs font-semibold transition-all flex items-center gap-3 cursor-pointer"
+                className="w-full p-3.5 border border-slate-200/90 rounded-[16px] bg-white hover:border-slate-400 hover:shadow-2xs text-slate-800 text-xs font-bold transition-all flex items-center gap-3.5 cursor-pointer group"
                 onClick={() => addModule("templateNode")}
               >
-                <FiFileText size={18} className="text-purple-600" />
-                Email Template
+                <div className="w-10 h-10 rounded-xl bg-[#111110] text-white flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
+                  <FiFileText size={20} />
+                </div>
+                <div className="text-left">
+                  <div className="text-slate-900 font-bold text-sm">Email Template</div>
+                  <div className="text-xs text-slate-400 font-medium mt-0.5">Email Template</div>
+                </div>
               </button>
 
               <button
                 type="button"
-                className="w-full p-3 border border-slate-200 rounded-[12px] bg-slate-50 hover:bg-amber-50 hover:border-amber-300 text-slate-800 text-xs font-semibold transition-all flex items-center gap-3 cursor-pointer"
+                className="w-full p-3.5 border border-slate-200/90 rounded-[16px] bg-white hover:border-slate-400 hover:shadow-2xs text-slate-800 text-xs font-bold transition-all flex items-center gap-3.5 cursor-pointer group"
                 onClick={() => addModule("delayNode")}
               >
-                <FiClock size={18} className="text-amber-600" /> Delay
+                <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
+                  <FiClock size={20} />
+                </div>
+                <div className="text-left">
+                  <div className="text-slate-900 font-bold text-sm">Delay</div>
+                  <div className="text-xs text-slate-400 font-medium mt-0.5">Delay</div>
+                </div>
               </button>
 
               <button
                 type="button"
-                className="w-full p-3 border border-slate-200 rounded-[12px] bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 text-slate-800 text-xs font-semibold transition-all flex items-center gap-3 cursor-pointer"
+                className="w-full p-3.5 border border-slate-200/90 rounded-[16px] bg-white hover:border-slate-400 hover:shadow-2xs text-slate-800 text-xs font-bold transition-all flex items-center gap-3.5 cursor-pointer group"
+                onClick={() => addModule("webhookNode")}
+              >
+                <div className="w-10 h-10 rounded-xl bg-[#111110] text-white flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
+                  <Zap size={20} />
+                </div>
+                <div className="text-left">
+                  <div className="text-slate-900 font-bold text-sm">Webhook Trigger</div>
+                  <div className="text-xs text-slate-400 font-medium mt-0.5">Custom Mailhook Request</div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                className="w-full p-3.5 border border-slate-200/90 rounded-[16px] bg-white hover:border-slate-400 hover:shadow-2xs text-slate-800 text-xs font-bold transition-all flex items-center gap-3.5 cursor-pointer group"
                 onClick={() => addModule("conditionNode")}
               >
-                <FiFilter size={18} className="text-emerald-600" /> Condition
+                <div className="w-10 h-10 rounded-xl bg-[#111110] text-white flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
+                  <FiFilter size={20} />
+                </div>
+                <div className="text-left">
+                  <div className="text-slate-900 font-bold text-sm">Condition</div>
+                  <div className="text-xs text-slate-400 font-medium mt-0.5">Filter criteria</div>
+                </div>
               </button>
             </div>
-
-            {/* Cancel */}
-            <button
-              type="button"
-              className="w-full p-2.5 bg-slate-100 border border-slate-200 rounded-[8px] text-xs font-semibold text-slate-700 hover:bg-slate-200 transition cursor-pointer"
-              onClick={() => setShowModuleModal(false)}
-            >
-              Cancel
-            </button>
           </div>
         </div>
       )}
@@ -1425,6 +1744,26 @@ const OthersScenariosPage = () => {
             );
 
             setShowEmailModal(false);
+          }}
+        />
+      )}
+
+      {showTemplateModal && (
+        <TemplateModal
+          node={editingNode}
+          templates={otherActiveTemplates}
+          connections={connections}
+          fetchActiveTemplates={fetchActiveTemplates}
+          onClose={() => setShowTemplateModal(false)}
+          onSave={(data) => {
+            setRfNodes((prev) =>
+              prev.map((n) =>
+                n.id === (editingNode?.id || editingNode)
+                  ? { ...n, data: { ...n.data, config: data } }
+                  : n,
+              ),
+            );
+            setShowTemplateModal(false);
           }}
         />
       )}

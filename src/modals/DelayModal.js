@@ -9,8 +9,8 @@ const DelayModal = ({ node, onSave, onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-      <div className="bg-white w-[400px] rounded-lg shadow-lg">
-        <div className="flex items-center justify-between bg-blue-600 text-white px-4 py-3 rounded-t-lg">
+      <div className="bg-white w-[400px] rounded-[8px] shadow-lg">
+        <div className="flex items-center justify-between bg-[#111110] text-white px-4 py-3 rounded-t-lg">
           <h2 className="font-semibold">Configure Delay</h2>
           <button onClick={onClose}>
             <X className="w-5 h-5" />
@@ -44,7 +44,7 @@ const DelayModal = ({ node, onSave, onClose }) => {
           </button>
           <button
             onClick={() => onSave({ delayValue, delayUnit })}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md"
+            className="px-6 py-2 bg-[#111110]  text-white rounded-md"
           >
             Save
           </button>

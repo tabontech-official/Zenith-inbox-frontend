@@ -2837,13 +2837,13 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                     <span className="text-xs font-semibold text-slate-400">
                       Scenarios /
                     </span>
-                    {isEditingName ? (
+                    <div className="relative flex items-center group">
                       <input
                         type="text"
                         value={scenarioName}
+                        placeholder="Shopify Partner Directory — Lead Automation"
                         onChange={(e) => setScenarioName(e.target.value)}
                         onBlur={() => {
-                          setIsEditingName(false);
                           if (!scenarioName.trim()) {
                             setScenarioName("Shopify Partner Directory — Lead Automation");
                           }
@@ -2851,28 +2851,13 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                         }}
                         onKeyDown={(e) => {
                           if (e.key === "Enter") {
-                            setIsEditingName(false);
-                            if (!scenarioName.trim()) {
-                              setScenarioName("Shopify Partner Directory — Lead Automation");
-                            }
-                            handleSaveScenario();
+                            e.target.blur();
                           }
                         }}
-                        autoFocus
-                        className="text-base font-bold text-slate-900 bg-white border border-slate-300 rounded-[6px] px-2 py-0.5 outline-none focus:ring-2 focus:ring-slate-900"
-                      />
-                    ) : (
-                      <div
-                        onClick={() => setIsEditingName(true)}
-                        className="flex items-center gap-1.5 cursor-pointer hover:bg-slate-100 px-2 py-0.5 rounded-[6px] transition group"
+                        className="text-base font-bold text-slate-900 bg-transparent hover:bg-slate-100/70 focus:bg-white border border-transparent hover:border-slate-200 focus:border-slate-300 rounded-[6px] px-2 py-0.5 outline-none transition-all w-[300px] sm:w-[380px] truncate focus:not-truncate cursor-pointer focus:cursor-text"
                         title="Click to edit scenario name"
-                      >
-                        <h1 className="text-base font-bold text-slate-900">
-                          {scenarioName || "Shopify Partner Directory — Lead Automation"}
-                        </h1>
-                        <FiEdit size={13} className="text-slate-400 opacity-0 group-hover:opacity-100 transition" />
-                      </div>
-                    )}
+                      />
+                    </div>
                     <span className="inline-flex items-center gap-1 rounded-full bg-[#E6F4EA] px-2.5 py-0.5 text-[11px] font-semibold text-[#137333]">
                       <span className="h-1.5 w-1.5 rounded-full bg-[#34A853]"></span>
                       Live
