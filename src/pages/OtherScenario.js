@@ -1287,7 +1287,7 @@ const OthersScenariosPage = () => {
                 <button
                   type="button"
                   onClick={saveScenario}
-                  className="rounded-full bg-[#111110] hover:bg-black px-4.5 py-1.5 text-xs font-bold text-white shadow-2xs transition cursor-pointer"
+                  className="rounded-full bg-[#111110] hover:bg-black px-5 py-1.5 text-xs font-bold text-white shadow-2xs transition cursor-pointer"
                 >
                   {id ? "Update Scenario" : "Save Scenario"}
                 </button>
