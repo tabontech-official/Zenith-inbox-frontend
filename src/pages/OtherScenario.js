@@ -1221,12 +1221,12 @@ const OthersScenariosPage = () => {
         <Sidebar />
 
         <main className="flex flex-1 flex-col overflow-hidden min-w-0 pt-[60px]">
-          {/* Top Header Bar */}
-          <div className="sticky top-0 z-30 border-b border-[#EBE8E1] bg-[#FAF8F5] px-6 py-3.5 shadow-2xs">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
+          {/* Top Header Bar (Full width, no max-width) */}
+          <div className="sticky top-0 z-30 border-b border-slate-200 bg-[#FAF8F5] px-6 py-3 shadow-2xs w-full">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between w-full">
+              <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-semibold text-slate-400">
+                  <span className="text-xs sm:text-sm font-medium text-slate-400">
                     Scenarios /
                   </span>
                   <div className="relative flex items-center group">
@@ -1235,60 +1235,64 @@ const OthersScenariosPage = () => {
                       value={scenarioName}
                       placeholder="Custom Scenario — Automation Flow"
                       onChange={(e) => setScenarioName(e.target.value)}
-                      className="text-base font-bold text-slate-900 bg-transparent hover:bg-slate-100/70 focus:bg-white border border-transparent hover:border-slate-200 focus:border-slate-300 rounded-[6px] px-2 py-0.5 outline-none transition-all w-[300px] sm:w-[360px] truncate focus:not-truncate cursor-pointer focus:cursor-text"
+                      className="text-sm sm:text-base font-bold text-slate-900 bg-transparent hover:bg-slate-100/70 focus:bg-white border border-transparent hover:border-slate-200 focus:border-slate-300 rounded-[6px] px-2 py-0.5 outline-none transition-all w-[280px] sm:w-[360px] truncate focus:not-truncate cursor-pointer focus:cursor-text"
                       title="Click to edit scenario name"
                     />
                   </div>
-                  <span className="inline-flex items-center gap-1 rounded-full bg-[#E6F4EA] px-2.5 py-0.5 text-[11px] font-semibold text-[#137333] shrink-0">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#34A853]"></span>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100/90 border border-emerald-200/80 px-2.5 py-0.5 text-xs font-bold text-emerald-800 shrink-0">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-600"></span>
                     Live
                   </span>
                 </div>
 
-                <div className="mt-1 flex items-center gap-2 text-xs text-slate-500 font-medium">
-                  <span className="inline-flex items-center gap-1 text-[#137333]">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#34A853]"></span>
+                <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
+                  <span className="inline-flex items-center gap-1 text-emerald-700 font-semibold">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-600"></span>
                     Mailhook Active
                   </span>
-                  <span className="text-slate-300">|</span>
-                  <span>{connections.length > 0 ? `${connections.length} Sender Accounts` : "No Sender Account"}</span>
-                  <span className="text-slate-300">|</span>
+                  <span className="text-slate-300 font-normal">|</span>
+                  <span>{connections.length > 0 ? `${connections.length} Sender Accounts` : "1 Sender Accounts"}</span>
+                  <span className="text-slate-300 font-normal">|</span>
                   <span>{rfNodes.filter(n => n.type !== "blankNode").length} Active Nodes</span>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 shrink-0">
+              <div className="flex items-center gap-2.5 shrink-0">
                 <button
+                  type="button"
                   onClick={() => setShowTestInstructionsModal(true)}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50/70 px-4 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 transition cursor-pointer"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50/80 px-3.5 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 transition cursor-pointer"
                 >
                   <HelpCircle size={14} className="text-indigo-600" />
                   How to Test
                 </button>
 
                 <button
+                  type="button"
                   onClick={() => setShowWebhookModal(true)}
-                  className="rounded-full border border-[#E0DDD5] bg-white px-4 py-1.5 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 transition flex items-center gap-1.5 cursor-pointer"
+                  className="rounded-full border border-slate-300 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 transition flex items-center gap-1.5 cursor-pointer"
                 >
                   <Zap size={14} className="text-amber-500" /> Webhook Info
                 </button>
 
                 <button
+                  type="button"
                   onClick={handleRunTest}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 transition cursor-pointer"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50/80 px-3.5 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 transition cursor-pointer"
                 >
                   <Sparkles size={14} className="text-indigo-600" />
                   Run Test
                 </button>
 
                 <button
+                  type="button"
                   onClick={saveScenario}
-                  className="rounded-full bg-slate-900 hover:bg-black px-5 py-1.5 text-xs font-semibold text-white shadow-xs transition cursor-pointer"
+                  className="rounded-full bg-[#111110] hover:bg-black px-4.5 py-1.5 text-xs font-bold text-white shadow-2xs transition cursor-pointer"
                 >
                   {id ? "Update Scenario" : "Save Scenario"}
                 </button>
 
-                <div className="flex items-center gap-2 rounded-full border border-[#E0DDD5] bg-white px-3 py-1 shadow-2xs">
+                <div className="flex items-center gap-2 rounded-full border border-slate-300 bg-white px-3 py-1 shadow-2xs">
                   <span className="text-xs font-semibold text-slate-700">
                     {isActive ? "On" : "Off"}
                   </span>
@@ -1305,7 +1309,7 @@ const OthersScenariosPage = () => {
                       }}
                       className="sr-only peer"
                     />
-                    <div className="w-8 h-4 bg-slate-300 peer-checked:bg-[#137333] rounded-full transition-colors"></div>
+                    <div className="w-8 h-4 bg-slate-300 peer-checked:bg-emerald-600 rounded-full transition-colors"></div>
                     <div className="absolute left-0.5 top-0.5 w-3 h-3 bg-white rounded-full transition-transform peer-checked:translate-x-4"></div>
                   </label>
                 </div>
@@ -1314,10 +1318,10 @@ const OthersScenariosPage = () => {
           </div>
 
           {/* Main Canvas Body */}
-          <div className="flex-1 overflow-y-auto bg-[#FAF8F5] p-6 relative">
+          <div className="flex-1 overflow-y-auto bg-[#FAF8F5] p-6 relative w-full">
             <div className="absolute inset-0 bg-[radial-gradient(#D5D1C8_1px,transparent_1px)] [background-size:16px_16px] opacity-40 pointer-events-none"></div>
 
-            <div className="relative z-10 grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)] gap-8 mx-auto">
+            <div className="relative z-10 grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)] gap-8 w-full">
               {/* LEFT SIDEBAR: Setup Checklist */}
               <div className="space-y-4">
                 <div className="rounded-[20px] bg-gradient-to-b from-slate-950 via-zinc-900 to-black text-white p-5 border border-slate-800 shadow-xl relative overflow-hidden">

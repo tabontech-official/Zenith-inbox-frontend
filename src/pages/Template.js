@@ -278,32 +278,42 @@ export default function Template() {
     toast.error(
       "Auto response is enabled. Switch to manual mode to edit templates.",
     );
-
   return (
     <div className="min-h-screen bg-[#FAF8F5]">
       <Sidebar />
       <div className="w-full flex-1 pt-[60px]">
         {/* Main Header */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center shadow-2xs border border-slate-800">
-                <Layout className="w-5 h-5 text-emerald-400" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-                  Service Templates
-                </h1>
-                <p className="text-xs text-slate-500 font-normal mt-0.5">
-                  Manage and automate your Shopify service response templates
-                </p>
-              </div>
+       <div className="border-b border-gray-200 bg-white">
+        <div className="flex min-h-[30px] items-center justify-between gap-4 px-6 text-[11px] text-gray-500">
+          <div className="flex min-w-0 items-center divide-x divide-gray-200">
+            <div className="flex items-center gap-1.5 pr-4 font-medium text-green-700">
+              <span className="relative flex h-3 w-3 items-center justify-center">
+                <span className="absolute h-3 w-3 rounded-full bg-green-200" />
+                <span className="relative h-2 w-2 rounded-full bg-green-500" />
+              </span>
+
+              <span>All systems live</span>
+            </div>
+
+            <div className="hidden px-4 sm:block">
+              Shopify Templates
+              {/* {user?.email ? ` · ${user.email}` : ""} */}
+            </div>
+
+            <div className="hidden px-4 md:block">
+              {/* Filter matched {stats?.processed || 0} leads today */}
+            </div>
+
+            <div className="hidden px-4 lg:block">
+              Manage and automate your shopify service communication.
             </div>
           </div>
-        </div>
 
+         
+        </div>
+      </div>
         {/* Filter Bar & Controls */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="px-4 sm:px-6 lg:px-8 py-4">
           <div className="bg-white rounded-[12px] border border-slate-200 p-4 shadow-2xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
               <div className="flex items-center gap-2">
@@ -405,7 +415,7 @@ export default function Template() {
         </div>
 
         {/* Content Table */}
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+        <main className="px-4 sm:px-6 lg:px-8 pb-12">
           <div className="bg-white rounded-[12px] border border-slate-200 shadow-2xs overflow-hidden">
             <div className="hidden sm:block overflow-x-auto">
               <table className="min-w-full border-collapse text-xs">

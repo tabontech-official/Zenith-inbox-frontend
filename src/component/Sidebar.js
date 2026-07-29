@@ -675,6 +675,7 @@ const Sidebar = ({ onOpenMailhook, onOpenGmail, onOpenOutlook }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isScenarioMenuOpen, setIsScenarioMenuOpen] = useState(false);
+  const [isTemplateMenuOpen, setIsTemplateMenuOpen] = useState(false);
   const [guideStep, setGuideStep] = useState(0);
 
   // Limit restriction state
@@ -761,6 +762,7 @@ const Sidebar = ({ onOpenMailhook, onOpenGmail, onOpenOutlook }) => {
 
   const profileMenuRef = useRef(null);
   const scenarioMenuRef = useRef(null);
+  const templateMenuRef = useRef(null);
 
   const leadRef = useRef(null);
   const allScenarioRef = useRef(null);
@@ -917,6 +919,13 @@ const Sidebar = ({ onOpenMailhook, onOpenGmail, onOpenOutlook }) => {
       ) {
         setIsScenarioMenuOpen(false);
       }
+
+      if (
+        templateMenuRef.current &&
+        !templateMenuRef.current.contains(event.target)
+      ) {
+        setIsTemplateMenuOpen(false);
+      }
     };
 
     document.addEventListener("mousedown", closeDropdowns);
@@ -930,6 +939,7 @@ const Sidebar = ({ onOpenMailhook, onOpenGmail, onOpenOutlook }) => {
     setIsMobileMenuOpen(false);
     setIsProfileMenuOpen(false);
     setIsScenarioMenuOpen(false);
+    setIsTemplateMenuOpen(false);
   }, [location.pathname]);
 
   const handleLogout = async () => {
@@ -1137,12 +1147,49 @@ const Sidebar = ({ onOpenMailhook, onOpenGmail, onOpenOutlook }) => {
               )}
             </div>
 
-            <DesktopNavLink
-              to="/templates"
-              label="Templates"
-              Icon={FiFileText}
-              active={isSectionActive(["/templates"])}
-            />
+            <div ref={templateMenuRef} className="relative">
+              <button
+                type="button"
+                onClick={() =>
+                  setIsTemplateMenuOpen((previousValue) => !previousValue)
+                }
+                className={`flex h-9 items-center gap-1.5 rounded-[8px] px-4 text-[13px] font-medium transition-colors ${
+                  isSectionActive(["/templates"])
+                    ? "bg-gray-100 text-black"
+                    : "text-zinc-600 hover:bg-gray-100 hover:text-black"
+                }`}
+              >
+                <span>Templates</span>
+
+                <FiChevronDown
+                  className={`h-3.5 w-3.5 transition-transform ${
+                    isTemplateMenuOpen ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+
+              {isTemplateMenuOpen && (
+                <div className="absolute left-0 top-[46px] z-50 w-56 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-2 shadow-xl">
+                  <Link
+                    to="/templates"
+                    onClick={() => setIsTemplateMenuOpen(false)}
+                    className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-zinc-700 hover:bg-zinc-100 hover:text-black"
+                  >
+                    <FiFileText className="h-4 w-4 text-zinc-600" />
+                    Shopify Template
+                  </Link>
+
+                  <Link
+                    to="/templates/general"
+                    onClick={() => setIsTemplateMenuOpen(false)}
+                    className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-zinc-700 hover:bg-zinc-100 hover:text-black"
+                  >
+                    <FiSettings className="h-4 w-4 text-zinc-600" />
+                    Custom Template
+                  </Link>
+                </div>
+              )}
+            </div>
 
             <DesktopNavLink
               to="/inbox"
@@ -1317,9 +1364,16 @@ const Sidebar = ({ onOpenMailhook, onOpenGmail, onOpenOutlook }) => {
 
             <MobileNavLink
               to="/templates"
-              label="Templates"
+              label="Shopify Template"
               Icon={FiFileText}
-              active={isSectionActive(["/templates"])}
+              active={isActive("/templates")}
+            />
+
+            <MobileNavLink
+              to="/templates/general"
+              label="Custom Template"
+              Icon={FiSettings}
+              active={isActive("/templates/general")}
             />
 
             <MobileNavLink
