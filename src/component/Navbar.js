@@ -1,6 +1,7 @@
 import React, { useState, useContext, useRef, useEffect } from "react";
-import { FiEdit3, FiLogOut, FiUser } from "react-icons/fi";
+import { FiEdit3, FiLogOut, FiUser, FiCpu } from "react-icons/fi";
 import { useNavigate, useLocation, Link } from "react-router-dom";
+import { jwtDecode } from "jwt-decode";
 import OrganizationSettingsModal from "./OrganizationSettingsModal";
 import ScenarioSelectModal from "./ScenarioSelectModal";
 import { UserContext } from "./UserContext";
@@ -14,15 +15,30 @@ const Navbar = () => {
   const [openScenario, setOpenScenario] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [guideStep, setGuideStep] = useState(0);
+  const [role, setRole] = useState("");
 
   const navigate = useNavigate();
   const location = useLocation();
-  const isProfilePage = location.pathname === "/profile";
+  const isProfilePage = location.pathname === "/profile" || location.pathname === "/company-profile";
   const profileRef = useRef(null);
 
   const { user, loading } = useContext(UserContext);
   const plan = user?.subscription?.plan || "free";
   const userId = localStorage.getItem("userid");
+
+  useEffect(() => {
+    const storedToken = localStorage.getItem("usertoken");
+    if (storedToken) {
+      try {
+        const decoded = jwtDecode(storedToken);
+        if (decoded?.payLoad?.role) {
+          setRole(decoded.payLoad.role);
+        }
+      } catch (err) {
+        console.error("Token decode error:", err);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     if (!userId) return;
@@ -168,6 +184,21 @@ const Navbar = () => {
             )}
           </div> */}
 
+          {(role === "admin" ||
+            role === "superadmin" ||
+            role === "master_admin" ||
+            user?.role === "admin" ||
+            user?.role === "superadmin" ||
+            user?.role === "master_admin") && (
+            <Link
+              to="/admin/ai-config"
+              className="hidden md:inline-flex h-10 items-center justify-center gap-2 bg-[#111110] hover:bg-black text-white px-4 rounded-xl text-sm font-semibold shadow-sm transition duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            >
+              <FiCpu className="w-4 h-4 text-purple-400" />
+              <span>Master AI Module</span>
+            </Link>
+          )}
+
           <div className="relative">
             <button
               onClick={() => {
@@ -199,7 +230,7 @@ const Navbar = () => {
             </button>
 
             {showProfileMenu && (
-              <div className="absolute right-0 mt-2 w-44 bg-white border rounded-lg shadow-lg z-50 overflow-hidden">
+              <div className="absolute right-0 mt-2 w-52 bg-white border rounded-lg shadow-lg z-50 overflow-hidden">
                 {!loading && plan !== "pro" && (
                   <Link
                     to="/pricing"
@@ -221,15 +252,30 @@ const Navbar = () => {
                 >
                   <MdSecurity className="text-gray-600" /> Security
                 </button>
-                {!isProfilePage && (
+                <button
+                  onClick={() => {
+                    setShowProfileMenu(false);
+                    navigate("/company-profile");
+                  }}
+                  className="w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2 transition border-t"
+                >
+                  <FiUser className="text-gray-600" /> Company Profile
+                </button>
+
+                {(role === "admin" ||
+                  role === "superadmin" ||
+                  role === "master_admin" ||
+                  user?.role === "admin" ||
+                  user?.role === "superadmin" ||
+                  user?.role === "master_admin") && (
                   <button
                     onClick={() => {
                       setShowProfileMenu(false);
-                      navigate("/profile");
+                      navigate("/admin/ai-config");
                     }}
-                    className="w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2 transition border-t"
+                    className="w-full px-4 py-3 text-sm text-purple-700 hover:bg-purple-50 flex items-center gap-2 transition border-t font-semibold"
                   >
-                    <FiUser className="text-gray-600" /> Profile
+                    <FiCpu className="text-purple-600" /> Master AI Module
                   </button>
                 )}
 

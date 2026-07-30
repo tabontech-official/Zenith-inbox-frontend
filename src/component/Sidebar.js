@@ -645,7 +645,9 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   FiAlertTriangle,
   FiBarChart2,
+  FiBriefcase,
   FiChevronDown,
+  FiCpu,
   FiFileText,
   FiGrid,
   FiInbox,
@@ -1206,6 +1208,13 @@ const Sidebar = ({ onOpenMailhook, onOpenGmail, onOpenOutlook }) => {
               Icon={FiLink}
               active={isSectionActive(["/connection"])}
             />
+
+            <DesktopNavLink
+              to="/company-profile"
+              label="Company Profile"
+              Icon={FiBriefcase}
+              active={isSectionActive(["/company-profile"])}
+            />
           </nav>
         </div>
 
@@ -1301,7 +1310,7 @@ const Sidebar = ({ onOpenMailhook, onOpenGmail, onOpenOutlook }) => {
                 </div>
 
                 <Link
-                  to="/profile"
+                  to="/company-profile"
                   className="mt-1 flex items-center gap-3 rounded-[8px] px-3 py-2.5 text-sm text-zinc-700 hover:bg-zinc-100 hover:text-black"
                 >
                   <FiUser className="h-4 w-4" />
@@ -1315,6 +1324,21 @@ const Sidebar = ({ onOpenMailhook, onOpenGmail, onOpenOutlook }) => {
                   <FiSettings className="h-4 w-4" />
                   Connections
                 </Link>
+
+                {(role === "admin" ||
+                  role === "superadmin" ||
+                  role === "master_admin" ||
+                  user?.role === "admin" ||
+                  user?.role === "superadmin" ||
+                  user?.role === "master_admin") && (
+                  <Link
+                    to="/admin/ai-config"
+                    className="flex items-center gap-3 rounded-[8px] px-3 py-2.5 text-sm text-purple-700 hover:bg-purple-50 font-medium"
+                  >
+                    <FiCpu className="h-4 w-4 text-purple-600" />
+                    Master AI Config
+                  </Link>
+                )}
 
                 <button
                   type="button"
@@ -1399,10 +1423,10 @@ const Sidebar = ({ onOpenMailhook, onOpenGmail, onOpenOutlook }) => {
             />
 
             <MobileNavLink
-              to="/profile"
+              to="/company-profile"
               label="Profile"
               Icon={FiUser}
-              active={isActive("/profile")}
+              active={isSectionActive(["/company-profile"])}
             />
           </nav>
 
@@ -1478,6 +1502,13 @@ const Sidebar = ({ onOpenMailhook, onOpenGmail, onOpenOutlook }) => {
             to="/admin/product-page"
             label="CMS Products"
             active={isSectionActive(["/admin/product-page"])}
+          />
+
+          <DesktopNavLink
+            to="/admin/ai-config"
+            label="Master AI Module"
+            Icon={FiCpu}
+            active={isSectionActive(["/admin/ai-config"])}
           />
         </nav>
       </div>

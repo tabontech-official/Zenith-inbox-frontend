@@ -19,6 +19,8 @@ import SetupFlow from "./pages/SetupPage";
 import Inbox from "./pages/Inbox";
 import MailhookSetupGuide from "./pages/MailhookSetupGuide";
 import Profile from "./pages/Profile";
+import CompanyProfile from "./pages/CompanyProfile";
+import AdminAIConfig from "./Admin/AdminAIConfig";
 import ResetPassword from "./Auth/ResetPassword";
 import ForgotPassword from "./Auth/ForgotPassword";
 import LoginVerify from "./Auth/LoginVerify";
@@ -243,7 +245,23 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/company-profile"
+            element={
+              <ProtectedRoute>
+                <CompanyProfile />
+              </ProtectedRoute>
+            }
+          />
           {/* Admin Routing */}
+          <Route
+            path="/admin/ai-config"
+            element={
+              <ProtectedRoute adminOnly={true}>
+                <AdminAIConfig />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/admin/dashboard"
             element={
