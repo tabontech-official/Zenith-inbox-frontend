@@ -244,10 +244,10 @@ const Inbox = () => {
   // Helper to compile full thread messages including incoming replies and manual replies
   const getThreadMessages = (email) => {
     if (!email) return [];
-    const parentId = email._id;
+    const parentId = String(email._id);
 
     const rawReplies = email.replies || email.conversation || [];
-    const cleanReplies = rawReplies.filter((msg) => msg._id !== parentId);
+    const cleanReplies = rawReplies.filter((msg) => String(msg._id) !== parentId);
 
     const replies = cleanReplies.map((msg) => ({
       ...msg,
@@ -275,13 +275,39 @@ const Inbox = () => {
 
     const fullList = [parentMessage, ...replies, ...discussionMessages];
 
-    // Deduplicate by message ID or body snippet
     const map = new Map();
     fullList.forEach((item) => {
-      const key =
-        item._id ||
-        `${item.direction}-${item.date}-${(item.textBody || "").slice(0, 20)}`;
-      map.set(key, item);
+      if (item.isParentMessage) {
+        map.set(`parent-${item._id}`, item);
+        return;
+      }
+
+      const rawText = item.textBody || item.message || "";
+      const rawHtml = item.htmlBody || "";
+      const cleanText = (rawText || rawHtml)
+        .replace(/<[^>]*>/g, "")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase();
+
+      // 2-minute time window resolution to group near-identical duplicate messages
+      const itemTime = new Date(item.date || item.createdAt || Date.now()).getTime();
+      const timeWindow = Math.floor(itemTime / 120000);
+
+      const dedupeKey = cleanText
+        ? `${item.direction || "outgoing"}-${timeWindow}-${cleanText}`
+        : String(item._id);
+
+      if (!map.has(dedupeKey)) {
+        map.set(dedupeKey, item);
+      } else {
+        const existing = map.get(dedupeKey);
+        const existingIsTemp = String(existing._id).startsWith("disc-") || String(existing._id).startsWith("reply-");
+        const itemIsTemp = String(item._id).startsWith("disc-") || String(item._id).startsWith("reply-");
+        if (existingIsTemp && !itemIsTemp) {
+          map.set(dedupeKey, item);
+        }
+      }
     });
 
     return Array.from(map.values()).sort(
@@ -379,13 +405,8 @@ const Inbox = () => {
         { message, userId }
       );
 
-      const newDiscussionMsg = {
-        message,
-        date: new Date().toISOString(),
-        createdBy: userId,
-      };
-
-      const sentEmail = res.data?.data || {
+      const updatedDoc = res.data?.data;
+      const sentChildEmail = res.data?.sentEmail?.data || {
         _id: `reply-${Date.now()}`,
         subject: `Re: ${selectedEmail.subject || "Lead Inquiry"}`,
         textBody: message,
@@ -397,16 +418,28 @@ const Inbox = () => {
         stepType: "Manual Reply",
       };
 
+      const updatedDiscussion = updatedDoc?.discussion || [
+        ...(selectedEmail.discussion || []),
+        { message, date: new Date().toISOString(), createdBy: userId },
+      ];
+
+      const updatedReplies = [
+        ...(selectedEmail.replies || []).filter((r) => r._id !== sentChildEmail._id),
+        sentChildEmail,
+      ];
+
+      const newLeadStatus =
+        selectedEmail.leadStatus === "new_lead" ? "awaiting" : selectedEmail.leadStatus;
+
       setEmails((prev) =>
         prev.map((email) =>
           email._id === selectedEmail._id
             ? {
                 ...email,
-                leadStatus:
-                  email.leadStatus === "new_lead" ? "awaiting" : email.leadStatus,
-                discussion: [...(email.discussion || []), newDiscussionMsg],
-                replies: [...(email.replies || []), sentEmail],
-                conversation: [...(email.conversation || []), sentEmail],
+                leadStatus: newLeadStatus,
+                discussion: updatedDiscussion,
+                replies: updatedReplies,
+                conversation: updatedReplies,
               }
             : email
         )
@@ -414,9 +447,10 @@ const Inbox = () => {
 
       setSelectedEmail((prev) => ({
         ...prev,
-        discussion: [...(prev.discussion || []), newDiscussionMsg],
-        replies: [...(prev.replies || []), sentEmail],
-        conversation: [...(prev.conversation || []), sentEmail],
+        leadStatus: newLeadStatus,
+        discussion: updatedDiscussion,
+        replies: updatedReplies,
+        conversation: updatedReplies,
       }));
 
       setReplyText("");
