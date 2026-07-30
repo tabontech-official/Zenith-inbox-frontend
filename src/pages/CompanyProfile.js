@@ -23,10 +23,15 @@ import {
   FiFacebook,
   FiInstagram,
   FiYoutube,
+  FiZap,
+  FiUploadCloud,
 } from "react-icons/fi";
 import { UserContext } from "../component/UserContext";
 import Sidebar from "../component/Sidebar";
 import toast from "react-hot-toast";
+import FillWithAiModal from "../modals/FillWithAiModal";
+import ImportJsonModal from "../modals/ImportJsonModal";
+import { sanitizeCompanyObject, sanitizeUrl, sanitizeEmail } from "../utils/companyProfileSchema";
 
 const API_BASE_URL = "https://email-syncing-backend.vercel.app/api/company-profile";
 
@@ -82,6 +87,23 @@ const CompanyProfile = () => {
 
   const [companyKnowledge, setCompanyKnowledge] = useState("");
 
+  // Modal State
+  const [showFillWithAiModal, setShowFillWithAiModal] = useState(false);
+  const [showImportJsonModal, setShowImportJsonModal] = useState(false);
+
+  // Handle JSON Import Data Population
+  const handleImportSuccess = (data) => {
+    if (data.company) setCompany((prev) => sanitizeCompanyObject({ ...prev, ...data.company }));
+    if (data.services) setServices(data.services);
+    if (data.products) setProducts(data.products);
+    if (data.portfolio) setPortfolio(data.portfolio);
+    if (data.faqs) setFaqs(data.faqs);
+    if (data.policies) setPolicies((prev) => ({ ...prev, ...data.policies }));
+    if (data.timelines) setTimelines((prev) => ({ ...prev, ...data.timelines }));
+    if (data.writingStyle) setWritingStyle((prev) => ({ ...prev, ...data.writingStyle }));
+    if (data.companyKnowledge) setCompanyKnowledge(data.companyKnowledge);
+  };
+
   // Fetch Existing Company Profile
   useEffect(() => {
     const fetchProfile = async () => {
@@ -93,7 +115,7 @@ const CompanyProfile = () => {
 
         if (result.success && result.data) {
           const d = result.data;
-          if (d.company) setCompany((prev) => ({ ...prev, ...d.company }));
+          if (d.company) setCompany((prev) => sanitizeCompanyObject({ ...prev, ...d.company }));
           if (d.services) setServices(d.services);
           if (d.products) setProducts(d.products);
           if (d.portfolio) setPortfolio(d.portfolio);
@@ -254,7 +276,25 @@ const CompanyProfile = () => {
               </p>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowFillWithAiModal(true)}
+                className="h-9 rounded-[8px] bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 px-3 text-[12px] font-semibold transition-all flex items-center gap-1.5 shadow-sm"
+              >
+                <FiZap className="w-3.5 h-3.5 text-indigo-600" />
+                <span>Fill with AI</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowImportJsonModal(true)}
+                className="h-9 rounded-[8px] bg-gray-100 hover:bg-gray-200 text-gray-800 border border-gray-200 px-3 text-[12px] font-semibold transition-all flex items-center gap-1.5"
+              >
+                <FiUploadCloud className="w-3.5 h-3.5 text-gray-600" />
+                <span>Import JSON</span>
+              </button>
+
               <button
                 type="button"
                 onClick={handleSave}
@@ -539,7 +579,7 @@ const CompanyProfile = () => {
                   </button>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {services.map((item, idx) => (
                     <div key={item.id || idx} className="p-4 bg-gray-50 rounded-[12px] border border-gray-200 space-y-3">
                       <div className="flex items-center justify-between">
@@ -552,8 +592,9 @@ const CompanyProfile = () => {
                           <FiTrash2 className="w-4 h-4" />
                         </button>
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="space-y-3">
                         <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Service Name</label>
                           <input
                             type="text"
                             value={item.name}
@@ -563,12 +604,13 @@ const CompanyProfile = () => {
                               setServices(updated);
                             }}
                             placeholder="Service Name"
-                            className="w-full px-3 py-1.5 bg-white border border-gray-200 rounded-[8px] text-xs font-medium text-gray-800"
+                            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-[8px] text-xs font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                           />
                         </div>
-                        <div className="sm:col-span-2">
-                          <input
-                            type="text"
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Service Details & Description</label>
+                          <textarea
+                            rows={3}
                             value={item.description}
                             onChange={(e) => {
                               const updated = [...services];
@@ -576,7 +618,7 @@ const CompanyProfile = () => {
                               setServices(updated);
                             }}
                             placeholder="Service details & deliverables..."
-                            className="w-full px-3 py-1.5 bg-white border border-gray-200 rounded-[8px] text-xs text-gray-800"
+                            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-[8px] text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                           />
                         </div>
                       </div>
@@ -614,7 +656,7 @@ const CompanyProfile = () => {
                   </button>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {products.map((item, idx) => (
                     <div key={item.id || idx} className="p-4 bg-gray-50 rounded-[12px] border border-gray-200 space-y-3">
                       <div className="flex items-center justify-between">
@@ -627,32 +669,25 @@ const CompanyProfile = () => {
                           <FiTrash2 className="w-4 h-4" />
                         </button>
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <input
-                          type="text"
-                          value={item.name}
-                          onChange={(e) => {
-                            const updated = [...products];
-                            updated[idx].name = e.target.value;
-                            setProducts(updated);
-                          }}
-                          placeholder="Product Name"
-                          className="w-full px-3 py-1.5 bg-white border border-gray-200 rounded-[8px] text-xs font-medium text-gray-800"
-                        />
-                        <input
-                          type="text"
-                          value={item.features}
-                          onChange={(e) => {
-                            const updated = [...products];
-                            updated[idx].features = e.target.value;
-                            setProducts(updated);
-                          }}
-                          placeholder="Key Features / Specs"
-                          className="w-full px-3 py-1.5 bg-white border border-gray-200 rounded-[8px] text-xs text-gray-800"
-                        />
-                        <div className="sm:col-span-2">
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Product Name</label>
+                          <input
+                            type="text"
+                            value={item.name}
+                            onChange={(e) => {
+                              const updated = [...products];
+                              updated[idx].name = e.target.value;
+                              setProducts(updated);
+                            }}
+                            placeholder="Product Name"
+                            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-[8px] text-xs font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Product Description</label>
                           <textarea
-                            rows={2}
+                            rows={3}
                             value={item.description}
                             onChange={(e) => {
                               const updated = [...products];
@@ -660,7 +695,7 @@ const CompanyProfile = () => {
                               setProducts(updated);
                             }}
                             placeholder="Product Description..."
-                            className="w-full px-3 py-1.5 bg-white border border-gray-200 rounded-[8px] text-xs text-gray-800"
+                            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-[8px] text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                           />
                         </div>
                       </div>
@@ -698,7 +733,7 @@ const CompanyProfile = () => {
                   </button>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {portfolio.map((item, idx) => (
                     <div key={item.id || idx} className="p-4 bg-gray-50 rounded-[12px] border border-gray-200 space-y-3">
                       <div className="flex items-center justify-between">
@@ -711,40 +746,49 @@ const CompanyProfile = () => {
                           <FiTrash2 className="w-4 h-4" />
                         </button>
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <input
-                          type="text"
-                          value={item.projectName}
-                          onChange={(e) => {
-                            const updated = [...portfolio];
-                            updated[idx].projectName = e.target.value;
-                            setPortfolio(updated);
-                          }}
-                          placeholder="Project Name"
-                          className="w-full px-3 py-1.5 bg-white border border-gray-200 rounded-[8px] text-xs font-medium text-gray-800"
-                        />
-                        <input
-                          type="text"
-                          value={item.links}
-                          onChange={(e) => {
-                            const updated = [...portfolio];
-                            updated[idx].links = e.target.value;
-                            setPortfolio(updated);
-                          }}
-                          placeholder="Project Links / Image URLs"
-                          className="w-full px-3 py-1.5 bg-white border border-gray-200 rounded-[8px] text-xs text-gray-800"
-                        />
-                        <div className="sm:col-span-2">
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Project Name</label>
+                            <input
+                              type="text"
+                              value={item.projectName}
+                              onChange={(e) => {
+                                const updated = [...portfolio];
+                                updated[idx].projectName = e.target.value;
+                                setPortfolio(updated);
+                              }}
+                              placeholder="Project Name"
+                              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-[8px] text-xs font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Project Link</label>
+                            <input
+                              type="text"
+                              value={item.links}
+                              onChange={(e) => {
+                                const updated = [...portfolio];
+                                updated[idx].links = e.target.value;
+                                setPortfolio(updated);
+                              }}
+                              placeholder="Project Link (e.g. https://...)"
+                              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-[8px] text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Description</label>
                           <textarea
-                            rows={2}
+                            rows={3}
                             value={item.description}
                             onChange={(e) => {
                               const updated = [...portfolio];
                               updated[idx].description = e.target.value;
                               setPortfolio(updated);
                             }}
-                            placeholder="Project Overview..."
-                            className="w-full px-3 py-1.5 bg-white border border-gray-200 rounded-[8px] text-xs text-gray-800"
+                            placeholder="Project Description..."
+                            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-[8px] text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                           />
                         </div>
                       </div>
@@ -1126,6 +1170,18 @@ We aim to deliver world-class automation...
               </div>
             </div>
           )}
+          {/* Modals */}
+          <FillWithAiModal
+            isOpen={showFillWithAiModal}
+            onClose={() => setShowFillWithAiModal(false)}
+            onOpenImportModal={() => setShowImportJsonModal(true)}
+          />
+
+          <ImportJsonModal
+            isOpen={showImportJsonModal}
+            onClose={() => setShowImportJsonModal(false)}
+            onImportSuccess={handleImportSuccess}
+          />
         </div>
       </main>
     </div>

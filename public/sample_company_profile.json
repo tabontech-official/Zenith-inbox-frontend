@@ -1,0 +1,80 @@
+{
+  "company": {
+    "companyName": "Acme Innovations Inc.",
+    "businessDescription": "Leading provider of AI-powered email automation and workflow solutions for high-growth teams.",
+    "industry": "Software & Automation",
+    "website": "https://acmeinnovations.com",
+    "email": "support@acmeinnovations.com",
+    "phone": "+1 (555) 234-5678",
+    "address": "100 Tech Boulevard, Suite 400, San Francisco, CA 94107",
+    "socialLinks": {
+      "linkedin": "https://linkedin.com/company/acmeinnovations",
+      "twitter": "https://twitter.com/acmeinnovations",
+      "facebook": "https://facebook.com/acmeinnovations",
+      "instagram": "https://instagram.com/acmeinnovations",
+      "youtube": "https://youtube.com/@acmeinnovations"
+    }
+  },
+  "services": [
+    {
+      "name": "Custom Workflow Automation",
+      "description": "Bespoke automation setup for enterprise CRM and email integration with zero data loss."
+    },
+    {
+      "name": "AI Inbox Training & Setup",
+      "description": "Custom fine-tuning of AI auto-responder models trained on your business domain and SOPs."
+    }
+  ],
+  "products": [
+    {
+      "name": "Zenith Inbox Pro",
+      "description": "AI-assisted multi-channel inbox with automated lead routing, smart replies, and analytics.",
+      "features": "AI auto-reply, Unified Inbox, Real-time CRM Sync, Instant Lead Tagging"
+    }
+  ],
+  "portfolio": [
+    {
+      "projectName": "Enterprise Mail Migration",
+      "links": "https://acmeinnovations.com/case-studies/enterprise-migration",
+      "description": "Migrated 50,000 active mailboxes with zero downtime for a global financial institution."
+    }
+  ],
+  "faqs": [
+    {
+      "question": "How long does onboarding take?",
+      "answer": "Standard onboarding and setup completes within 2 to 4 business days."
+    },
+    {
+      "question": "Is my data secure?",
+      "answer": "Yes, we are SOC-2 Type II certified and enforce AES-256 end-to-end encryption."
+    }
+  ],
+  "policies": {
+    "returnPolicy": "30-day money-back guarantee on all software subscriptions.",
+    "refundPolicy": "Full refund processed within 5 business days upon written request.",
+    "shippingPolicy": "Instant digital access provisioned immediately upon signup.",
+    "privacyPolicy": "SOC-2 Type II compliant. We never sell or transfer customer data.",
+    "termsAndConditions": "Standard Enterprise SaaS Terms & Conditions apply.",
+    "customPolicies": [
+      {
+        "name": "Uptime SLA Guarantee",
+        "details": "99.99% monthly guaranteed uptime with 24/7 priority support escalations."
+      }
+    ]
+  },
+  "timelines": {
+    "deliveryTime": "2-4 business days",
+    "projectTimeline": "Discovery: 1 week, Build: 2 weeks, Validation: 1 week",
+    "supportHours": "Mon-Fri 9:00 AM - 6:00 PM EST (24/7 for Enterprise)",
+    "businessWorkingHours": "Mon - Fri: 9:00 AM - 6:00 PM EST"
+  },
+  "writingStyle": {
+    "toneOfVoice": "Professional, Helpful, Empathetic, Concise",
+    "brandPersonality": "Innovative, Reliable, Premium",
+    "communicationStyle": "Direct, Action-oriented, Solution-focused",
+    "preferredLanguage": "English (US)",
+    "wordsToAvoid": "Cheap, guaranteed, ASAP, baseline",
+    "exampleResponses": "Thank you for reaching out to Acme. We have processed your request and updated your account details."
+  },
+  "companyKnowledge": "# Company Overview & History\nAcme Innovations Inc. was founded in 2020 to revolutionize email inbox workflows and enterprise lead management...\n\n# Core Mission & Vision\nDeliver world-class AI automation that saves teams over 20 hours per week while improving response accuracy.\n\n# Customer Onboarding SOPs\n1. Initial discovery call and requirement gathering\n2. AI model training on knowledge base\n3. Integration testing & user approval\n4. Final deployment and post-launch review."
+}
