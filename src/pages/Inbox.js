@@ -158,6 +158,9 @@ const Inbox = () => {
       }
     } catch (err) {
       console.error("Error fetching inbox:", err);
+      if (err.response && err.response.status === 404) {
+        setEmails([]);
+      }
     } finally {
       setLoading(false);
     }
