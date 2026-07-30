@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Sidebar from "../component/Sidebar";
 import axios from "axios";
 import {
@@ -19,6 +19,10 @@ import {
   FiTag,
   FiMessageCircle,
   FiCornerUpLeft,
+  FiPaperclip,
+  FiFile,
+  FiDownload,
+  FiX,
 } from "react-icons/fi";
 
 const API_BASE_URL = "https://email-syncing-backend.vercel.app/mailhook";
@@ -32,6 +36,8 @@ const Inbox = () => {
   const [selectedLeadIds, setSelectedLeadIds] = useState(new Set());
   const [leadStatuses, setLeadStatuses] = useState({});
   const [replyText, setReplyText] = useState("");
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const fileInputRef = useRef(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("all"); // 'all', 'awaiting', 'auto_replied', 'secured', 'closed'
   const [modal, setModal] = useState({
@@ -191,6 +197,25 @@ const Inbox = () => {
       return clean.split("<")[0].trim() || clean.match(/<(.+)>/)?.[1] || clean;
     }
     return clean.split("@")[0];
+  };
+
+  const getAttachmentUrl = (att) => {
+    if (!att) return "#";
+    const pathStr = att.url || att.path || "";
+    if (!pathStr) return "#";
+    if (
+      pathStr.startsWith("http://") ||
+      pathStr.startsWith("https://") ||
+      pathStr.startsWith("data:")
+    ) {
+      return pathStr;
+    }
+    const cleanPath = String(pathStr)
+      .replace(/\\/g, "/")
+      .replace(/^(.*?)uploads\//, "");
+
+    const backendOrigin = API_BASE_URL.replace(/\/mailhook\/?$/, "");
+    return `${backendOrigin}/uploads/${cleanPath}`;
   };
 
   const formatTimeAgo = (dateStr) => {
@@ -401,8 +426,19 @@ const Inbox = () => {
     });
   };
 
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const filesArray = Array.from(e.target.files);
+      setSelectedFiles((prev) => [...prev, ...filesArray]);
+    }
+  };
+
+  const removeFile = (index) => {
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handleSendThreadReply = async () => {
-    if (!selectedEmail || !replyText.trim() || replySending) return;
+    if (!selectedEmail || (!replyText.trim() && selectedFiles.length === 0) || replySending) return;
 
     const message = replyText.trim();
     const userId = localStorage.getItem("userid");
@@ -410,9 +446,21 @@ const Inbox = () => {
     try {
       setReplySending(true);
 
+      const formData = new FormData();
+      formData.append("message", message);
+      if (userId) formData.append("userId", userId);
+      selectedFiles.forEach((file) => {
+        formData.append("attachments", file);
+      });
+
       const res = await axios.post(
         `${API_BASE_URL}/send-thread-reply/${selectedEmail._id}`,
-        { message, userId }
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
       );
 
       const updatedDoc = res.data?.data;
@@ -426,6 +474,11 @@ const Inbox = () => {
         date: new Date().toISOString(),
         direction: "outgoing",
         stepType: "Manual Reply",
+        attachments: selectedFiles.map((f) => ({
+          filename: f.name,
+          size: f.size,
+          contentType: f.type,
+        })),
       };
 
       const updatedDiscussion = updatedDoc?.discussion || [
@@ -464,6 +517,8 @@ const Inbox = () => {
       }));
 
       setReplyText("");
+      setSelectedFiles([]);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (err) {
       console.error("Error sending thread reply:", err);
       showModal({
@@ -536,6 +591,8 @@ const Inbox = () => {
   };
 
   // Counts for filter tabs
+  const [scenarioTab, setScenarioTab] = useState("all"); // 'all', 'shopify', 'custom'
+
   const awaitingCount = emails.filter(
     (e) => e.direction === "incoming" || e.leadStatus === "new_lead"
   ).length;
@@ -550,7 +607,41 @@ const Inbox = () => {
   const securedCount = emails.filter((e) => e.leadStatus === "secured").length;
   const closedCount = emails.filter((e) => e.leadStatus === "closed").length;
 
+  const shopifyCount = emails.filter(
+    (e) =>
+      (e.service || "").toLowerCase().includes("shopify") ||
+      (e.subject || "").toLowerCase().includes("shopify") ||
+      e.stepType === "shopify-test-parent" ||
+      !!e.extraFields?.storeName
+  ).length;
+
+  const customCount = emails.filter(
+    (e) =>
+      (e.service || "").toLowerCase() === "custom" ||
+      e.emailType === "custom" ||
+      (e.subject || "").toLowerCase().includes("custom test") ||
+      (!((e.service || "").toLowerCase().includes("shopify") || (e.subject || "").toLowerCase().includes("shopify")))
+  ).length;
+
   const filteredEmails = emails.filter((email) => {
+    // 1. Scenario Filter
+    if (scenarioTab === "shopify") {
+      const isShopify =
+        (email.service || "").toLowerCase().includes("shopify") ||
+        (email.subject || "").toLowerCase().includes("shopify") ||
+        email.stepType === "shopify-test-parent" ||
+        !!email.extraFields?.storeName;
+      if (!isShopify) return false;
+    } else if (scenarioTab === "custom") {
+      const isCustom =
+        (email.service || "").toLowerCase() === "custom" ||
+        email.emailType === "custom" ||
+        (email.subject || "").toLowerCase().includes("custom test") ||
+        (!((email.service || "").toLowerCase().includes("shopify") || (email.subject || "").toLowerCase().includes("shopify")));
+      if (!isCustom) return false;
+    }
+
+    // 2. Search Term Filter
     const term = searchTerm.trim().toLowerCase();
     const sender = email.senderAddress || email.forwardedMeta?.from || "";
     const recipient = email.recipientAddress || email.forwardedMeta?.to || "";
@@ -565,6 +656,7 @@ const Inbox = () => {
 
     if (!matchesSearch) return false;
 
+    // 3. Lead Status Filter
     if (activeTab === "awaiting") {
       return email.direction === "incoming" || email.leadStatus === "new_lead";
     } else if (activeTab === "auto_replied") {
@@ -666,6 +758,43 @@ const Inbox = () => {
                 </span>
                 Poll 60s
               </span>
+            </div>
+
+            {/* Scenario Type Filter Bar */}
+            <div className="mt-3 flex items-center gap-1 rounded-[10px] bg-[#EBE8E1] p-1">
+              <button
+                type="button"
+                onClick={() => setScenarioTab("all")}
+                className={`flex-1 rounded-[7px] py-1 text-[11px] font-bold transition cursor-pointer text-center ${
+                  scenarioTab === "all"
+                    ? "bg-white text-slate-900 shadow-2xs"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                All ({emails.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setScenarioTab("shopify")}
+                className={`flex-1 rounded-[7px] py-1 text-[11px] font-bold transition cursor-pointer text-center ${
+                  scenarioTab === "shopify"
+                    ? "bg-[#34A853] text-white shadow-2xs"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                Shopify ({shopifyCount})
+              </button>
+              <button
+                type="button"
+                onClick={() => setScenarioTab("custom")}
+                className={`flex-1 rounded-[7px] py-1 text-[11px] font-bold transition cursor-pointer text-center ${
+                  scenarioTab === "custom"
+                    ? "bg-indigo-600 text-white shadow-2xs"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                Custom ({customCount})
+              </button>
             </div>
 
             {/* Filter Tabs */}
@@ -995,6 +1124,41 @@ const Inbox = () => {
                               ),
                             }}
                           />
+                          {message.attachments && message.attachments.length > 0 && (
+                            <div className="mt-3 pt-3 border-t border-slate-100 flex flex-col gap-2">
+                              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                Attachments ({message.attachments.length})
+                              </p>
+                              <div className="flex flex-wrap gap-2">
+                                {message.attachments.map((att, attIdx) => (
+                                  <a
+                                    key={attIdx}
+                                    href={getAttachmentUrl(att)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    download={att.filename || "attachment"}
+                                    className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 px-3 py-2 text-xs font-medium text-slate-800 transition group"
+                                  >
+                                    <FiFile size={14} className="text-indigo-600 shrink-0" />
+                                    <div className="flex flex-col">
+                                      <span className="font-semibold text-[11px] max-w-[180px] truncate group-hover:underline">
+                                        {att.filename}
+                                      </span>
+                                      {att.size && (
+                                        <span className="text-[9px] text-slate-400">
+                                          {(att.size / 1024).toFixed(0)} KB
+                                        </span>
+                                      )}
+                                    </div>
+                                    <FiDownload
+                                      size={12}
+                                      className="text-slate-400 group-hover:text-slate-700 ml-1 shrink-0"
+                                    />
+                                  </a>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     );
@@ -1031,6 +1195,41 @@ const Inbox = () => {
                             ),
                           }}
                         />
+                        {message.attachments && message.attachments.length > 0 && (
+                          <div className="mt-3 pt-3 border-t border-slate-800 flex flex-col gap-2">
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                              Attachments ({message.attachments.length})
+                            </p>
+                            <div className="flex flex-wrap gap-2">
+                              {message.attachments.map((att, attIdx) => (
+                                <a
+                                  key={attIdx}
+                                  href={getAttachmentUrl(att)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  download={att.filename || "attachment"}
+                                  className="flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900 hover:bg-slate-800 px-3 py-2 text-xs font-medium text-slate-200 transition group"
+                                >
+                                  <FiFile size={14} className="text-indigo-400 shrink-0" />
+                                  <div className="flex flex-col">
+                                    <span className="font-semibold text-[11px] max-w-[180px] truncate group-hover:underline">
+                                      {att.filename}
+                                    </span>
+                                    {att.size && (
+                                      <span className="text-[9px] text-slate-400">
+                                        {(att.size / 1024).toFixed(0)} KB
+                                      </span>
+                                    )}
+                                  </div>
+                                  <FiDownload
+                                    size={12}
+                                    className="text-slate-400 group-hover:text-white ml-1 shrink-0"
+                                  />
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   );
@@ -1048,6 +1247,31 @@ const Inbox = () => {
               {/* Bottom Reply Bar */}
               <div className="border-t border-[#EBE8E1] bg-[#FAF8F5] p-4 shrink-0">
                 <div className="flex flex-col gap-2.5 max-w-5xl mx-auto">
+                  {/* Selected Files Preview */}
+                  {selectedFiles.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-2 pb-1">
+                      {selectedFiles.map((file, idx) => (
+                        <div
+                          key={idx}
+                          className="flex items-center gap-1.5 rounded-md border border-[#E0DDD5] bg-white px-2.5 py-1 text-[11px] font-medium text-slate-700 shadow-2xs"
+                        >
+                          <FiFile size={12} className="text-indigo-600" />
+                          <span className="max-w-[150px] truncate">{file.name}</span>
+                          <span className="text-[9px] text-slate-400">
+                            ({(file.size / 1024).toFixed(0)}KB)
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => removeFile(idx)}
+                            className="text-slate-400 hover:text-red-600 transition cursor-pointer ml-1"
+                          >
+                            <FiX size={12} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
                   {/* Quick Reply Pills */}
                   <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
                     <span className="text-[11px] font-bold text-slate-400 whitespace-nowrap flex items-center gap-1">
@@ -1092,6 +1316,22 @@ const Inbox = () => {
 
                   <div className="flex items-center gap-3">
                     <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileChange}
+                      multiple
+                      className="hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      title="Attach files"
+                      className="h-11 w-11 rounded-[8px] border border-[#E5E2DC] bg-[#F0EEE9] hover:bg-white hover:border-slate-400 text-slate-700 flex items-center justify-center transition cursor-pointer shrink-0"
+                    >
+                      <FiPaperclip size={16} />
+                    </button>
+
+                    <input
                       type="text"
                       value={replyText}
                       onChange={(e) => setReplyText(e.target.value)}
@@ -1110,7 +1350,7 @@ const Inbox = () => {
                     <button
                       type="button"
                       onClick={handleSendThreadReply}
-                      disabled={!replyText.trim() || replySending}
+                      disabled={(!replyText.trim() && selectedFiles.length === 0) || replySending}
                       className="h-11 rounded-[8px] bg-[#111110] hover:bg-black px-6 text-xs font-bold text-white transition disabled:cursor-not-allowed disabled:opacity-50 flex items-center justify-center gap-2 shrink-0 cursor-pointer shadow-xs"
                     >
                       {replySending ? (
