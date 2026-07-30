@@ -797,7 +797,9 @@ const RegisterPage = () => {
           message: "Google signup successful! Redirecting...",
         });
 
-        setTimeout(() => navigate("/setup?step=1"), 1200);
+        // setTimeout(() => navigate("/setup?step=1"), 1200);
+        setTimeout(() => navigate("/dashboard"), 1200);
+
       }
     } catch (err) {
       setAlert({

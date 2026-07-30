@@ -174,7 +174,17 @@ const Inbox = () => {
     return String(value).replace(/^"|"$/g, "").trim();
   };
 
-  const getNameFromAddress = (address = "") => {
+  const getNameFromAddress = (address = "", emailObj = null) => {
+    if (emailObj) {
+      const first = emailObj.senderFirstName?.trim();
+      const last = emailObj.senderLastName?.trim();
+      if (first || last) {
+        return `${first || ""} ${last || ""}`.trim();
+      }
+      if (emailObj.senderName?.trim()) {
+        return emailObj.senderName.trim();
+      }
+    }
     const clean = cleanAddress(address);
     if (!clean) return "Unknown Lead";
     if (clean.includes("<")) {
@@ -776,7 +786,7 @@ const Inbox = () => {
             {!loading &&
               filteredEmails.map((email, idx) => {
                 const isSelected = selectedEmail?._id === email._id;
-                const name = getNameFromAddress(email.senderAddress);
+                const name = getNameFromAddress(email.senderAddress, email);
                 const { company, snippet } = getCompanyAndSnippet(email);
                 const timeAgo = formatTimeAgo(email.date) || `${idx + 1}m ago`;
 
