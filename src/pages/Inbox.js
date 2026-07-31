@@ -312,11 +312,6 @@ const Inbox = () => {
 
     const map = new Map();
     fullList.forEach((item) => {
-      if (item.isParentMessage) {
-        map.set(`parent-${item._id}`, item);
-        return;
-      }
-
       const rawText = item.textBody || item.message || "";
       const rawHtml = item.htmlBody || "";
       const cleanText = (rawText || rawHtml)
@@ -325,27 +320,25 @@ const Inbox = () => {
         .trim()
         .toLowerCase();
 
-      // 2-minute time window resolution to group near-identical duplicate messages
       const itemTime = new Date(item.date || item.createdAt || Date.now()).getTime();
-      const timeWindow = Math.floor(itemTime / 120000);
+      const timeWindow = Math.floor(itemTime / 180000); // 3-minute window
+      const direction = item.direction || (item.isParentMessage ? "incoming" : "outgoing");
 
-      const dedupeKey = cleanText
-        ? `${item.direction || "outgoing"}-${timeWindow}-${cleanText}`
-        : String(item._id);
+      const dedupKey = item._id && !String(item._id).startsWith("disc-")
+        ? `id-${item._id}`
+        : `${direction}-${timeWindow}-${cleanText.slice(0, 100)}`;
 
-      if (!map.has(dedupeKey)) {
-        map.set(dedupeKey, item);
-      } else {
-        const existing = map.get(dedupeKey);
-        const existingIsTemp = String(existing._id).startsWith("disc-") || String(existing._id).startsWith("reply-");
-        const itemIsTemp = String(item._id).startsWith("disc-") || String(item._id).startsWith("reply-");
-        if (existingIsTemp && !itemIsTemp) {
-          map.set(dedupeKey, item);
-        }
+      const contentKey = `${direction}-${timeWindow}-${cleanText.slice(0, 100)}`;
+
+      if (!map.has(dedupKey) && !map.has(contentKey)) {
+        map.set(contentKey, item);
+        map.set(dedupKey, item);
       }
     });
 
-    return Array.from(map.values()).sort(
+    const uniqueMessages = Array.from(new Set(map.values()));
+
+    return uniqueMessages.sort(
       (a, b) =>
         new Date(a.date || a.createdAt || 0) -
         new Date(b.date || b.createdAt || 0)
