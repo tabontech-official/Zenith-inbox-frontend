@@ -89,7 +89,7 @@
 
 //       try {
 //         const response = await fetch(
-//           `https://email-syncing-backend.vercel.app/auth/guide/${userId}`,
+//           `http://localhost:5000/auth/guide/${userId}`,
 //           {
 //             headers: {
 //               Authorization: `Bearer ${token}`,
@@ -162,7 +162,7 @@
 //     try {
 //       if (userId) {
 //         await fetch(
-//           `https://email-syncing-backend.vercel.app/auth/logout/${userId}`,
+//           `http://localhost:5000/auth/logout/${userId}`,
 //           {
 //             method: "POST",
 //           },
@@ -182,7 +182,7 @@
 
 //     try {
 //       await fetch(
-//         `https://email-syncing-backend.vercel.app/auth/guide/${userId}`,
+//         `http://localhost:5000/auth/guide/${userId}`,
 //         {
 //           method: "POST",
 //           headers: {
@@ -704,7 +704,7 @@ const Sidebar = ({ onOpenMailhook, onOpenGmail, onOpenOutlook }) => {
     try {
       // 1. Fetch Shopify Scenario details
       const resShopify = await fetch(
-        "https://email-syncing-backend.vercel.app/scenario/details",
+        "http://localhost:5000/scenario/details",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -717,7 +717,7 @@ const Sidebar = ({ onOpenMailhook, onOpenGmail, onOpenOutlook }) => {
 
       // 2. Fetch Custom Scenarios
       const resCustom = await fetch(
-        `https://email-syncing-backend.vercel.app/scenario/all?userId=${uid}`,
+        `http://localhost:5000/scenario/all?userId=${uid}`,
       );
       const dataCustom = await resCustom.json();
       let countCustom = 0;
@@ -784,12 +784,50 @@ const Sidebar = ({ onOpenMailhook, onOpenGmail, onOpenOutlook }) => {
         location.pathname === path || location.pathname.startsWith(`${path}/`),
     );
 
+  const [unseenCount, setUnseenCount] = useState(0);
+
+  useEffect(() => {
+    const fetchUnseenCount = async () => {
+      const storedUserId = localStorage.getItem("userid");
+      if (!storedUserId) return;
+
+      try {
+        const res = await fetch(
+          `http://localhost:5000/mailhook/getAllEmailsData/${storedUserId}`
+        );
+        const data = await res.json();
+        const threads = data?.data?.threads || [];
+
+        const readIds = new Set(JSON.parse(localStorage.getItem("readEmailIds") || "[]"));
+        const unseenThreads = threads.filter((t) => !readIds.has(t._id));
+
+        setUnseenCount(unseenThreads.length);
+      } catch (err) {
+        console.error("Error fetching unseen emails for badge:", err);
+      }
+    };
+
+    fetchUnseenCount();
+    const interval = setInterval(fetchUnseenCount, 6000);
+
+    const handleReadUpdate = () => {
+      fetchUnseenCount();
+    };
+    window.addEventListener("readEmailUpdated", handleReadUpdate);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("readEmailUpdated", handleReadUpdate);
+    };
+  }, []);
+
   const inboxCount =
-    typeof user?.unreadEmails === "number"
+    unseenCount ||
+    (typeof user?.unreadEmails === "number"
       ? user.unreadEmails
       : typeof user?.unreadCount === "number"
-        ? user.unreadCount
-        : 0;
+      ? user.unreadCount
+      : 0);
 
   const userName =
     user?.name ||
@@ -819,7 +857,7 @@ const Sidebar = ({ onOpenMailhook, onOpenGmail, onOpenOutlook }) => {
 
       try {
         const res = await fetch(
-          "https://email-syncing-backend.vercel.app/scenario/details",
+          "http://localhost:5000/scenario/details",
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -865,7 +903,7 @@ const Sidebar = ({ onOpenMailhook, onOpenGmail, onOpenOutlook }) => {
 
       try {
         const response = await fetch(
-          `https://email-syncing-backend.vercel.app/auth/guide/${userId}`,
+          `http://localhost:5000/auth/guide/${userId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -948,7 +986,7 @@ const Sidebar = ({ onOpenMailhook, onOpenGmail, onOpenOutlook }) => {
     try {
       if (userId) {
         await fetch(
-          `https://email-syncing-backend.vercel.app/auth/logout/${userId}`,
+          `http://localhost:5000/auth/logout/${userId}`,
           {
             method: "POST",
           },
@@ -968,7 +1006,7 @@ const Sidebar = ({ onOpenMailhook, onOpenGmail, onOpenOutlook }) => {
 
     try {
       await fetch(
-        `https://email-syncing-backend.vercel.app/auth/guide/${userId}`,
+        `http://localhost:5000/auth/guide/${userId}`,
         {
           method: "POST",
           headers: {
@@ -1035,21 +1073,23 @@ const Sidebar = ({ onOpenMailhook, onOpenGmail, onOpenOutlook }) => {
     <Link
       to={to}
       ref={linkRef}
-      className={`flex h-9 items-center gap-2 rounded-[8px] px-4 text-[13px] font-medium transition-colors ${
+      className={`relative flex h-9 items-center gap-1.5 rounded-[8px] px-3.5 text-[13px] font-medium transition-colors ${
         active
-          ? "bg-gray-100 text-black"
+          ? "bg-gray-100 text-black font-semibold"
           : "text-zinc-600 hover:bg-gray-100 hover:text-black"
       }`}
     >
       {Icon && <Icon className="h-4 w-4 lg:hidden" />}
 
-      <span>{label}</span>
+      <span className="relative inline-flex items-center">
+        <span>{label}</span>
 
-      {badge > 0 && (
-        <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#f5b83d] px-1 text-[10px] font-bold text-black">
-          {badge > 99 ? "99+" : badge}
-        </span>
-      )}
+        {badge > 0 && (
+          <span className="ml-1 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[#DC2626] px-1 text-[9px] font-extrabold text-white shadow-2xs -translate-y-1.5 animate-in zoom-in">
+            {badge > 99 ? "99+" : badge}
+          </span>
+        )}
+      </span>
     </Link>
   );
 

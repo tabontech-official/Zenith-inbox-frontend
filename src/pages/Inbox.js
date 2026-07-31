@@ -24,9 +24,14 @@ import {
   FiDownload,
   FiX,
   FiAlertCircle,
+  FiShoppingBag,
+  FiSliders,
+  FiShield,
+  FiStar,
+  FiCheck,
 } from "react-icons/fi";
 
-const API_BASE_URL = "https://email-syncing-backend.vercel.app/mailhook";
+const API_BASE_URL = "http://localhost:5000/mailhook";
 
 const Inbox = () => {
   const [emails, setEmails] = useState([]);
@@ -37,8 +42,10 @@ const Inbox = () => {
   const [selectedLeadIds, setSelectedLeadIds] = useState(new Set());
   const [leadStatuses, setLeadStatuses] = useState({});
   const [replyText, setReplyText] = useState("");
+  const [replyingToMessage, setReplyingToMessage] = useState(null);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const fileInputRef = useRef(null);
+  const messagesEndRef = useRef(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("all"); // 'all', 'awaiting', 'auto_replied', 'secured', 'closed'
   const [modal, setModal] = useState({
@@ -48,6 +55,21 @@ const Inbox = () => {
     message: "",
     onConfirm: null,
   });
+
+  const scrollToBottom = () => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
+  useEffect(() => {
+    if (selectedEmail) {
+      const timer = setTimeout(() => {
+        scrollToBottom();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [selectedEmail?._id, selectedEmail?.conversation?.length, selectedEmail?.replies?.length]);
 
   useEffect(() => {
     const handleResize = () => setIsMobileView(window.innerWidth < 1024);
@@ -82,17 +104,89 @@ const Inbox = () => {
     return val;
   };
 
+  const markEmailAsRead = (emailId) => {
+    if (!emailId) return;
+    try {
+      const readIds = new Set(JSON.parse(localStorage.getItem("readEmailIds") || "[]"));
+      if (!readIds.has(emailId)) {
+        readIds.add(emailId);
+        localStorage.setItem("readEmailIds", JSON.stringify(Array.from(readIds)));
+        window.dispatchEvent(new Event("readEmailUpdated"));
+      }
+    } catch (e) {
+      console.error("Error updating read email status:", e);
+    }
+  };
+
+  const handleEmailClick = (email) => {
+    setSelectedEmail(email);
+    setReplyingToMessage(null);
+    if (email && email._id) {
+      markEmailAsRead(email._id);
+    }
+  };
+
   const leadStatusOptions = [
     { value: "new_lead", label: "New Lead" },
     { value: "secured", label: "Secured" },
     { value: "closed", label: "Closed" },
   ];
 
+  const getThreadLatestDate = (thread) => {
+    if (!thread) return 0;
+    let maxTime = 0;
+
+    const checkDate = (d) => {
+      if (!d) return;
+      const ms = new Date(d).getTime();
+      if (!isNaN(ms) && ms > maxTime) {
+        maxTime = ms;
+      }
+    };
+
+    checkDate(thread.lastActivityAt);
+    checkDate(thread.date);
+    checkDate(thread.createdAt);
+
+    const msgs = thread.replies || thread.conversation || thread.discussion || [];
+    msgs.forEach((m) => {
+      checkDate(m.date);
+      checkDate(m.createdAt);
+      checkDate(m.timestamp);
+    });
+
+    return maxTime;
+  };
+
   const normalizeEmails = (threads = []) => {
     return threads
       .filter((t) => !t.isDeleted)
       .map((thread) => {
         const messages = thread.conversation || [];
+        const sortedMsgs = [...messages].sort(
+          (m1, m2) =>
+            new Date(m2.date || m2.createdAt || 0) -
+            new Date(m1.date || m1.createdAt || 0)
+        );
+        const newestMessage = sortedMsgs.length > 0 ? sortedMsgs[0] : null;
+
+        const lastActivityAt =
+          (newestMessage ? newestMessage.date || newestMessage.createdAt : null) ||
+          thread.lastActivityAt ||
+          thread.date ||
+          thread.createdAt;
+
+        const latestSenderAddress =
+          (newestMessage ? newestMessage.senderAddress || newestMessage.forwardedMeta?.from : null) ||
+          thread.senderAddress ||
+          thread.forwardedMeta?.from ||
+          "Unknown";
+
+        const latestTextBody =
+          (newestMessage ? newestMessage.textBody || newestMessage.htmlBody || newestMessage.body : null) ||
+          thread.textBody ||
+          thread.body ||
+          "";
 
         return {
           _id: thread._id,
@@ -100,11 +194,14 @@ const Inbox = () => {
           subject: thread.subject || "",
           textBody: thread.textBody || thread.body || "",
           htmlBody: thread.htmlBody || "",
+          latestTextBody,
+          latestSenderAddress,
           senderAddress:
             thread.senderAddress || thread.forwardedMeta?.from || "Unknown",
           recipientAddress:
             thread.recipientAddress || thread.forwardedMeta?.to || "",
           date: thread.date || thread.createdAt,
+          lastActivityAt,
           direction: thread.direction || "incoming",
           leadStatus: thread.leadStatus || "new_lead",
           service: thread.service || null,
@@ -129,24 +226,90 @@ const Inbox = () => {
       });
   };
 
-  const fetchEmails = async () => {
+  const prevEmailMapRef = useRef(new Map());
+
+  const playNotificationSound = () => {
     try {
-      setLoading(true);
-      const userId = localStorage.getItem("userid");
-      if (!userId) {
-        setLoading(false);
-        return;
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContext) return;
+      const ctx = new AudioContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15);
+
+      gain.gain.setValueAtTime(0.15, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.4);
+    } catch (e) {
+      console.log("Audio play error:", e);
+    }
+  };
+
+  const sendDesktopNotification = (title, body) => {
+    try {
+      if ("Notification" in window && Notification.permission === "granted") {
+        new Notification(title, {
+          body: body || "You received a new message in Zenith Inbox",
+        });
       }
+    } catch (e) {
+      console.log("Desktop notification error:", e);
+    }
+  };
+
+  const fetchEmails = async (showLoading = true) => {
+    try {
+      if (showLoading) setLoading(true);
+      const userId = localStorage.getItem("userid");
+      if (!userId) return;
+
       const res = await axios.get(`${API_BASE_URL}/getAllEmailsData/${userId}`);
       const raw = res.data?.data?.threads || [];
 
       let data = normalizeEmails(raw);
 
       data = data.sort(
-        (a, b) =>
-          new Date(b.date || b.createdAt || 0) -
-          new Date(a.date || a.createdAt || 0)
+        (a, b) => getThreadLatestDate(b) - getThreadLatestDate(a)
       );
+
+      // Check for new incoming messages during background polls to trigger notifications
+      if (!showLoading && prevEmailMapRef.current.size > 0) {
+        let hasNewIncoming = false;
+        let newSender = "";
+        let newSnippet = "";
+
+        data.forEach((thread) => {
+          const prevMsgCount = prevEmailMapRef.current.get(thread._id) || 0;
+          const currentMsgCount = (thread.replies || thread.conversation || []).length || 1;
+
+          if (currentMsgCount > prevMsgCount) {
+            hasNewIncoming = true;
+            newSender = getNameFromAddress(thread.latestSenderAddress || thread.senderAddress, thread);
+            newSnippet = thread.latestTextBody || thread.subject || "New message received";
+          }
+        });
+
+        if (hasNewIncoming) {
+          playNotificationSound();
+          sendDesktopNotification(`📩 New Email from ${newSender}`, newSnippet);
+        }
+      }
+
+      // Update message counts reference
+      const newMap = new Map();
+      data.forEach((t) => {
+        const count = (t.replies || t.conversation || []).length || 1;
+        newMap.set(t._id, count);
+      });
+      prevEmailMapRef.current = newMap;
 
       setEmails(data);
 
@@ -159,9 +322,13 @@ const Inbox = () => {
 
       if (!isMobileView && data.length > 0 && !selectedEmail) {
         setSelectedEmail(data[0]);
+        markEmailAsRead(data[0]._id);
       } else if (selectedEmail) {
         const updated = data.find((e) => e._id === selectedEmail._id);
-        if (updated) setSelectedEmail(updated);
+        if (updated) {
+          setSelectedEmail(updated);
+          markEmailAsRead(updated._id);
+        }
       }
     } catch (err) {
       console.error("Error fetching inbox:", err);
@@ -169,12 +336,23 @@ const Inbox = () => {
         setEmails([]);
       }
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchEmails();
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+
+    fetchEmails(true);
+
+    // Automatic real-time background polling every 6 seconds
+    const interval = setInterval(() => {
+      fetchEmails(false);
+    }, 6000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const cleanAddress = (value = "") => {
@@ -321,17 +499,18 @@ const Inbox = () => {
         .trim()
         .toLowerCase();
 
-      const direction = item.direction || (item.isParentMessage ? "incoming" : "outgoing");
       const textSnippet = cleanText.slice(0, 150);
+      const cleanMsgId = item.messageId ? String(item.messageId).replace(/^<|>$/g, "").trim() : "";
 
-      // Deduplicate identical message text per direction
-      const contentKey = textSnippet ? `${direction}:${textSnippet}` : `id:${item._id}`;
+      // Deduplicate by clean Message-ID or by textSnippet
+      const contentKey = cleanMsgId ? `msg:${cleanMsgId}` : textSnippet ? `text:${textSnippet}` : `id:${item._id}`;
 
       if (!map.has(contentKey)) {
         map.set(contentKey, item);
       } else {
         const existing = map.get(contentKey);
-        if (!existing.isParentMessage && item.isParentMessage) {
+        // Prefer outgoing status badge / reply over duplicate incoming sync
+        if (existing.direction === "incoming" && item.direction === "outgoing") {
           map.set(contentKey, item);
         }
       }
@@ -443,6 +622,14 @@ const Inbox = () => {
       const formData = new FormData();
       formData.append("message", message);
       if (userId) formData.append("userId", userId);
+      if (replyingToMessage) {
+        if (replyingToMessage.messageId) {
+          formData.append("targetMessageId", replyingToMessage.messageId);
+        }
+        if (replyingToMessage._id) {
+          formData.append("targetParentEmailId", replyingToMessage._id);
+        }
+      }
       selectedFiles.forEach((file) => {
         formData.append("attachments", file);
       });
@@ -488,8 +675,10 @@ const Inbox = () => {
       const newLeadStatus =
         selectedEmail.leadStatus === "new_lead" ? "awaiting" : selectedEmail.leadStatus;
 
-      setEmails((prev) =>
-        prev.map((email) =>
+      const nowIso = new Date().toISOString();
+
+      setEmails((prev) => {
+        const updated = prev.map((email) =>
           email._id === selectedEmail._id
             ? {
                 ...email,
@@ -497,10 +686,17 @@ const Inbox = () => {
                 discussion: updatedDiscussion,
                 replies: updatedReplies,
                 conversation: updatedReplies,
+                lastActivityAt: nowIso,
+                latestTextBody: message,
+                latestSenderAddress: "You (Support)",
               }
             : email
-        )
-      );
+        );
+
+        return updated.sort(
+          (a, b) => getThreadLatestDate(b) - getThreadLatestDate(a)
+        );
+      });
 
       setSelectedEmail((prev) => ({
         ...prev,
@@ -508,9 +704,13 @@ const Inbox = () => {
         discussion: updatedDiscussion,
         replies: updatedReplies,
         conversation: updatedReplies,
+        lastActivityAt: nowIso,
+        latestTextBody: message,
+        latestSenderAddress: "You (Support)",
       }));
 
       setReplyText("");
+      setReplyingToMessage(null);
       setSelectedFiles([]);
       if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (err) {
@@ -580,12 +780,8 @@ const Inbox = () => {
     `;
   };
 
-  const handleEmailClick = (email) => {
-    setSelectedEmail(email);
-  };
-
-  // Counts for filter tabs
-  const [scenarioTab, setScenarioTab] = useState("all"); // 'all', 'shopify', 'custom'
+  // Sidebar navigation option state: 'all' | 'shopify' | 'custom' | 'awaiting' | 'replied' | 'secured'
+  const [sidebarFilter, setSidebarFilter] = useState("all");
 
   const awaitingCount = emails.filter(
     (e) => e.direction === "incoming" || e.leadStatus === "new_lead"
@@ -618,54 +814,48 @@ const Inbox = () => {
   ).length;
 
   const filteredEmails = emails.filter((email) => {
-    // 1. Scenario Filter
-    if (scenarioTab === "shopify") {
+    // 1. Sidebar Category/Status Filter
+    if (sidebarFilter === "shopify") {
       const isShopify =
         (email.service || "").toLowerCase().includes("shopify") ||
         (email.subject || "").toLowerCase().includes("shopify") ||
         email.stepType === "shopify-test-parent" ||
         !!email.extraFields?.storeName;
       if (!isShopify) return false;
-    } else if (scenarioTab === "custom") {
+    } else if (sidebarFilter === "custom") {
       const isCustom =
         (email.service || "").toLowerCase() === "custom" ||
         email.emailType === "custom" ||
         (email.subject || "").toLowerCase().includes("custom test") ||
         (!((email.service || "").toLowerCase().includes("shopify") || (email.subject || "").toLowerCase().includes("shopify")));
       if (!isCustom) return false;
+    } else if (sidebarFilter === "awaiting") {
+      if (!(email.direction === "incoming" || email.leadStatus === "new_lead")) return false;
+    } else if (sidebarFilter === "replied") {
+      const isReplied =
+        email.direction === "outgoing" ||
+        (email.replies && email.replies.length > 0) ||
+        email.stepType === "Auto Reply";
+      if (!isReplied) return false;
+    } else if (sidebarFilter === "secured") {
+      if (email.leadStatus !== "secured") return false;
     }
 
     // 2. Search Term Filter
     const term = searchTerm.trim().toLowerCase();
-    const sender = email.senderAddress || email.forwardedMeta?.from || "";
-    const recipient = email.recipientAddress || email.forwardedMeta?.to || "";
+    if (!term) return true;
 
-    const matchesSearch =
-      !term ||
+    const sender = email.latestSenderAddress || email.senderAddress || email.forwardedMeta?.from || "";
+    const recipient = email.recipientAddress || email.forwardedMeta?.to || "";
+    const subj = email.subject || "";
+    const body = email.latestTextBody || email.textBody || "";
+
+    return (
       sender.toLowerCase().includes(term) ||
       recipient.toLowerCase().includes(term) ||
-      (email.subject || "").toLowerCase().includes(term) ||
-      (email.textBody || "").toLowerCase().includes(term) ||
-      (email.service || "").toLowerCase().includes(term);
-
-    if (!matchesSearch) return false;
-
-    // 3. Lead Status Filter
-    if (activeTab === "awaiting") {
-      return email.direction === "incoming" || email.leadStatus === "new_lead";
-    } else if (activeTab === "auto_replied") {
-      return (
-        email.direction === "outgoing" ||
-        (email.replies && email.replies.length > 0) ||
-        email.stepType === "Auto Reply"
-      );
-    } else if (activeTab === "secured") {
-      return email.leadStatus === "secured";
-    } else if (activeTab === "closed") {
-      return email.leadStatus === "closed";
-    }
-
-    return true;
+      subj.toLowerCase().includes(term) ||
+      body.toLowerCase().includes(term)
+    );
   });
 
   return (
@@ -734,133 +924,149 @@ const Inbox = () => {
 
       {/* Main Container */}
       <main className="flex min-w-0 flex-1 overflow-hidden bg-[#FAF8F5] pt-[60px]">
-        {/* LEFT PANEL: Leads List */}
+        {/* LEFT SIDEBAR NAVIGATION OPTIONS */}
+        <aside className="hidden md:flex w-52 lg:w-56 flex-col border-r border-[#EBE8E1] bg-[#FAF8F5] p-3 shrink-0">
+          <div className="px-3 py-2 mb-1">
+            <h2 className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Lead Inbox</h2>
+          </div>
+
+          <div className="space-y-1">
+            <button
+              type="button"
+              onClick={() => setSidebarFilter("all")}
+              className={`flex w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-bold transition cursor-pointer ${
+                sidebarFilter === "all" ? "bg-[#111110] text-white shadow-2xs" : "text-slate-700 hover:bg-[#EFECE6]"
+              }`}
+            >
+              <span className="flex items-center gap-2.5">
+                <FiInbox size={15} /> All
+              </span>
+              <span
+                className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold ${
+                  sidebarFilter === "all" ? "bg-slate-800 text-white" : "bg-[#E5E2DC] text-slate-700"
+                }`}
+              >
+                {emails.length}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSidebarFilter("shopify")}
+              className={`flex w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-bold transition cursor-pointer ${
+                sidebarFilter === "shopify" ? "bg-[#34A853] text-white shadow-2xs" : "text-slate-700 hover:bg-[#EFECE6]"
+              }`}
+            >
+              <span className="flex items-center gap-2.5">
+                <FiShoppingBag size={15} /> Shopify
+              </span>
+              <span
+                className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold ${
+                  sidebarFilter === "shopify" ? "bg-emerald-800 text-white" : "bg-[#E5E2DC] text-slate-700"
+                }`}
+              >
+                {shopifyCount}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSidebarFilter("custom")}
+              className={`flex w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-bold transition cursor-pointer ${
+                sidebarFilter === "custom" ? "bg-indigo-600 text-white shadow-2xs" : "text-slate-700 hover:bg-[#EFECE6]"
+              }`}
+            >
+              <span className="flex items-center gap-2.5">
+                <FiSliders size={15} /> Custom
+              </span>
+              <span
+                className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold ${
+                  sidebarFilter === "custom" ? "bg-indigo-800 text-white" : "bg-[#E5E2DC] text-slate-700"
+                }`}
+              >
+                {customCount}
+              </span>
+            </button>
+
+            <div className="my-3 border-t border-[#EBE8E1] px-3 pt-3">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Status Filters</span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setSidebarFilter("awaiting")}
+              className={`flex w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-bold transition cursor-pointer ${
+                sidebarFilter === "awaiting" ? "bg-amber-600 text-white shadow-2xs" : "text-slate-700 hover:bg-[#EFECE6]"
+              }`}
+            >
+              <span className="flex items-center gap-2.5">
+                <FiClock size={15} /> Awaiting reply
+              </span>
+              <span
+                className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold ${
+                  sidebarFilter === "awaiting" ? "bg-amber-800 text-white" : "bg-[#E5E2DC] text-slate-700"
+                }`}
+              >
+                {awaitingCount}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSidebarFilter("replied")}
+              className={`flex w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-bold transition cursor-pointer ${
+                sidebarFilter === "replied" ? "bg-emerald-600 text-white shadow-2xs" : "text-slate-700 hover:bg-[#EFECE6]"
+              }`}
+            >
+              <span className="flex items-center gap-2.5">
+                <FiCheckCircle size={15} /> Replied
+              </span>
+              <span
+                className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold ${
+                  sidebarFilter === "replied" ? "bg-emerald-800 text-white" : "bg-[#E5E2DC] text-slate-700"
+                }`}
+              >
+                {autoRepliedCount}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSidebarFilter("secured")}
+              className={`flex w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-bold transition cursor-pointer ${
+                sidebarFilter === "secured" ? "bg-blue-600 text-white shadow-2xs" : "text-slate-700 hover:bg-[#EFECE6]"
+              }`}
+            >
+              <span className="flex items-center gap-2.5">
+                <FiShield size={15} /> Secured
+              </span>
+              <span
+                className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold ${
+                  sidebarFilter === "secured" ? "bg-blue-800 text-white" : "bg-[#E5E2DC] text-slate-700"
+                }`}
+              >
+                {securedCount}
+              </span>
+            </button>
+          </div>
+        </aside>
+
+        {/* MIDDLE PANEL: Leads List */}
         <section
           className={`${
             isMobileView && selectedEmail ? "hidden" : "flex"
-          } w-full flex-col border-r border-[#EBE8E1] bg-[#FAF8F5] md:w-[360px] lg:w-[390px] shrink-0 min-h-0`}
+          } w-full flex-col border-r border-[#EBE8E1] bg-[#FAF8F5] md:w-[340px] lg:w-[370px] shrink-0 min-h-0`}
         >
-          {/* Header Area */}
-          <div className="p-5 pb-3 border-b border-[#EBE8E1]">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-                  <FiInbox size={12} className="text-slate-400" />
-                  <span>Inbox / Overview</span>
-                </div>
-                <h1 className="text-lg font-bold tracking-tight text-slate-900 mt-0.5">
-                  Lead Inbox
-                </h1>
-              </div>
-
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200/80 px-2.5 py-1 text-[11px] font-semibold text-emerald-800">
-                <span className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75 animate-ping" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-600" />
-                </span>
-                Poll 60s
-              </span>
-            </div>
-
-            {/* Scenario Type Filter Bar */}
-            <div className="mt-3 flex items-center gap-1 rounded-[10px] bg-[#EBE8E1] p-1">
-              <button
-                type="button"
-                onClick={() => setScenarioTab("all")}
-                className={`flex-1 rounded-[7px] py-1 text-[11px] font-bold transition cursor-pointer text-center ${
-                  scenarioTab === "all"
-                    ? "bg-white text-slate-900 shadow-2xs"
-                    : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                All ({emails.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setScenarioTab("shopify")}
-                className={`flex-1 rounded-[7px] py-1 text-[11px] font-bold transition cursor-pointer text-center ${
-                  scenarioTab === "shopify"
-                    ? "bg-[#34A853] text-white shadow-2xs"
-                    : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                Shopify ({shopifyCount})
-              </button>
-              <button
-                type="button"
-                onClick={() => setScenarioTab("custom")}
-                className={`flex-1 rounded-[7px] py-1 text-[11px] font-bold transition cursor-pointer text-center ${
-                  scenarioTab === "custom"
-                    ? "bg-indigo-600 text-white shadow-2xs"
-                    : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                Custom ({customCount})
-              </button>
-            </div>
-
-            {/* Filter Tabs */}
-            <div className="mt-3.5 flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-              <button
-                type="button"
-                onClick={() => setActiveTab("all")}
-                className={`rounded-[8px] px-3.5 py-1.5 text-xs font-bold transition whitespace-nowrap shrink-0 cursor-pointer ${
-                  activeTab === "all"
-                    ? "bg-[#111110] text-white shadow-2xs"
-                    : "bg-[#EFECE6] text-slate-700 hover:bg-[#E5E2DC]"
-                }`}
-              >
-                All ({emails.length})
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveTab("awaiting")}
-                className={`rounded-[8px] px-3.5 py-1.5 text-xs font-bold transition whitespace-nowrap shrink-0 cursor-pointer ${
-                  activeTab === "awaiting"
-                    ? "bg-[#111110] text-white shadow-2xs"
-                    : "bg-[#EFECE6] text-slate-700 hover:bg-[#E5E2DC]"
-                }`}
-              >
-                Awaiting ({awaitingCount})
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveTab("auto_replied")}
-                className={`rounded-[8px] px-3.5 py-1.5 text-xs font-bold transition whitespace-nowrap shrink-0 cursor-pointer ${
-                  activeTab === "auto_replied"
-                    ? "bg-[#111110] text-white shadow-2xs"
-                    : "bg-[#EFECE6] text-slate-700 hover:bg-[#E5E2DC]"
-                }`}
-              >
-                Replied ({autoRepliedCount})
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveTab("secured")}
-                className={`rounded-[8px] px-3.5 py-1.5 text-xs font-bold transition whitespace-nowrap shrink-0 cursor-pointer ${
-                  activeTab === "secured"
-                    ? "bg-[#111110] text-white shadow-2xs"
-                    : "bg-[#EFECE6] text-slate-700 hover:bg-[#E5E2DC]"
-                }`}
-              >
-                Secured ({securedCount})
-              </button>
-            </div>
-
-            {/* Search Bar & Action Controls */}
-            <div className="mt-3 flex items-center gap-2">
-              <div className="relative flex-1 flex items-center">
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none text-slate-400">
-                  <FiSearch className="text-sm" />
-                </div>
+          {/* Search & Actions Header */}
+          <div className="p-4 border-b border-[#EBE8E1]">
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <FiSearch className="absolute left-3 top-3 text-slate-400 text-xs" />
                 <input
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search leads by name, email..."
+                  placeholder="Search leads, emails..."
                   className="h-9 w-full rounded-[8px] border border-[#E5E2DC] bg-[#F0EEE9] pl-9 pr-3 text-xs outline-none transition placeholder:text-slate-400 focus:border-slate-800 focus:bg-white font-medium"
                 />
               </div>
@@ -909,7 +1115,7 @@ const Inbox = () => {
                   No leads found
                 </p>
                 <p className="mt-1 text-[11px] text-slate-400 font-normal">
-                  Try adjusting your search query or active tab filter.
+                  Try adjusting your search query or active filter.
                 </p>
               </div>
             )}
@@ -917,9 +1123,12 @@ const Inbox = () => {
             {!loading &&
               filteredEmails.map((email, idx) => {
                 const isSelected = selectedEmail?._id === email._id;
-                const name = getNameFromAddress(email.senderAddress, email);
+                const name = getNameFromAddress(email.latestSenderAddress || email.senderAddress, email);
                 const { company, snippet } = getCompanyAndSnippet(email);
-                const timeAgo = formatTimeAgo(email.date) || `${idx + 1}m ago`;
+                const timeAgo = formatTimeAgo(email.lastActivityAt || email.date) || `${idx + 1}m ago`;
+                const msgCount = (email.replies || email.conversation || []).length || 1;
+                const conversation = email.replies || email.conversation || [];
+                const hasReplies = conversation.length > 1 || email.direction === "outgoing" || email.stepType === "Auto Reply";
 
                 // Status Badges
                 let badgeContent = null;
@@ -935,19 +1144,7 @@ const Inbox = () => {
                       <FiCheckCircle size={10} className="text-emerald-600" /> Secured
                     </span>
                   );
-                } else if (
-                  email.direction === "incoming" ||
-                  email.leadStatus === "new_lead"
-                ) {
-                  badgeContent = (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 border border-amber-200 px-2 py-0.5 text-[10px] font-bold text-amber-800">
-                      <FiClock size={10} className="text-amber-600" /> Awaiting reply
-                    </span>
-                  );
-                } else if (
-                  email.direction === "outgoing" ||
-                  (email.replies && email.replies.length > 0)
-                ) {
+                } else if (hasReplies) {
                   badgeContent = (
                     <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
                       <FiCheckCircle size={10} className="text-emerald-600" /> Replied
@@ -955,26 +1152,46 @@ const Inbox = () => {
                   );
                 } else {
                   badgeContent = (
-                    <span className="inline-flex rounded-full bg-slate-100 border border-slate-200 px-2 py-0.5 text-[10px] font-bold text-slate-600">
-                      New Lead
+                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 border border-amber-200 px-2 py-0.5 text-[10px] font-bold text-amber-800">
+                      <FiClock size={10} className="text-amber-600" /> Awaiting reply
                     </span>
                   );
                 }
+
+                const readIds = new Set(
+                  JSON.parse(localStorage.getItem("readEmailIds") || "[]")
+                );
+                const isUnread = !readIds.has(email._id);
 
                 return (
                   <button
                     key={email._id}
                     type="button"
                     onClick={() => handleEmailClick(email)}
-                    className={`group relative flex w-full flex-col border-b border-[#EBE8E1] px-5 py-3.5 text-left transition cursor-pointer ${
+                    className={`group relative flex w-full flex-col border-b border-[#EBE8E1] px-4 py-3.5 text-left transition cursor-pointer ${
                       isSelected
                         ? "bg-[#F2EFE8] border-l-4 border-l-black"
+                        : isUnread
+                        ? "bg-amber-50/50 hover:bg-[#F4F1EA] border-l-4 border-l-red-500"
                         : "bg-transparent hover:bg-[#F4F1EA] border-l-4 border-l-transparent"
                     }`}
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-bold text-slate-900 text-xs truncate pr-2">
-                        {name}
+                      <span className="font-bold text-slate-900 text-xs truncate pr-2 flex items-center gap-1.5">
+                        {isUnread && (
+                          <span className="h-2 w-2 rounded-full bg-red-600 shrink-0 animate-pulse" title="Unread message" />
+                        )}
+                        <span className={`truncate ${isUnread ? "font-black text-slate-950" : "font-bold text-slate-800"}`}>{name}</span>
+                        {msgCount > 1 && (
+                          <span className="rounded-full bg-slate-200 px-1.5 py-0.2 text-[9px] font-extrabold text-slate-700">
+                            {msgCount}
+                          </span>
+                        )}
+                        {isUnread && (
+                          <span className="rounded-full bg-red-100 border border-red-200 px-1.5 py-0.2 text-[9px] font-black text-red-700">
+                            UNREAD
+                          </span>
+                        )}
                       </span>
                       <span className="text-[10px] text-slate-400 font-semibold shrink-0">
                         {timeAgo}
@@ -1005,7 +1222,7 @@ const Inbox = () => {
           </div>
         </section>
 
-        {/* RIGHT PANEL: Lead Detail & Thread View */}
+        {/* RIGHT PANEL: Lead Detail & Thread View (Gmail Structure) */}
         <section
           className={`${
             isMobileView && !selectedEmail ? "hidden" : "flex"
@@ -1013,23 +1230,18 @@ const Inbox = () => {
         >
           {selectedEmail ? (
             <div className="flex min-h-0 flex-1 flex-col">
-              {/* Top Detail Header */}
+              {/* Top Detail Header Toolbar */}
               <div className="shrink-0 border-b border-[#EBE8E1] bg-[#FAF8F5] px-6 py-4">
-                {isMobileView && (
-                  <button
-                    type="button"
-                    onClick={() => setSelectedEmail(null)}
-                    className="mb-3 inline-flex items-center gap-1 text-xs font-bold text-slate-700"
-                  >
-                    <FiArrowLeft /> Back to Leads
-                  </button>
-                )}
-
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#111110] text-xs font-bold text-white uppercase tracking-wider shadow-2xs">
-                      {getInitials(selectedEmail.senderAddress)}
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedEmail(null)}
+                      className="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-[#E0DDD5] bg-white text-slate-700 hover:bg-slate-50 transition cursor-pointer shadow-2xs"
+                      title="Back to leads list"
+                    >
+                      <FiArrowLeft size={14} />
+                    </button>
 
                     <div>
                       <h2 className="text-sm font-bold text-slate-900 flex items-center gap-1.5 flex-wrap">
@@ -1087,7 +1299,7 @@ const Inbox = () => {
                 </div>
               </div>
 
-              {/* Thread Messages List */}
+              {/* Gmail-Style Thread Messages List */}
               <div className="min-h-0 flex-1 overflow-y-auto px-6 lg:px-8 py-6 space-y-6">
                 {getThreadMessages(selectedEmail).map((message, index) => {
                   const isIncoming = message.direction === "incoming";
@@ -1103,102 +1315,80 @@ const Inbox = () => {
                       })
                     : "Just now";
 
-                  if (isIncoming) {
-                    return (
-                      <div
-                        key={`${message._id}-${index}`}
-                        className="flex flex-col items-start space-y-1.5"
-                      >
-                        <p className="text-[11px] text-slate-400 font-semibold px-1 flex items-center gap-1.5">
-                          <FiUser size={13} className="text-slate-600" />
-                          <span className="font-bold text-slate-800">{senderName}</span>
-                          <span>·</span>
-                          <span>{msgTime}</span>
-                        </p>
-
-                        <div className="w-full max-w-[85%] rounded-[18px] border border-[#EAE7E0] bg-white p-5 text-xs leading-relaxed text-slate-800 shadow-2xs">
-                          <div
-                            dangerouslySetInnerHTML={{
-                              __html: formatEmailBody(
-                                message.htmlBody,
-                                message.textBody,
-                                false
-                              ),
-                            }}
-                          />
-                          {message.attachments && message.attachments.length > 0 && (
-                            <div className="mt-3 pt-3 border-t border-slate-100 flex flex-col gap-2">
-                              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                                Attachments ({message.attachments.length})
-                              </p>
-                              <div className="flex flex-wrap gap-2">
-                                {message.attachments.map((att, attIdx) => (
-                                  <a
-                                    key={attIdx}
-                                    href={getAttachmentUrl(att)}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    download={att.filename || "attachment"}
-                                    className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 px-3 py-2 text-xs font-medium text-slate-800 transition group"
-                                  >
-                                    <FiFile size={14} className="text-indigo-600 shrink-0" />
-                                    <div className="flex flex-col">
-                                      <span className="font-semibold text-[11px] max-w-[180px] truncate group-hover:underline">
-                                        {att.filename}
-                                      </span>
-                                      {att.size && (
-                                        <span className="text-[9px] text-slate-400">
-                                          {(att.size / 1024).toFixed(0)} KB
-                                        </span>
-                                      )}
-                                    </div>
-                                    <FiDownload
-                                      size={12}
-                                      className="text-slate-400 group-hover:text-slate-700 ml-1 shrink-0"
-                                    />
-                                  </a>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  }
-
                   const isManual = message.stepType === "Manual Reply" || message.senderAddress?.includes("You");
+
+                  // Gmail-style Avatar color
+                  const avatarBg = isIncoming
+                    ? "bg-[#C2410C]"
+                    : isManual
+                    ? "bg-[#18181B]"
+                    : "bg-[#7E22CE]";
 
                   return (
                     <div
                       key={`${message._id}-${index}`}
-                      className="flex flex-col items-end space-y-1.5"
+                      className="rounded-[18px] border border-[#EAE7E0] bg-white p-5 shadow-2xs transition hover:shadow-xs"
                     >
-                      <div className="flex items-center gap-1.5 text-[11px] font-bold px-1">
-                        {isManual ? (
-                          <span className="text-indigo-600 flex items-center gap-1">
-                            <FiCornerUpLeft size={12} /> Reply Sent
+                      {/* Message Header */}
+                      <div className="flex items-start justify-between pb-3 mb-3 border-b border-slate-100">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white uppercase tracking-wider ${avatarBg}`}
+                          >
+                            {getInitials(message.senderAddress || senderName)}
+                          </div>
+
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-slate-900 text-xs">
+                                {senderName}
+                              </span>
+                              {!isIncoming && (
+                                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-extrabold text-slate-600">
+                                  {isManual ? "Manual Reply" : "Auto-reply"}
+                                </span>
+                              )}
+                            </div>
+
+                            <p className="text-[11px] text-slate-400 font-medium mt-0.5">
+                              to {message.recipientAddress || "me"}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3 text-right">
+                          <span className="text-[11px] font-semibold text-slate-400">
+                            {msgTime}
                           </span>
-                        ) : (
-                          <span className="text-emerald-700 flex items-center gap-1">
-                            <FiZap size={12} /> Auto-reply Sent
-                          </span>
-                        )}
-                        <span className="text-slate-300">·</span>
-                        <span className="text-slate-400 font-normal">{msgTime}</span>
+                          {isIncoming && (
+                            <button
+                              type="button"
+                              onClick={() => setReplyingToMessage(message)}
+                              className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600 hover:text-indigo-900 transition cursor-pointer"
+                              title="Reply to this message"
+                            >
+                              <FiCornerUpLeft size={13} />
+                              <span>Reply</span>
+                            </button>
+                          )}
+                        </div>
                       </div>
 
-                      <div className="w-full max-w-[85%] rounded-[18px] bg-[#111110] p-5 text-xs leading-relaxed text-white shadow-md border border-slate-800">
+                      {/* Message Body */}
+                      <div className="text-xs leading-relaxed text-slate-800">
                         <div
                           dangerouslySetInnerHTML={{
                             __html: formatEmailBody(
                               message.htmlBody,
                               message.textBody,
-                              true
+                              false
                             ),
                           }}
                         />
+
+                        {/* Attachments Grid */}
                         {message.attachments && message.attachments.length > 0 && (
-                          <div className="mt-3 pt-3 border-t border-slate-800 flex flex-col gap-2">
+                          <div className="mt-4 pt-3 border-t border-slate-100 flex flex-col gap-2">
                             <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
                               Attachments ({message.attachments.length})
                             </p>
@@ -1210,9 +1400,9 @@ const Inbox = () => {
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   download={att.filename || "attachment"}
-                                  className="flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900 hover:bg-slate-800 px-3 py-2 text-xs font-medium text-slate-200 transition group"
+                                  className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 px-3 py-2 text-xs font-medium text-slate-800 transition group"
                                 >
-                                  <FiFile size={14} className="text-indigo-400 shrink-0" />
+                                  <FiFile size={14} className="text-indigo-600 shrink-0" />
                                   <div className="flex flex-col">
                                     <span className="font-semibold text-[11px] max-w-[180px] truncate group-hover:underline">
                                       {att.filename}
@@ -1225,7 +1415,7 @@ const Inbox = () => {
                                   </div>
                                   <FiDownload
                                     size={12}
-                                    className="text-slate-400 group-hover:text-white ml-1 shrink-0"
+                                    className="text-slate-400 group-hover:text-slate-700 ml-1 shrink-0"
                                   />
                                 </a>
                               ))}
@@ -1244,11 +1434,32 @@ const Inbox = () => {
                     Automation handed off — thread ready for custom replies
                   </span>
                 </div>
+
+                {/* Scroll Target for Latest Message */}
+                <div ref={messagesEndRef} />
               </div>
 
-              {/* Bottom Reply Bar */}
+              {/* Bottom Reply Composer */}
               <div className="border-t border-[#EBE8E1] bg-[#FAF8F5] p-4 shrink-0">
                 <div className="flex flex-col gap-2.5 max-w-5xl mx-auto">
+                  {/* Targeted Message Indicator Banner */}
+                  {replyingToMessage && (
+                    <div className="flex items-center justify-between rounded-lg bg-indigo-50 border border-indigo-200 px-3 py-1.5 text-xs text-indigo-950 font-medium shadow-2xs">
+                      <span className="truncate flex items-center gap-1.5">
+                        <FiCornerUpLeft size={13} className="text-indigo-600 shrink-0" />
+                        <span>Replying directly to message from <strong className="font-bold">{getNameFromAddress(replyingToMessage.senderAddress || selectedEmail.senderAddress)}</strong>:</span>
+                        <span className="text-slate-600 truncate max-w-[280px]">"{replyingToMessage.textBody?.replace(/<[^>]*>/g, '').trim().slice(0, 60) || 'Selected message'}..."</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setReplyingToMessage(null)}
+                        className="text-indigo-600 hover:text-indigo-900 text-xs font-bold shrink-0 ml-2 cursor-pointer"
+                      >
+                        ✕ Clear target
+                      </button>
+                    </div>
+                  )}
+
                   {/* Selected Files Preview */}
                   {selectedFiles.length > 0 && (
                     <div className="flex flex-wrap items-center gap-2 pb-1">
@@ -1276,9 +1487,27 @@ const Inbox = () => {
 
                   {/* Quick Reply Pills */}
                   <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
-                    <span className="text-[11px] font-bold text-slate-400 whitespace-nowrap flex items-center gap-1">
-                      <FiTag size={12} /> Quick Templates:
-                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setReplyText("Ok, see you soon.")}
+                      className="rounded-full border border-[#E0DDD5] bg-white px-3.5 py-1.5 text-xs font-medium text-slate-800 hover:bg-slate-100 transition whitespace-nowrap cursor-pointer shadow-2xs"
+                    >
+                      Ok, see you soon.
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setReplyText("I'm here.")}
+                      className="rounded-full border border-[#E0DDD5] bg-white px-3.5 py-1.5 text-xs font-medium text-slate-800 hover:bg-slate-100 transition whitespace-nowrap cursor-pointer shadow-2xs"
+                    >
+                      I'm here.
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setReplyText("I am waiting.")}
+                      className="rounded-full border border-[#E0DDD5] bg-white px-3.5 py-1.5 text-xs font-medium text-slate-800 hover:bg-slate-100 transition whitespace-nowrap cursor-pointer shadow-2xs"
+                    >
+                      I am waiting.
+                    </button>
                     <button
                       type="button"
                       onClick={() =>
@@ -1288,7 +1517,7 @@ const Inbox = () => {
                           )}, thanks for reaching out! We received your request and would love to connect.`
                         )
                       }
-                      className="rounded-full border border-[#E0DDD5] bg-white px-3 py-1 text-[11px] font-bold text-slate-700 hover:bg-slate-100 transition whitespace-nowrap cursor-pointer"
+                      className="rounded-full border border-[#E0DDD5] bg-white px-3.5 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-100 transition whitespace-nowrap cursor-pointer shadow-2xs"
                     >
                       👋 Greeting & Intro
                     </button>
@@ -1299,24 +1528,14 @@ const Inbox = () => {
                           "Just checking in to see if you had any questions regarding our initial proposal?"
                         )
                       }
-                      className="rounded-full border border-[#E0DDD5] bg-white px-3 py-1 text-[11px] font-bold text-slate-700 hover:bg-slate-100 transition whitespace-nowrap cursor-pointer"
+                      className="rounded-full border border-[#E0DDD5] bg-white px-3.5 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-100 transition whitespace-nowrap cursor-pointer shadow-2xs"
                     >
                       📌 Follow-up Nudge
                     </button>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setReplyText(
-                          "Could you please share your store URL and preferred project timeline?"
-                        )
-                      }
-                      className="rounded-full border border-[#E0DDD5] bg-white px-3 py-1 text-[11px] font-bold text-slate-700 hover:bg-slate-100 transition whitespace-nowrap cursor-pointer"
-                    >
-                      📝 Ask Project Details
-                    </button>
                   </div>
 
-                  <div className="flex items-center gap-3">
+                  {/* Input Box and Controls */}
+                  <div className="flex items-center gap-2">
                     <input
                       type="file"
                       ref={fileInputRef}
@@ -1324,6 +1543,7 @@ const Inbox = () => {
                       multiple
                       className="hidden"
                     />
+
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
@@ -1377,7 +1597,7 @@ const Inbox = () => {
                 Select a Lead Thread
               </h3>
               <p className="mt-1 max-w-sm text-xs text-slate-500 leading-relaxed font-medium">
-                Choose a lead from the left list to view their message thread, status history, and send direct replies.
+                Choose a lead from the list to view their message thread, status history, and send direct replies.
               </p>
             </div>
           )}

@@ -8,7 +8,7 @@ import { UserContext } from "./UserContext";
 import axios from "axios";
 import { MdSecurity } from "react-icons/md";
 
-const API = "https://email-syncing-backend.vercel.app/auth/guide";
+const API = "http://localhost:5000/auth/guide";
 
 const Navbar = () => {
   const [open, setOpen] = useState(false);
@@ -120,7 +120,7 @@ const Navbar = () => {
   }, []);
 
   const handleLogout = async () => {
-    await fetch(`https://email-syncing-backend.vercel.app/auth/logout/${userId}`, {
+    await fetch(`http://localhost:5000/auth/logout/${userId}`, {
       method: "POST",
     });
     localStorage.clear();

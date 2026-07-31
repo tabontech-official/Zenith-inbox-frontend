@@ -178,7 +178,7 @@ const handleChange = (e) => {
       if (profileImageFile) fd.append("image", profileImageFile);
 
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/auth/updateUserAndOrganization/${user._id}`,
+        `http://localhost:5000/auth/updateUserAndOrganization/${user._id}`,
         {
           method: "PUT",
           body: fd,

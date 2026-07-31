@@ -13,7 +13,7 @@
 // import Navbar from "../component/Navbar";
 // import toast from "react-hot-toast";
 
-// const API_BASE = "https://email-syncing-backend.vercel.app";
+// const API_BASE = "http://localhost:5000";
 
 // const Security = () => {
 //   const { user, updateUser, loading } = useContext(UserContext);
@@ -436,7 +436,7 @@ import Sidebar from "../component/Sidebar";
 import Navbar from "../component/Navbar";
 import toast from "react-hot-toast";
 
-const API_BASE = "https://email-syncing-backend.vercel.app";
+const API_BASE = "http://localhost:5000";
 
 const Security = () => {
   const { user, updateUser, loading } = useContext(UserContext);

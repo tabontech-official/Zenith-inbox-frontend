@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { FiEye, FiEyeOff, FiMail, FiServer, FiX } from "react-icons/fi";
 
-const API_BASE_URL = "https://email-syncing-backend.vercel.app";
+const API_BASE_URL = "http://localhost:5000";
 
 const initialForm = {
   name: "My Email Connection",
