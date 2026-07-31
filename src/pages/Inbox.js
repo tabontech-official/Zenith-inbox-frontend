@@ -23,6 +23,7 @@ import {
   FiFile,
   FiDownload,
   FiX,
+  FiAlertCircle,
 } from "react-icons/fi";
 
 const API_BASE_URL = "https://email-syncing-backend.vercel.app/mailhook";
@@ -673,39 +674,47 @@ const Inbox = () => {
 
       {/* Alert / Confirm Modal */}
       {modal.open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-          <div className="w-full max-w-md rounded-[16px] bg-white p-6 shadow-2xl border border-slate-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-[440px] rounded-[24px] bg-white p-7 shadow-2xl border border-slate-100/80">
             <div
-              className={`mb-4 flex h-12 w-12 items-center justify-center rounded-xl ${
+              className={`flex h-12 w-12 items-center justify-center rounded-[16px] ${
                 modal.type === "error"
-                  ? "bg-red-50 text-red-600"
+                  ? "bg-red-50 text-red-600 border border-red-100"
                   : modal.type === "confirm"
-                  ? "bg-amber-50 text-amber-600"
-                  : "bg-blue-50 text-blue-600"
+                  ? "bg-[#FFF8EE] text-[#D97706] border border-[#FDE68A]/40"
+                  : "bg-indigo-50 text-indigo-600 border border-indigo-100"
               }`}
             >
-              <FiMail size={22} />
+              {modal.type === "confirm" ? (
+                <FiMail size={22} className="text-[#D97706]" />
+              ) : modal.type === "error" ? (
+                <FiAlertCircle size={22} />
+              ) : (
+                <FiMail size={22} />
+              )}
             </div>
 
-            <h3 className="text-base font-bold text-slate-900">{modal.title}</h3>
-            <p className="mt-1.5 text-xs leading-relaxed text-slate-500 font-medium">
+            <h3 className="mt-5 text-lg font-bold text-[#111110] tracking-tight">{modal.title}</h3>
+            <p className="mt-1.5 text-sm leading-relaxed text-slate-500 font-medium">
               {modal.message}
             </p>
 
-            <div className="mt-6 flex justify-end gap-2.5">
-              <button
-                type="button"
-                onClick={closeModal}
-                className="rounded-[8px] border border-slate-300 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
-              >
-                Cancel
-              </button>
+            <div className="mt-7 flex items-center justify-end gap-3">
+              {modal.type === "confirm" && (
+                <button
+                  type="button"
+                  onClick={closeModal}
+                  className="rounded-[12px] border border-slate-200 bg-white px-5 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition cursor-pointer shadow-2xs"
+                >
+                  Cancel
+                </button>
+              )}
 
               {modal.type === "confirm" ? (
                 <button
                   type="button"
                   onClick={modal.onConfirm}
-                  className="rounded-[8px] bg-red-600 px-4 py-2 text-xs font-bold text-white hover:bg-red-700 transition cursor-pointer"
+                  className="rounded-[12px] bg-[#DC2626] px-6 py-2.5 text-xs font-bold text-white hover:bg-[#B91C1C] transition cursor-pointer shadow-xs active:scale-[0.98]"
                 >
                   Delete
                 </button>
@@ -713,7 +722,7 @@ const Inbox = () => {
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="rounded-[8px] bg-[#111110] px-4 py-2 text-xs font-bold text-white hover:bg-black transition cursor-pointer"
+                  className="rounded-[12px] bg-[#111110] px-6 py-2.5 text-xs font-bold text-white hover:bg-black transition cursor-pointer shadow-xs"
                 >
                   OK
                 </button>

@@ -799,7 +799,6 @@ const RegisterPage = () => {
 
         // setTimeout(() => navigate("/setup?step=1"), 1200);
         setTimeout(() => navigate("/dashboard"), 1200);
-
       }
     } catch (err) {
       setAlert({
@@ -819,13 +818,13 @@ const RegisterPage = () => {
       return;
     }
 
-  if (!acceptedTerms) {
-  setAlert({
-    type: "error",
-    message: "You must agree to terms and conditions before you proceed.",
-  });
-  return;
-}
+    if (!acceptedTerms) {
+      setAlert({
+        type: "error",
+        message: "You must agree to terms and conditions before you proceed.",
+      });
+      return;
+    }
 
     setLoading(true);
     setAlert({ type: "", message: "" });
