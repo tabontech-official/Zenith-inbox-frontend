@@ -4,7 +4,7 @@ import toast from "react-hot-toast";
 import axios from "axios";
 import Sidebar from "../component/Sidebar";
 
-const API_URL = "http://localhost:5000/admin/scripts";
+const API_URL = "https://email-syncing-backend.vercel.app/admin/scripts";
 
 const AdminScriptsPage = () => {
   const [headerScript, setHeaderScript] = useState("");

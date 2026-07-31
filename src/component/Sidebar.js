@@ -89,7 +89,7 @@
 
 //       try {
 //         const response = await fetch(
-//           `http://localhost:5000/auth/guide/${userId}`,
+//           `https://email-syncing-backend.vercel.app/auth/guide/${userId}`,
 //           {
 //             headers: {
 //               Authorization: `Bearer ${token}`,
@@ -162,7 +162,7 @@
 //     try {
 //       if (userId) {
 //         await fetch(
-//           `http://localhost:5000/auth/logout/${userId}`,
+//           `https://email-syncing-backend.vercel.app/auth/logout/${userId}`,
 //           {
 //             method: "POST",
 //           },
@@ -182,7 +182,7 @@
 
 //     try {
 //       await fetch(
-//         `http://localhost:5000/auth/guide/${userId}`,
+//         `https://email-syncing-backend.vercel.app/auth/guide/${userId}`,
 //         {
 //           method: "POST",
 //           headers: {
@@ -704,7 +704,7 @@ const Sidebar = ({ onOpenMailhook, onOpenGmail, onOpenOutlook }) => {
     try {
       // 1. Fetch Shopify Scenario details
       const resShopify = await fetch(
-        "http://localhost:5000/scenario/details",
+        "https://email-syncing-backend.vercel.app/scenario/details",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -717,7 +717,7 @@ const Sidebar = ({ onOpenMailhook, onOpenGmail, onOpenOutlook }) => {
 
       // 2. Fetch Custom Scenarios
       const resCustom = await fetch(
-        `http://localhost:5000/scenario/all?userId=${uid}`,
+        `https://email-syncing-backend.vercel.app/scenario/all?userId=${uid}`,
       );
       const dataCustom = await resCustom.json();
       let countCustom = 0;
@@ -793,7 +793,7 @@ const Sidebar = ({ onOpenMailhook, onOpenGmail, onOpenOutlook }) => {
 
       try {
         const res = await fetch(
-          `http://localhost:5000/mailhook/getAllEmailsData/${storedUserId}`
+          `https://email-syncing-backend.vercel.app/mailhook/getAllEmailsData/${storedUserId}`
         );
         const data = await res.json();
         const threads = data?.data?.threads || [];
@@ -857,7 +857,7 @@ const Sidebar = ({ onOpenMailhook, onOpenGmail, onOpenOutlook }) => {
 
       try {
         const res = await fetch(
-          "http://localhost:5000/scenario/details",
+          "https://email-syncing-backend.vercel.app/scenario/details",
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -903,7 +903,7 @@ const Sidebar = ({ onOpenMailhook, onOpenGmail, onOpenOutlook }) => {
 
       try {
         const response = await fetch(
-          `http://localhost:5000/auth/guide/${userId}`,
+          `https://email-syncing-backend.vercel.app/auth/guide/${userId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -986,7 +986,7 @@ const Sidebar = ({ onOpenMailhook, onOpenGmail, onOpenOutlook }) => {
     try {
       if (userId) {
         await fetch(
-          `http://localhost:5000/auth/logout/${userId}`,
+          `https://email-syncing-backend.vercel.app/auth/logout/${userId}`,
           {
             method: "POST",
           },
@@ -1006,7 +1006,7 @@ const Sidebar = ({ onOpenMailhook, onOpenGmail, onOpenOutlook }) => {
 
     try {
       await fetch(
-        `http://localhost:5000/auth/guide/${userId}`,
+        `https://email-syncing-backend.vercel.app/auth/guide/${userId}`,
         {
           method: "POST",
           headers: {

@@ -59,7 +59,7 @@ export default function CustomTemplate() {
       setLoading(true);
       const userId = localStorage.getItem("userid");
       const res = await axios.get(
-        "http://localhost:5000/template/all/custom",
+        "https://email-syncing-backend.vercel.app/template/all/custom",
         {
           params: { userId },
         },
@@ -128,13 +128,13 @@ export default function CustomTemplate() {
 
       if (editingId) {
         await axios.put(
-          `http://localhost:5000/template/update/${editingId}`,
+          `https://email-syncing-backend.vercel.app/template/update/${editingId}`,
           payload,
         );
         toast.success("Template updated successfully!");
       } else {
         await axios.post(
-          "http://localhost:5000/template/create",
+          "https://email-syncing-backend.vercel.app/template/create",
           payload,
         );
         toast.success("Template created successfully!");
@@ -161,7 +161,7 @@ export default function CustomTemplate() {
 
     try {
       await axios.put(
-        `http://localhost:5000/template/update/${id}`,
+        `https://email-syncing-backend.vercel.app/template/update/${id}`,
         {
           active: !currentStatus,
         },
@@ -191,7 +191,7 @@ export default function CustomTemplate() {
   const handleDeleteTemplate = async () => {
     try {
       await axios.delete(
-        `http://localhost:5000/template/delete/${deleteId}`,
+        `https://email-syncing-backend.vercel.app/template/delete/${deleteId}`,
       );
 
       toast.success("Template deleted!");
@@ -209,7 +209,7 @@ export default function CustomTemplate() {
     try {
       const userId = localStorage.getItem("userid");
       const res = await axios.patch(
-        "http://localhost:5000/template/templatestatus/all/other",
+        "https://email-syncing-backend.vercel.app/template/templatestatus/all/other",
         { userId },
       );
       if (res.data.success) {

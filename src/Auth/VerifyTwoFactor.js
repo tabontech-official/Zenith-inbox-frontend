@@ -57,7 +57,7 @@
 //       setLoading(true);
 
 //       const response = await axios.post(
-//         "http://localhost:5000/auth/2fa/verify-login",
+//         "https://email-syncing-backend.vercel.app/auth/2fa/verify-login",
 //         {
 //           userId,
 //           token: code,
@@ -219,7 +219,7 @@ const VerifyTwoFactor = () => {
       setLoading(true);
 
       const response = await axios.post(
-        "http://localhost:5000/auth/2fa/verify-login",
+        "https://email-syncing-backend.vercel.app/auth/2fa/verify-login",
         {
           userId,
           token: code,

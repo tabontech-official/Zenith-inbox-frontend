@@ -185,7 +185,7 @@ const EmailDetailPage = () => {
       try {
         setLoading(true);
         const res = await axios.get(
-          `http://localhost:5000/mailhook/getAllEmailsData/${emailId}`
+          `https://email-syncing-backend.vercel.app/mailhook/getAllEmailsData/${emailId}`
         );
         setThread(res.data?.data || null);
       } catch (err) {

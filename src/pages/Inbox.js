@@ -31,7 +31,7 @@ import {
   FiCheck,
 } from "react-icons/fi";
 
-const API_BASE_URL = "http://localhost:5000/mailhook";
+const API_BASE_URL = "https://email-syncing-backend.vercel.app/mailhook";
 
 const Inbox = () => {
   const [emails, setEmails] = useState([]);
