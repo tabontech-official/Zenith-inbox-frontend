@@ -321,23 +321,23 @@ const Inbox = () => {
         .trim()
         .toLowerCase();
 
-      const itemTime = new Date(item.date || item.createdAt || Date.now()).getTime();
-      const timeWindow = Math.floor(itemTime / 180000); // 3-minute window
       const direction = item.direction || (item.isParentMessage ? "incoming" : "outgoing");
+      const textSnippet = cleanText.slice(0, 150);
 
-      const dedupKey = item._id && !String(item._id).startsWith("disc-")
-        ? `id-${item._id}`
-        : `${direction}-${timeWindow}-${cleanText.slice(0, 100)}`;
+      // Deduplicate identical message text per direction
+      const contentKey = textSnippet ? `${direction}:${textSnippet}` : `id:${item._id}`;
 
-      const contentKey = `${direction}-${timeWindow}-${cleanText.slice(0, 100)}`;
-
-      if (!map.has(dedupKey) && !map.has(contentKey)) {
+      if (!map.has(contentKey)) {
         map.set(contentKey, item);
-        map.set(dedupKey, item);
+      } else {
+        const existing = map.get(contentKey);
+        if (!existing.isParentMessage && item.isParentMessage) {
+          map.set(contentKey, item);
+        }
       }
     });
 
-    const uniqueMessages = Array.from(new Set(map.values()));
+    const uniqueMessages = Array.from(map.values());
 
     return uniqueMessages.sort(
       (a, b) =>
