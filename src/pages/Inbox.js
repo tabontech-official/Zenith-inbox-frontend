@@ -359,6 +359,17 @@ const Inbox = () => {
     return String(value).replace(/^"|"$/g, "").trim();
   };
 
+  const getLeadAddressForThread = (emailObj) => {
+    if (!emailObj) return "";
+    const conversation = emailObj.replies || emailObj.conversation || [];
+    const incomingMsg = conversation.find((m) => m.direction === "incoming" || (m.senderAddress && m.senderAddress.includes("@")));
+    if (incomingMsg?.senderAddress) return incomingMsg.senderAddress;
+    if (emailObj.direction === "outgoing" && emailObj.recipientAddress) {
+      return emailObj.recipientAddress;
+    }
+    return emailObj.latestSenderAddress || emailObj.senderAddress || emailObj.recipientAddress || "";
+  };
+
   const getNameFromAddress = (address = "", emailObj = null) => {
     if (emailObj) {
       const first = emailObj.senderFirstName?.trim();
@@ -502,16 +513,18 @@ const Inbox = () => {
       const textSnippet = cleanText.slice(0, 150);
       const cleanMsgId = item.messageId ? String(item.messageId).replace(/^<|>$/g, "").trim() : "";
 
-      // Deduplicate by clean Message-ID or by textSnippet
-      const contentKey = cleanMsgId ? `msg:${cleanMsgId}` : textSnippet ? `text:${textSnippet}` : `id:${item._id}`;
+      const itemKey = item._id
+        ? `id:${item._id}`
+        : cleanMsgId
+        ? `msg:${cleanMsgId}`
+        : `text:${item.direction}:${textSnippet}`;
 
-      if (!map.has(contentKey)) {
-        map.set(contentKey, item);
+      if (!map.has(itemKey)) {
+        map.set(itemKey, item);
       } else {
-        const existing = map.get(contentKey);
-        // Prefer outgoing status badge / reply over duplicate incoming sync
+        const existing = map.get(itemKey);
         if (existing.direction === "incoming" && item.direction === "outgoing") {
-          map.set(contentKey, item);
+          map.set(itemKey, item);
         }
       }
     });
@@ -1123,7 +1136,8 @@ const Inbox = () => {
             {!loading &&
               filteredEmails.map((email, idx) => {
                 const isSelected = selectedEmail?._id === email._id;
-                const name = getNameFromAddress(email.latestSenderAddress || email.senderAddress, email);
+                const targetAddress = getLeadAddressForThread(email);
+                const name = getNameFromAddress(targetAddress, email);
                 const { company, snippet } = getCompanyAndSnippet(email);
                 const timeAgo = formatTimeAgo(email.lastActivityAt || email.date) || `${idx + 1}m ago`;
                 const msgCount = (email.replies || email.conversation || []).length || 1;
