@@ -163,7 +163,23 @@ const Inbox = () => {
       .filter((t) => !t.isDeleted)
       .map((thread) => {
         const messages = thread.conversation || [];
-        const sortedMsgs = [...messages].sort(
+
+        const uniqueMsgsMap = new Map();
+        messages.forEach((m) => {
+          const cleanId = m.messageId ? m.messageId.replace(/^<|>$/g, "").trim().toLowerCase() : "";
+          const text = (m.textBody || m.htmlBody || m.body || "").replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim().toLowerCase().slice(0, 100);
+          const dir = m.direction || "incoming";
+          const sender = (m.senderAddress || "").trim().toLowerCase();
+          const key = cleanId || `${dir}:${sender}:${text}`;
+
+          if (!uniqueMsgsMap.has(key)) {
+            uniqueMsgsMap.set(key, m);
+          }
+        });
+
+        const deduplicatedMsgs = Array.from(uniqueMsgsMap.values());
+
+        const sortedMsgs = [...deduplicatedMsgs].sort(
           (m1, m2) =>
             new Date(m2.date || m2.createdAt || 0) -
             new Date(m1.date || m1.createdAt || 0)
@@ -207,7 +223,7 @@ const Inbox = () => {
           service: thread.service || null,
           stepType: thread.stepType || null,
           discussion: thread.discussion || [],
-          replies: messages.map((msg) => ({
+          replies: deduplicatedMsgs.map((msg) => ({
             _id: msg._id,
             subject: msg.subject || "",
             textBody: msg.textBody || msg.body || "",
@@ -692,13 +708,24 @@ const Inbox = () => {
         { message, date: new Date().toISOString(), createdBy: userId },
       ];
 
-      const updatedReplies = [
+      const rawReplies = [
         ...(selectedEmail.replies || []).filter((r) => r._id !== sentChildEmail._id),
         sentChildEmail,
       ];
 
-      const newLeadStatus =
-        selectedEmail.leadStatus === "new_lead" ? "awaiting" : selectedEmail.leadStatus;
+      const uniqueRepliesMap = new Map();
+      rawReplies.forEach((r) => {
+        const text = (r.textBody || r.htmlBody || r.body || "").replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim().toLowerCase().slice(0, 100);
+        const dir = r.direction || "outgoing";
+        const key = r._id && !String(r._id).startsWith("reply-") ? r._id.toString() : `${dir}:${text}`;
+
+        if (!uniqueRepliesMap.has(key)) {
+          uniqueRepliesMap.set(key, r);
+        }
+      });
+      const updatedReplies = Array.from(uniqueRepliesMap.values());
+
+      const newLeadStatus = "awaiting";
 
       const nowIso = new Date().toISOString();
 
@@ -811,11 +838,10 @@ const Inbox = () => {
   const isThreadReplied = (e) => {
     if (!e) return false;
     const msgs = e.replies || e.conversation || e.discussion || [];
-    if (msgs.length > 1) return true;
-    if (e.direction === "outgoing" || e.stepType === "Auto Reply") return true;
-    if (["customer_replied", "awaiting_customer_reply", "auto_replied", "replied"].includes(e.status)) return true;
-    if (e.leadStatus === "replied" || e.leadStatus === "auto_replied") return true;
-    return false;
+    const latestMsg = msgs.length > 0 ? msgs[msgs.length - 1] : e;
+    if (e.leadStatus === "replied" || e.leadStatus === "customer_replied") return true;
+    if (e.leadStatus === "awaiting" || e.awaitingReply === true) return false;
+    return latestMsg.direction === "incoming";
   };
 
   const awaitingCount = emails.filter(
@@ -1172,7 +1198,7 @@ const Inbox = () => {
                       <FiCheckCircle size={10} className="text-emerald-600" /> Secured
                     </span>
                   );
-                } else if (hasReplies) {
+                } else if (isThreadReplied(email)) {
                   badgeContent = (
                     <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
                       <FiCheckCircle size={10} className="text-emerald-600" /> Replied
