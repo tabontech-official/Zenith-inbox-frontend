@@ -227,6 +227,11 @@ const Inbox = () => {
   };
 
   const prevEmailMapRef = useRef(new Map());
+  const selectedEmailRef = useRef(selectedEmail);
+
+  useEffect(() => {
+    selectedEmailRef.current = selectedEmail;
+  }, [selectedEmail]);
 
   const playNotificationSound = () => {
     try {
@@ -320,11 +325,18 @@ const Inbox = () => {
 
       setLeadStatuses(initialStatuses);
 
-      if (!isMobileView && data.length > 0 && !selectedEmail) {
+      const currentSelected = selectedEmailRef.current;
+
+      if (!isMobileView && data.length > 0 && !currentSelected) {
         setSelectedEmail(data[0]);
         markEmailAsRead(data[0]._id);
-      } else if (selectedEmail) {
-        const updated = data.find((e) => e._id === selectedEmail._id);
+      } else if (currentSelected) {
+        const updated = data.find(
+          (e) =>
+            e._id === currentSelected._id ||
+            (e.threadId && e.threadId === currentSelected.threadId) ||
+            (e.conversationId && e.conversationId === currentSelected.conversationId)
+        );
         if (updated) {
           setSelectedEmail(updated);
           markEmailAsRead(updated._id);
@@ -796,16 +808,21 @@ const Inbox = () => {
   // Sidebar navigation option state: 'all' | 'shopify' | 'custom' | 'awaiting' | 'replied' | 'secured'
   const [sidebarFilter, setSidebarFilter] = useState("all");
 
+  const isThreadReplied = (e) => {
+    if (!e) return false;
+    const msgs = e.replies || e.conversation || e.discussion || [];
+    if (msgs.length > 1) return true;
+    if (e.direction === "outgoing" || e.stepType === "Auto Reply") return true;
+    if (["customer_replied", "awaiting_customer_reply", "auto_replied", "replied"].includes(e.status)) return true;
+    if (e.leadStatus === "replied" || e.leadStatus === "auto_replied") return true;
+    return false;
+  };
+
   const awaitingCount = emails.filter(
-    (e) => e.direction === "incoming" || e.leadStatus === "new_lead"
+    (e) => e.leadStatus !== "secured" && e.leadStatus !== "closed" && !isThreadReplied(e)
   ).length;
 
-  const autoRepliedCount = emails.filter(
-    (e) =>
-      e.direction === "outgoing" ||
-      (e.replies && e.replies.length > 0) ||
-      e.stepType === "Auto Reply"
-  ).length;
+  const autoRepliedCount = emails.filter((e) => isThreadReplied(e)).length;
 
   const securedCount = emails.filter((e) => e.leadStatus === "secured").length;
   const closedCount = emails.filter((e) => e.leadStatus === "closed").length;
@@ -843,13 +860,10 @@ const Inbox = () => {
         (!((email.service || "").toLowerCase().includes("shopify") || (email.subject || "").toLowerCase().includes("shopify")));
       if (!isCustom) return false;
     } else if (sidebarFilter === "awaiting") {
-      if (!(email.direction === "incoming" || email.leadStatus === "new_lead")) return false;
+      if (email.leadStatus === "secured" || email.leadStatus === "closed") return false;
+      if (isThreadReplied(email)) return false;
     } else if (sidebarFilter === "replied") {
-      const isReplied =
-        email.direction === "outgoing" ||
-        (email.replies && email.replies.length > 0) ||
-        email.stepType === "Auto Reply";
-      if (!isReplied) return false;
+      if (!isThreadReplied(email)) return false;
     } else if (sidebarFilter === "secured") {
       if (email.leadStatus !== "secured") return false;
     }

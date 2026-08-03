@@ -1464,21 +1464,32 @@ const ShopifyScenariosPage = () => {
     const missingModules = [];
     const unverifiedConnections = [];
 
+    const incomingLeadConn = (incomingLeadsConnection || "").toString().trim();
+
+    if (!incomingLeadConn || incomingLeadConn === "" || incomingLeadConn === "null" || incomingLeadConn === "undefined" || incomingLeadConn === "(empty)") {
+      missingModules.push({
+        branch: 0,
+        module: 0,
+        moduleName: "Incoming Leads",
+      });
+    }
+
     routerBranches.forEach((branch, i) => {
       branch.modules.forEach((m, j) => {
-        const rawName = m.app?.name || "";
+        const rawName = m.app?.displayName || m.app?.name || m.emailType || m.stepType || `Module ${j + 1}`;
         const appName = rawName.toLowerCase();
 
         const isEmailModule =
           appName.includes("gmail") ||
           appName.includes("email") ||
           appName.includes("follow") ||
-          appName.includes("initial");
+          appName.includes("initial") ||
+          m.type === "Send Email";
 
         const connectionId =
           typeof m.connectionId === "string"
             ? m.connectionId.trim()
-            : (m.connectionId ?? "").toString().trim();
+            : (m.connectionId?._id || m.connectionId || "").toString().trim();
 
         if (
           isEmailModule &&
@@ -1506,10 +1517,9 @@ const ShopifyScenariosPage = () => {
     });
 
     if (missingModules.length > 0) {
+      const nodeNames = [...new Set(missingModules.map((m) => m.moduleName))].join(", ");
       toast.error(
-        `Cannot run test.\n\nMissing connections in:\n${missingModules
-          .map((m) => `• ${m.moduleName}`)
-          .join("\n")}`,
+        `First add a connection to '${nodeNames}' node before running send test.`,
         {
           duration: 6000,
           style: {
