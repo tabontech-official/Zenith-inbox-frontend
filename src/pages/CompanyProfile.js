@@ -243,9 +243,11 @@ const CompanyProfile = () => {
                 <span>Knowledge Base active</span>
               </div>
 
-              <div className="hidden px-4 sm:block">
-                {company.companyName || "My Company Profile"}
-              </div>
+              {company.companyName ? (
+                <div className="hidden px-4 sm:block">
+                  {company.companyName}
+                </div>
+              ) : null}
 
               <div className="hidden px-4 md:block">
                 {services.length} Services · {products.length} Products · {faqs.length} FAQs
@@ -268,10 +270,7 @@ const CompanyProfile = () => {
           {/* Header section */}
           <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
             <div>
-              <h1 className="text-[24px] font-semibold leading-tight tracking-[-0.035em] text-gray-900">
-                Company Profile
-              </h1>
-              <p className="mt-1 text-[13px] text-gray-500">
+              <p className="text-[13px] text-gray-500">
                 Manage your business details, products, services, policies, and AI knowledge base.
               </p>
             </div>

@@ -1241,12 +1241,6 @@ const Sidebar = ({ onOpenMailhook, onOpenGmail, onOpenOutlook }) => {
               active={isSectionActive(["/connection"])}
             />
 
-            <DesktopNavLink
-              to="/company-profile"
-              label="Company Profile"
-              Icon={FiBriefcase}
-              active={isSectionActive(["/company-profile"])}
-            />
           </nav>
         </div>
 
