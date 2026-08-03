@@ -787,6 +787,31 @@ const Inbox = () => {
     content = content.replace(/disabled/g, "");
 
     if (isHtml) {
+      // 1. Remove <html>, <head>, <body>, <!DOCTYPE> wrapper tags
+      content = content
+        .replace(/<!DOCTYPE[^>]*>/gi, "")
+        .replace(/<html[^>]*>/gi, "")
+        .replace(/<\/html>/gi, "")
+        .replace(/<head[\s\S]*?<\/head>/gi, "")
+        .replace(/<body[^>]*>/gi, "")
+        .replace(/<\/body>/gi, "");
+
+      // 2. Strip global style rules (body, html, :root, *) and scope remaining rules to .email-body-content
+      content = content.replace(/<style[\s\S]*?<\/style>/gi, (styleBlock) => {
+        return styleBlock
+          .replace(/html\s*\{[^}]*\}/gi, "")
+          .replace(/body\s*\{[^}]*\}/gi, "")
+          .replace(/:root\s*\{[^}]*\}/gi, "")
+          .replace(/\*\s*\{[^}]*\}/gi, "")
+          .replace(/(?:^|\})\s*([a-zA-Z0-9_\-.,#\s>+~]+)\s*\{/gi, (match, selector) => {
+            const scopedSelector = selector
+              .split(",")
+              .map((s) => `.email-body-content ${s.trim()}`)
+              .join(", ");
+            return `\n${scopedSelector} {`;
+          });
+      });
+
       content = content.replace(
         /(?:<br\s*\/?>\s*[\r\n]*\s*){3,}/gi,
         "<br/><br/>"
@@ -826,7 +851,7 @@ const Inbox = () => {
     );
 
     return `
-      <div class="email-body-content" style="font-family: system-ui, -apple-system, sans-serif; font-size: 13.5px; line-height: 1.6; color: ${textColor}; max-width: 100%; word-break: break-word; overflow-wrap: break-word;">
+      <div class="email-body-content" style="font-family: system-ui, -apple-system, sans-serif; font-size: 13.5px; line-height: 1.6; color: ${textColor}; max-width: 100%; word-break: break-word; overflow-wrap: break-word; overflow-x: auto; isolation: isolate;">
         ${content}
       </div>
     `;

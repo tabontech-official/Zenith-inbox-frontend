@@ -27,17 +27,35 @@ const formatEmailBody = (html, text, forwardedBody) => {
   content = content.replace(/disabled/g, "");
 
   if (isHtml) {
-    // 2. Replace 3 or more consecutive HTML line breaks with a maximum of 2.
-    content = content.replace(/(?:<br\s*\/?>\s*[\r\n]*\s*){3,}/gi, "<br/><br/>");
+    content = content
+      .replace(/<!DOCTYPE[^>]*>/gi, "")
+      .replace(/<html[^>]*>/gi, "")
+      .replace(/<\/html>/gi, "")
+      .replace(/<head[\s\S]*?<\/head>/gi, "")
+      .replace(/<body[^>]*>/gi, "")
+      .replace(/<\/body>/gi, "");
 
-    // Replace 3 or more consecutive newlines with 2.
+    content = content.replace(/<style[\s\S]*?<\/style>/gi, (styleBlock) => {
+      return styleBlock
+        .replace(/html\s*\{[^}]*\}/gi, "")
+        .replace(/body\s*\{[^}]*\}/gi, "")
+        .replace(/:root\s*\{[^}]*\}/gi, "")
+        .replace(/\*\s*\{[^}]*\}/gi, "")
+        .replace(/(?:^|\})\s*([a-zA-Z0-9_\-.,#\s>+~]+)\s*\{/gi, (match, selector) => {
+          const scopedSelector = selector
+            .split(",")
+            .map((s) => `.email-body-content ${s.trim()}`)
+            .join(", ");
+          return `\n${scopedSelector} {`;
+        });
+    });
+
+    content = content.replace(/(?:<br\s*\/?>\s*[\r\n]*\s*){3,}/gi, "<br/><br/>");
     content = content.replace(/\n{3,}/g, "\n\n");
   } else {
-    // 2. Replace 3 or more consecutive line breaks with a maximum of 2.
     content = content.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
     content = content.replace(/\n{3,}/g, "\n\n");
 
-    // Escape HTML entities to prevent rendering issues or injection in plain text
     content = content
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
@@ -45,7 +63,6 @@ const formatEmailBody = (html, text, forwardedBody) => {
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#039;");
 
-    // 3. Make links and email addresses clickable
     content = content.replace(
       /(https?:\/\/[^\s<]+)/g,
       '<a href="$1" target="_blank" style="color:#1a73e8;text-decoration:underline;font-weight:500">$1</a>',
@@ -56,17 +73,19 @@ const formatEmailBody = (html, text, forwardedBody) => {
       '<a href="mailto:$1" style="color:#1a73e8;text-decoration:underline">$1</a>',
     );
 
-    // Convert newlines to breaks for HTML rendering
     content = content.replace(/\n/g, "<br/>");
   }
 
-  // Modern styled headers or form keys formatting (preserved from original code)
   content = content.replace(
     /(Full Name:|Business Email:|Country:|Service:|Budget:|Store Name:|Store URL:|Problem & Goal:)/g,
     '<br/><strong style="color:#202124;font-weight:600">$1</strong>',
   );
 
-  return content;
+  return `
+    <div class="email-body-content" style="font-family: system-ui, -apple-system, sans-serif; font-size: 13.5px; line-height: 1.6; color: #1E293B; max-width: 100%; word-break: break-word; overflow-wrap: break-word; overflow-x: auto; isolation: isolate;">
+      ${content}
+    </div>
+  `;
 };
 
 const renderEmailChain = (email, title = "Email", level = 0, domId = "") => {
