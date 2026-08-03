@@ -38,18 +38,7 @@ const LoginPage = () => {
         navigate("/admin/dashboard", { replace: true });
         return;
       }
-
-      if (setupCompleted) {
-        navigate("/dashboard", { replace: true });
-        return;
-      }
-
-      const nextStep =
-        steps.find(
-          (s) => s.status === "skipped" || s.status === "incomplete"
-        )?.step || 1;
-
-      navigate(`/setup?step=${nextStep}`, { replace: true });
+      navigate("/dashboard", { replace: true });
     }, 800);
   };
 

@@ -43,21 +43,6 @@ const PublicRoute = ({ children }) => {
   const authPages = ["/login", "/register"];
 
   if (user && authPages.includes(location.pathname)) {
-    const hasSkippedOrIncomplete = user?.setup?.steps?.some(
-      (s) => s.status === "skipped" || s.status === "incomplete"
-    );
-
-    const wizardCompleted = !hasSkippedOrIncomplete;
-
-    if (!wizardCompleted) {
-      const nextStep =
-        user?.setup?.steps?.find(
-          (s) => s.status === "skipped" || s.status === "incomplete"
-        )?.step || 1;
-
-      return <Navigate to={`/setup?step=${nextStep}`} replace />;
-    }
-
     return <Navigate to="/dashboard" replace />;
   }
 
