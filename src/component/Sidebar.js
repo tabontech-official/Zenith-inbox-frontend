@@ -739,16 +739,8 @@ const Sidebar = ({ onOpenMailhook, onOpenGmail, onOpenOutlook }) => {
   };
 
   const handleSelectShopifyScenario = () => {
-    if (shopifyScenarioCount >= 1) {
-      setShowScenarioSelectionModal(false);
-      setUpgradeReason("shopify");
-      setShowUpgradeModal(true);
-    } else {
-      setShowScenarioSelectionModal(false);
-      localStorage.removeItem("scenarioId");
-      localStorage.removeItem("scenarioActive");
-      navigate("/scenarios/shopify");
-    }
+    setShowScenarioSelectionModal(false);
+    navigate("/scenarios/shopify");
   };
 
   const handleSelectCustomScenario = () => {
