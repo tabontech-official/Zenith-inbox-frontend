@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useContext } from "react";
-import Sidebar from "../component/Sidebar";
+import AppLayout from "../component/AppLayout";
 import axios from "axios";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
@@ -264,9 +264,8 @@ export default function CustomTemplate() {
   );
 
   return (
-    <div className="min-h-screen bg-[#FAF8F5]">
-      <Sidebar />
-      <div className="w-full flex-1 pt-[60px]">
+    <AppLayout>
+      <div className="w-full flex-1 min-w-0 h-full overflow-y-auto bg-[#FAF8F5]">
         {/* Header Section */}
          <div className="border-b border-gray-200 bg-white">
         <div className="flex min-h-[30px] items-center justify-between gap-4 px-6 text-[11px] text-gray-500">
@@ -831,6 +830,6 @@ export default function CustomTemplate() {
           </div>
         )}
       </div>
-    </div>
+    </AppLayout>
   );
 }

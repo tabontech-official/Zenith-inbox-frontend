@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
-import Sidebar from "../component/Sidebar";
+import AppLayout from "../component/AppLayout";
 import ConnectionModal from "../component/ConnectionModal";
 import OutlookConnectionModal from "../component/OutlookConnectionModal";
 import {
@@ -165,13 +165,8 @@ const ConnectionsPage = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Sidebar
-        onOpenMailhook={() => setIsMailhookModalOpen(true)}
-        onOpenGmail={() => openModal()}
-        onOpenOutlook={() => openOutlookModal()}
-      />
-      <div className="flex-1 flex flex-col min-w-0 pt-[60px] ">
+    <AppLayout>
+      <div className="flex-1 flex flex-col min-w-0 h-full overflow-y-auto bg-[#F7F7FA]">
         {/* Top Title Subheader */}
         <header className="border-b border-[#EBE8E1] bg-white px-6 py-2">
           <p className="text-xs text-slate-500  font-medium">
@@ -495,7 +490,7 @@ const ConnectionsPage = () => {
           setConnections((prev) => prev.filter((conn) => conn._id !== id));
         }}
       />
-    </div>
+    </AppLayout>
   );
 };
 

@@ -102,11 +102,17 @@ export const UserProvider = ({ children }) => {
       if (data.data.organization) {
         setOrganization(data.data.organization);
       } else {
-        const orgRes = await fetch(
-          `https://email-syncing-backend.vercel.app/organization/${userId}`
-        );
-        const orgData = await orgRes.json();
-        setOrganization(orgData.data);
+        try {
+          const orgRes = await fetch(
+            `https://email-syncing-backend.vercel.app/auth/organization/get/${userId}`
+          );
+          const orgData = await orgRes.json();
+          if (orgData?.data) {
+            setOrganization(orgData.data);
+          }
+        } catch (orgErr) {
+          console.error("Error fetching org:", orgErr);
+        }
       }
     } catch (err) {
       console.error("Error refreshing user:", err);

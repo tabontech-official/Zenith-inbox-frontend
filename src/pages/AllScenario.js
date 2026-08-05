@@ -414,7 +414,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-import Sidebar from "../component/Sidebar";
+import AppLayout from "../component/AppLayout";
 
 const getScenarioName = (scenario) => {
   if (scenario.name?.trim()) {
@@ -648,12 +648,10 @@ const AllScenariosPage = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-zinc-100 font-sans text-zinc-900">
-      <Sidebar />
-
-      <main className="min-h-screen pt-[60px]">
+    <AppLayout>
+      <div className="flex-1 overflow-y-auto bg-zinc-100 font-sans text-zinc-900">
         {/* Full-width container */}
-        <div className="w-full px-4 py-8 sm:px-8 lg:px-12">
+        <div className="w-full ">
           {/* Header */}
           <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
             <div>
@@ -1080,7 +1078,6 @@ const AllScenariosPage = () => {
             </div>
           </section>
         </div>
-      </main>
 
       {/* Delete Confirmation Modal */}
       {deleteModalOpen && (
@@ -1187,7 +1184,8 @@ const AllScenariosPage = () => {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </AppLayout>
   );
 };
 

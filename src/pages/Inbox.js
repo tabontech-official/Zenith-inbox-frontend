@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
-import Sidebar from "../component/Sidebar";
+import AppLayout from "../component/AppLayout";
+import { useLocation } from "react-router-dom";
 import axios from "axios";
 import {
   FiArrowLeft,
@@ -29,6 +30,15 @@ import {
   FiShield,
   FiStar,
   FiCheck,
+  FiPrinter,
+  FiSmile,
+  FiMoreVertical,
+  FiLink,
+  FiImage,
+  FiLock,
+  FiEdit3,
+  FiMaximize2,
+  FiChevronDown,
 } from "react-icons/fi";
 
 const API_BASE_URL = "https://email-syncing-backend.vercel.app/mailhook";
@@ -43,9 +53,11 @@ const Inbox = () => {
   const [leadStatuses, setLeadStatuses] = useState({});
   const [replyText, setReplyText] = useState("");
   const [replyingToMessage, setReplyingToMessage] = useState(null);
+  const [activeReplyMsgId, setActiveReplyMsgId] = useState(null);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const fileInputRef = useRef(null);
   const messagesEndRef = useRef(null);
+  const replyTextRef = useRef(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("all"); // 'all', 'awaiting', 'auto_replied', 'secured', 'closed'
   const [modal, setModal] = useState({
@@ -121,6 +133,7 @@ const Inbox = () => {
   const handleEmailClick = (email) => {
     setSelectedEmail(email);
     setReplyingToMessage(null);
+    setActiveReplyMsgId(null);
     if (email && email._id) {
       markEmailAsRead(email._id);
     }
@@ -343,10 +356,7 @@ const Inbox = () => {
 
       const currentSelected = selectedEmailRef.current;
 
-      if (!isMobileView && data.length > 0 && !currentSelected) {
-        setSelectedEmail(data[0]);
-        markEmailAsRead(data[0]._id);
-      } else if (currentSelected) {
+      if (currentSelected) {
         const updated = data.find(
           (e) =>
             e._id === currentSelected._id ||
@@ -449,6 +459,34 @@ const Inbox = () => {
     if (diffInHours < 24) return `${diffInHours}h ago`;
     const diffInDays = Math.floor(diffInHours / 24);
     return `${diffInDays}d ago`;
+  };
+
+  const formatGmailDate = (d) => {
+    const dateObj = new Date(d);
+    if (isNaN(dateObj.getTime())) return "";
+    try {
+      const formattedStr = dateObj.toLocaleDateString("en-US", {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
+      const timeAgo = formatTimeAgo(d);
+      return timeAgo ? `${formattedStr} (${timeAgo})` : formattedStr;
+    } catch (e) {
+      return "";
+    }
+  };
+
+  const getAvatarColor = (nameStr = "") => {
+    const colors = ["#C0392B", "#8E44AD", "#2980B9", "#27AE60", "#D35400", "#16A085", "#7F8C8D", "#D97706"];
+    let hash = 0;
+    for (let i = 0; i < (nameStr || "").length; i++) {
+      hash = nameStr.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return colors[Math.abs(hash) % colors.length];
   };
 
   const getInitials = (address = "") => {
@@ -763,6 +801,7 @@ const Inbox = () => {
 
       setReplyText("");
       setReplyingToMessage(null);
+      setActiveReplyMsgId("none");
       setSelectedFiles([]);
       if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (err) {
@@ -842,23 +881,49 @@ const Inbox = () => {
       content = content.replace(/\n/g, "<br/>");
     }
 
-    const textColor = isDark ? "#F3F4F6" : "#1E293B";
-    const labelColor = isDark ? "#FFFFFF" : "#0F172A";
+    const textColor = isDark ? "#F8FAFC" : "#0F172A";
+    const labelColor = isDark ? "#FFFFFF" : "#020617";
+    const quoteColor = isDark ? "#94A3B8" : "#475569";
+    const quoteBorder = isDark ? "#475569" : "#CBD5E1";
 
     content = content.replace(
       /(Full Name:|Business Email:|Country:|Service:|Budget:|Store Name:|Store URL:|Problem & Goal:)/g,
-      `<br/><strong style="color:${labelColor};font-weight:600">$1</strong>`
+      `<br/><strong style="color:${labelColor};font-weight:700">$1</strong>`
     );
 
     return `
-      <div class="email-body-content" style="font-family: system-ui, -apple-system, sans-serif; font-size: 13.5px; line-height: 1.6; color: ${textColor}; max-width: 100%; word-break: break-word; overflow-wrap: break-word; overflow-x: auto; isolation: isolate;">
+      <style>
+        .email-body-content-${isDark ? "dark" : "light"} {
+          color: ${textColor} !important;
+        }
+        .email-body-content-${isDark ? "dark" : "light"} p,
+        .email-body-content-${isDark ? "dark" : "light"} span,
+        .email-body-content-${isDark ? "dark" : "light"} td,
+        .email-body-content-${isDark ? "dark" : "light"} div {
+          color: inherit;
+        }
+        .email-body-content-${isDark ? "dark" : "light"} blockquote {
+          border-left: 3px solid ${quoteBorder} !important;
+          color: ${quoteColor} !important;
+          margin: 8px 0 !important;
+          padding-left: 12px !important;
+          opacity: 0.9;
+        }
+      </style>
+      <div class="email-body-content email-body-content-${isDark ? "dark" : "light"}" style="font-family: system-ui, -apple-system, sans-serif; font-size: 13.5px; line-height: 1.6; color: ${textColor}; max-width: 100%; word-break: break-word; overflow-wrap: break-word; overflow-x: auto; isolation: isolate;">
         ${content}
       </div>
     `;
   };
 
+  const buildEmailHtml = (content, isDark = false) => {
+    return formatEmailBody(content, content, isDark);
+  };
+
   // Sidebar navigation option state: 'all' | 'shopify' | 'custom' | 'awaiting' | 'replied' | 'secured'
-  const [sidebarFilter, setSidebarFilter] = useState("all");
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const sidebarFilter = searchParams.get("filter") || "all";
 
   const isThreadReplied = (e) => {
     if (!e) return false;
@@ -937,8 +1002,8 @@ const Inbox = () => {
   });
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#FAF8F5] font-sans text-slate-900 antialiased">
-      <Sidebar />
+    <AppLayout>
+      <div className="flex h-full overflow-hidden font-sans text-slate-900 antialiased">
 
       {/* Alert / Confirm Modal */}
       {modal.open && (
@@ -1001,688 +1066,544 @@ const Inbox = () => {
       )}
 
       {/* Main Container */}
-      <main className="flex min-w-0 flex-1 overflow-hidden bg-[#FAF8F5] pt-[60px]">
-        {/* LEFT SIDEBAR NAVIGATION OPTIONS */}
-        <aside className="hidden md:flex w-52 lg:w-56 flex-col border-r border-[#EBE8E1] bg-[#FAF8F5] p-3 shrink-0">
-          <div className="px-3 py-2 mb-1">
-            <h2 className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Lead Inbox</h2>
-          </div>
+      <main className="flex min-w-0 flex-1 overflow-hidden bg-[#F7F7FA] relative flex-col">
 
-          <div className="space-y-1">
-            <button
-              type="button"
-              onClick={() => setSidebarFilter("all")}
-              className={`flex w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-bold transition cursor-pointer ${
-                sidebarFilter === "all" ? "bg-[#111110] text-white shadow-2xs" : "text-slate-700 hover:bg-[#EFECE6]"
-              }`}
-            >
-              <span className="flex items-center gap-2.5">
-                <FiInbox size={15} /> All
-              </span>
-              <span
-                className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold ${
-                  sidebarFilter === "all" ? "bg-slate-800 text-white" : "bg-[#E5E2DC] text-slate-700"
-                }`}
-              >
-                {emails.length}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setSidebarFilter("shopify")}
-              className={`flex w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-bold transition cursor-pointer ${
-                sidebarFilter === "shopify" ? "bg-[#34A853] text-white shadow-2xs" : "text-slate-700 hover:bg-[#EFECE6]"
-              }`}
-            >
-              <span className="flex items-center gap-2.5">
-                <FiShoppingBag size={15} /> Shopify
-              </span>
-              <span
-                className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold ${
-                  sidebarFilter === "shopify" ? "bg-emerald-800 text-white" : "bg-[#E5E2DC] text-slate-700"
-                }`}
-              >
-                {shopifyCount}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setSidebarFilter("custom")}
-              className={`flex w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-bold transition cursor-pointer ${
-                sidebarFilter === "custom" ? "bg-indigo-600 text-white shadow-2xs" : "text-slate-700 hover:bg-[#EFECE6]"
-              }`}
-            >
-              <span className="flex items-center gap-2.5">
-                <FiSliders size={15} /> Custom
-              </span>
-              <span
-                className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold ${
-                  sidebarFilter === "custom" ? "bg-indigo-800 text-white" : "bg-[#E5E2DC] text-slate-700"
-                }`}
-              >
-                {customCount}
-              </span>
-            </button>
-
-            <div className="my-3 border-t border-[#EBE8E1] px-3 pt-3">
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Status Filters</span>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setSidebarFilter("awaiting")}
-              className={`flex w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-bold transition cursor-pointer ${
-                sidebarFilter === "awaiting" ? "bg-amber-600 text-white shadow-2xs" : "text-slate-700 hover:bg-[#EFECE6]"
-              }`}
-            >
-              <span className="flex items-center gap-2.5">
-                <FiClock size={15} /> Awaiting reply
-              </span>
-              <span
-                className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold ${
-                  sidebarFilter === "awaiting" ? "bg-amber-800 text-white" : "bg-[#E5E2DC] text-slate-700"
-                }`}
-              >
-                {awaitingCount}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setSidebarFilter("replied")}
-              className={`flex w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-bold transition cursor-pointer ${
-                sidebarFilter === "replied" ? "bg-emerald-600 text-white shadow-2xs" : "text-slate-700 hover:bg-[#EFECE6]"
-              }`}
-            >
-              <span className="flex items-center gap-2.5">
-                <FiCheckCircle size={15} /> Replied
-              </span>
-              <span
-                className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold ${
-                  sidebarFilter === "replied" ? "bg-emerald-800 text-white" : "bg-[#E5E2DC] text-slate-700"
-                }`}
-              >
-                {autoRepliedCount}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setSidebarFilter("secured")}
-              className={`flex w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-bold transition cursor-pointer ${
-                sidebarFilter === "secured" ? "bg-blue-600 text-white shadow-2xs" : "text-slate-700 hover:bg-[#EFECE6]"
-              }`}
-            >
-              <span className="flex items-center gap-2.5">
-                <FiShield size={15} /> Secured
-              </span>
-              <span
-                className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold ${
-                  sidebarFilter === "secured" ? "bg-blue-800 text-white" : "bg-[#E5E2DC] text-slate-700"
-                }`}
-              >
-                {securedCount}
-              </span>
-            </button>
-          </div>
-        </aside>
-
-        {/* MIDDLE PANEL: Leads List */}
-        <section
-          className={`${
-            isMobileView && selectedEmail ? "hidden" : "flex"
-          } w-full flex-col border-r border-[#EBE8E1] bg-[#FAF8F5] md:w-[340px] lg:w-[370px] shrink-0 min-h-0`}
-        >
-          {/* Search & Actions Header */}
-          <div className="p-4 border-b border-[#EBE8E1]">
-            <div className="flex items-center gap-2">
-              <div className="relative flex-1">
-                <FiSearch className="absolute left-3 top-3 text-slate-400 text-xs" />
+        {/* =================== GMAIL-STYLE LIST VIEW =================== */}
+        {!selectedEmail && (
+          <div className="flex flex-col flex-1 min-h-0">
+            {/* Search & Actions Header */}
+            <div className="shrink-0 bg-white border-b border-slate-200 px-5 py-3 flex items-center gap-3">
+              <div className="relative flex-1 max-w-lg">
+                <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
                 <input
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Search leads, emails..."
-                  className="h-9 w-full rounded-[8px] border border-[#E5E2DC] bg-[#F0EEE9] pl-9 pr-3 text-xs outline-none transition placeholder:text-slate-400 focus:border-slate-800 focus:bg-white font-medium"
+                  className="h-9 w-full rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-slate-400 focus:bg-white"
                 />
               </div>
-
               <button
                 type="button"
                 onClick={fetchEmails}
-                title="Refresh Inbox"
-                className="flex h-9 w-9 items-center justify-center rounded-[8px] border border-[#E5E2DC] bg-[#F0EEE9] text-slate-600 transition hover:bg-[#E5E2DC] shrink-0 cursor-pointer"
+                title="Refresh"
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-600 transition hover:bg-slate-100 shrink-0 cursor-pointer"
               >
-                <FiRefreshCw
-                  className={`text-xs ${loading ? "animate-spin text-slate-900" : ""}`}
-                />
+                <FiRefreshCw size={14} className={loading ? "animate-spin" : ""} />
               </button>
-
-              {selectedLeadIds.size > 0 && (
-                <button
-                  type="button"
-                  onClick={() => handleDeleteLeads([...selectedLeadIds])}
-                  className="flex h-9 items-center gap-1.5 rounded-[8px] bg-red-50 border border-red-200 px-3 text-xs font-bold text-red-600 hover:bg-red-100 shrink-0 transition cursor-pointer"
-                >
-                  <FiTrash2 className="text-xs" />
-                  ({selectedLeadIds.size})
-                </button>
-              )}
+              <span className="text-xs text-slate-400 font-medium shrink-0">{filteredEmails.length} leads</span>
             </div>
-          </div>
 
-          {/* Leads Items List */}
-          <div className="min-h-0 flex-1 overflow-y-auto">
-            {loading && (
-              <div className="flex h-40 items-center justify-center">
-                <div className="flex flex-col items-center gap-2 text-slate-400">
-                  <FiRefreshCw className="animate-spin text-lg text-slate-700" />
-                  <p className="text-xs font-bold text-slate-600">Loading leads...</p>
-                </div>
+            {/* Table Header */}
+            {!loading && filteredEmails.length > 0 && (
+              <div className="shrink-0 bg-white border-b border-slate-200 px-5 py-2 flex items-center gap-4">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-slate-300 text-slate-900 cursor-pointer"
+                  checked={selectedLeadIds.size === filteredEmails.length && filteredEmails.length > 0}
+                  onChange={() => {
+                    if (selectedLeadIds.size === filteredEmails.length) {
+                      setSelectedLeadIds(new Set());
+                    } else {
+                      setSelectedLeadIds(new Set(filteredEmails.map((e) => e._id)));
+                    }
+                  }}
+                />
+                <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider flex-1">Sender</span>
+                <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider flex-[3]">Subject</span>
+                <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider w-20 text-right">Date</span>
               </div>
             )}
 
-            {!loading && filteredEmails.length === 0 && (
-              <div className="flex h-60 flex-col items-center justify-center px-6 text-center text-slate-400">
-                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-[#EFECE6]">
-                  <FiInbox className="text-slate-600 text-lg" />
+            {/* Lead Rows */}
+            <div className="flex-1 overflow-y-auto bg-white">
+              {loading && (
+                <div className="flex h-40 items-center justify-center">
+                  <div className="flex flex-col items-center gap-2">
+                    <FiRefreshCw className="animate-spin text-slate-400" size={20} />
+                    <p className="text-xs text-slate-500">Loading leads...</p>
+                  </div>
                 </div>
-                <p className="text-xs font-bold text-slate-700">
-                  No leads found
-                </p>
-                <p className="mt-1 text-[11px] text-slate-400 font-normal">
-                  Try adjusting your search query or active filter.
-                </p>
-              </div>
-            )}
+              )}
 
-            {!loading &&
-              filteredEmails.map((email, idx) => {
-                const isSelected = selectedEmail?._id === email._id;
+              {!loading && filteredEmails.length === 0 && (
+                <div className="flex h-60 flex-col items-center justify-center text-center px-6">
+                  <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
+                    <FiInbox size={22} />
+                  </div>
+                  <p className="text-sm font-semibold text-slate-700">No leads found</p>
+                  <p className="mt-1 text-xs text-slate-400">Try adjusting your search or filter.</p>
+                </div>
+              )}
+
+              {!loading && filteredEmails.map((email, idx) => {
                 const targetAddress = getLeadAddressForThread(email);
                 const name = getNameFromAddress(targetAddress, email);
                 const { company, snippet } = getCompanyAndSnippet(email);
                 const timeAgo = formatTimeAgo(email.lastActivityAt || email.date) || `${idx + 1}m ago`;
                 const msgCount = (email.replies || email.conversation || []).length || 1;
-                const conversation = email.replies || email.conversation || [];
-                const hasReplies = conversation.length > 1 || email.direction === "outgoing" || email.stepType === "Auto Reply";
-
-                // Status Badges
-                let badgeContent = null;
-                if (email.leadStatus === "closed") {
-                  badgeContent = (
-                    <span className="inline-flex rounded-full bg-red-50 border border-red-200 px-2 py-0.5 text-[10px] font-bold text-red-700">
-                      Closed
-                    </span>
-                  );
-                } else if (email.leadStatus === "secured") {
-                  badgeContent = (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
-                      <FiCheckCircle size={10} className="text-emerald-600" /> Secured
-                    </span>
-                  );
-                } else if (isThreadReplied(email)) {
-                  badgeContent = (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
-                      <FiCheckCircle size={10} className="text-emerald-600" /> Replied
-                    </span>
-                  );
-                } else {
-                  badgeContent = (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 border border-amber-200 px-2 py-0.5 text-[10px] font-bold text-amber-800">
-                      <FiClock size={10} className="text-amber-600" /> Awaiting reply
-                    </span>
-                  );
-                }
-
-                const readIds = new Set(
-                  JSON.parse(localStorage.getItem("readEmailIds") || "[]")
-                );
+                const isChecked = selectedLeadIds.has(email._id);
+                const readIds = new Set(JSON.parse(localStorage.getItem("readEmailIds") || "[]"));
                 const isUnread = !readIds.has(email._id);
 
+                // Status badge color
+                let statusBadge = null;
+                if (email.leadStatus === "secured") {
+                  statusBadge = <span className="shrink-0 inline-flex rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-700">Secured</span>;
+                } else if (email.leadStatus === "closed") {
+                  statusBadge = <span className="shrink-0 inline-flex rounded-full bg-red-50 border border-red-200 px-2 py-0.5 text-[10px] font-bold text-red-700">Closed</span>;
+                } else if (isThreadReplied(email)) {
+                  statusBadge = <span className="shrink-0 inline-flex rounded-full bg-blue-50 border border-blue-200 px-2 py-0.5 text-[10px] font-bold text-blue-700">Replied</span>;
+                } else {
+                  statusBadge = <span className="shrink-0 inline-flex rounded-full bg-amber-50 border border-amber-200 px-2 py-0.5 text-[10px] font-bold text-amber-700">Awaiting</span>;
+                }
+
                 return (
-                  <button
+                  <div
                     key={email._id}
-                    type="button"
-                    onClick={() => handleEmailClick(email)}
-                    className={`group relative flex w-full flex-col border-b border-[#EBE8E1] px-4 py-3.5 text-left transition cursor-pointer ${
-                      isSelected
-                        ? "bg-[#F2EFE8] border-l-4 border-l-black"
+                    className={`group flex items-center gap-4 border-b border-slate-100 px-5 py-3 cursor-pointer transition select-none ${
+                      isChecked
+                        ? "bg-blue-50/60"
                         : isUnread
-                        ? "bg-amber-50/50 hover:bg-[#F4F1EA] border-l-4 border-l-red-500"
-                        : "bg-transparent hover:bg-[#F4F1EA] border-l-4 border-l-transparent"
+                        ? "bg-white hover:bg-slate-50 font-semibold"
+                        : "bg-white hover:bg-slate-50"
                     }`}
+                    onClick={() => handleEmailClick(email)}
                   >
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-slate-900 text-xs truncate pr-2 flex items-center gap-1.5">
-                        {isUnread && (
-                          <span className="h-2 w-2 rounded-full bg-red-600 shrink-0 animate-pulse" title="Unread message" />
-                        )}
-                        <span className={`truncate ${isUnread ? "font-black text-slate-950" : "font-bold text-slate-800"}`}>{name}</span>
-                        {msgCount > 1 && (
-                          <span className="rounded-full bg-slate-200 px-1.5 py-0.2 text-[9px] font-extrabold text-slate-700">
-                            {msgCount}
-                          </span>
-                        )}
-                        {isUnread && (
-                          <span className="rounded-full bg-red-100 border border-red-200 px-1.5 py-0.2 text-[9px] font-black text-red-700">
-                            UNREAD
-                          </span>
-                        )}
+                    {/* Checkbox */}
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onClick={(e) => e.stopPropagation()}
+                      onChange={() => toggleLeadSelection(email._id)}
+                      className="h-4 w-4 rounded border-slate-300 text-slate-900 cursor-pointer shrink-0 opacity-0 group-hover:opacity-100 checked:opacity-100 transition"
+                    />
+
+                    {/* Unread dot */}
+                    <span className={`h-2 w-2 rounded-full shrink-0 ${isUnread ? "bg-blue-500" : "bg-transparent"}`} />
+
+                    {/* Sender name */}
+                    <span className={`w-[160px] shrink-0 truncate text-sm ${isUnread ? "font-bold text-slate-900" : "font-medium text-slate-700"}`}>
+                      {name}
+                      {msgCount > 1 && (
+                        <span className="ml-1.5 text-[10px] font-normal text-slate-400">({msgCount})</span>
+                      )}
+                    </span>
+
+                    {/* Subject + snippet */}
+                    <span className="flex-1 min-w-0 text-sm truncate">
+                      <span className={`${isUnread ? "font-bold text-slate-900" : "font-medium text-slate-800"}`}>
+                        {email.subject || company || "No Subject"}
                       </span>
-                      <span className="text-[10px] text-slate-400 font-semibold shrink-0">
-                        {timeAgo}
-                      </span>
-                    </div>
+                      <span className="text-slate-400 font-normal"> – {snippet}</span>
+                    </span>
 
-                    <p className="mt-1 truncate text-xs text-slate-500 font-normal leading-relaxed">
-                      <span className="font-bold text-slate-800">
-                        {company}
-                      </span>{" "}
-                      · {snippet}
-                    </p>
+                    {/* Status badge */}
+                    <span className="shrink-0">{statusBadge}</span>
 
-                    <div className="mt-2.5 flex items-center justify-between">
-                      {badgeContent}
-
-                      <input
-                        type="checkbox"
-                        checked={selectedLeadIds.has(email._id)}
-                        onClick={(e) => e.stopPropagation()}
-                        onChange={() => toggleLeadSelection(email._id)}
-                        className="h-3.5 w-3.5 rounded border-[#D0CCC3] text-slate-900 focus:ring-0 opacity-0 group-hover:opacity-100 checked:opacity-100 transition cursor-pointer"
-                      />
-                    </div>
-                  </button>
+                    {/* Date */}
+                    <span className="w-16 shrink-0 text-right text-xs text-slate-400 font-medium">{timeAgo}</span>
+                  </div>
                 );
               })}
+            </div>
           </div>
-        </section>
+        )}
 
-        {/* RIGHT PANEL: Lead Detail & Thread View (Gmail Structure) */}
-        <section
-          className={`${
-            isMobileView && !selectedEmail ? "hidden" : "flex"
-          } min-w-0 flex-1 flex-col bg-[#FAF8F5]`}
-        >
-          {selectedEmail ? (
-            <div className="flex min-h-0 flex-1 flex-col">
-              {/* Top Detail Header Toolbar */}
-              <div className="shrink-0 border-b border-[#EBE8E1] bg-[#FAF8F5] px-6 py-4">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedEmail(null)}
-                      className="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-[#E0DDD5] bg-white text-slate-700 hover:bg-slate-50 transition cursor-pointer shadow-2xs"
-                      title="Back to leads list"
-                    >
-                      <FiArrowLeft size={14} />
-                    </button>
-
-                    <div>
-                      <h2 className="text-sm font-bold text-slate-900 flex items-center gap-1.5 flex-wrap">
-                        <span>
-                          {getNameFromAddress(selectedEmail.senderAddress)}
-                        </span>
-                        <span className="text-slate-300 font-normal">·</span>
-                        <span className="text-slate-600 font-medium">
-                          {selectedEmail.senderAddress}
-                        </span>
-                      </h2>
-
-                      <p className="text-xs text-slate-500 font-medium mt-0.5">
-                        Subject: <span className="text-slate-800 font-bold">{selectedEmail.subject || "No Subject"}</span>
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 shrink-0">
-                    <a
-                      href={`https://mail.google.com/mail/u/0/#search/${encodeURIComponent(
-                        selectedEmail.senderAddress || ""
-                      )}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center justify-center gap-1.5 h-9 rounded-[8px] border border-[#E0DDD5] bg-white px-3.5 text-xs font-bold text-slate-800 shadow-2xs hover:bg-slate-50 transition cursor-pointer"
-                    >
-                      <FiExternalLink size={13} />
-                      <span>Open in Gmail</span>
-                    </a>
-
-                    <select
-                      value={leadStatuses[selectedEmail._id] || "new_lead"}
-                      onChange={(e) =>
-                        handleStatusChange(selectedEmail._id, e.target.value)
-                      }
-                      className="h-9 rounded-[8px] border border-[#E0DDD5] bg-white px-3 text-xs font-bold text-slate-800 outline-none hover:bg-slate-50 transition cursor-pointer shadow-2xs"
-                    >
-                      {leadStatusOptions.map((status) => (
-                        <option key={status.value} value={status.value}>
-                          {status.label}
-                        </option>
-                      ))}
-                    </select>
-
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteLeads([selectedEmail._id])}
-                      className="flex h-9 w-9 items-center justify-center rounded-[8px] border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition cursor-pointer shadow-2xs shrink-0"
-                      title="Delete Lead"
-                    >
-                      <FiTrash2 className="text-sm" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Gmail-Style Thread Messages List */}
-              <div className="min-h-0 flex-1 overflow-y-auto px-6 lg:px-8 py-6 space-y-6">
-                {getThreadMessages(selectedEmail).map((message, index) => {
-                  const isIncoming = message.direction === "incoming";
-                  const senderName = getNameFromAddress(
-                    message.senderAddress || selectedEmail.senderAddress
-                  );
-                  const msgTime = message.date
-                    ? new Date(message.date).toLocaleString([], {
-                        month: "short",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })
-                    : "Just now";
-
-                  const isManual = message.stepType === "Manual Reply" || message.senderAddress?.includes("You");
-
-                  // Gmail-style Avatar color
-                  const avatarBg = isIncoming
-                    ? "bg-[#C2410C]"
-                    : isManual
-                    ? "bg-[#18181B]"
-                    : "bg-[#7E22CE]";
-
-                  return (
-                    <div
-                      key={`${message._id}-${index}`}
-                      className="rounded-[18px] border border-[#EAE7E0] bg-white p-5 shadow-2xs transition hover:shadow-xs"
-                    >
-                      {/* Message Header */}
-                      <div className="flex items-start justify-between pb-3 mb-3 border-b border-slate-100">
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white uppercase tracking-wider ${avatarBg}`}
-                          >
-                            {getInitials(message.senderAddress || senderName)}
-                          </div>
-
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold text-slate-900 text-xs">
-                                {senderName}
-                              </span>
-                              {!isIncoming && (
-                                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-extrabold text-slate-600">
-                                  {isManual ? "Manual Reply" : "Auto-reply"}
-                                </span>
-                              )}
-                            </div>
-
-                            <p className="text-[11px] text-slate-400 font-medium mt-0.5">
-                              to {message.recipientAddress || "me"}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-3 text-right">
-                          <span className="text-[11px] font-semibold text-slate-400">
-                            {msgTime}
-                          </span>
-                          {isIncoming && (
-                            <button
-                              type="button"
-                              onClick={() => setReplyingToMessage(message)}
-                              className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600 hover:text-indigo-900 transition cursor-pointer"
-                              title="Reply to this message"
-                            >
-                              <FiCornerUpLeft size={13} />
-                              <span>Reply</span>
-                            </button>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Message Body */}
-                      <div className="text-xs leading-relaxed text-slate-800">
-                        <div
-                          dangerouslySetInnerHTML={{
-                            __html: formatEmailBody(
-                              message.htmlBody,
-                              message.textBody,
-                              false
-                            ),
-                          }}
-                        />
-
-                        {/* Attachments Grid */}
-                        {message.attachments && message.attachments.length > 0 && (
-                          <div className="mt-4 pt-3 border-t border-slate-100 flex flex-col gap-2">
-                            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                              Attachments ({message.attachments.length})
-                            </p>
-                            <div className="flex flex-wrap gap-2">
-                              {message.attachments.map((att, attIdx) => (
-                                <a
-                                  key={attIdx}
-                                  href={getAttachmentUrl(att)}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  download={att.filename || "attachment"}
-                                  className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 px-3 py-2 text-xs font-medium text-slate-800 transition group"
-                                >
-                                  <FiFile size={14} className="text-indigo-600 shrink-0" />
-                                  <div className="flex flex-col">
-                                    <span className="font-semibold text-[11px] max-w-[180px] truncate group-hover:underline">
-                                      {att.filename}
-                                    </span>
-                                    {att.size && (
-                                      <span className="text-[9px] text-slate-400">
-                                        {(att.size / 1024).toFixed(0)} KB
-                                      </span>
-                                    )}
-                                  </div>
-                                  <FiDownload
-                                    size={12}
-                                    className="text-slate-400 group-hover:text-slate-700 ml-1 shrink-0"
-                                  />
-                                </a>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-
-                {/* Hand-off Divider */}
-                <div className="my-6 flex justify-center">
-                  <span className="rounded-full bg-[#EFECE6] border border-[#E0DDD5] px-4 py-1.5 text-xs font-bold text-slate-700 shadow-2xs flex items-center gap-1.5">
-                    <FiMessageCircle size={13} className="text-slate-600" />
-                    Automation handed off — thread ready for custom replies
+        {/* =================== GMAIL DETAIL VIEW (Image 1 & Image 2) =================== */}
+        {selectedEmail && (
+          <div className="flex flex-col flex-1 min-h-0 bg-white">
+            {/* Top Toolbar Header (Gmail Style) */}
+            <div className="shrink-0 border-b border-slate-200 bg-white px-6 py-3.5 flex items-center justify-between">
+              {/* Left: Back button & Subject Title */}
+              <div className="flex items-center gap-4 min-w-0 flex-1">
+                <button
+                  type="button"
+                  onClick={() => setSelectedEmail(null)}
+                  className="p-2 rounded-full text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                  title="Back to leads"
+                >
+                  <FiArrowLeft size={18} />
+                </button>
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <h2 className="text-lg font-normal text-[#202124] truncate tracking-tight">
+                    {selectedEmail.subject || selectedEmail.latestSubject || "No Subject"}
+                  </h2>
+                  <span className="shrink-0 rounded bg-slate-200/80 px-2 py-0.5 text-[11px] font-medium text-slate-700">
+                    Inbox <span className="text-slate-500 font-normal">x</span>
                   </span>
                 </div>
-
-                {/* Scroll Target for Latest Message */}
-                <div ref={messagesEndRef} />
               </div>
 
-              {/* Bottom Reply Composer */}
-              <div className="border-t border-[#EBE8E1] bg-[#FAF8F5] p-4 shrink-0">
-                <div className="flex flex-col gap-2.5 max-w-5xl mx-auto">
-                  {/* Targeted Message Indicator Banner */}
-                  {replyingToMessage && (
-                    <div className="flex items-center justify-between rounded-lg bg-indigo-50 border border-indigo-200 px-3 py-1.5 text-xs text-indigo-950 font-medium shadow-2xs">
-                      <span className="truncate flex items-center gap-1.5">
-                        <FiCornerUpLeft size={13} className="text-indigo-600 shrink-0" />
-                        <span>Replying directly to message from <strong className="font-bold">{getNameFromAddress(replyingToMessage.senderAddress || selectedEmail.senderAddress)}</strong>:</span>
-                        <span className="text-slate-600 truncate max-w-[280px]">"{replyingToMessage.textBody?.replace(/<[^>]*>/g, '').trim().slice(0, 60) || 'Selected message'}..."</span>
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setReplyingToMessage(null)}
-                        className="text-indigo-600 hover:text-indigo-900 text-xs font-bold shrink-0 ml-2 cursor-pointer"
-                      >
-                        ✕ Clear target
-                      </button>
-                    </div>
-                  )}
+              {/* Right: Actions */}
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="p-2 rounded-full text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                  title="Print thread"
+                >
+                  <FiPrinter size={16} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const gmailUrl = `https://mail.google.com/mail/u/0/#inbox/${selectedEmail.providerThreadId || selectedEmail.providerMessageId || ""}`;
+                    window.open(gmailUrl, "_blank");
+                  }}
+                  className="p-2 rounded-full text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                  title="Open in Gmail window"
+                >
+                  <FiExternalLink size={16} />
+                </button>
+                <select
+                  value={leadStatuses[selectedEmail._id] || selectedEmail.leadStatus || "new_lead"}
+                  onChange={(e) => handleStatusChange(selectedEmail._id, e.target.value)}
+                  className="h-8 rounded-lg border border-slate-200 bg-slate-50 px-2.5 text-xs font-medium text-slate-700 cursor-pointer outline-none hover:bg-slate-100 transition"
+                >
+                  {leadStatusOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteLeads([selectedEmail._id])}
+                  className="p-2 rounded-full text-slate-600 hover:bg-red-50 hover:text-red-600 transition cursor-pointer"
+                  title="Delete lead"
+                >
+                  <FiTrash2 size={16} />
+                </button>
+              </div>
+            </div>
 
-                  {/* Selected Files Preview */}
-                  {selectedFiles.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-2 pb-1">
-                      {selectedFiles.map((file, idx) => (
-                        <div
-                          key={idx}
-                          className="flex items-center gap-1.5 rounded-md border border-[#E0DDD5] bg-white px-2.5 py-1 text-[11px] font-medium text-slate-700 shadow-2xs"
-                        >
-                          <FiFile size={12} className="text-indigo-600" />
-                          <span className="max-w-[150px] truncate">{file.name}</span>
-                          <span className="text-[9px] text-slate-400">
-                            ({(file.size / 1024).toFixed(0)}KB)
+            {/* Thread Scrollable Content (Image 1 Stacked Messages) */}
+            <div className="flex-1 overflow-y-auto px-8 py-6 flex flex-col gap-6">
+              {(() => {
+                const conversation = selectedEmail.replies || selectedEmail.conversation || selectedEmail.discussion || [];
+                const allMessages = conversation.length > 0 ? conversation : [selectedEmail];
+
+                return allMessages.map((msg, mIdx) => {
+                  const isOutgoing = msg.direction === "outgoing" || msg.stepType === "Auto Reply" || msg.role === "assistant";
+                  const senderName = isOutgoing
+                    ? "sami"
+                    : getNameFromAddress(msg.senderAddress || msg.from || getLeadAddressForThread(selectedEmail), selectedEmail);
+                  const senderEmailAddr = isOutgoing
+                    ? "2014tabontech@gmail.com"
+                    : msg.senderAddress || msg.from || getLeadAddressForThread(selectedEmail);
+                  const recipientAddr = isOutgoing
+                    ? getNameFromAddress(getLeadAddressForThread(selectedEmail), selectedEmail)
+                    : "me";
+
+                  const msgBody = msg.htmlBody || msg.textBody || msg.latestHtmlBody || msg.latestTextBody || msg.body || msg.content || "";
+                  const fullDateStr = formatGmailDate(msg.date || msg.createdAt || msg.timestamp);
+                  const avatarLetter = (senderName.charAt(0) || "U").toUpperCase();
+                  const avatarColor = isOutgoing ? "#8E44AD" : "#C0392B";
+
+                  const msgIdKey = msg._id || mIdx;
+                  const isReplyBoxOpenHere =
+                    activeReplyMsgId === msgIdKey ||
+                    (!activeReplyMsgId && mIdx === allMessages.length - 1);
+
+                  return (
+                    <div key={msgIdKey} className="flex flex-col border-b border-slate-100 pb-6 last:border-b-0">
+                      {/* Message Header Row */}
+                      <div className="flex items-start justify-between gap-4 mb-3">
+                        {/* Left: Avatar + Sender Details */}
+                        <div className="flex items-start gap-3.5 min-w-0 flex-1">
+                          <div
+                            className="h-10 w-10 rounded-full text-white font-semibold text-sm flex items-center justify-center shrink-0 shadow-xs"
+                            style={{ backgroundColor: avatarColor }}
+                          >
+                            {avatarLetter}
+                          </div>
+                          <div className="flex flex-col min-w-0">
+                            <div className="flex items-baseline gap-2">
+                              <span className="font-bold text-[#202124] text-sm truncate">
+                                {senderName}
+                              </span>
+                              <span className="text-xs text-slate-500 font-normal truncate">
+                                &lt;{senderEmailAddr}&gt;
+                              </span>
+                            </div>
+                            <span className="text-xs text-slate-500 font-medium flex items-center gap-1">
+                              to {recipientAddr} <FiChevronDown size={11} className="text-slate-400" />
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Right: Date & Message Action (Reply ↩) */}
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="text-xs text-slate-500 font-normal">
+                            {fullDateStr}
                           </span>
                           <button
                             type="button"
-                            onClick={() => removeFile(idx)}
-                            className="text-slate-400 hover:text-red-600 transition cursor-pointer ml-1"
+                            onClick={() => {
+                              setActiveReplyMsgId(msgIdKey);
+                              setReplyingToMessage(msg);
+                              const targetName = isOutgoing
+                                ? getNameFromAddress(getLeadAddressForThread(selectedEmail), selectedEmail)
+                                : senderName;
+                              const greeting = `Hi ${targetName.split(" ")[0]}, `;
+                              if (!replyText || !replyText.startsWith(greeting)) {
+                                setReplyText(greeting);
+                              }
+                              setTimeout(() => {
+                                if (replyTextRef.current) {
+                                  replyTextRef.current.focus();
+                                }
+                              }, 50);
+                            }}
+                            className="p-1.5 rounded-full text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                            title="Reply to message"
                           >
-                            <FiX size={12} />
+                            <FiCornerUpLeft size={16} />
                           </button>
                         </div>
-                      ))}
-                    </div>
-                  )}
+                      </div>
 
-                  {/* Quick Reply Pills */}
-                  <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
-                    <button
-                      type="button"
-                      onClick={() => setReplyText("Ok, see you soon.")}
-                      className="rounded-full border border-[#E0DDD5] bg-white px-3.5 py-1.5 text-xs font-medium text-slate-800 hover:bg-slate-100 transition whitespace-nowrap cursor-pointer shadow-2xs"
-                    >
-                      Ok, see you soon.
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setReplyText("I'm here.")}
-                      className="rounded-full border border-[#E0DDD5] bg-white px-3.5 py-1.5 text-xs font-medium text-slate-800 hover:bg-slate-100 transition whitespace-nowrap cursor-pointer shadow-2xs"
-                    >
-                      I'm here.
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setReplyText("I am waiting.")}
-                      className="rounded-full border border-[#E0DDD5] bg-white px-3.5 py-1.5 text-xs font-medium text-slate-800 hover:bg-slate-100 transition whitespace-nowrap cursor-pointer shadow-2xs"
-                    >
-                      I am waiting.
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setReplyText(
-                          `Hi ${getNameFromAddress(
-                            selectedEmail.senderAddress
-                          )}, thanks for reaching out! We received your request and would love to connect.`
-                        )
-                      }
-                      className="rounded-full border border-[#E0DDD5] bg-white px-3.5 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-100 transition whitespace-nowrap cursor-pointer shadow-2xs"
-                    >
-                      👋 Greeting & Intro
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setReplyText(
-                          "Just checking in to see if you had any questions regarding our initial proposal?"
-                        )
-                      }
-                      className="rounded-full border border-[#E0DDD5] bg-white px-3.5 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-100 transition whitespace-nowrap cursor-pointer shadow-2xs"
-                    >
-                      📌 Follow-up Nudge
-                    </button>
-                  </div>
+                      {/* Message Body (Gmail Style Full Width) */}
+                      <div className="pl-13 pr-4 text-[#202124] text-sm leading-relaxed font-normal">
+                        {msgBody ? (
+                          <div
+                            dangerouslySetInnerHTML={{ __html: buildEmailHtml(msgBody, false) }}
+                          />
+                        ) : (
+                          <p className="text-sm italic text-slate-400">No content</p>
+                        )}
 
-                  {/* Input Box and Controls */}
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      onChange={handleFileChange}
-                      multiple
-                      className="hidden"
-                    />
+                        {/* Attachments */}
+                        {(msg.attachments || []).length > 0 && (
+                          <div className="mt-4 flex flex-wrap gap-2">
+                            {msg.attachments.map((att, aIdx) => (
+                              <a
+                                key={aIdx}
+                                href={att.url || "#"}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition"
+                              >
+                                <FiFile size={13} className="text-slate-500" />
+                                <span>{att.filename || att.name || `Attachment ${aIdx + 1}`}</span>
+                              </a>
+                            ))}
+                          </div>
+                        )}
+                      </div>
 
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      title="Attach files"
-                      className="h-11 w-11 rounded-[8px] border border-[#E5E2DC] bg-[#F0EEE9] hover:bg-white hover:border-slate-400 text-slate-700 flex items-center justify-center transition cursor-pointer shrink-0"
-                    >
-                      <FiPaperclip size={16} />
-                    </button>
+                      {/* =================== GMAIL INLINE REPLY COMPOSER BOX (Image 2) =================== */}
+                      {isReplyBoxOpenHere && (
+                        <div id="gmail-reply-composer" className="mt-5 rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden animate-in fade-in duration-150">
+                          {/* Header inside reply box */}
+                          <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                            <div className="flex items-center gap-3 text-xs font-semibold text-slate-700">
+                              <div className="h-7 w-7 rounded-full bg-[#8E44AD] text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-xs">
+                                S
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <FiCornerUpLeft size={14} className="text-slate-500" />
+                                <FiChevronDown size={12} className="text-slate-400" />
+                                <span>
+                                  {replyingToMessage
+                                    ? getNameFromAddress(replyingToMessage.senderAddress || replyingToMessage.from, selectedEmail)
+                                    : getNameFromAddress(getLeadAddressForThread(selectedEmail), selectedEmail)}
+                                </span>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const gmailUrl = `https://mail.google.com/mail/u/0/#inbox/${selectedEmail.providerThreadId || selectedEmail.providerMessageId || ""}`;
+                                window.open(gmailUrl, "_blank");
+                              }}
+                              className="text-slate-400 hover:text-slate-700 transition cursor-pointer"
+                              title="Pop out reply window"
+                            >
+                              <FiMaximize2 size={13} />
+                            </button>
+                          </div>
 
-                    <input
-                      type="text"
-                      value={replyText}
-                      onChange={(e) => setReplyText(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && !e.shiftKey) {
-                          e.preventDefault();
-                          handleSendThreadReply();
-                        }
-                      }}
-                      placeholder={`Reply to ${getNameFromAddress(
-                        selectedEmail.senderAddress
-                      )}...`}
-                      className="h-11 flex-1 rounded-[8px] border border-[#E5E2DC] bg-[#F0EEE9] px-4 text-xs font-medium text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-slate-800 focus:bg-white"
-                    />
+                          {/* Textarea Input */}
+                          <div className="p-4 flex flex-col gap-3">
+                            <textarea
+                              ref={replyTextRef}
+                              rows={4}
+                              value={replyText}
+                              onChange={(e) => setReplyText(e.target.value)}
+                              placeholder="Hi Sami,"
+                              className="w-full text-sm text-[#202124] placeholder:text-slate-400 outline-none resize-none bg-transparent font-sans"
+                            />
 
-                    <button
-                      type="button"
-                      onClick={handleSendThreadReply}
-                      disabled={(!replyText.trim() && selectedFiles.length === 0) || replySending}
-                      className="h-11 rounded-[8px] bg-[#111110] hover:bg-black px-6 text-xs font-bold text-white transition disabled:cursor-not-allowed disabled:opacity-50 flex items-center justify-center gap-2 shrink-0 cursor-pointer shadow-xs"
-                    >
-                      {replySending ? (
-                        <FiRefreshCw className="animate-spin text-xs" />
-                      ) : (
-                        <>
-                          <FiSend size={13} />
-                          <span>Send Reply</span>
-                        </>
+                            {/* Ellipsis quoted text button */}
+                            <div className="flex items-center">
+                              <button
+                                type="button"
+                                className="px-2 py-0.5 rounded border border-slate-300 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold transition cursor-pointer"
+                                title="Show quoted text"
+                              >
+                                ...
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Bottom Toolbar Row (Gmail Style) */}
+                          <div className="px-4 py-3 border-t border-slate-100 flex items-center justify-between bg-slate-50/40">
+                            {/* Left Action Controls: Send button + Formatting icons */}
+                            <div className="flex items-center gap-3">
+                              {/* Blue Send Button */}
+                              <div className="inline-flex rounded-full shadow-xs">
+                                <button
+                                  type="button"
+                                  onClick={handleSendThreadReply}
+                                  disabled={replySending || !replyText.trim()}
+                                  className="h-9 bg-[#1a73e8] hover:bg-[#1557b0] text-white text-xs font-bold px-4 rounded-l-full flex items-center gap-1.5 transition disabled:opacity-50 cursor-pointer"
+                                >
+                                  {replySending ? (
+                                    <FiRefreshCw className="animate-spin" size={13} />
+                                  ) : (
+                                    "Send"
+                                  )}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={handleSendThreadReply}
+                                  disabled={replySending || !replyText.trim()}
+                                  className="h-9 bg-[#1a73e8] hover:bg-[#1557b0] text-white px-2 rounded-r-full border-l border-white/20 flex items-center justify-center transition disabled:opacity-50 cursor-pointer"
+                                >
+                                  <FiChevronDown size={13} />
+                                </button>
+                              </div>
+
+                              {/* Toolbar Icons */}
+                              <div className="flex items-center gap-1 text-slate-500">
+                                <button
+                                  type="button"
+                                  onClick={() => fileInputRef.current?.click()}
+                                  className="p-2 rounded-full hover:bg-slate-200/60 hover:text-slate-800 transition cursor-pointer"
+                                  title="Attach files"
+                                >
+                                  <FiPaperclip size={15} />
+                                </button>
+                                <input ref={fileInputRef} type="file" className="hidden" multiple onChange={handleFileChange} />
+                                <button
+                                  type="button"
+                                  className="p-2 rounded-full hover:bg-slate-200/60 hover:text-slate-800 transition cursor-pointer"
+                                  title="Insert link"
+                                >
+                                  <FiLink size={15} />
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Right Action: Discard / Delete draft */}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setReplyText("");
+                                setSelectedFiles([]);
+                                setReplyingToMessage(null);
+                                setActiveReplyMsgId("none");
+                              }}
+                              className="p-2 rounded-full text-slate-400 hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
+                              title="Discard draft"
+                            >
+                              <FiTrash2 size={16} />
+                            </button>
+                          </div>
+                        </div>
                       )}
-                    </button>
-                  </div>
-                </div>
-              </div>
+                    </div>
+                  );
+                });
+              })()}
+
+              <div ref={messagesEndRef} />
             </div>
-          ) : (
-            <div className="flex flex-1 flex-col items-center justify-center bg-[#FAF8F5] px-6 text-center">
-              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white border border-[#EBE8E1] text-slate-600 shadow-2xs">
-                <FiMessageSquare size={24} />
-              </div>
-              <h3 className="text-base font-bold text-slate-900">
-                Select a Lead Thread
-              </h3>
-              <p className="mt-1 max-w-sm text-xs text-slate-500 leading-relaxed font-medium">
-                Choose a lead from the list to view their message thread, status history, and send direct replies.
-              </p>
+          </div>
+        )}
+
+        {/* =================== FOOTER ACTION BAR (when checkboxes selected) =================== */}
+        {selectedLeadIds.size > 0 && (
+          <div className="absolute bottom-0 left-0 right-0 z-30 flex items-center justify-between gap-3 border-t border-slate-200 bg-white px-6 py-3 shadow-lg animate-in slide-in-from-bottom-2 duration-200">
+            {/* Left: count + clear */}
+            <div className="flex items-center gap-3 shrink-0">
+              <span className="rounded-full bg-slate-900 px-2.5 py-1 text-[11px] font-bold text-white">
+                {selectedLeadIds.size} selected
+              </span>
+              <button
+                type="button"
+                onClick={() => setSelectedLeadIds(new Set())}
+                className="text-xs font-semibold text-slate-500 hover:text-slate-800 transition cursor-pointer"
+              >
+                Clear
+              </button>
             </div>
-          )}
-        </section>
+
+            {/* Right: action buttons */}
+            <div className="flex items-center gap-2 flex-wrap justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  [...selectedLeadIds].forEach((id) => handleStatusChange(id, "archived"));
+                  setSelectedLeadIds(new Set());
+                }}
+                className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+              >
+                <FiInbox size={13} />
+                Archived
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleDeleteLeads([...selectedLeadIds])}
+                className="flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-100 transition cursor-pointer"
+              >
+                <FiTrash2 size={13} />
+                Delete
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  [...selectedLeadIds].forEach((id) => handleStatusChange(id, "closed"));
+                  setSelectedLeadIds(new Set());
+                }}
+                className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-200 transition cursor-pointer"
+              >
+                <FiX size={13} />
+                Closed
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  [...selectedLeadIds].forEach((id) => handleStatusChange(id, "secured"));
+                  setSelectedLeadIds(new Set());
+                }}
+                className="flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 transition cursor-pointer"
+              >
+                <FiCheckCircle size={13} />
+                Secured
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  [...selectedLeadIds].forEach((id) => handleStatusChange(id, "new_lead"));
+                  setSelectedLeadIds(new Set());
+                }}
+                className="flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition cursor-pointer"
+              >
+                <FiStar size={13} />
+                New Lead
+              </button>
+            </div>
+          </div>
+        )}
+
       </main>
     </div>
+    </AppLayout>
   );
 };
 

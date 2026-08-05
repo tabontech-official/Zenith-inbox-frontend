@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { ArrowLeft, Plus, Redo, Undo } from "lucide-react";
-import Sidebar from "../component/Sidebar";
+import AppLayout from "../component/AppLayout";
 import toast from "react-hot-toast";
 import { useNavigate, useParams } from "react-router-dom";
 import ReactFlow, {
@@ -1216,11 +1216,9 @@ const OthersScenariosPage = () => {
   };
 
   return (
-    <ReactFlowProvider>
-      <div className="flex h-screen overflow-hidden bg-[#FAF8F5] font-sans antialiased text-slate-900">
-        <Sidebar />
-
-        <main className="flex flex-1 flex-col overflow-hidden min-w-0 pt-[60px]">
+    <AppLayout>
+      <ReactFlowProvider>
+        <div className="flex flex-1 flex-col overflow-hidden min-w-0 bg-[#FAF8F5] font-sans antialiased text-slate-900">
           {/* Top Header Bar (Full width, no max-width) */}
           <div className="sticky top-0 z-30 border-b border-slate-200 bg-[#FAF8F5] px-6 py-3 shadow-2xs w-full">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between w-full">
@@ -1595,8 +1593,6 @@ const OthersScenariosPage = () => {
               </div>
             </div>
           </div>
-        </main>
-      </div>
       {showTestEmailModal && (
         <TestEmailModal
           email={testEmail}
@@ -1942,7 +1938,9 @@ const OthersScenariosPage = () => {
           </div>
         </div>
       )}
+      </div>
     </ReactFlowProvider>
+  </AppLayout>
   );
 };
 

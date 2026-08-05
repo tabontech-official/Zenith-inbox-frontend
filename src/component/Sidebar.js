@@ -982,14 +982,14 @@ const Sidebar = ({ onOpenMailhook, onOpenGmail, onOpenOutlook }) => {
           {
             method: "POST",
           },
-        );
+        ).catch(() => {});
       }
     } catch (error) {
       console.error("Logout request failed:", error);
     } finally {
       localStorage.clear();
-      navigate("/login", { replace: true });
-      window.location.reload();
+      sessionStorage.clear();
+      window.location.href = "/login";
     }
   };
 

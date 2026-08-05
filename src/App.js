@@ -14,6 +14,7 @@ import AllScenariosPage from "./pages/AllScenario";
 import { UserProvider } from "./component/UserContext";
 import EmailDetailPage from "./pages/EmailDetailPage";
 import ProtectedRoute from "./Protection/Protected";
+import TeamsPage from "./pages/TeamsPage";
 import SetupPage from "./pages/SetupPage";
 import SetupFlow from "./pages/SetupPage";
 import Inbox from "./pages/Inbox";
@@ -49,6 +50,7 @@ import DynamicScripts from "./pages/DynamicScripts";
 import FooterLinksPage from "./pages/FooterLinksPage";
 import AdminProductPage from "./Admin/AdminProductPage";
 import Security from "./pages/Security";
+import UsersPage from "./pages/Users";
 
 function App() {
   return (
@@ -119,6 +121,14 @@ function App() {
             }
           />
           <Route
+            path="/teams"
+            element={
+              <ProtectedRoute>
+                <TeamsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/connection"
             element={
               <ProtectedRoute>
@@ -172,6 +182,16 @@ function App() {
                 <OthersScenariosPage />
               </ProtectedRoute>
             }
+            
+          />
+            <Route
+            path="/organization/users"
+            element={
+              <ProtectedRoute>
+                <UsersPage />
+              </ProtectedRoute>
+            }
+            
           />
           <Route
             path="/pages/mailhook/instruction"

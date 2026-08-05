@@ -1,78 +1,24 @@
-import React, { useState, useEffect } from "react";
-import Sidebar from "../component/Sidebar";
-import Navbar from "../component/Navbar";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useContext } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import {
-  FiMail,
-  FiArrowLeft,
-  FiArrowRight,
-  FiEdit,
-  FiPlusCircle,
-  FiBarChart2,
   FiZap,
-  FiSettings,
+  FiPlus,
+  FiExternalLink,
+  FiCheckCircle,
+  FiArrowUpRight,
+  FiMail,
 } from "react-icons/fi";
 import axios from "axios";
-import { motion } from "framer-motion";
-import {
-  FiCheckCircle,
-  FiAlertTriangle,
-  FiXOctagon,
-  FiClock,
-} from "react-icons/fi";
-
-const StatIcon = ({ icon: Icon, colorClass }) => (
-  <div className={`p-3 rounded-full ${colorClass} bg-opacity-10`}>
-    <Icon className={`w-5 h-5 ${colorClass}`} />
-  </div>
-);
-
-const StatusBadge = ({ status, isActive = true }) => {
-  let color = "";
-  let text = status;
-
-  if (!isActive) {
-    color = "bg-gray-100 text-gray-600";
-    text = "Inactive";
-  } else {
-    switch (status) {
-      case "Processed":
-      case "Active":
-        color = "bg-green-100 text-green-700";
-        break;
-      case "Pending":
-        color = "bg-yellow-100 text-yellow-700";
-        break;
-      case "Partial":
-        color = "bg-blue-100 text-blue-700";
-        break;
-      case "Failed":
-        color = "bg-red-100 text-red-700";
-        break;
-      default:
-        color = "bg-gray-100 text-gray-700";
-    }
-  }
-
-  return (
-    <span
-      className={`px-3 py-1 text-xs rounded-full font-medium tracking-wider ${color}`}
-    >
-      {text}
-    </span>
-  );
-};
+import { UserContext } from "../component/UserContext";
+import AppLayout from "../component/AppLayout";
 
 const Organization = () => {
-  const [guideStep, setGuideStep] = useState(0);
-  const [automationOn, setAutomationOn] = useState(true);
   const navigate = useNavigate();
-  const [emails, setEmails] = useState([]);
+  const { user: contextUser } = useContext(UserContext);
+
   const [user, setUser] = useState(null);
+  const [emails, setEmails] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [page, setPage] = useState(1);
-  const [limit] = useState(5);
-  const [totalPages, setTotalPages] = useState(1);
   const [stats, setStats] = useState({
     total: 0,
     processed: 0,
@@ -82,618 +28,467 @@ const Organization = () => {
   });
   const [recentScenarios, setRecentScenarios] = useState([]);
   const [scenariosLoading, setScenariosLoading] = useState(false);
+
+  const userId = localStorage.getItem("userid") || contextUser?._id;
+
   useEffect(() => {
-    const step = localStorage.getItem("scenarioGuideStep");
-
-    if (step && step !== "done") {
-      setGuideStep(Number(step));
-    }
-  }, []);
-
-  const fetchEmails = async () => {
-    try {
-      setLoading(true);
-
-      const userId = localStorage.getItem("userid");
-      if (!userId) return console.error("No userId in localStorage");
-
-      const res = await axios.get(
-        `https://email-syncing-backend.vercel.app/mailhook/getAllEmails/${userId}?page=${page}&limit=${limit}`,
-      );
-
-      let data = res.data?.data || [];
-
-      data = data.filter((email) => {
-        const hasReply = email.statuses && email.statuses.length > 0;
-
-        const isGmailVerification =
-          email.senderAddress?.toLowerCase().includes("google") ||
-          email.subject?.toLowerCase().includes("gmail forwarding") ||
-          email.textBody?.includes("mail-settings.google.com");
-
-        return hasReply || isGmailVerification;
-      });
-
-      // Latest first
-      data.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-      setEmails(data);
-      setTotalPages(res.data?.totalPages || 1);
-      setStats(res.data?.stats || {});
-    } catch (err) {
-      console.error("Error fetching emails:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    fetchUser();
+    fetchStats();
+    fetchEmails();
+    fetchRecentScenarios();
+  }, [userId]);
 
   const fetchUser = async () => {
     try {
-      const userId = localStorage.getItem("userid");
-      if (!userId) return console.error("No userId in localStorage");
-
+      if (!userId) return;
       const res = await axios.get(
-        `https://email-syncing-backend.vercel.app/auth/getUsers/${userId}`,
+        `https://email-syncing-backend.vercel.app/auth/getUsers/${userId}`
       );
-      setUser(res.data?.data || null);
+      const fetchedUser = res.data?.data || contextUser || null;
+      setUser(fetchedUser);
     } catch (err) {
       console.error("Error fetching user:", err);
     }
   };
 
+  const fetchStats = async () => {
+    // Stats are derived from the email threads - computed in fetchEmails
+    // This function is kept for future dedicated stats endpoint support
+  };
+
+  const fetchEmails = async () => {
+    try {
+      if (!userId) return;
+      setLoading(true);
+      const res = await axios.get(
+        `https://email-syncing-backend.vercel.app/mailhook/getAllEmailsData/${userId}`
+      );
+      const threads = res.data?.data?.threads || [];
+      // Normalize threads the same way Inbox.js does
+      const normalized = threads.map((t) => ({
+        ...t,
+        replies: t.replies || t.conversation || [],
+        discussion: t.discussion || [],
+      }));
+      setEmails(normalized);
+
+      // Derive stats from real data
+      const secured = normalized.filter((e) => e.leadStatus === "secured").length;
+      const replied = normalized.filter((e) => {
+        const msgs = e.replies || e.conversation || e.discussion || [];
+        const last = msgs.length > 0 ? msgs[msgs.length - 1] : e;
+        if (e.leadStatus === "replied" || e.leadStatus === "customer_replied") return true;
+        return last.direction === "incoming";
+      }).length;
+      setStats({
+        total: normalized.length,
+        processed: secured,
+        partial: replied,
+        failed: 0,
+        pending: normalized.length - secured - replied,
+      });
+    } catch (err) {
+      console.error("Error fetching email threads:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const fetchRecentScenarios = async () => {
     try {
-      setScenariosLoading(true);
-      const userId = localStorage.getItem("userid");
       if (!userId) return;
-
-      const res = await axios.get(
-        `https://email-syncing-backend.vercel.app/scenario/user/${userId}`,
-      );
-
-      const scenarios = Array.isArray(res.data)
-        ? res.data
-        : res.data.data || [];
-
-      const recent = scenarios
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-        .slice(0, 5);
-
-      setRecentScenarios(recent);
+      setScenariosLoading(true);
+      let res;
+      try {
+        res = await axios.get(
+          `https://email-syncing-backend.vercel.app/scenario/user/${userId}`
+        );
+      } catch (e) {
+        res = await axios.get(
+          `https://email-syncing-backend.vercel.app/scenario/getScenariosByUser/${userId}`
+        );
+      }
+      // Handle multiple response shapes
+      const data =
+        Array.isArray(res.data) ? res.data :
+        Array.isArray(res.data?.scenarios) ? res.data.scenarios :
+        Array.isArray(res.data?.data) ? res.data.data :
+        res.data?.data?.scenarios || [];
+      setRecentScenarios(data);
     } catch (err) {
-      console.error("Error fetching scenarios:", err);
+      console.error("Error fetching user scenarios:", err);
     } finally {
       setScenariosLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchUser();
-    fetchRecentScenarios();
-  }, []);
+  const activeScenarios = recentScenarios.filter((s) => s.scenarioActive);
+  const totalInquiries = stats.total || 0;
+  const replyRate = totalInquiries > 0 ? Math.round((stats.processed / totalInquiries) * 100) : 0;
 
-  useEffect(() => {
-    fetchEmails();
-  }, [page]);
+  return (
+    <AppLayout>
+      <div className="flex flex-col gap-6">
+        {/* Breadcrumb & Main Header */}
+        <div className="mb-2">
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+            {user?.organizationName || user?.companyName || "My Organization"}
+          </h1>
+        </div>
 
-  const fetchEmailById = () => {
-    navigate(`/inbox`);
-  };
-
-  const getEmailStatus = (statuses) => {
-    if (!statuses || statuses.length === 0) return "Pending";
-    if (statuses.every((s) => s.status === "failed")) return "Failed";
-    if (statuses.every((s) => s.status === "completed")) return "Processed";
-    if (statuses.some((s) => s.status === "partial")) return "Partial";
-    return "Pending";
-  };
-
-  const rootEmails = emails;
-  const statCards = [
-    {
-      label: "Total Emails",
-      value: stats.total,
-      icon: FiBarChart2,
-      color: "text-indigo-600",
-    },
-    {
-      label: "Processed",
-      value: stats.processed,
-      icon: FiCheckCircle,
-      color: "text-green-600",
-    },
-    {
-      label: "Partial",
-      value: stats.partial,
-      icon: FiAlertTriangle,
-      color: "text-blue-600",
-    },
-    {
-      label: "Failed",
-      value: stats.failed,
-      icon: FiXOctagon,
-      color: "text-red-600",
-    },
-    {
-      label: "Pending",
-      value: stats.pending,
-      icon: FiClock,
-      color: "text-yellow-600",
-    },
-  ];
-  const firstName =
-    user?.name?.split(" ")[0] ||
-    user?.fullName?.split(" ")[0] ||
-    user?.username ||
-    "User";
-
-  const activeScenarios = recentScenarios.filter(
-    (scenario) => scenario.scenarioActive,
-  );
-
-  const pendingReplies = stats?.pending || 0;
-
-  const replyRate =
-    stats?.total > 0 ? Math.round((stats.processed / stats.total) * 100) : 0;
-
-  const activityEmails = emails.slice(0, 4);
-
-  const formatTimeAgo = (date) => {
-    if (!date) return "";
-
-    const createdDate = new Date(date);
-    const now = new Date();
-    const difference = now - createdDate;
-
-    const minutes = Math.floor(difference / 60000);
-    const hours = Math.floor(difference / 3600000);
-    const days = Math.floor(difference / 86400000);
-
-    if (minutes < 1) return "Now";
-    if (minutes < 60) return `${minutes}m`;
-    if (hours < 24) return `${hours}h`;
-
-    return `${days}d`;
-  };
-
-  const getScenarioRoute = (scenario) => {
-    return scenario.type === "shopify"
-      ? `/scenarios/shopify/${scenario._id}`
-      : `/scenarios/others/${scenario._id}`;
-  };
- return (
-  <div className="min-h-screen bg-gray-50 font-inter text-gray-900">
-    <Sidebar />
-
-    <main className="min-h-screen pt-[60px]">
-      {/* System status bar */}
-      <div className="border-b border-gray-200 bg-white">
-        <div className="flex min-h-[30px] items-center justify-between gap-4 px-6 text-[11px] text-gray-500">
-          <div className="flex min-w-0 items-center divide-x divide-gray-200">
-            <div className="flex items-center gap-1.5 pr-4 font-medium text-green-700">
-              <span className="relative flex h-3 w-3 items-center justify-center">
-                <span className="absolute h-3 w-3 rounded-full bg-green-200" />
-                <span className="relative h-2 w-2 rounded-full bg-green-500" />
+        {/* ----------------------------------------------------------- */}
+        {/* 4 STAT METRIC CARDS ROW */}
+        {/* ----------------------------------------------------------- */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-2">
+          {/* Card 1: Total Lead Inquiries */}
+          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs flex items-center justify-between">
+            <div className="flex flex-col">
+              <span className="text-xs font-medium text-slate-500 mb-1">
+                Total lead inquiries
               </span>
-
-              <span>All systems live</span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-xl font-bold text-slate-900">
+                  {stats?.total || 0}
+                </span>
+                <span className="text-xs font-semibold text-slate-500">
+                  {replyRate}%
+                </span>
+              </div>
             </div>
-
-            <div className="hidden px-4 sm:block">
-              Inbox connected
-              {user?.email ? ` · ${user.email}` : ""}
-            </div>
-
-            <div className="hidden px-4 md:block">
-              Filter matched {stats?.processed || 0} leads today
-            </div>
-
-            <div className="hidden px-4 lg:block">
-              Last poll 42s ago
+            <div className="h-10 w-10 rounded-full bg-slate-100 text-slate-900 flex items-center justify-center">
+              <FiZap size={18} />
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => {
-              fetchEmails();
-              fetchRecentScenarios();
-            }}
-            className="shrink-0 font-semibold text-indigo-600 underline underline-offset-2 hover:text-indigo-700"
-          >
-            Run health check
-          </button>
+          {/* Card 2: AI Replies Left */}
+          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs flex items-center justify-between">
+            <div className="flex flex-col">
+              <span className="text-xs font-medium text-slate-500 mb-1 flex items-center gap-1">
+                AI replies left <FiExternalLink size={11} className="text-slate-400" />
+              </span>
+              <div className="flex items-baseline gap-1">
+                <span className="text-xl font-bold text-slate-900">
+                  {user?.creditsLeft || 1000}
+                </span>
+                <span className="text-xs font-medium text-slate-400">/ 1,000</span>
+              </div>
+            </div>
+            <div className="h-10 w-10 rounded-full bg-slate-100 text-slate-900 flex items-center justify-center font-bold text-sm">
+              O
+            </div>
+          </div>
+
+          {/* Card 3: Total Secured Leads */}
+          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs flex items-center justify-between">
+            <div className="flex flex-col">
+              <span className="text-xs font-medium text-slate-500 mb-1">
+                Total secured leads
+              </span>
+              <span className="text-xl font-bold text-slate-900">
+                {emails.filter((e) => e.leadStatus === "secured").length}
+              </span>
+              <span className="text-[10px] text-slate-400 mt-0.5">
+                Secured & processed
+              </span>
+            </div>
+            <div className="h-10 w-10 rounded-full bg-green-50 text-green-600 flex items-center justify-center">
+              <FiCheckCircle size={18} />
+            </div>
+          </div>
+
+          {/* Card 4: Total Active Scenario */}
+          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs flex items-center justify-between">
+            <div className="flex flex-col">
+              <span className="text-xs font-medium text-slate-500 mb-1">
+                Total active scenario
+              </span>
+              <div className="flex items-baseline gap-1">
+                <span className="text-xl font-bold text-slate-900">
+                  {activeScenarios.length}
+                </span>
+                <span className="text-xs font-medium text-slate-400">
+                  / {recentScenarios.length || 2}
+                </span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate("/pricing")}
+              className="rounded-[8px] bg-black hover:bg-slate-800 px-3 py-1.5 text-xs font-semibold text-white transition cursor-pointer"
+            >
+              Upgrade
+            </button>
+          </div>
         </div>
-      </div>
 
-      <div className="px-5 py-7 sm:px-7 lg:px-10">
-        {/* Heading and filters */}
-        <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
-          <div>
-            <h1 className="text-[24px] font-semibold leading-tight tracking-[-0.035em] text-gray-900">
-              Good morning, {firstName}
-            </h1>
-
-            <p className="mt-1 text-[13px] text-gray-500">
-              Your automations answered {stats?.processed || 0} leads while
-              you slept.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              className="h-8 rounded-full bg-gray-200 px-4 text-[11px] font-semibold text-black shadow-sm transition hover:bg-gray-200"
-            >
-              7 days
-            </button>
-
-            <button
-              type="button"
-              className="h-8 rounded-full border border-gray-200 bg-white px-4 text-[11px] font-semibold text-gray-700 shadow-sm transition hover:border-gray-300  hover:bg-gray-200"
-            >
-              30 days
-            </button>
-
-            <button
-              type="button"
-              className="h-8 rounded-full border border-gray-200 bg-white px-4 text-[11px] font-semibold text-gray-700 shadow-sm transition hover:border-gray-300  hover:bg-gray-200"
-            >
-              90 days
-            </button>
-          </div>
-        </div>
-
-        {/* Statistics */}
-        <section className="mb-7 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {/* Leads captured */}
-          <div className="min-h-[123px] rounded-[18px] border border-gray-200 bg-white px-5 py-5 shadow-sm">
-            <p className="text-[12px] font-medium text-gray-500">
-              Leads captured
-            </p>
-
-            <p className="mt-2 text-[32px] font-bold leading-none tracking-tight text-gray-900">
-              {stats?.total || 0}
-            </p>
-
-            <p className="mt-3 text-[11px] font-medium text-green-700">
-              ↑ 18% vs last week
-            </p>
-          </div>
-
-          {/* Average response */}
-          <div className="min-h-[123px] rounded-[18px] border border-gray-200 bg-white px-5 py-5 shadow-sm">
-            <p className="text-[12px] font-medium text-gray-500">
-              Avg first response
-            </p>
-
-            <p className="mt-2 text-[32px] font-bold leading-none tracking-tight text-gray-900">
-              42
-              <span className="ml-0.5 text-[15px]">s</span>
-            </p>
-
-            <p className="mt-3 text-[11px] font-semibold text-indigo-600">
-              Directory average: 9 hours
-            </p>
-          </div>
-
-          {/* Reply rate */}
-          <div className="min-h-[123px] rounded-[18px] border border-gray-200 bg-white px-5 py-5 shadow-sm">
-            <p className="text-[12px] font-medium text-gray-500">
-              Reply rate
-            </p>
-
-            <p className="mt-2 text-[32px] font-bold leading-none tracking-tight text-gray-900">
-              {replyRate}%
-            </p>
-
-            <p className="mt-3 text-[11px] font-medium text-green-700">
-              ↑ 9 pts since automation
-            </p>
-          </div>
-
-          {/* Awaiting reply */}
-          <div className="min-h-[123px] rounded-[18px] border border-gray-200 bg-white px-5 py-5 shadow-sm">
-            <p className="text-[12px] font-medium text-gray-500">
-              Awaiting your reply
-            </p>
-
-            <p className="mt-2 text-[32px] font-bold leading-none tracking-tight text-gray-900">
-              {pendingReplies}
-            </p>
-
-            <button
-              type="button"
-              onClick={() => navigate("/inbox")}
-              className="mt-3 flex items-center gap-1 text-[11px] font-semibold text-indigo-600 transition hover:text-indigo-700"
-            >
-              Open inbox
-              <FiArrowRight className="h-3 w-3" />
-            </button>
-          </div>
-        </section>
-
-        {/* Main dashboard columns */}
-        <section className="grid grid-cols-1 gap-4 xl:grid-cols-[1.5fr_1fr]">
-          {/* Scenarios */}
-          <div>
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-[13px] font-semibold text-gray-900">
-                Scenarios
+        {/* ----------------------------------------------------------- */}
+        {/* HERO BANNER & ACTION AREA */}
+        {/* ----------------------------------------------------------- */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Main Action Box (2 Columns) */}
+          {recentScenarios.length === 0 ? (
+            <div className="lg:col-span-2 rounded-2xl border border-slate-200 bg-white p-8 flex flex-col items-center justify-center text-center shadow-xs">
+              <div className="h-12 w-12 rounded-2xl bg-purple-100 text-purple-600 flex items-center justify-center mb-4">
+                <FiPlus size={24} />
+              </div>
+              <h2 className="text-xl font-bold text-slate-900 mb-2">
+                Create scenario from scratch
               </h2>
-
+              <p className="text-xs text-slate-500 max-w-md mb-6 leading-relaxed">
+                Connect your email account, build automated lead response flows, and turn raw directory inquiries into qualified clients.
+              </p>
               <button
                 type="button"
-                onClick={() => navigate("/scenarios/all")}
-                className="text-[11px] font-semibold text-indigo-600 transition hover:text-indigo-700"
+                onClick={() => navigate("/scenarios/others")}
+                className="rounded-[8px] bg-black hover:bg-slate-800 px-5 py-2.5 text-xs font-semibold text-white transition cursor-pointer shadow-sm flex items-center gap-2"
               >
-                View all
+                <FiPlus size={16} />
+                <span>Create Scenario</span>
               </button>
             </div>
-
-            <div className="space-y-2.5">
-              {scenariosLoading ? (
-                <div className="flex h-[72px] items-center justify-center rounded-[17px] border border-gray-200 bg-white text-sm text-gray-500 shadow-sm">
-                  Loading scenarios...
-                </div>
-              ) : recentScenarios.length > 0 ? (
-                recentScenarios.slice(0, 3).map((scenario) => {
-                  const isPaused = !scenario.scenarioActive;
-
-                  const isAttention =
-                    scenario.status === "failed" ||
-                    scenario.connectionStatus === "disconnected";
-
-                  return (
-                    <button
-                      type="button"
-                      key={scenario._id}
-                      onClick={() => navigate(getScenarioRoute(scenario))}
-                      className={`flex min-h-[72px] w-full items-center gap-4 rounded-[17px] border px-5 py-3 text-left transition ${
-                        isAttention
-                          ? "border-yellow-300 bg-white shadow-sm hover:bg-yellow-50/40"
-                          : isPaused
-                            ? "border-dashed border-gray-300 bg-gray-50 opacity-70"
-                            : "border-gray-200 bg-white shadow-sm hover:border-indigo-200 hover:bg-indigo-50/40"
-                      }`}
-                    >
-                      {/* Icon */}
-                      <span
-                        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
-                          isAttention
-                            ? "bg-yellow-100 text-yellow-700"
-                            : isPaused
-                              ? "bg-gray-100 text-gray-400"
-                              : "bg-indigo-50 text-indigo-600"
-                        }`}
-                      >
-                        {isAttention ? (
-                          <FiAlertTriangle className="h-4 w-4" />
-                        ) : isPaused ? (
-                          <FiClock className="h-4 w-4" />
-                        ) : (
-                          <FiMail className="h-4 w-4" />
-                        )}
-                      </span>
-
-                      {/* Content */}
-                      <span className="min-w-0 flex-1">
-                        <span
-                          className={`block truncate text-[14px] font-semibold ${
-                            isPaused ? "text-gray-500" : "text-gray-900"
-                          }`}
-                        >
-                          {scenario.name || "Untitled Scenario"}
-                        </span>
-
-                        <span
-                          className={`mt-0.5 block truncate text-[11px] ${
-                            isAttention
-                              ? "text-yellow-700"
-                              : "text-gray-500"
-                          }`}
-                        >
-                          {isAttention
-                            ? "Sender disconnected — replies are queued, not sent"
-                            : isPaused
-                              ? "Paused — rules kept"
-                              : `${scenario.type || "Custom"} · Created ${formatTimeAgo(
-                                  scenario.createdAt,
-                                )} ago`}
-                        </span>
-                      </span>
-
-                      {/* Active scenario */}
-                      {!isPaused && !isAttention && (
-                        <>
-                          <div className="hidden h-7 items-end gap-[3px] sm:flex">
-                            {[8, 14, 10, 20, 16, 25].map(
-                              (height, barIndex) => (
-                                <span
-                                  key={barIndex}
-                                  className={`w-[4px] rounded-sm ${
-                                    barIndex === 5
-                                      ? "bg-indigo-600"
-                                      : "bg-indigo-200"
-                                  }`}
-                                  style={{ height }}
-                                />
-                              ),
-                            )}
-                          </div>
-
-                          <span className="flex items-center gap-1.5 rounded-full bg-green-100 px-3 py-1.5 text-[10px] font-semibold text-green-700">
-                            <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
-                            Live
-                          </span>
-                        </>
-                      )}
-
-                      {/* Needs attention */}
-                      {isAttention && (
-                        <>
-                          <span
-                            role="button"
-                            tabIndex={0}
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              navigate("/connection");
-                            }}
-                            onKeyDown={(event) => {
-                              if (
-                                event.key === "Enter" ||
-                                event.key === " "
-                              ) {
-                                event.stopPropagation();
-                                navigate("/connection");
-                              }
-                            }}
-                            className="rounded-full bg-indigo-600 px-4 py-2 text-[10px] font-semibold text-white transition hover:bg-indigo-700"
-                          >
-                            Reconnect
-                          </span>
-
-                          <span className="hidden items-center gap-1.5 rounded-full bg-yellow-100 px-3 py-1.5 text-[10px] font-semibold text-yellow-700 sm:flex">
-                            <span className="h-1.5 w-1.5 rounded-full bg-yellow-500" />
-                            Needs attention
-                          </span>
-                        </>
-                      )}
-
-                      {/* Paused */}
-                      {isPaused && (
-                        <span className="rounded-full bg-gray-200 px-3 py-1.5 text-[10px] font-semibold text-gray-500">
-                          Paused
-                        </span>
-                      )}
-                    </button>
-                  );
-                })
-              ) : (
-                <div className="flex min-h-[150px] flex-col items-center justify-center rounded-[17px] border border-dashed border-gray-300 bg-white px-6 text-center shadow-sm">
-                  <FiZap className="mb-3 h-6 w-6 text-indigo-400" />
-
-                  <p className="text-sm font-semibold text-gray-800">
-                    No scenarios found
-                  </p>
+          ) : (
+            <div className="lg:col-span-2 flex flex-col gap-4">
+              <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-2xs transition hover:border-slate-300">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="h-9 w-9 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold text-xs shadow-xs">
+                      S
+                    </div>
+                    <div>
+                      <h2 className="text-base font-bold text-slate-900 leading-tight">
+                        Configured Scenarios
+                      </h2>
+                      <p className="text-xs text-slate-500 font-normal mt-0.5">
+                        Active workflow automations
+                      </p>
+                    </div>
+                  </div>
 
                   <button
                     type="button"
-                    onClick={() => navigate("/scenarios/shopify")}
-                    className="mt-2 text-xs font-semibold text-indigo-600 transition hover:text-indigo-700"
+                    onClick={() => navigate("/scenarios/others")}
+                    className="rounded-[8px] bg-black hover:bg-slate-800 px-3.5 py-1.5 text-xs font-semibold text-white transition cursor-pointer shadow-2xs flex items-center gap-1.5"
                   >
-                    Create your first scenario
+                    <FiPlus size={14} />
+                    <span>Create scenario</span>
                   </button>
                 </div>
-              )}
-            </div>
-          </div>
 
-          {/* Latest activity */}
-          <div>
-            <h2 className="mb-3 text-[13px] font-semibold text-gray-900">
-              Latest activity
-            </h2>
-
-            <div className="min-h-[244px] rounded-[18px] border border-gray-200 bg-white px-5 py-1 shadow-sm">
-              {loading ? (
-                <div className="flex min-h-[230px] items-center justify-center text-sm text-gray-500">
-                  Loading activity...
-                </div>
-              ) : activityEmails.length > 0 ? (
-                activityEmails.map((email, index) => {
-                  const root = email.rootEmail || email;
-
-                  const status = getEmailStatus(
-                    email.statuses || root.statuses,
-                  );
-
-                  const sender =
-                    root.senderName ||
-                    root.senderAddress?.split("@")[0] ||
-                    "Unknown sender";
-
-                  const initials = sender
-                    .split(" ")
-                    .map((word) => word.charAt(0))
-                    .join("")
-                    .slice(0, 2)
-                    .toUpperCase();
-
-                  const failed = status === "Failed";
-
-                  return (
-                    <button
-                      type="button"
-                      key={root._id || index}
-                      onClick={() => navigate("/inbox")}
-                      className="flex w-full items-center gap-3 border-b border-gray-100 py-3 text-left transition hover:bg-indigo-50/50 last:border-b-0"
+                <div className="flex flex-col gap-3">
+                  {recentScenarios.map((sc) => (
+                    <div
+                      key={sc._id}
+                      onClick={() =>
+                        navigate(
+                          sc.type === "shopify"
+                            ? `/scenarios/shopify/${sc._id}`
+                            : `/scenarios/others/${sc._id}`
+                        )
+                      }
+                      className="group rounded-2xl border border-slate-200/80 bg-white p-4 transition-all duration-200 hover:border-slate-300 hover:shadow-xs cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                     >
-                      <span
-                        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[9px] font-bold ${
-                          failed
-                            ? "bg-red-50 text-red-600"
-                            : index % 3 === 0
-                              ? "bg-green-100 text-green-700"
-                              : index % 3 === 1
-                                ? "bg-yellow-100 text-yellow-700"
-                                : "bg-indigo-100 text-indigo-700"
-                        }`}
-                      >
-                        {failed ? "!" : initials}
-                      </span>
+                      <div className="flex items-center gap-3.5 min-w-0">
+                        <div className="h-10 w-10 rounded-xl bg-slate-100 border border-slate-200/60 text-slate-700 flex items-center justify-center shrink-0">
+                          <FiMail size={18} />
+                        </div>
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-sm font-bold text-slate-900 truncate group-hover:text-black transition">
+                            {sc.name || "Shopify Partner Directory Scenario"}
+                          </span>
+                          <span className="text-xs text-slate-400 mt-0.5 font-medium truncate">
+                            {sc.type || "Shopify"} directory • created by system
+                          </span>
+                        </div>
+                      </div>
 
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate text-[12px] text-gray-900">
-                          <strong>{sender}</strong>
+                      <div className="flex items-center gap-5 shrink-0 self-end sm:self-auto">
+                        <div className="flex items-end gap-1 h-6 px-1 py-0.5">
+                          <div className="w-1 bg-slate-200 rounded-full h-2 group-hover:bg-slate-400 transition" />
+                          <div className="w-1 bg-slate-300 rounded-full h-4 group-hover:bg-slate-500 transition" />
+                          <div className="w-1 bg-slate-200 rounded-full h-3 group-hover:bg-slate-400 transition" />
+                          <div className="w-1 bg-slate-400 rounded-full h-5 group-hover:bg-slate-700 transition" />
+                          <div className="w-1 bg-slate-200 rounded-full h-3 group-hover:bg-slate-400 transition" />
+                        </div>
 
-                          {!failed &&
-                            ` · ${
-                              status === "Processed"
-                                ? "auto-replied"
-                                : "replied"
-                            }`}
-                        </span>
-
-                        <span className="mt-0.5 block truncate text-[10px] text-gray-500">
-                          {failed
-                            ? "Run failed · rate limit on send"
-                            : root.subject || "Email automation activity"}
-                        </span>
-
-                        {failed && (
-                          <span className="mt-1 inline-block text-[10px] font-semibold text-red-600 underline underline-offset-2">
-                            View & retry →
+                        {sc.scenarioActive !== false ? (
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200/80 px-3 py-1 text-xs font-semibold text-emerald-700">
+                            <span className="relative flex h-2 w-2">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                            </span>
+                            Live
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-500">
+                            <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
+                            Inactive
                           </span>
                         )}
-                      </span>
-
-                      <span className="shrink-0 text-[9px] text-gray-400">
-                        {formatTimeAgo(root.date || root.createdAt)}
-                      </span>
-                    </button>
-                  );
-                })
-              ) : (
-                <div className="flex min-h-[230px] flex-col items-center justify-center text-center">
-                  <FiMail className="mb-2 h-6 w-6 text-indigo-300" />
-
-                  <p className="text-sm font-medium text-gray-700">
-                    No recent activity
-                  </p>
-
-                  <p className="mt-1 text-xs text-gray-400">
-                    New email activity will appear here.
-                  </p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              )}
+              </div>
             </div>
+          )}
+
+          {/* Right Educational Hero Box */}
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 text-white p-6 flex flex-col justify-between shadow-xs relative overflow-hidden group">
+            <div className="z-10">
+              <div className="h-10 w-10 rounded-[8px] bg-black text-white border border-slate-700 flex items-center justify-center mb-4 shadow-sm">
+                <FiZap size={20} />
+              </div>
+              <h3 className="text-base font-bold text-white mb-1">
+                Intelligent Email Automation
+              </h3>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                Route incoming lead inquiries, match active templates, and generate Gemini AI replies automatically.
+              </p>
+            </div>
+
+            <Link
+              to="/scenarios/others"
+              className="z-10 inline-flex items-center gap-1.5 text-xs font-bold text-white hover:text-slate-200 transition mt-6"
+            >
+              <span>Learn about types of scenarios</span>
+              <FiArrowUpRight size={14} />
+            </Link>
           </div>
-        </section>
+        </div>
+
+        {/* ----------------------------------------------------------- */}
+        {/* RECENT SCENARIOS & SYSTEM ACTIVITY */}
+        {/* ----------------------------------------------------------- */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Recent Scenarios Card */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-bold text-slate-900">
+                Recent Scenarios
+              </h3>
+              <Link
+                to="/scenarios/others"
+                className="text-xs font-bold text-slate-900 hover:underline"
+              >
+                View all
+              </Link>
+            </div>
+
+            {scenariosLoading ? (
+              <div className="py-8 text-center text-xs text-slate-400 animate-pulse">
+                Loading scenarios...
+              </div>
+            ) : recentScenarios.length === 0 ? (
+              <div className="py-8 text-center text-xs text-slate-500">
+                No scenarios created yet.
+              </div>
+            ) : (
+              <div className="flex flex-col divide-y divide-slate-100">
+                {recentScenarios.map((sc) => (
+                  <div
+                    key={sc._id}
+                    onClick={() =>
+                      navigate(
+                        sc.type === "shopify"
+                          ? `/scenarios/shopify/${sc._id}`
+                          : `/scenarios/others/${sc._id}`
+                      )
+                    }
+                    className="py-3 flex items-center justify-between cursor-pointer hover:bg-slate-50 px-2 rounded-lg transition"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-lg bg-slate-100 text-slate-900 flex items-center justify-center font-bold text-xs">
+                        {sc.type === "shopify" ? "S" : "C"}
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-xs font-semibold text-slate-800">
+                          {sc.name || "Untitled Scenario"}
+                        </span>
+                        <span className="text-[10px] text-slate-400 capitalize">
+                          {sc.type || "Custom"} Scenario
+                        </span>
+                      </div>
+                    </div>
+
+                    <span
+                      className={`px-2.5 py-0.5 text-[10px] rounded-full font-semibold ${
+                        sc.scenarioActive
+                          ? "bg-green-100 text-green-700"
+                          : "bg-slate-100 text-slate-600"
+                      }`}
+                    >
+                      {sc.scenarioActive ? "Active" : "Inactive"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Email Activity Log Card */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-bold text-slate-900">
+                Live Lead Ingestion Activity
+              </h3>
+              <Link
+                to="/inbox"
+                className="text-xs font-bold text-slate-900 hover:underline"
+              >
+                Go to Inbox
+              </Link>
+            </div>
+
+            {loading ? (
+              <div className="py-8 text-center text-xs text-slate-400 animate-pulse">
+                Fetching activity...
+              </div>
+            ) : emails.length === 0 ? (
+              <div className="py-8 text-center text-xs text-slate-500">
+                No email leads processed yet.
+              </div>
+            ) : (
+              <div className="flex flex-col divide-y divide-slate-100">
+                {emails.slice(0, 5).map((em) => (
+                  <div
+                    key={em._id}
+                    onClick={() => navigate("/inbox")}
+                    className="py-3 flex items-center justify-between cursor-pointer hover:bg-slate-50 px-2 rounded-lg transition"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="h-8 w-8 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-xs shrink-0">
+                        {(em.latestSenderAddress || em.senderAddress || em.forwardedMeta?.from || "C")
+                          .charAt(0)
+                          .toUpperCase()}
+                      </div>
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-xs font-semibold text-slate-800 truncate">
+                          {em.subject || em.latestSubject || "No Subject"}
+                        </span>
+                        <span className="text-[10px] text-slate-400 truncate">
+                          From: {em.latestSenderAddress || em.senderAddress || em.forwardedMeta?.from || "Unknown"}
+                        </span>
+                      </div>
+                    </div>
+
+                    <span className={`px-2.5 py-0.5 text-[10px] rounded-full font-semibold shrink-0 ${
+                      em.leadStatus === "secured"
+                        ? "bg-green-100 text-green-700"
+                        : em.leadStatus === "closed"
+                        ? "bg-red-100 text-red-700"
+                        : "bg-slate-100 text-slate-900"
+                    }`}>
+                      {em.leadStatus === "secured" ? "Secured" : em.leadStatus === "closed" ? "Closed" : "Active"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
-    </main>
-  </div>
-);
+    </AppLayout>
+  );
 };
 
 export default Organization;

@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { CiLink } from "react-icons/ci";
 
-import Sidebar from "../component/Sidebar";
+import AppLayout from "../component/AppLayout";
 import {
   FiAlertCircle,
   FiCode,
@@ -2348,10 +2348,8 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
     );
   };
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 font-inter">
-      <Sidebar />
-
-      <div className="flex-1 flex flex-col ml-0 transition-all duration-300 h-screen overflow-y-auto pt-[60px]">
+    <AppLayout>
+      <div className="flex-1 flex flex-col h-full overflow-y-auto min-w-0 bg-[#FAF8F5] font-inter">
         {historyViewMode === "table" ? (
           <div className="flex-1 bg-gray-50 flex flex-col h-full overflow-hidden">
             {/* Header */}
@@ -5405,7 +5403,7 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
           </div>
         </div>
       )}
-    </div>
+    </AppLayout>
   );
 };
 

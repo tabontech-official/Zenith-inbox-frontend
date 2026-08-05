@@ -120,12 +120,19 @@ const Navbar = () => {
   }, []);
 
   const handleLogout = async () => {
-    await fetch(`https://email-syncing-backend.vercel.app/auth/logout/${userId}`, {
-      method: "POST",
-    });
-    localStorage.clear();
-    navigate("/login", { replace: true });
-    window.location.reload();
+    try {
+      if (userId) {
+        await fetch(`https://email-syncing-backend.vercel.app/auth/logout/${userId}`, {
+          method: "POST",
+        }).catch(() => {});
+      }
+    } catch (err) {
+      console.error("Logout error:", err);
+    } finally {
+      localStorage.clear();
+      sessionStorage.clear();
+      window.location.href = "/login";
+    }
   };
 
   const isBlurred = !isProfilePage && (open || openScenario || showProfileMenu);
