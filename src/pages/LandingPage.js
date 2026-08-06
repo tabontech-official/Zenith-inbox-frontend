@@ -1001,7 +1001,6 @@ const LandingPage = () => {
   const navigate = useNavigate();
   const [demoOpen, setDemoOpen] = useState(false);
   const [content, setContent] = useState(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchContent = async () => {
@@ -1010,11 +1009,8 @@ const LandingPage = () => {
           "https://email-syncing-backend.vercel.app/api/landing-page",
         );
         if (res.ok) setContent(await res.json());
-        else console.error("Failed to fetch landing page content");
       } catch (err) {
         console.error("Error connecting to server", err);
-      } finally {
-        setLoading(false);
       }
     };
     fetchContent();
@@ -1245,18 +1241,7 @@ const pageData = {
     show: { opacity: 1, y: 0, transition: { duration: 0.55, ease: "easeOut" } },
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#fafafa] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-10 w-10 rounded-full border-[3px] border-zinc-200 border-t-violet-600 animate-spin" />
-          <p className="text-sm font-semibold text-zinc-500">
-            Loading Replex Engine...
-          </p>
-        </div>
-      </div>
-    );
-  }
+
   const TestimonialsSection = () => (
     <section className="relative overflow-hidden border-b border-zinc-200/70  py-24">
       {" "}
