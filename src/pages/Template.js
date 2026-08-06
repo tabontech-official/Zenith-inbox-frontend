@@ -33,17 +33,21 @@ export default function Template() {
     if (nextStatus) {
       try {
         const cpRes = await axios.get(`https://email-syncing-backend.vercel.app/api/company-profile/${targetUserId}`);
-        const cp = cpRes.data?.data || cpRes.data;
-        const isComplete = cp?.companyName && cp.companyName.trim().length > 0 && cp?.businessDescription && cp.businessDescription.trim().length > 0;
+        // API returns { success, data: { company: { companyName, businessDescription, ... }, ... } }
+        const profileData = cpRes.data?.data || cpRes.data;
+        const cp = profileData?.company || profileData;
+        const isComplete =
+          cp?.companyName && cp.companyName.trim().length > 0 &&
+          cp?.businessDescription && cp.businessDescription.trim().length > 0;
         if (!isComplete) {
           toast.error("Please complete your company profile before activating AI replies.", { duration: 4000 });
           navigate("/company-profile");
           return;
         }
       } catch (err) {
-        toast.error("Please complete your company profile before activating AI replies.", { duration: 4000 });
-        navigate("/company-profile");
-        return;
+        // If the profile check itself fails (network, server error), don't block the user
+        // Just log a warning and allow activation to proceed
+        console.warn("Could not verify company profile, proceeding anyway:", err?.message);
       }
     }
 

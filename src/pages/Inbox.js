@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import AppLayout from "../component/AppLayout";
 import { useLocation } from "react-router-dom";
 import axios from "axios";
+import { fetchCompanyProfile, generateAiReply, recordAiReplyUsed } from "../utils/aiReplyService";
 import {
   FiArrowLeft,
   FiSearch,
@@ -67,6 +68,17 @@ const Inbox = () => {
     message: "",
     onConfirm: null,
   });
+
+  // ── AI Replies ──────────────────────────────────────────────────────────────
+  const [aiActive, setAiActive] = useState(() => {
+    try {
+      const stored = localStorage.getItem("aiRepliesActive");
+      return stored === "true";
+    } catch { return false; }
+  });
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const companyProfileRef = useRef(null); // cached company profile
+  // ────────────────────────────────────────────────────────────────────────────
 
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
@@ -393,6 +405,30 @@ const Inbox = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // Sync AI replies status from user settings + pre-load company profile
+  useEffect(() => {
+    const userId = localStorage.getItem("userid");
+    if (!userId) return;
+
+    // Check AI status from backend
+    axios
+      .get(`https://email-syncing-backend.vercel.app/auth/getUsers/${userId}`)
+      .then((res) => {
+        const userData = res.data?.data;
+        if (userData) {
+          const isActive = userData.Ai === true || userData.subscription?.aiRepliesActive === true;
+          setAiActive(isActive);
+          localStorage.setItem("aiRepliesActive", String(isActive));
+        }
+      })
+      .catch(() => {});
+
+    // Pre-load company profile for AI replies
+    fetchCompanyProfile(userId).then((profile) => {
+      companyProfileRef.current = profile;
+    });
+  }, []);
+
   const cleanAddress = (value = "") => {
     return String(value).replace(/^"|"$/g, "").trim();
   };
@@ -689,6 +725,61 @@ const Inbox = () => {
     setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
+  // ── AI Generate Reply ────────────────────────────────────────────────────────
+  const handleGenerateAiReply = async () => {
+    if (!selectedEmail || aiGenerating) return;
+
+    const userId = localStorage.getItem("userid");
+    if (!userId) return;
+
+    // Ensure company profile is loaded
+    if (!companyProfileRef.current) {
+      companyProfileRef.current = await fetchCompanyProfile(userId);
+    }
+
+    // Get the latest customer message to reply to
+    const allMsgs = [
+      ...(selectedEmail.replies || selectedEmail.conversation || []),
+    ];
+    const incomingMsgs = allMsgs.filter((m) => m.direction === "incoming" || !m.direction);
+    const lastCustomerMsg = incomingMsgs[incomingMsgs.length - 1] || selectedEmail;
+
+    const customerText =
+      (lastCustomerMsg.textBody || lastCustomerMsg.htmlBody || "")
+        .replace(/<[^>]*>/g, "")
+        .replace(/\s+/g, " ")
+        .trim() ||
+      (selectedEmail.textBody || selectedEmail.htmlBody || "")
+        .replace(/<[^>]*>/g, "")
+        .replace(/\s+/g, " ")
+        .trim() ||
+      selectedEmail.subject ||
+      "";
+
+    const customerName = getNameFromAddress(
+      getLeadAddressForThread(selectedEmail),
+      selectedEmail
+    );
+
+    try {
+      setAiGenerating(true);
+      const aiReply = await generateAiReply(
+        customerText,
+        companyProfileRef.current,
+        customerName
+      );
+      setReplyText(aiReply);
+      // Focus the textarea so user can review/edit before sending
+      setTimeout(() => replyTextRef.current?.focus(), 100);
+    } catch (err) {
+      console.error("AI reply generation failed:", err);
+      alert("AI reply generation failed: " + (err.message || "Unknown error"));
+    } finally {
+      setAiGenerating(false);
+    }
+  };
+  // ────────────────────────────────────────────────────────────────────────────
+
   const handleSendThreadReply = async () => {
     if (!selectedEmail || (!replyText.trim() && selectedFiles.length === 0) || replySending) return;
 
@@ -798,6 +889,22 @@ const Inbox = () => {
         latestTextBody: message,
         latestSenderAddress: "You (Support)",
       }));
+
+      // Record AI reply usage if AI was used to generate this reply
+      if (aiActive) {
+        const userId = localStorage.getItem("userid");
+        const customerAddr = getLeadAddressForThread(selectedEmail);
+        const customerName = getNameFromAddress(customerAddr, selectedEmail);
+        recordAiReplyUsed(userId, {
+          customerName,
+          businessEmail: customerAddr,
+          scenarioName: selectedEmail.scenarioName || selectedEmail.service || "AI Reply",
+          service: selectedEmail.service || "General",
+          inboundMessage: (selectedEmail.textBody || selectedEmail.htmlBody || "").slice(0, 500),
+          generatedReply: message,
+          scenarioType: selectedEmail.stepType?.includes("shopify") ? "shopify" : "custom",
+        });
+      }
 
       setReplyText("");
       setReplyingToMessage(null);
@@ -1546,6 +1653,33 @@ const Inbox = () => {
                                 >
                                   <FiLink size={15} />
                                 </button>
+
+                                {/* ✨ AI Generate Reply Button — visible when AI Replies are active */}
+                                {aiActive && (
+                                  <button
+                                    type="button"
+                                    onClick={handleGenerateAiReply}
+                                    disabled={aiGenerating}
+                                    title="Generate AI reply using company knowledge"
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold transition cursor-pointer ml-1 ${
+                                      aiGenerating
+                                        ? "bg-violet-100 text-violet-400 border border-violet-200"
+                                        : "bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-sm hover:from-violet-700 hover:to-indigo-700 active:scale-[0.97]"
+                                    }`}
+                                  >
+                                    {aiGenerating ? (
+                                      <>
+                                        <FiRefreshCw size={11} className="animate-spin" />
+                                        <span>Generating...</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <FiZap size={11} />
+                                        <span>Generate with AI</span>
+                                      </>
+                                    )}
+                                  </button>
+                                )}
                               </div>
                             </div>
 

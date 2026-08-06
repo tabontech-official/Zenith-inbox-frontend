@@ -309,21 +309,13 @@ const AppLayout = ({ children }) => {
   const shopifyScenariosList = userScenarios.filter(
     (s) => s.type === "shopify" || (s.name || "").toLowerCase().includes("shopify")
   );
-  if (shopifyScenariosList.length === 0) {
-    shopifyScenariosList.push({ _id: "shopify_default", name: "Shopify Scenario", type: "shopify" });
-  }
 
   const customScenariosList = userScenarios.filter(
     (s) => s.type !== "shopify" && !(s.name || "").toLowerCase().includes("shopify")
   );
-  if (customScenariosList.length === 0) {
-    customScenariosList.push({ _id: "custom_default", name: "Custom Scenario", type: "custom" });
-  }
 
   // Process Connections list
-  const connectionsList = userConnections.length > 0
-    ? userConnections
-    : [{ _id: "conn_default", name: user?.email || "Connection 1", userEmail: user?.email || "2014tabontech@gmail.com" }];
+  const connectionsList = userConnections;
 
   // isReplied: matches Inbox.js isThreadReplied logic exactly
   const isReplied = (e) => {
@@ -759,104 +751,110 @@ const AppLayout = ({ children }) => {
             </div>
 
             {/* ---- SHOPIFY SCENARIOS group ---- */}
-            <div>
-              <div className="mb-2 flex items-center gap-1.5 border-b border-slate-200 px-2 pb-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                <FiShoppingBag className="h-3.5 w-3.5 text-slate-700" />
-                <span>Shopify Scenarios</span>
+            {shopifyScenariosList.length > 0 && (
+              <div>
+                <div className="mb-2 flex items-center gap-1.5 border-b border-slate-200 px-2 pb-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  <FiShoppingBag className="h-3.5 w-3.5 text-slate-700" />
+                  <span>Shopify Scenarios</span>
+                </div>
+                <nav className="flex flex-col gap-0.5">
+                  {shopifyScenariosList.map((scen) => {
+                    const count = emails.filter((e) => isEmailInScenario(e, scen)).length;
+                    const isActive =
+                      (activeScenarioId && String(activeScenarioId) === String(scen._id)) ||
+                      (activeScenarioName && activeScenarioName.toLowerCase() === (scen.name || "").toLowerCase());
+                    return (
+                      <button
+                        key={scen._id || scen.name}
+                        type="button"
+                        onClick={() => navigate(`/inbox?scenarioId=${scen._id}&scenario=${encodeURIComponent(scen.name)}`)}
+                        className={`flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-left text-[12px] transition ${
+                          isActive
+                            ? "bg-slate-200 font-semibold text-slate-950"
+                            : "font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-950"
+                        }`}
+                      >
+                        <span className="truncate pr-1" title={scen.name}>{scen.name}</span>
+                        <span className="rounded-full bg-slate-100 border border-slate-200 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">
+                          {count}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </nav>
               </div>
-              <nav className="flex flex-col gap-0.5">
-                {shopifyScenariosList.map((scen) => {
-                  const count = emails.filter((e) => isEmailInScenario(e, scen)).length;
-                  const isActive =
-                    (activeScenarioId && String(activeScenarioId) === String(scen._id)) ||
-                    (activeScenarioName && activeScenarioName.toLowerCase() === (scen.name || "").toLowerCase());
-                  return (
-                    <button
-                      key={scen._id || scen.name}
-                      type="button"
-                      onClick={() => navigate(`/inbox?scenarioId=${scen._id}&scenario=${encodeURIComponent(scen.name)}`)}
-                      className={`flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-left text-[12px] transition ${
-                        isActive
-                          ? "bg-slate-200 font-semibold text-slate-950"
-                          : "font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-950"
-                      }`}
-                    >
-                      <span className="truncate pr-1" title={scen.name}>{scen.name}</span>
-                      <span className="rounded-full bg-slate-100 border border-slate-200 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">
-                        {count}
-                      </span>
-                    </button>
-                  );
-                })}
-              </nav>
-            </div>
+            )}
 
             {/* ---- CUSTOM SCENARIOS group ---- */}
-            <div>
-              <div className="mb-2 flex items-center gap-1.5 border-b border-slate-200 px-2 pb-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                <FiSliders className="h-3.5 w-3.5 text-slate-700" />
-                <span>Custom Scenarios</span>
+            {customScenariosList.length > 0 && (
+              <div>
+                <div className="mb-2 flex items-center gap-1.5 border-b border-slate-200 px-2 pb-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  <FiSliders className="h-3.5 w-3.5 text-slate-700" />
+                  <span>Custom Scenarios</span>
+                </div>
+                <nav className="flex flex-col gap-0.5">
+                  {customScenariosList.map((scen) => {
+                    const count = emails.filter((e) => isEmailInScenario(e, scen)).length;
+                    const isActive =
+                      (activeScenarioId && String(activeScenarioId) === String(scen._id)) ||
+                      (activeScenarioName && activeScenarioName.toLowerCase() === (scen.name || "").toLowerCase());
+                    return (
+                      <button
+                        key={scen._id || scen.name}
+                        type="button"
+                        onClick={() => navigate(`/inbox?scenarioId=${scen._id}&scenario=${encodeURIComponent(scen.name)}`)}
+                        className={`flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-left text-[12px] transition ${
+                          isActive
+                            ? "bg-slate-200 font-semibold text-slate-950"
+                            : "font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-950"
+                        }`}
+                      >
+                        <span className="truncate pr-1" title={scen.name}>{scen.name}</span>
+                        <span className="rounded-full bg-slate-100 border border-slate-200 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">
+                          {count}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </nav>
               </div>
-              <nav className="flex flex-col gap-0.5">
-                {customScenariosList.map((scen) => {
-                  const count = emails.filter((e) => isEmailInScenario(e, scen)).length;
-                  const isActive =
-                    (activeScenarioId && String(activeScenarioId) === String(scen._id)) ||
-                    (activeScenarioName && activeScenarioName.toLowerCase() === (scen.name || "").toLowerCase());
-                  return (
-                    <button
-                      key={scen._id || scen.name}
-                      type="button"
-                      onClick={() => navigate(`/inbox?scenarioId=${scen._id}&scenario=${encodeURIComponent(scen.name)}`)}
-                      className={`flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-left text-[12px] transition ${
-                        isActive
-                          ? "bg-slate-200 font-semibold text-slate-950"
-                          : "font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-950"
-                      }`}
-                    >
-                      <span className="truncate pr-1" title={scen.name}>{scen.name}</span>
-                      <span className="rounded-full bg-slate-100 border border-slate-200 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">
-                        {count}
-                      </span>
-                    </button>
-                  );
-                })}
-              </nav>
-            </div>
+            )}
 
             {/* ---- CONNECTIONS group ---- */}
-            <div>
-              <div className="mb-2 flex items-center gap-1.5 border-b border-slate-200 px-2 pb-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                <FiLink className="h-3.5 w-3.5 text-slate-700" />
-                <span>Connections</span>
+            {connectionsList.length > 0 && (
+              <div>
+                <div className="mb-2 flex items-center gap-1.5 border-b border-slate-200 px-2 pb-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  <FiLink className="h-3.5 w-3.5 text-slate-700" />
+                  <span>Connections</span>
+                </div>
+                <nav className="flex flex-col gap-0.5">
+                  {connectionsList.map((conn) => {
+                    const connLabel = conn.name || conn.userEmail || conn.email || "Connection";
+                    const count = emails.filter((e) => isEmailInConnection(e, conn)).length;
+                    const isActive =
+                      (activeConnectionId && String(activeConnectionId) === String(conn._id)) ||
+                      (activeConnectionName && activeConnectionName.toLowerCase() === connLabel.toLowerCase());
+                    return (
+                      <button
+                        key={conn._id || connLabel}
+                        type="button"
+                        onClick={() => navigate(`/inbox?connectionId=${conn._id}&connection=${encodeURIComponent(connLabel)}`)}
+                        className={`flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-left text-[12px] transition ${
+                          isActive
+                            ? "bg-slate-200 font-semibold text-slate-950"
+                            : "font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-950"
+                        }`}
+                      >
+                        <span className="truncate pr-1" title={connLabel}>{connLabel}</span>
+                        <span className="rounded-full bg-slate-100 border border-slate-200 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">
+                          {count}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </nav>
               </div>
-              <nav className="flex flex-col gap-0.5">
-                {connectionsList.map((conn) => {
-                  const connLabel = conn.name || conn.userEmail || conn.email || "Connection";
-                  const count = emails.filter((e) => isEmailInConnection(e, conn)).length;
-                  const isActive =
-                    (activeConnectionId && String(activeConnectionId) === String(conn._id)) ||
-                    (activeConnectionName && activeConnectionName.toLowerCase() === connLabel.toLowerCase());
-                  return (
-                    <button
-                      key={conn._id || connLabel}
-                      type="button"
-                      onClick={() => navigate(`/inbox?connectionId=${conn._id}&connection=${encodeURIComponent(connLabel)}`)}
-                      className={`flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-left text-[12px] transition ${
-                        isActive
-                          ? "bg-slate-200 font-semibold text-slate-950"
-                          : "font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-950"
-                      }`}
-                    >
-                      <span className="truncate pr-1" title={connLabel}>{connLabel}</span>
-                      <span className="rounded-full bg-slate-100 border border-slate-200 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">
-                        {count}
-                      </span>
-                    </button>
-                  );
-                })}
-              </nav>
-            </div>
+            )}
 
             {/* ---- STATUS FILTERS group ---- */}
             <div>
