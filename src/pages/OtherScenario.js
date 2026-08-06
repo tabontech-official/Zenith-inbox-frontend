@@ -90,7 +90,7 @@ const OthersScenariosPage = () => {
 
       if (userId) {
         try {
-          const res = await fetch(`https://email-syncing-backend.vercel.app/scenario/user/${userId}`);
+          const res = await fetch(`http://localhost:5000/scenario/user/${userId}`);
           const data = await res.json();
           const list = Array.isArray(data) ? data : data?.data || [];
           const activeCount = list.filter((s) => s.scenarioActive && s._id !== id).length;
@@ -217,7 +217,7 @@ const OthersScenariosPage = () => {
   const fetchTestEmail = async () => {
     try {
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/mailhook/email/latest/${userId}`,
+        `http://localhost:5000/mailhook/email/latest/${userId}`,
       );
 
       const data = await res.json();
@@ -265,7 +265,7 @@ const OthersScenariosPage = () => {
   const fetchActiveTemplates = async () => {
     try {
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/template/other/active?userId=${userId}`,
+        `http://localhost:5000/template/other/active?userId=${userId}`,
       );
 
       const data = await res.json();
@@ -818,7 +818,7 @@ const OthersScenariosPage = () => {
       await fetchActiveTemplates();
 
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/scenario/detail/${id}`,
+        `http://localhost:5000/scenario/detail/${id}`,
       );
       const data = await res.json();
 
@@ -840,7 +840,7 @@ const OthersScenariosPage = () => {
   const fetchConnections = async () => {
     try {
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/auth/getConnection/${localStorage.getItem(
+        `http://localhost:5000/auth/getConnection/${localStorage.getItem(
           "userid",
         )}`,
       );
@@ -922,8 +922,8 @@ const OthersScenariosPage = () => {
     };
 
     const url = id
-      ? `https://email-syncing-backend.vercel.app/scenario/detail/${id}`
-      : `https://email-syncing-backend.vercel.app/scenario`;
+      ? `http://localhost:5000/scenario/detail/${id}`
+      : `http://localhost:5000/scenario`;
 
     await fetch(url, {
       method: id ? "PUT" : "POST",
@@ -1231,7 +1231,7 @@ const OthersScenariosPage = () => {
       const userId = localStorage.getItem("userid");
 
       const res = await fetch(
-        "https://email-syncing-backend.vercel.app/template/save/other",
+        "http://localhost:5000/template/save/other",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

@@ -32,7 +32,7 @@ export default function Template() {
     // If activating, first check company profile is filled
     if (nextStatus) {
       try {
-        const cpRes = await axios.get(`https://email-syncing-backend.vercel.app/api/company-profile/${targetUserId}`);
+        const cpRes = await axios.get(`http://localhost:5000/api/company-profile/${targetUserId}`);
         // API returns { success, data: { company: { companyName, businessDescription, ... }, ... } }
         const profileData = cpRes.data?.data || cpRes.data;
         const cp = profileData?.company || profileData;
@@ -52,16 +52,23 @@ export default function Template() {
     }
 
     setAiActive(nextStatus);
+    setTemplates((prev) => prev.map((t) => ({ ...t, aiResponse: nextStatus })));
     try {
       setTogglingAi(true);
       const res = await axios.post(
-        `https://email-syncing-backend.vercel.app/auth/toggle-ai-replies/${targetUserId}`,
+        `http://localhost:5000/auth/toggle-ai-replies/${targetUserId}`,
         { enabled: nextStatus, userId: targetUserId }
       );
+      await axios.patch("http://localhost:5000/template/ai-toggle-all", {
+        userId: targetUserId,
+        platform: "shopify",
+        aiResponse: nextStatus,
+      });
       if (res.data?.user && setContextUser) setContextUser(res.data.user);
-      toast.success(nextStatus ? "AI Replies activated!" : "AI Replies paused.");
+      toast.success(nextStatus ? "AI Replies activated on all templates!" : "AI Replies paused on all templates.");
     } catch (err) {
       setAiActive(!nextStatus);
+      fetchTemplates();
       toast.error("Failed to update AI replies status.");
     } finally {
       setTogglingAi(false);
@@ -95,7 +102,7 @@ export default function Template() {
       setLoading(true);
       const userId = localStorage.getItem("userid");
       const res = await axios.get(
-        "https://email-syncing-backend.vercel.app/template/all",
+        "http://localhost:5000/template/all",
         {
           params: { userId },
         },
@@ -113,6 +120,41 @@ export default function Template() {
       toast.error("Failed to fetch templates");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleToggleTemplateAi = async (templateId, currentStatus) => {
+    const nextStatus = !currentStatus;
+    setTemplates((prev) =>
+      prev.map((t) => (t._id === templateId ? { ...t, aiResponse: nextStatus } : t))
+    );
+    try {
+      await axios.patch(`http://localhost:5000/template/ai-toggle/${templateId}`, {
+        aiResponse: nextStatus,
+      });
+      toast.success(nextStatus ? "AI Response enabled for template!" : "Switched to Fixed Template.");
+    } catch (err) {
+      setTemplates((prev) =>
+        prev.map((t) => (t._id === templateId ? { ...t, aiResponse: currentStatus } : t))
+      );
+      toast.error("Failed to update template AI status.");
+    }
+  };
+
+  const handleBulkToggleAi = async (enableAll) => {
+    const userId = localStorage.getItem("userid") || user?._id;
+    if (!userId) return;
+    setTemplates((prev) => prev.map((t) => ({ ...t, aiResponse: enableAll })));
+    try {
+      await axios.patch("http://localhost:5000/template/ai-toggle-all", {
+        userId,
+        platform: "shopify",
+        aiResponse: enableAll,
+      });
+      toast.success(enableAll ? "AI Response enabled on ALL Shopify templates!" : "Disabled AI response on all templates.");
+    } catch (err) {
+      fetchTemplates();
+      toast.error("Failed to bulk update templates AI status.");
     }
   };
 
@@ -212,13 +254,13 @@ export default function Template() {
 
       if (editingId) {
         await axios.put(
-          `https://email-syncing-backend.vercel.app/template/update/${editingId}`,
+          `http://localhost:5000/template/update/${editingId}`,
           payload,
         );
         toast.success("Template updated successfully!");
       } else {
         await axios.post(
-          "https://email-syncing-backend.vercel.app/template/create",
+          "http://localhost:5000/template/create",
           payload,
         );
         toast.success("Template created successfully!");
@@ -251,7 +293,7 @@ export default function Template() {
 
     try {
       await axios.put(
-        `https://email-syncing-backend.vercel.app/template/update/${id}`,
+        `http://localhost:5000/template/update/${id}`,
         {
           active: !currentStatus,
         },
@@ -273,7 +315,7 @@ export default function Template() {
     try {
       const userId = localStorage.getItem("userid");
       const res = await axios.patch(
-        "https://email-syncing-backend.vercel.app/template/templatestatus/all",
+        "http://localhost:5000/template/templatestatus/all",
         { userId },
       );
       if (res.data.success) {
@@ -546,32 +588,51 @@ export default function Template() {
                               {formatSequenceName(t.name)}
                             </td>
 
-                            <td className="px-4 py-3 text-xs max-w-[260px]">
-                              {aiEnabled ? (
-                                <span className="inline-flex items-center gap-1.5 text-emerald-700 font-bold">
-                                  <BoltIcon className="w-3.5 h-3.5 text-emerald-600" />
-                                  Auto Reply
-                                  <span className="text-[11px] text-slate-400 font-normal">
-                                    (AI Enabled)
-                                  </span>
+                            <td className="px-4 py-3 text-xs max-w-[280px]">
+                              <div className="flex flex-col gap-1.5 items-start">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleToggleTemplateAi(t._id, t.aiResponse !== false);
+                                  }}
+                                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border transition cursor-pointer shadow-2xs ${
+                                    t.aiResponse !== false
+                                      ? "bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100"
+                                      : "bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200"
+                                  }`}
+                                  title="Click to toggle AI response for this specific template"
+                                >
+                                  <BoltIcon className={`w-3.5 h-3.5 ${t.aiResponse !== false ? "text-emerald-600 fill-emerald-100" : "text-slate-400"}`} />
+                                  <span>{t.aiResponse !== false ? "Auto Reply (AI Enabled)" : "Fixed Template"}</span>
+                                </button>
+
+                                <span className="text-slate-500 text-[11px] font-normal truncate block max-w-[250px]">
+                                  {(t.content || "").replace(/<[^>]+>/g, "").slice(0, 65)}...
                                 </span>
-                              ) : (
-                                <span className="text-slate-600 truncate block font-normal">
-                                  {t.content
-                                    .replace(/<[^>]+>/g, "")
-                                    .slice(0, 85)}
-                                  ...
-                                </span>
-                              )}
+                              </div>
                             </td>
 
                             <td className="px-4 py-3 text-center">
-                              <label className="relative inline-flex items-center cursor-pointer">
+                              <label
+                                className={`relative inline-flex items-center ${
+                                  t.aiResponse !== false || aiEnabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"
+                                }`}
+                                title={
+                                  t.aiResponse !== false
+                                    ? "Status toggle is inactive while Auto Reply (AI) is enabled."
+                                    : "Toggle template active status"
+                                }
+                              >
                                 <input
                                   type="checkbox"
-                                  checked={t.active}
-                                  disabled={aiEnabled}
+                                  checked={t.aiResponse !== false ? false : t.active}
+                                  disabled={t.aiResponse !== false || aiEnabled}
                                   onChange={() => {
+                                    if (t.aiResponse !== false) {
+                                      toast.error("Auto Reply (AI) is active on this template. Switch to Fixed Template mode to change status.");
+                                      return;
+                                    }
                                     if (aiEnabled) {
                                       aiBlockToast();
                                       return;
@@ -583,7 +644,7 @@ export default function Template() {
 
                                 <div
                                   className={`w-9 h-5 rounded-full transition-colors ${
-                                    aiEnabled
+                                    t.aiResponse !== false || aiEnabled
                                       ? "bg-slate-200"
                                       : "bg-slate-300 peer-checked:bg-emerald-600"
                                   }`}
@@ -591,7 +652,7 @@ export default function Template() {
 
                                 <div
                                   className={`absolute left-[2px] top-[2px] w-4 h-4 bg-white rounded-full shadow-xs transition-transform ${
-                                    !aiEnabled && t.active ? "translate-x-4" : ""
+                                    t.aiResponse === false && !aiEnabled && t.active ? "translate-x-4" : ""
                                   }`}
                                 ></div>
                               </label>

@@ -42,7 +42,7 @@ import {
   FiChevronDown,
 } from "react-icons/fi";
 
-const API_BASE_URL = "https://email-syncing-backend.vercel.app/mailhook";
+const API_BASE_URL = "http://localhost:5000/mailhook";
 
 const Inbox = () => {
   const [emails, setEmails] = useState([]);
@@ -412,7 +412,7 @@ const Inbox = () => {
 
     // Check AI status from backend
     axios
-      .get(`https://email-syncing-backend.vercel.app/auth/getUsers/${userId}`)
+      .get(`http://localhost:5000/auth/getUsers/${userId}`)
       .then((res) => {
         const userData = res.data?.data;
         if (userData) {
@@ -1040,10 +1040,22 @@ const Inbox = () => {
   const isThreadReplied = (e) => {
     if (!e) return false;
     const msgs = e.replies || e.conversation || e.discussion || [];
-    const latestMsg = msgs.length > 0 ? msgs[msgs.length - 1] : e;
-    if (e.leadStatus === "replied" || e.leadStatus === "customer_replied") return true;
-    if (e.leadStatus === "awaiting" || e.awaitingReply === true) return false;
-    return latestMsg.direction === "incoming";
+
+    if (!msgs || msgs.length === 0) {
+      if (e.leadStatus === "replied" || e.leadStatus === "customer_replied") return true;
+      if (e.leadStatus === "awaiting" || e.awaitingReply === true) return false;
+      return (e.direction || "incoming") === "outgoing";
+    }
+
+    const latestMsg = msgs[msgs.length - 1];
+    const isOutgoing =
+      latestMsg.direction === "outgoing" ||
+      latestMsg.stepType === "Auto Reply" ||
+      latestMsg.stepType === "Manual Reply" ||
+      latestMsg.role === "assistant" ||
+      (latestMsg.senderAddress && latestMsg.senderAddress.includes("2014tabontech@gmail.com"));
+
+    return isOutgoing;
   };
 
   const awaitingCount = emails.filter(

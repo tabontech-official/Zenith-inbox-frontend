@@ -142,7 +142,7 @@ const MailhookConnectionModal = ({
 
     try {
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/mailhook/verification/${user._id}`
+        `http://localhost:5000/mailhook/verification/${user._id}`
       );
       const data = await res.json();
 
@@ -189,7 +189,7 @@ const MailhookConnectionModal = ({
       setValidationFailed(false);
 
       const res = await axios.post(
-        "https://email-syncing-backend.vercel.app/mailhookcard/validate",
+        "http://localhost:5000/mailhookcard/validate",
         {
           userId: user._id,
           forwardingEmail: verificationEmail?.toEmail || "",
@@ -321,7 +321,7 @@ const MailhookConnectionModal = ({
                   onClick={async () => {
                     try {
                       const res = await axios.post(
-                        "https://email-syncing-backend.vercel.app/mailhookcard/create",
+                        "http://localhost:5000/mailhookcard/create",
                         {
                           userId: user._id,
                           forwardingEmail: "",

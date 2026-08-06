@@ -70,7 +70,7 @@ const WebhookModal = ({
       setLoadingMailhookEmails(true);
 
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/mailhook/verification/${user._id}`
+        `http://localhost:5000/mailhook/verification/${user._id}`
       );
 
       const data = await res.json();

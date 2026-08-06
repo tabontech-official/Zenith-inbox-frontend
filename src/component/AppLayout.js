@@ -23,6 +23,7 @@ import {
   FiCheckCircle,
   FiTrendingUp,
   FiLink,
+  FiLayers,
 } from "react-icons/fi";
 import axios from "axios";
 import { UserContext } from "./UserContext";
@@ -105,7 +106,7 @@ const AppLayout = ({ children }) => {
 
     try {
       setTogglingAi(true);
-      const res = await axios.post(`https://email-syncing-backend.vercel.app/auth/toggle-ai-replies/${targetUserId}`, {
+      const res = await axios.post(`http://localhost:5000/auth/toggle-ai-replies/${targetUserId}`, {
         enabled: nextStatus,
         userId: targetUserId,
       });
@@ -116,7 +117,7 @@ const AppLayout = ({ children }) => {
     } catch (err) {
       console.error("Error toggling AI replies:", err);
       try {
-        await axios.patch(`https://email-syncing-backend.vercel.app/auth/user/ai`, {
+        await axios.patch(`http://localhost:5000/auth/user/ai`, {
           userId: targetUserId,
           enabled: nextStatus,
         });
@@ -148,7 +149,7 @@ const AppLayout = ({ children }) => {
     try {
       if (!userId) return;
       const res = await axios.get(
-        `https://email-syncing-backend.vercel.app/auth/getUsers/${userId}`,
+        `http://localhost:5000/auth/getUsers/${userId}`,
       );
       const fetchedUser = res.data?.data || contextUser || null;
       if (fetchedUser) {
@@ -177,7 +178,7 @@ const AppLayout = ({ children }) => {
     try {
       if (!userId) return;
       const res = await axios.get(
-        `https://email-syncing-backend.vercel.app/auth/organization/get/${userId}`,
+        `http://localhost:5000/auth/organization/get/${userId}`,
       );
       const orgData = res.data?.data;
       if (orgData) {
@@ -192,7 +193,7 @@ const AppLayout = ({ children }) => {
       }
 
       const emailsRes = await axios.get(
-        `https://email-syncing-backend.vercel.app/mailhook/getAllEmailsData/${userId}`,
+        `http://localhost:5000/mailhook/getAllEmailsData/${userId}`,
       );
       const threads = emailsRes.data?.data?.threads || [];
       // Normalize: flatten thread root emails
@@ -257,8 +258,8 @@ const AppLayout = ({ children }) => {
     const fetchSidebarData = async () => {
       try {
         const [scenRes, connRes] = await Promise.all([
-          axios.get(`https://email-syncing-backend.vercel.app/scenario/user/${userId}`).catch(() => null),
-          axios.get(`https://email-syncing-backend.vercel.app/auth/getConnection/${userId}`).catch(() => null),
+          axios.get(`http://localhost:5000/scenario/user/${userId}`).catch(() => null),
+          axios.get(`http://localhost:5000/auth/getConnection/${userId}`).catch(() => null),
         ]);
 
         let scens = Array.isArray(scenRes?.data)
@@ -361,11 +362,22 @@ const AppLayout = ({ children }) => {
   const isReplied = (e) => {
     if (!e) return false;
     const msgs = e.replies || e.conversation || e.discussion || [];
-    const latestMsg = msgs.length > 0 ? msgs[msgs.length - 1] : e;
-    if (e.leadStatus === "replied" || e.leadStatus === "customer_replied")
-      return true;
-    if (e.leadStatus === "awaiting" || e.awaitingReply === true) return false;
-    return latestMsg.direction === "incoming";
+
+    if (!msgs || msgs.length === 0) {
+      if (e.leadStatus === "replied" || e.leadStatus === "customer_replied") return true;
+      if (e.leadStatus === "awaiting" || e.awaitingReply === true) return false;
+      return (e.direction || "incoming") === "outgoing";
+    }
+
+    const latestMsg = msgs[msgs.length - 1];
+    const isOutgoing =
+      latestMsg.direction === "outgoing" ||
+      latestMsg.stepType === "Auto Reply" ||
+      latestMsg.stepType === "Manual Reply" ||
+      latestMsg.role === "assistant" ||
+      (latestMsg.senderAddress && latestMsg.senderAddress.includes("2014tabontech@gmail.com"));
+
+    return isOutgoing;
   };
   const inboxRepliedCount = emails.filter(isReplied).length;
 
@@ -383,7 +395,7 @@ const AppLayout = ({ children }) => {
       const currentUserId = userId || user?._id;
       if (currentUserId) {
         await axios.put(
-          `https://email-syncing-backend.vercel.app/auth/updateUserAndOrganization/${currentUserId}`,
+          `http://localhost:5000/auth/updateUserAndOrganization/${currentUserId}`,
           {
             organizationName: orgForm.organizationName,
             Region: orgForm.region,
@@ -418,7 +430,7 @@ const AppLayout = ({ children }) => {
       const currentUserId = localStorage.getItem("userid") || user?._id;
       if (currentUserId) {
         await fetch(
-          `https://email-syncing-backend.vercel.app/auth/logout/${currentUserId}`,
+          `http://localhost:5000/auth/logout/${currentUserId}`,
           {
             method: "POST",
           },
@@ -797,50 +809,15 @@ const AppLayout = ({ children }) => {
               </button>
             </div>
 
-            {/* ---- SHOPIFY SCENARIOS group ---- */}
-            {shopifyScenariosList.length > 0 && (
+            {/* ---- ALL SCENARIOS group ---- */}
+            {userScenarios.length > 0 && (
               <div>
                 <div className="mb-2 flex items-center gap-1.5 border-b border-slate-200 px-2 pb-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                  <FiShoppingBag className="h-3.5 w-3.5 text-slate-700" />
-                  <span>Shopify Scenarios</span>
+                  <FiLayers className="h-3.5 w-3.5 text-slate-700" />
+                  <span>Scenarios</span>
                 </div>
                 <nav className="flex flex-col gap-0.5">
-                  {shopifyScenariosList.map((scen) => {
-                    const count = emails.filter((e) => isEmailInScenario(e, scen)).length;
-                    const isActive =
-                      (activeScenarioId && String(activeScenarioId) === String(scen._id)) ||
-                      (activeScenarioName && activeScenarioName.toLowerCase() === (scen.name || "").toLowerCase());
-                    return (
-                      <button
-                        key={scen._id || scen.name}
-                        type="button"
-                        onClick={() => navigate(`/inbox?scenarioId=${scen._id}&scenario=${encodeURIComponent(scen.name)}`)}
-                        className={`flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-left text-[12px] transition ${
-                          isActive
-                            ? "bg-slate-200 font-semibold text-slate-950"
-                            : "font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-950"
-                        }`}
-                      >
-                        <span className="truncate pr-1" title={scen.name}>{scen.name}</span>
-                        <span className="rounded-full bg-slate-100 border border-slate-200 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">
-                          {count}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </nav>
-              </div>
-            )}
-
-            {/* ---- CUSTOM SCENARIOS group ---- */}
-            {customScenariosList.length > 0 && (
-              <div>
-                <div className="mb-2 flex items-center gap-1.5 border-b border-slate-200 px-2 pb-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                  <FiSliders className="h-3.5 w-3.5 text-slate-700" />
-                  <span>Custom Scenarios</span>
-                </div>
-                <nav className="flex flex-col gap-0.5">
-                  {customScenariosList.map((scen) => {
+                  {userScenarios.map((scen) => {
                     const count = emails.filter((e) => isEmailInScenario(e, scen)).length;
                     const isActive =
                       (activeScenarioId && String(activeScenarioId) === String(scen._id)) ||

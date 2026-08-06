@@ -23,7 +23,7 @@ import AppLayout from "../component/AppLayout";
 import Header from "../component/Header";
 import { UserContext } from "../component/UserContext";
 
-const API_BASE_URL = "https://email-syncing-backend.vercel.app";
+const API_BASE_URL = "http://localhost:5000";
 
 const Pricing = () => {
   const navigate = useNavigate();

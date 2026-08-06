@@ -12,7 +12,7 @@ import toast from "react-hot-toast";
 import { UserContext } from "../component/UserContext";
 import AppLayout from "../component/AppLayout";
 
-const API_BASE = "https://email-syncing-backend.vercel.app";
+const API_BASE = "http://localhost:5000";
 
 const Security = () => {
   const { user, updateUser, loading } = useContext(UserContext);
