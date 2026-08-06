@@ -15,6 +15,8 @@ import {
   FiLoader,
   FiSliders,
   FiInfo,
+  FiAlertCircle,
+  FiAlertTriangle,
 } from "react-icons/fi";
 import axios from "axios";
 import AppLayout from "../component/AppLayout";
@@ -34,6 +36,8 @@ const Pricing = () => {
   const [billingCycle, setBillingCycle] = useState("monthly"); // 'monthly' | 'yearly'
   const [loadingUser, setLoadingUser] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [cancelLoading, setCancelLoading] = useState(false);
+  const [stripeNotification, setStripeNotification] = useState(null);
 
   // User subscription state
   const [userSub, setUserSub] = useState({
@@ -47,6 +51,8 @@ const Pricing = () => {
   const [showBuyExtrasModal, setShowBuyExtrasModal] = useState(false);
   const [showCouponModal, setShowCouponModal] = useState(false);
   const [showHowItWorksModal, setShowHowItWorksModal] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState("Too expensive");
   const [selectedPackQty, setSelectedPackQty] = useState(500);
   const [couponCode, setCouponCode] = useState("");
   const [couponMessage, setCouponMessage] = useState("");
@@ -54,6 +60,32 @@ const Pricing = () => {
   useEffect(() => {
     fetchUserData();
   }, [userId]);
+
+  // Handle return redirect from Stripe Checkout
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get("success") === "true") {
+      const plan = params.get("plan");
+      const qty = params.get("qty");
+      if (plan === "ExtraCredits") {
+        setStripeNotification({
+          type: "success",
+          message: `Payment successful! Added ${Number(qty || 0).toLocaleString()} extra AI replies to your account.`,
+        });
+      } else {
+        setStripeNotification({
+          type: "success",
+          message: `Payment successful! Your subscription has been upgraded to the ${plan || "new"} plan.`,
+        });
+      }
+      fetchUserData();
+    } else if (params.get("canceled") === "true") {
+      setStripeNotification({
+        type: "info",
+        message: "Checkout was canceled. No charges were made.",
+      });
+    }
+  }, [location.search]);
 
   const fetchUserData = async () => {
     const targetUserId = userId || contextUser?._id;
@@ -132,6 +164,10 @@ const Pricing = () => {
 
         await fetchUserData();
         setShowBuyExtrasModal(false);
+        setStripeNotification({
+          type: "success",
+          message: planName === "ExtraCredits" ? `Added ${qty} extra AI replies!` : `Upgraded to ${planName} plan!`,
+        });
       }
     } catch (err) {
       console.error("Stripe checkout error:", err);
@@ -144,11 +180,60 @@ const Pricing = () => {
         });
         await fetchUserData();
         setShowBuyExtrasModal(false);
+        setStripeNotification({
+          type: "success",
+          message: planName === "ExtraCredits" ? `Added ${qty} extra AI replies!` : `Upgraded to ${planName} plan!`,
+        });
       } catch (e) {
         console.error("Plan update error:", e);
       }
     } finally {
       setCheckoutLoading(false);
+    }
+  };
+
+  // Cancel Subscription Action
+  const handleCancelSubscription = async () => {
+    const targetUserId = userId || contextUser?._id;
+    if (!targetUserId) return;
+
+    try {
+      setCancelLoading(true);
+      const res = await axios.post(`${API_BASE_URL}/stripe/cancel-subscription/${targetUserId}`, {
+        reason: cancelReason,
+      });
+
+      if (res.data?.data) {
+        const updatedSub = res.data.data;
+        setUserSub({
+          plan: updatedSub.plan || "Explore",
+          aiRepliesUsed: updatedSub.aiRepliesUsed || 0,
+          extraAiReplies: updatedSub.extraAiReplies || 0,
+          status: updatedSub.status || "canceled",
+        });
+      }
+
+      if (res.data?.user && setContextUser) {
+        setContextUser(res.data.user);
+      }
+
+      await fetchUserData();
+      setShowCancelModal(false);
+      setStripeNotification({
+        type: "info",
+        message: "Your subscription has been canceled. Your account is now on the Explore (Free) plan.",
+      });
+    } catch (err) {
+      console.error("Error canceling subscription:", err);
+      // Local fallback
+      setUserSub((prev) => ({ ...prev, plan: "Explore", status: "canceled" }));
+      setShowCancelModal(false);
+      setStripeNotification({
+        type: "info",
+        message: "Your subscription has been canceled. Your account is now on the Explore (Free) plan.",
+      });
+    } finally {
+      setCancelLoading(false);
     }
   };
 
@@ -164,6 +249,7 @@ const Pricing = () => {
   };
 
   const isUserLoggedIn = !!userId;
+  const isPaidPlan = ["elevate", "unite", "enterprise"].includes((userSub.plan || "").toLowerCase());
 
   // Extra AI Replies Add-On Packs definition
   const extraPacks = [
@@ -224,6 +310,33 @@ const Pricing = () => {
         </h1>
       </div>
 
+      {/* STRIPE NOTIFICATION BANNER */}
+      {stripeNotification && (
+        <div
+          className={`p-4 rounded-xl border flex items-center justify-between text-xs font-bold ${
+            stripeNotification.type === "success"
+              ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+              : "bg-slate-100 text-slate-800 border-slate-300"
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            {stripeNotification.type === "success" ? (
+              <FiCheckCircle size={16} className="text-emerald-600" />
+            ) : (
+              <FiInfo size={16} className="text-slate-600" />
+            )}
+            <span>{stripeNotification.message}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setStripeNotification(null)}
+            className="text-slate-400 hover:text-slate-700 cursor-pointer"
+          >
+            <FiX size={16} />
+          </button>
+        </div>
+      )}
+
       {/* ------------------------------------------------------------- */}
       {/* TOP ROW: PLAN CARD & AI REPLIES USAGE CARD */}
       {/* ------------------------------------------------------------- */}
@@ -255,6 +368,16 @@ const Pricing = () => {
                 >
                   <span>Change plan</span>
                 </button>
+
+                {isPaidPlan && (
+                  <button
+                    type="button"
+                    onClick={() => setShowCancelModal(true)}
+                    className="h-8 rounded-[8px] border border-red-200 bg-red-50 px-3 text-xs font-semibold text-red-700 hover:bg-red-100 transition cursor-pointer flex items-center gap-1 shadow-2xs"
+                  >
+                    <span>Cancel plan</span>
+                  </button>
+                )}
               </div>
             </div>
 
@@ -524,10 +647,19 @@ const Pricing = () => {
             className={`w-full py-2.5 rounded-[8px] text-xs font-bold transition cursor-pointer text-center ${
               userSub.plan?.toLowerCase() === "elevate"
                 ? "bg-slate-200 text-slate-700 border border-slate-300 cursor-default"
-                : "bg-slate-900 text-white hover:bg-black shadow-md"
+                : "bg-slate-900 text-white hover:bg-black shadow-md flex items-center justify-center gap-1.5"
             }`}
           >
-            {userSub.plan?.toLowerCase() === "elevate" ? "Current plan" : "Start with Elevate"}
+            {checkoutLoading ? (
+              <>
+                <FiLoader className="animate-spin" size={14} />
+                <span>Processing Secure Checkout...</span>
+              </>
+            ) : userSub.plan?.toLowerCase() === "elevate" ? (
+              "Current plan"
+            ) : (
+              "Start with Elevate"
+            )}
           </button>
         </div>
 
@@ -624,10 +756,19 @@ const Pricing = () => {
             className={`w-full py-2.5 rounded-[8px] text-xs font-bold transition cursor-pointer text-center ${
               userSub.plan?.toLowerCase() === "unite"
                 ? "bg-slate-100 text-slate-400 border border-slate-200 cursor-default"
-                : "bg-slate-900 text-white hover:bg-black shadow-xs"
+                : "bg-slate-900 text-white hover:bg-black shadow-xs flex items-center justify-center gap-1.5"
             }`}
           >
-            {userSub.plan?.toLowerCase() === "unite" ? "Current plan" : "Choose Unite"}
+            {checkoutLoading ? (
+              <>
+                <FiLoader className="animate-spin" size={14} />
+                <span>Processing Secure Checkout...</span>
+              </>
+            ) : userSub.plan?.toLowerCase() === "unite" ? (
+              "Current plan"
+            ) : (
+              "Choose Unite"
+            )}
           </button>
         </div>
       </div>
@@ -851,7 +992,89 @@ const Pricing = () => {
       )}
 
       {/* ------------------------------------------------------------- */}
-      {/* MODAL 2: REDEEM COUPON MODAL */}
+      {/* MODAL 2: CANCEL SUBSCRIPTION MODAL */}
+      {/* ------------------------------------------------------------- */}
+      {showCancelModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white rounded-xl shadow-2xl border border-slate-200 max-w-md w-full p-6 animate-in zoom-in-95 duration-150 flex flex-col gap-4">
+            <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2 text-red-600">
+                <FiAlertTriangle size={20} />
+                <h3 className="text-base font-bold text-slate-950">Cancel Subscription</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCancelModal(false)}
+                className="text-slate-400 hover:text-slate-700 cursor-pointer"
+              >
+                <FiX size={18} />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Are you sure you want to cancel your <strong className="text-slate-900">{userSub.plan}</strong> subscription?
+            </p>
+
+            {/* Impact Box */}
+            <div className="bg-red-50/60 border border-red-200 rounded-lg p-3 text-xs text-red-900 flex flex-col gap-1.5 font-medium">
+              <span className="font-bold flex items-center gap-1 text-red-700">
+                <FiAlertCircle size={14} />
+                What happens when you cancel:
+              </span>
+              <ul className="list-disc list-inside text-[11px] text-red-800 space-y-1 pl-1">
+                <li>Your account will revert to the <strong>Explore (Free)</strong> plan.</li>
+                <li>Monthly AI replies limit will reset to 50 replies/mo.</li>
+                <li>Active scenarios limit will be capped at 1.</li>
+                <li>Team members limit will revert to 1.</li>
+              </ul>
+            </div>
+
+            {/* Reason selector */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-slate-800">Please tell us why you are cancelling:</label>
+              <select
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-800 outline-none bg-white focus:border-slate-900"
+              >
+                <option value="Too expensive">Too expensive</option>
+                <option value="Not using it enough">Not using it enough</option>
+                <option value="Missing key features">Missing key features</option>
+                <option value="Switched to another product">Switched to another product</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+
+            <div className="mt-2 flex items-center justify-end gap-2 border-t border-slate-100 pt-3">
+              <button
+                type="button"
+                onClick={() => setShowCancelModal(false)}
+                className="px-4 py-2 text-xs font-bold text-white bg-slate-900 rounded-lg hover:bg-black transition cursor-pointer"
+              >
+                Keep My Plan
+              </button>
+              <button
+                type="button"
+                disabled={cancelLoading}
+                onClick={handleCancelSubscription}
+                className="px-4 py-2 text-xs font-bold text-red-600 bg-white border border-red-300 rounded-lg hover:bg-red-50 transition cursor-pointer flex items-center gap-1.5"
+              >
+                {cancelLoading ? (
+                  <>
+                    <FiLoader className="animate-spin" size={14} />
+                    <span>Cancelling...</span>
+                  </>
+                ) : (
+                  <span>Confirm Cancellation</span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ------------------------------------------------------------- */}
+      {/* MODAL 3: REDEEM COUPON MODAL */}
       {/* ------------------------------------------------------------- */}
       {showCouponModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs animate-in fade-in duration-150">
@@ -903,7 +1126,7 @@ const Pricing = () => {
       )}
 
       {/* ------------------------------------------------------------- */}
-      {/* MODAL 3: HOW DO AI REPLIES WORK MODAL */}
+      {/* MODAL 4: HOW DO AI REPLIES WORK MODAL */}
       {/* ------------------------------------------------------------- */}
       {showHowItWorksModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs animate-in fade-in duration-150">

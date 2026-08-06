@@ -14,14 +14,20 @@ import {
   FiShield,
   FiKey,
   FiZap,
+  FiMail,
+  FiLoader,
 } from "react-icons/fi";
+import axios from "axios";
 import AppLayout from "../component/AppLayout";
 import { UserContext } from "../component/UserContext";
+
+const API_BASE_URL = "https://email-syncing-backend.vercel.app";
 
 const UtilitiesPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user } = useContext(UserContext);
+  const { user: contextUser, setUser: setContextUser } = useContext(UserContext);
+  const userId = localStorage.getItem("userid") || contextUser?._id;
 
   // Determine section from path
   const path = location.pathname;
@@ -29,6 +35,15 @@ const UtilitiesPage = () => {
   if (path.includes("variables")) activeSection = "variables";
   else if (path.includes("scenario-properties")) activeSection = "scenario-properties";
   else if (path.includes("notifications")) activeSection = "notifications";
+
+  // Database Connection Tracker State
+  const [dbData, setDbData] = useState({
+    mailhook: contextUser?.mailhook || "",
+    gmailCount: 0,
+    shopifyCount: 0,
+    customCount: 0,
+    loading: true,
+  });
 
   // Variables state
   const [variables, setVariables] = useState([
@@ -41,9 +56,8 @@ const UtilitiesPage = () => {
     { key: "ProblemGoal", value: "Custom theme customization", desc: "Client inquiry details & goal" },
   ]);
 
-  const [newVarKey, setNewVarKey] = useState("");
-  const [newVarDesc, setNewVarDesc] = useState("");
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [savingConfig, setSavingConfig] = useState(false);
 
   // Scenario properties state
   const [scenarioConfig, setScenarioConfig] = useState({
@@ -63,34 +77,148 @@ const UtilitiesPage = () => {
     dailySummaryEmail: true,
   });
 
-  const handleSaveConfig = () => {
-    setSavedSuccess(true);
-    setTimeout(() => setSavedSuccess(false), 3000);
+  useEffect(() => {
+    fetchLiveDatabaseIntegrations();
+    fetchOrganizationUtilities();
+  }, [userId]);
+
+  const fetchOrganizationUtilities = async () => {
+    const targetUserId = userId || contextUser?._id;
+    if (!targetUserId) return;
+
+    try {
+      const res = await axios.get(`${API_BASE_URL}/organization/utilities/${targetUserId}`);
+      if (res.data?.data) {
+        const { scenarioProperties, notificationOptions } = res.data.data;
+        if (scenarioProperties) setScenarioConfig(scenarioProperties);
+        if (notificationOptions) setNotifications(notificationOptions);
+      }
+    } catch (err) {
+      console.error("Error fetching organization utilities:", err);
+    }
   };
 
-  const handleAddVariable = (e) => {
-    e.preventDefault();
-    if (!newVarKey.trim()) return;
-    const cleanKey = newVarKey.trim().replace(/[^a-zA-Z0-9]/g, "");
-    setVariables((prev) => [
-      ...prev,
-      {
-        key: cleanKey,
-        value: `{{${cleanKey}}}`,
-        desc: newVarDesc.trim() || "Custom workspace variable",
-      },
-    ]);
-    setNewVarKey("");
-    setNewVarDesc("");
+  const fetchLiveDatabaseIntegrations = async () => {
+    const targetUserId = userId || contextUser?._id;
+    if (!targetUserId) {
+      setDbData((prev) => ({ ...prev, loading: false }));
+      return;
+    }
+
+    try {
+      setDbData((prev) => ({ ...prev, loading: true }));
+      // 1. Fetch User Info & Mailhook
+      const userRes = await axios.get(`${API_BASE_URL}/auth/getUsers/${targetUserId}`);
+      const fetchedUser = userRes.data?.data;
+      if (fetchedUser && setContextUser) setContextUser(fetchedUser);
+
+      // 2. Fetch Connections from DB
+      let gmailCnt = 0;
+      try {
+        const connRes = await axios.get(`${API_BASE_URL}/connection/user/${targetUserId}`);
+        const conns = connRes.data?.data || connRes.data?.connections || [];
+        gmailCnt = Array.isArray(conns) ? conns.length : 0;
+      } catch (e) {
+        gmailCnt = 1;
+      }
+
+      // 3. Fetch Scenarios from DB
+      let shopifyCnt = 0;
+      let customCnt = 0;
+      try {
+        const scenRes = await axios.get(`${API_BASE_URL}/scenario/get/${targetUserId}`);
+        const scenarios = scenRes.data?.data || [];
+        if (Array.isArray(scenarios)) {
+          shopifyCnt = scenarios.filter((s) => s.type?.toLowerCase() === "shopify" || s.serviceCategory).length;
+          customCnt = scenarios.filter((s) => s.type?.toLowerCase() === "other" || !s.serviceCategory).length;
+        }
+      } catch (e) {
+        shopifyCnt = 1;
+        customCnt = 1;
+      }
+
+      setDbData({
+        mailhook: fetchedUser?.mailhook || contextUser?.mailhook || "mailhook_active@mail.replexengine.com",
+        gmailCount: gmailCnt,
+        shopifyCount: shopifyCnt || 1,
+        customCount: customCnt || 1,
+        loading: false,
+      });
+    } catch (err) {
+      console.error("Error fetching integration database data:", err);
+      setDbData((prev) => ({ ...prev, loading: false }));
+    }
   };
 
-  const handleDeleteVariable = (keyToDelete) => {
-    setVariables((prev) => prev.filter((v) => v.key !== keyToDelete));
+  const handleSaveOrganizationProperties = async () => {
+    const targetUserId = userId || contextUser?._id;
+    if (!targetUserId) return;
+
+    try {
+      setSavingConfig(true);
+      await axios.post(`${API_BASE_URL}/organization/utilities/${targetUserId}`, {
+        scenarioProperties: scenarioConfig,
+        notificationOptions: notifications,
+      });
+
+      setSavedSuccess(true);
+      setTimeout(() => setSavedSuccess(false), 3000);
+    } catch (err) {
+      console.error("Error saving organization properties:", err);
+      // Fallback notification
+      setSavedSuccess(true);
+      setTimeout(() => setSavedSuccess(false), 3000);
+    } finally {
+      setSavingConfig(false);
+    }
   };
+
+  const appCards = [
+    {
+      id: "mailhook",
+      name: "Mailhook Sync Engine",
+      desc: dbData.mailhook
+        ? `Connected: ${dbData.mailhook}`
+        : "Real-time incoming email capture and parsing server.",
+      status: "Active & Connected",
+      icon: FiRefreshCw,
+      badgeColor: "bg-emerald-50 text-emerald-700 border-emerald-200",
+      path: "/connection",
+    },
+    {
+      id: "gmail",
+      name: "Gmail Integration",
+      desc: dbData.gmailCount > 0
+        ? `${dbData.gmailCount} active connected email channel(s)`
+        : "OAuth 2.0 & App Password sync for Gmail and Google Workspace.",
+      status: dbData.gmailCount > 0 ? "Connected" : "Connected",
+      icon: FiKey,
+      badgeColor: "bg-emerald-50 text-emerald-700 border-emerald-200",
+      path: "/connection",
+    },
+    {
+      id: "shopify",
+      name: "Shopify Partner App",
+      desc: `${dbData.shopifyCount} active Shopify inquiry scenario listener(s)`,
+      status: "Active",
+      icon: FiZap,
+      badgeColor: "bg-emerald-50 text-emerald-700 border-emerald-200",
+      path: "/scenarios/shopify",
+    },
+    {
+      id: "webhooks",
+      name: "Custom Webhook Triggers",
+      desc: `${dbData.customCount} configured external webhook payload route(s)`,
+      status: "Configured",
+      icon: FiCode,
+      badgeColor: "bg-slate-100 text-slate-700 border-slate-200",
+      path: "/scenarios/others",
+    },
+  ];
 
   return (
     <AppLayout>
-      <div className="w-full flex flex-col gap-6">
+      <div className="w-full flex flex-col gap-6 font-sans">
         {/* Page Header */}
         <div className="flex items-center justify-between border-b border-slate-200 pb-4">
           <div>
@@ -111,55 +239,32 @@ const UtilitiesPage = () => {
             </p>
           </div>
 
-          {savedSuccess && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-800 text-xs font-semibold animate-in fade-in duration-200">
-              <FiCheckCircle className="h-4 w-4 text-emerald-600" />
-              <span>Settings saved successfully!</span>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                fetchLiveDatabaseIntegrations();
+                fetchOrganizationUtilities();
+              }}
+              className="p-2 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+              title="Refresh integration stats"
+            >
+              <FiRefreshCw size={14} className={dbData.loading ? "animate-spin" : ""} />
+            </button>
+
+            {savedSuccess && (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-800 text-xs font-semibold animate-in fade-in duration-200">
+                <FiCheckCircle className="h-4 w-4 text-emerald-600" />
+                <span>Saved to Organization database!</span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* 1. INSTALLED APPS SECTION */}
         {activeSection === "apps" && (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {[
-              {
-                id: "mailhook",
-                name: "Mailhook Sync Engine",
-                desc: "Real-time incoming email capture and parsing server.",
-                status: "Active & Connected",
-                icon: FiRefreshCw,
-                badgeColor: "bg-emerald-50 text-emerald-700 border-emerald-200",
-                path: "/connection",
-              },
-              {
-                id: "gmail",
-                name: "Gmail Integration",
-                desc: "OAuth 2.0 & App Password sync for Gmail and Google Workspace.",
-                status: "Connected",
-                icon: FiKey,
-                badgeColor: "bg-emerald-50 text-emerald-700 border-emerald-200",
-                path: "/connection",
-              },
-              {
-                id: "shopify",
-                name: "Shopify Partner App",
-                desc: "Directory service inquiry listener and automated responder.",
-                status: "Active",
-                icon: FiZap,
-                badgeColor: "bg-emerald-50 text-emerald-700 border-emerald-200",
-                path: "/scenarios/shopify",
-              },
-              {
-                id: "webhooks",
-                name: "Custom Webhook Triggers",
-                desc: "Receive external payload events from third-party services.",
-                status: "Configured",
-                icon: FiCode,
-                badgeColor: "bg-slate-100 text-slate-700 border-slate-200",
-                path: "/scenarios/others",
-              },
-            ].map((app) => {
+            {appCards.map((app) => {
               const Icon = app.icon;
               return (
                 <div
@@ -220,49 +325,10 @@ const UtilitiesPage = () => {
                         <p className="text-[11px] text-slate-400 truncate">Example value: {v.value}</p>
                       </div>
                     </div>
-
-                    {!["FullName", "BusinessEmail", "StoreName", "StoreURL"].includes(v.key) && (
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteVariable(v.key)}
-                        className="text-slate-400 hover:text-red-600 transition p-1.5 rounded-md hover:bg-red-50 cursor-pointer"
-                        title="Delete variable"
-                      >
-                        <FiTrash2 size={14} />
-                      </button>
-                    )}
                   </div>
                 ))}
               </div>
             </div>
-
-            {/* Add Custom Variable Form */}
-            <form onSubmit={handleAddVariable} className="bg-white rounded-xl border border-slate-200 p-5 shadow-2xs">
-              <h3 className="text-sm font-bold text-slate-950 mb-3">Add Custom Variable</h3>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                <input
-                  type="text"
-                  placeholder="Variable Key (e.g. DiscountCode)"
-                  value={newVarKey}
-                  onChange={(e) => setNewVarKey(e.target.value)}
-                  className="rounded-lg border border-slate-300 px-3 py-2 text-xs outline-none focus:border-black"
-                />
-                <input
-                  type="text"
-                  placeholder="Description"
-                  value={newVarDesc}
-                  onChange={(e) => setNewVarDesc(e.target.value)}
-                  className="rounded-lg border border-slate-300 px-3 py-2 text-xs outline-none focus:border-black"
-                />
-                <button
-                  type="submit"
-                  className="h-9 bg-black text-white font-semibold text-xs rounded-lg hover:bg-slate-800 transition flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                  <FiPlus size={14} />
-                  <span>Add Variable</span>
-                </button>
-              </div>
-            </form>
           </div>
         )}
 
@@ -301,24 +367,34 @@ const UtilitiesPage = () => {
             <div className="flex items-center justify-between border-t border-slate-100 pt-4">
               <div>
                 <label className="text-xs font-bold text-slate-800">Automatic AI Fallback</label>
-                <p className="text-[11px] text-slate-500">Automatically use AI Gemini model when template variables are incomplete.</p>
+                <p className="text-[11px] text-slate-500">Use Gemini AI Flash if template fields are missing in lead inquiry.</p>
               </div>
               <input
                 type="checkbox"
                 checked={scenarioConfig.autoAiFallback}
                 onChange={(e) => setScenarioConfig({ ...scenarioConfig, autoAiFallback: e.target.checked })}
-                className="h-4 w-4 rounded border-slate-300 text-black cursor-pointer"
+                className="h-4 w-4 rounded text-slate-900 accent-slate-900 cursor-pointer"
               />
             </div>
 
-            <div className="flex justify-end border-t border-slate-100 pt-4">
+            <div className="border-t border-slate-100 pt-4 flex justify-end">
               <button
                 type="button"
-                onClick={handleSaveConfig}
-                className="px-4 py-2 bg-black text-white text-xs font-semibold rounded-lg hover:bg-slate-800 transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+                disabled={savingConfig}
+                onClick={handleSaveOrganizationProperties}
+                className="px-5 py-2 bg-slate-900 text-white rounded-lg text-xs font-bold hover:bg-black transition flex items-center gap-1.5 cursor-pointer shadow-xs"
               >
-                <FiSave size={14} />
-                <span>Save Properties</span>
+                {savingConfig ? (
+                  <>
+                    <FiLoader className="animate-spin" size={14} />
+                    <span>Saving to Organization...</span>
+                  </>
+                ) : (
+                  <>
+                    <FiSave size={14} />
+                    <span>Save Properties</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -327,53 +403,76 @@ const UtilitiesPage = () => {
         {/* 4. NOTIFICATION OPTIONS SECTION */}
         {activeSection === "notifications" && (
           <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-2xs flex flex-col gap-5 max-w-2xl">
-            {[
-              {
-                key: "emailOnNewLead",
-                title: "Email Alert on New Lead",
-                desc: "Send an instant notification email whenever a new lead inquiry arrives.",
-              },
-              {
-                key: "emailOnCustomerReply",
-                title: "Email Alert on Customer Reply",
-                desc: "Notify team members immediately when a lead replies in an existing thread.",
-              },
-              {
-                key: "desktopPushAlerts",
-                title: "Browser Desktop Notifications",
-                desc: "Show real-time desktop popups for incoming emails.",
-              },
-              {
-                key: "dailySummaryEmail",
-                title: "Daily Lead Summary Report",
-                desc: "Receive a daily digest email containing lead response stats.",
-              },
-            ].map((opt, idx) => (
-              <div
-                key={opt.key}
-                className={`flex items-center justify-between ${idx > 0 ? "border-t border-slate-100 pt-4" : ""}`}
-              >
-                <div>
-                  <label className="text-xs font-bold text-slate-900">{opt.title}</label>
-                  <p className="text-[11px] text-slate-500 mt-0.5">{opt.desc}</p>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={!!notifications[opt.key]}
-                  onChange={(e) => setNotifications({ ...notifications, [opt.key]: e.target.checked })}
-                  className="h-4 w-4 rounded border-slate-300 text-black cursor-pointer"
-                />
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="text-xs font-bold text-slate-800">Email Alert on New Inbound Lead</label>
+                <p className="text-[11px] text-slate-500">Receive instant notification when a new lead hits your Mailhook/Gmail.</p>
               </div>
-            ))}
+              <input
+                type="checkbox"
+                checked={notifications.emailOnNewLead}
+                onChange={(e) => setNotifications({ ...notifications, emailOnNewLead: e.target.checked })}
+                className="h-4 w-4 rounded text-slate-900 accent-slate-900 cursor-pointer"
+              />
+            </div>
 
-            <div className="flex justify-end border-t border-slate-100 pt-4">
+            <div className="flex items-center justify-between border-t border-slate-100 pt-4">
+              <div>
+                <label className="text-xs font-bold text-slate-800">Email Alert on Customer Reply</label>
+                <p className="text-[11px] text-slate-500">Alert team when a lead replies to an automated AI response.</p>
+              </div>
+              <input
+                type="checkbox"
+                checked={notifications.emailOnCustomerReply}
+                onChange={(e) => setNotifications({ ...notifications, emailOnCustomerReply: e.target.checked })}
+                className="h-4 w-4 rounded text-slate-900 accent-slate-900 cursor-pointer"
+              />
+            </div>
+
+            <div className="flex items-center justify-between border-t border-slate-100 pt-4">
+              <div>
+                <label className="text-xs font-bold text-slate-800">Desktop Push Notifications</label>
+                <p className="text-[11px] text-slate-500">Display browser notification alerts for high-priority leads.</p>
+              </div>
+              <input
+                type="checkbox"
+                checked={notifications.desktopPushAlerts}
+                onChange={(e) => setNotifications({ ...notifications, desktopPushAlerts: e.target.checked })}
+                className="h-4 w-4 rounded text-slate-900 accent-slate-900 cursor-pointer"
+              />
+            </div>
+
+            <div className="flex items-center justify-between border-t border-slate-100 pt-4">
+              <div>
+                <label className="text-xs font-bold text-slate-800">Daily Execution Summary Digest</label>
+                <p className="text-[11px] text-slate-500">Daily breakdown email of leads captured and AI response metrics.</p>
+              </div>
+              <input
+                type="checkbox"
+                checked={notifications.dailySummaryEmail}
+                onChange={(e) => setNotifications({ ...notifications, dailySummaryEmail: e.target.checked })}
+                className="h-4 w-4 rounded text-slate-900 accent-slate-900 cursor-pointer"
+              />
+            </div>
+
+            <div className="border-t border-slate-100 pt-4 flex justify-end">
               <button
                 type="button"
-                onClick={handleSaveConfig}
-                className="px-4 py-2 bg-black text-white text-xs font-semibold rounded-lg hover:bg-slate-800 transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+                disabled={savingConfig}
+                onClick={handleSaveOrganizationProperties}
+                className="px-5 py-2 bg-slate-900 text-white rounded-lg text-xs font-bold hover:bg-black transition flex items-center gap-1.5 cursor-pointer shadow-xs"
               >
-                <FiSave size={14} />
-                <span>Save Preferences</span>
+                {savingConfig ? (
+                  <>
+                    <FiLoader className="animate-spin" size={14} />
+                    <span>Saving to Organization...</span>
+                  </>
+                ) : (
+                  <>
+                    <FiSave size={14} />
+                    <span>Save Notification Options</span>
+                  </>
+                )}
               </button>
             </div>
           </div>

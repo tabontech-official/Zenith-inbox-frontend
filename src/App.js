@@ -53,6 +53,7 @@ import Security from "./pages/Security";
 import UsersPage from "./pages/Users";
 import UtilitiesPage from "./pages/UtilitiesPage";
 import AiRepliesUsagePage from "./pages/AiRepliesUsagePage";
+import PaymentsPage from "./pages/PaymentsPage";
 
 function App() {
   return (
@@ -199,6 +200,22 @@ function App() {
             element={
               <ProtectedRoute>
                 <AiRepliesUsagePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/organization/payments"
+            element={
+              <ProtectedRoute>
+                <PaymentsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/payments"
+            element={
+              <ProtectedRoute>
+                <PaymentsPage />
               </ProtectedRoute>
             }
           />

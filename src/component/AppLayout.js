@@ -40,13 +40,18 @@ const AppLayout = ({ children }) => {
   const [showCreateScenarioModal, setShowCreateScenarioModal] = useState(false);
   const [showOrgSettingsModal, setShowOrgSettingsModal] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
-  const [showNotificationsDropdown, setShowNotificationsDropdown] = useState(false);
+  const [showNotificationsDropdown, setShowNotificationsDropdown] =
+    useState(false);
   const [isSavingOrg, setIsSavingOrg] = useState(false);
 
   const [orgForm, setOrgForm] = useState({
-    organizationName: contextUser?.organizationName || contextUser?.companyName || "",
+    organizationName:
+      contextUser?.organizationName || contextUser?.companyName || "",
     region: contextUser?.Region || contextUser?.region || "US",
-    timezone: contextUser?.TimeZone || contextUser?.timezone || "(GMT-05:00) America/Toronto",
+    timezone:
+      contextUser?.TimeZone ||
+      contextUser?.timezone ||
+      "(GMT-05:00) America/Toronto",
     country: contextUser?.country || "Canada",
     partnerLink: contextUser?.PartnerLink || contextUser?.partnerLink || "",
   });
@@ -60,15 +65,66 @@ const AppLayout = ({ children }) => {
       if (contextUser.organizationName || contextUser.companyName) {
         setOrgForm((prev) => ({
           ...prev,
-          organizationName: contextUser.organizationName || contextUser.companyName || prev.organizationName,
+          organizationName:
+            contextUser.organizationName ||
+            contextUser.companyName ||
+            prev.organizationName,
           region: contextUser.Region || contextUser.region || prev.region,
-          timezone: contextUser.TimeZone || contextUser.timezone || prev.timezone,
+          timezone:
+            contextUser.TimeZone || contextUser.timezone || prev.timezone,
           country: contextUser.country || prev.country,
-          partnerLink: contextUser.PartnerLink || contextUser.partnerLink || prev.partnerLink,
+          partnerLink:
+            contextUser.PartnerLink ||
+            contextUser.partnerLink ||
+            prev.partnerLink,
         }));
       }
     }
   }, [contextUser]);
+
+  const [aiActive, setAiActive] = useState(() => {
+    return contextUser?.Ai ?? contextUser?.subscription?.aiRepliesActive ?? true;
+  });
+  const [togglingAi, setTogglingAi] = useState(false);
+
+  useEffect(() => {
+    if (contextUser) {
+      const activeState = contextUser.Ai ?? contextUser.subscription?.aiRepliesActive ?? true;
+      setAiActive(activeState);
+    }
+  }, [contextUser]);
+
+  const handleToggleAiReplies = async () => {
+    const targetUserId = userId || contextUser?._id;
+    if (!targetUserId) return;
+
+    const nextStatus = !aiActive;
+    setAiActive(nextStatus);
+
+    try {
+      setTogglingAi(true);
+      const res = await axios.post(`https://email-syncing-backend.vercel.app/auth/toggle-ai-replies/${targetUserId}`, {
+        enabled: nextStatus,
+        userId: targetUserId,
+      });
+
+      if (res.data?.user && setContextUser) {
+        setContextUser(res.data.user);
+      }
+    } catch (err) {
+      console.error("Error toggling AI replies:", err);
+      try {
+        await axios.patch(`https://email-syncing-backend.vercel.app/auth/user/ai`, {
+          userId: targetUserId,
+          enabled: nextStatus,
+        });
+      } catch (e) {
+        console.error("Patch AI error:", e);
+      }
+    } finally {
+      setTogglingAi(false);
+    }
+  };
 
   useEffect(() => {
     if (contextEmails && contextEmails.length > 0) {
@@ -90,16 +146,22 @@ const AppLayout = ({ children }) => {
     try {
       if (!userId) return;
       const res = await axios.get(
-        `https://email-syncing-backend.vercel.app/auth/getUsers/${userId}`
+        `https://email-syncing-backend.vercel.app/auth/getUsers/${userId}`,
       );
       const fetchedUser = res.data?.data || contextUser || null;
       if (fetchedUser) {
         setUser(fetchedUser);
         if (setContextUser) setContextUser(fetchedUser);
         setOrgForm({
-          organizationName: fetchedUser.organizationName || fetchedUser.companyName || "Organization",
+          organizationName:
+            fetchedUser.organizationName ||
+            fetchedUser.companyName ||
+            "Organization",
           region: fetchedUser.Region || fetchedUser.region || "US",
-          timezone: fetchedUser.TimeZone || fetchedUser.timezone || "(GMT-05:00) America/Toronto",
+          timezone:
+            fetchedUser.TimeZone ||
+            fetchedUser.timezone ||
+            "(GMT-05:00) America/Toronto",
           country: fetchedUser.country || "Canada",
           partnerLink: fetchedUser.PartnerLink || fetchedUser.partnerLink || "",
         });
@@ -113,7 +175,7 @@ const AppLayout = ({ children }) => {
     try {
       if (!userId) return;
       const res = await axios.get(
-        `https://email-syncing-backend.vercel.app/auth/organization/get/${userId}`
+        `https://email-syncing-backend.vercel.app/auth/organization/get/${userId}`,
       );
       const orgData = res.data?.data;
       if (orgData) {
@@ -128,7 +190,7 @@ const AppLayout = ({ children }) => {
       }
 
       const emailsRes = await axios.get(
-        `https://email-syncing-backend.vercel.app/mailhook/getAllEmailsData/${userId}`
+        `https://email-syncing-backend.vercel.app/mailhook/getAllEmailsData/${userId}`,
       );
       const threads = emailsRes.data?.data?.threads || [];
       // Normalize: flatten thread root emails
@@ -151,7 +213,7 @@ const AppLayout = ({ children }) => {
       (e.service || "").toLowerCase().includes("shopify") ||
       (e.subject || "").toLowerCase().includes("shopify") ||
       e.stepType === "shopify-test-parent" ||
-      !!e.extraFields?.storeName
+      !!e.extraFields?.storeName,
   ).length;
   const inboxCustomCount = emails.filter(
     (e) =>
@@ -160,14 +222,15 @@ const AppLayout = ({ children }) => {
         (e.subject || "").toLowerCase().includes("shopify") ||
         e.stepType === "shopify-test-parent" ||
         !!e.extraFields?.storeName
-      )
+      ),
   ).length;
   // isReplied: matches Inbox.js isThreadReplied logic exactly
   const isReplied = (e) => {
     if (!e) return false;
     const msgs = e.replies || e.conversation || e.discussion || [];
     const latestMsg = msgs.length > 0 ? msgs[msgs.length - 1] : e;
-    if (e.leadStatus === "replied" || e.leadStatus === "customer_replied") return true;
+    if (e.leadStatus === "replied" || e.leadStatus === "customer_replied")
+      return true;
     if (e.leadStatus === "awaiting" || e.awaitingReply === true) return false;
     return latestMsg.direction === "incoming";
   };
@@ -175,13 +238,14 @@ const AppLayout = ({ children }) => {
 
   const inboxAwaitingCount = emails.filter(
     (e) =>
-      e.leadStatus !== "secured" &&
-      e.leadStatus !== "closed" &&
-      !isReplied(e)
+      e.leadStatus !== "secured" && e.leadStatus !== "closed" && !isReplied(e),
   ).length;
-  const inboxSecuredCount = emails.filter((e) => e.leadStatus === "secured").length;
+  const inboxSecuredCount = emails.filter(
+    (e) => e.leadStatus === "secured",
+  ).length;
 
-  const inboxActiveFilter = new URLSearchParams(location.search).get("filter") || "all";
+  const inboxActiveFilter =
+    new URLSearchParams(location.search).get("filter") || "all";
 
   const handleSaveOrgSettings = async () => {
     try {
@@ -196,7 +260,7 @@ const AppLayout = ({ children }) => {
             TimeZone: orgForm.timezone,
             country: orgForm.country,
             PartnerLink: orgForm.partnerLink,
-          }
+          },
         );
       }
       const updatedUserObj = {
@@ -223,9 +287,12 @@ const AppLayout = ({ children }) => {
     try {
       const currentUserId = localStorage.getItem("userid") || user?._id;
       if (currentUserId) {
-        await fetch(`https://email-syncing-backend.vercel.app/auth/logout/${currentUserId}`, {
-          method: "POST",
-        }).catch(() => {});
+        await fetch(
+          `https://email-syncing-backend.vercel.app/auth/logout/${currentUserId}`,
+          {
+            method: "POST",
+          },
+        ).catch(() => {});
       }
     } catch (err) {
       console.error("Logout error:", err);
@@ -248,235 +315,254 @@ const AppLayout = ({ children }) => {
   const primaryNav = [
     { id: "org", label: "Org", icon: FiGrid, path: "/dashboard" },
     { id: "inbox", label: "Inbox", icon: FiInbox, path: "/inbox" },
-    { id: "scenarios", label: "Scenarios", icon: FiZap, path: "/scenarios/all" },
+    {
+      id: "scenarios",
+      label: "Scenarios",
+      icon: FiZap,
+      path: "/scenarios/all",
+    },
     { id: "connection", label: "Connection", icon: FiKey, path: "/connection" },
-    { id: "templates", label: "Templates", icon: FiFileText, path: "/templates" },
+    {
+      id: "templates",
+      label: "Templates",
+      icon: FiFileText,
+      path: "/templates",
+    },
   ];
-const organizationRoutes = [
-  "/dashboard",
-  "/teams",
-  "/security",
-  "/pricing",
-  "/organization",
-];
+  const organizationRoutes = [
+    "/dashboard",
+    "/teams",
+    "/security",
+    "/pricing",
+    "/organization",
+  ];
 
-const isOrganizationActive =
-  organizationRoutes.some(
-    (route) =>
-      location.pathname === route ||
-      location.pathname.startsWith(`${route}/`)
-  ) || location.pathname.startsWith("/organization/");
+  const isOrganizationActive =
+    organizationRoutes.some(
+      (route) =>
+        location.pathname === route ||
+        location.pathname.startsWith(`${route}/`),
+    ) || location.pathname.startsWith("/organization/");
   // Dynamic Secondary Sub-Nav Definitions based on current route
   const getSecondaryNav = () => {
-  const path = location.pathname;
+    const path = location.pathname;
 
-  if (path.startsWith("/inbox")) {
-    return { type: "inbox" };
-  }
+    if (path.startsWith("/inbox")) {
+      return { type: "inbox" };
+    }
 
-  if (path.startsWith("/scenarios")) {
+    if (path.startsWith("/scenarios")) {
+      return {
+        type: "standard",
+        title: "Scenarios",
+        items: [
+          {
+            id: "all",
+            label: "All scenarios",
+            path: "/scenarios/all",
+          },
+          {
+            id: "shopify",
+            label: "Shopify scenarios",
+            path: "/scenarios/shopify",
+          },
+          {
+            id: "custom",
+            label: "Custom scenarios",
+            path: "/scenarios/others",
+          },
+        ],
+      };
+    }
+
+    if (path.startsWith("/templates")) {
+      return {
+        type: "standard",
+        title: "Templates",
+        items: [
+          {
+            id: "shopify",
+            label: "Shopify template",
+            path: "/templates",
+          },
+          {
+            id: "custom",
+            label: "Custom template",
+            path: "/templates/general",
+          },
+        ],
+      };
+    }
+
+    if (path.startsWith("/connection")) {
+      return {
+        type: "standard",
+        title: "Connections",
+        items: [
+          {
+            id: "all",
+            label: "All connections",
+            path: "/connection",
+          },
+          {
+            id: "verified",
+            label: "Verified connections",
+            path: "/connection?status=verified",
+          },
+        ],
+      };
+    }
+
     return {
-      type: "standard",
-      title: "Scenarios",
-      items: [
+      type: "organization",
+      groups: [
         {
-          id: "all",
-          label: "All scenarios",
-          path: "/scenarios/all",
+          id: "organization",
+          title: "Organization",
+          icon: FiHome,
+          items: [
+            {
+              id: "dashboard",
+              label: "Dashboard",
+              path: "/dashboard",
+            },
+            {
+              id: "teams",
+              label: "Teams",
+              path: "/teams",
+            },
+            {
+              id: "users",
+              label: "Users",
+              path: "/organization/users",
+            },
+          ],
         },
         {
-          id: "shopify",
-          label: "Shopify scenarios",
-          path: "/scenarios/shopify",
+          id: "plan",
+          title: "My Plan",
+          icon: FiCreditCard,
+          items: [
+            {
+              id: "subscription",
+              label: "Subscription",
+              path: "/pricing",
+              badge: "Free",
+            },
+            {
+              id: "credit-usage",
+              label: "AI replies usage",
+              path: "/organization/credit-usage",
+            },
+            {
+              id: "payments",
+              label: "Payments",
+              path: "/organization/payments",
+            },
+          ],
         },
         {
-          id: "custom",
-          label: "Custom scenarios",
-          path: "/scenarios/others",
+          id: "utilities",
+          title: "Utilities",
+          icon: FiTool,
+          items: [
+            {
+              id: "installed-apps",
+              label: "Installed apps",
+              path: "/organization/apps",
+            },
+            {
+              id: "variables",
+              label: "Variables",
+              path: "/organization/variables",
+            },
+            {
+              id: "scenario-properties",
+              label: "Scenario properties",
+              path: "/organization/scenario-properties",
+            },
+            {
+              id: "notification-options",
+              label: "Notification options",
+              path: "/organization/notifications",
+            },
+          ],
         },
       ],
     };
-  }
-
-  if (path.startsWith("/templates")) {
-    return {
-      type: "standard",
-      title: "Templates",
-      items: [
-        {
-          id: "shopify",
-          label: "Shopify template",
-          path: "/templates",
-        },
-        {
-          id: "custom",
-          label: "Custom template",
-          path: "/templates/general",
-        },
-      ],
-    };
-  }
-
-  if (path.startsWith("/connection")) {
-    return {
-      type: "standard",
-      title: "Connections",
-      items: [
-        {
-          id: "all",
-          label: "All connections",
-          path: "/connection",
-        },
-        {
-          id: "verified",
-          label: "Verified connections",
-          path: "/connection?status=verified",
-        },
-      ],
-    };
-  }
-
-  return {
-    type: "organization",
-    groups: [
-      {
-        id: "organization",
-        title: "Organization",
-        icon: FiHome,
-        items: [
-          {
-            id: "dashboard",
-            label: "Dashboard",
-            path: "/dashboard",
-          },
-          {
-            id: "teams",
-            label: "Teams",
-            path: "/teams",
-          },
-          {
-            id: "users",
-            label: "Users",
-            path: "/organization/users",
-          },
-       
-        ],
-      },
-      {
-        id: "plan",
-        title: "My Plan",
-        icon: FiCreditCard,
-        items: [
-          {
-            id: "subscription",
-            label: "Subscription",
-            path: "/pricing",
-            badge: "Free",
-          },
-          {
-            id: "credit-usage",
-            label: "AI replies usage",
-            path: "/organization/credit-usage",
-          },
-          {
-            id: "payments",
-            label: "Payments",
-            path: "/organization/payments",
-          },
-        ],
-      },
-      {
-        id: "utilities",
-        title: "Utilities",
-        icon: FiTool,
-        items: [
-          {
-            id: "installed-apps",
-            label: "Installed apps",
-            path: "/organization/apps",
-          },
-          {
-            id: "variables",
-            label: "Variables",
-            path: "/organization/variables",
-          },
-          {
-            id: "scenario-properties",
-            label: "Scenario properties",
-            path: "/organization/scenario-properties",
-          },
-          {
-            id: "notification-options",
-            label: "Notification options",
-            path: "/organization/notifications",
-          },
-        ],
-      },
-    ],
   };
-};
 
   const secondaryNav = getSecondaryNav();
-const isSecondaryItemActive = (item) => {
-  const [itemPath, itemQuery = ""] = item.path.split("?");
+  const isSecondaryItemActive = (item) => {
+    const [itemPath, itemQuery = ""] = item.path.split("?");
 
-  if (location.pathname !== itemPath) {
-    return false;
-  }
+    if (location.pathname !== itemPath) {
+      return false;
+    }
 
-  if (!itemQuery) {
-    return location.search === "" || item.id === "dashboard";
-  }
+    if (!itemQuery) {
+      return location.search === "" || item.id === "dashboard";
+    }
 
-  return location.search === `?${itemQuery}`;
-};
+    return location.search === `?${itemQuery}`;
+  };
   return (
     <div className="flex h-screen bg-[#F7F7FA] font-sans text-slate-900 overflow-hidden">
       {/* ------------------------------------------------------------- */}
-      {/* 1. PRIMARY MAIN SIDEBAR (Black Vertical Strip with Upgrade & Security) */}
+      {/* 1. PRIMARY MAIN SIDEBAR (gray-200 Theme Strip with Upgrade & Security) */}
       {/* ------------------------------------------------------------- */}
-      <aside className="w-[68px] bg-black flex flex-col items-center py-4 shrink-0 shadow-lg z-20 justify-between">
+      <aside className="w-[68px] bg-gray-200 border-r border-gray-300 flex flex-col items-center py-4 shrink-0 shadow-sm z-20 justify-between">
         <div className="flex flex-col items-center w-full">
           {/* App Logo */}
           <Link
             to="/dashboard"
-            className="flex h-10 w-10 items-center justify-center rounded-[8px] bg-white/10 text-white font-bold text-lg mb-6 hover:bg-white/20 transition"
-            title="Zenith Platform"
+            className="flex h-10 w-10 items-center justify-center rounded-full  border  mb-6  transition shadow-2xs"
+            title="Replex Engine Platform"
           >
-            <span className="bg-gradient-to-tr from-purple-200 to-white bg-clip-text text-transparent">
-              Z
+            <span className="relative flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 ring-1 ring-slate-300">
+              <span className="absolute h-3.5 w-3.5 rounded-full border-[3px] border-slate-950 border-r-transparent" />
+              <span className="absolute right-[5px] top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-slate-950" />
             </span>
           </Link>
 
           {/* Main Navigation */}
-          <nav className="flex flex-col gap-3 w-full px-2">
+          <nav className="flex flex-col gap-2.5 w-full px-2">
             {primaryNav.map((item) => {
               const Icon = item.icon;
               const isActive =
-  (item.id === "org" && isOrganizationActive) ||
-  (item.id === "inbox" && location.pathname.startsWith("/inbox")) ||
-  (item.id === "scenarios" && location.pathname.startsWith("/scenarios")) ||
-  (item.id === "connection" && location.pathname.startsWith("/connection")) ||
-  (item.id === "templates" && location.pathname.startsWith("/templates"));
+                (item.id === "org" && isOrganizationActive) ||
+                (item.id === "inbox" &&
+                  location.pathname.startsWith("/inbox")) ||
+                (item.id === "scenarios" &&
+                  location.pathname.startsWith("/scenarios")) ||
+                (item.id === "connection" &&
+                  location.pathname.startsWith("/connection")) ||
+                (item.id === "templates" &&
+                  location.pathname.startsWith("/templates"));
               return (
                 <button
                   key={item.id}
                   type="button"
                   onClick={() => navigate(item.path)}
-                  className={`group relative flex flex-col items-center justify-center w-full py-2.5 rounded-[8px] transition cursor-pointer ${
-                    isActive
-                      ? "bg-white/20 text-white font-semibold shadow-inner"
-                      : "text-slate-400 hover:bg-white/10 hover:text-white"
-                  }`}
+                  className="group flex flex-col items-center justify-center w-full py-1 cursor-pointer"
                   title={item.label}
                 >
-                  <Icon size={20} />
-                  <span className="text-[10px] font-medium mt-1 tracking-tight">
+                  <div
+                    className={`flex items-center justify-center h-10 w-10 rounded-xl transition ${
+                      isActive
+                        ? "bg-gray-300 border border-gray-400/60 text-slate-950 shadow-2xs"
+                        : "bg-transparent group-hover:bg-gray-300/50 text-slate-700"
+                    }`}
+                  >
+                    <Icon size={20} className={isActive ? "text-slate-950" : "text-slate-700 group-hover:text-slate-950"} />
+                  </div>
+                  <span
+                    className={`text-[10px] mt-1 tracking-tight ${
+                      isActive ? "font-bold text-slate-950" : "font-medium text-slate-700"
+                    }`}
+                  >
                     {item.label}
                   </span>
-                  {isActive && (
-                    <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-white rounded-r-full" />
-                  )}
                 </button>
               );
             })}
@@ -489,15 +575,23 @@ const isSecondaryItemActive = (item) => {
           <button
             type="button"
             onClick={() => navigate("/security")}
-            className={`group relative flex flex-col items-center justify-center w-full py-2 rounded-[8px] transition cursor-pointer ${
-              location.pathname === "/security"
-                ? "bg-white/20 text-white font-semibold"
-                : "text-slate-400 hover:bg-white/10 hover:text-white"
-            }`}
+            className="group flex flex-col items-center justify-center w-full py-1 cursor-pointer"
             title="Security"
           >
-            <FiShield size={18} />
-            <span className="text-[9px] font-medium mt-0.5 tracking-tight">
+            <div
+              className={`flex items-center justify-center h-9 w-9 rounded-xl transition ${
+                location.pathname === "/security"
+                  ? "bg-gray-300 border border-gray-400/60 text-slate-950 shadow-2xs"
+                  : "bg-transparent group-hover:bg-gray-300/50 text-slate-700"
+              }`}
+            >
+              <FiShield size={18} className={location.pathname === "/security" ? "text-slate-950" : "text-slate-700 group-hover:text-slate-950"} />
+            </div>
+            <span
+              className={`text-[9px] mt-0.5 tracking-tight ${
+                location.pathname === "/security" ? "font-bold text-slate-950" : "font-medium text-slate-700"
+              }`}
+            >
               Security
             </span>
           </button>
@@ -506,7 +600,7 @@ const isSecondaryItemActive = (item) => {
           <button
             type="button"
             onClick={() => navigate("/pricing")}
-            className="w-full py-1.5 rounded-[8px] bg-white text-black hover:bg-slate-200 font-bold text-[10px] transition cursor-pointer shadow-sm text-center"
+            className="w-full py-1.5 rounded-[8px] bg-slate-900 text-white hover:bg-black font-bold text-[10px] transition cursor-pointer shadow-xs text-center border border-slate-900"
             title="Upgrade Plan"
           >
             Upgrade
@@ -517,103 +611,45 @@ const isSecondaryItemActive = (item) => {
       {/* ------------------------------------------------------------- */}
       {/* 2. SECONDARY SUB-NAVIGATION SIDEBAR (Gray Theme) */}
       {/* ------------------------------------------------------------- */}
-     {/* ------------------------------------------------------------- */}
-{/* 2. SECONDARY SUB-NAVIGATION SIDEBAR */}
-{/* ------------------------------------------------------------- */}
+      {/* ------------------------------------------------------------- */}
+      {/* 2. SECONDARY SUB-NAVIGATION SIDEBAR */}
+      {/* ------------------------------------------------------------- */}
 
-{secondaryNav.type === "inbox" ? (
-  <aside className="w-[230px] shrink-0 border-r border-slate-200 bg-white">
-    <div className="px-3 py-4">
-
-      {/* ---- LEAD INBOX group ---- */}
-      <div className="mb-3 flex items-center gap-2 border-b border-slate-200 px-2 pb-3">
-        <FiInbox className="h-4 w-4 text-slate-900" />
-        <h2 className="text-[13px] font-bold text-slate-900">Lead Inbox</h2>
-      </div>
-      <nav className="flex flex-col gap-0.5">
-        {[
-          { id: "all",     label: "All",     icon: FiInbox,       count: inboxAllCount,      path: "/inbox" },
-          { id: "shopify", label: "Shopify", icon: FiShoppingBag, count: inboxShopifyCount, path: "/inbox?filter=shopify" },
-          { id: "custom",  label: "Custom",  icon: FiSliders,     count: inboxCustomCount,  path: "/inbox?filter=custom" },
-        ].map((item) => {
-          const isActive = inboxActiveFilter === item.id;
-          return (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => navigate(item.path)}
-              className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-[13px] transition ${
-                isActive
-                  ? "bg-slate-200 font-semibold text-slate-950"
-                  : "font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-950"
-              }`}
-            >
-              <span>{item.label}</span>
-              <span className="rounded-full bg-slate-700 px-2 py-0.5 text-[10px] font-semibold text-white">
-                {item.count}
-              </span>
-            </button>
-          );
-        })}
-      </nav>
-
-      {/* ---- STATUS FILTERS group ---- */}
-      <div className="mt-5 mb-3 flex items-center gap-2 border-b border-slate-200 px-2 pb-3">
-        <FiSliders className="h-4 w-4 text-slate-900" />
-        <h2 className="text-[13px] font-bold text-slate-900">Status Filters</h2>
-      </div>
-      <nav className="flex flex-col gap-0.5">
-        {[
-          { id: "awaiting", label: "Awaiting reply", count: inboxAwaitingCount, path: "/inbox?filter=awaiting" },
-          { id: "replied",  label: "Replied",        count: inboxRepliedCount,  path: "/inbox?filter=replied"  },
-          { id: "secured",  label: "Secured",        count: inboxSecuredCount,  path: "/inbox?filter=secured"  },
-        ].map((item) => {
-          const isActive = inboxActiveFilter === item.id;
-          return (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => navigate(item.path)}
-              className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-[13px] transition ${
-                isActive
-                  ? "bg-slate-200 font-semibold text-slate-950"
-                  : "font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-950"
-              }`}
-            >
-              <span>{item.label}</span>
-              <span className="rounded-full bg-slate-700 px-2 py-0.5 text-[10px] font-semibold text-white">
-                {item.count}
-              </span>
-            </button>
-          );
-        })}
-      </nav>
-
-    </div>
-  </aside>
-) : secondaryNav.type === "organization" ? (
-  <aside className="w-[230px] shrink-0 border-r border-slate-200 bg-white">
-    <div className="px-3 py-4">
-      {secondaryNav.groups.map((group, groupIndex) => {
-        const GroupIcon = group.icon;
-
-        return (
-          <div
-  key={group.id}
-  className={groupIndex > 0 ? "mt-5" : ""}
->
-           <div className="mb-3 flex items-center gap-2 border-b border-slate-200 px-2 pb-3">
-  <GroupIcon className="h-4 w-4 text-slate-900" />
-
-  <h2 className="text-[13px] font-bold text-slate-900">
-    {group.title}
-  </h2>
-</div>
-
+      {secondaryNav.type === "inbox" ? (
+        <aside className="w-[230px] shrink-0 border-r border-slate-200 bg-white">
+          <div className="px-3 py-4">
+            {/* ---- LEAD INBOX group ---- */}
+            <div className="mb-3 flex items-center gap-2 border-b border-slate-200 px-2 pb-3">
+              <FiInbox className="h-4 w-4 text-slate-900" />
+              <h2 className="text-[13px] font-bold text-slate-900">
+                Lead Inbox
+              </h2>
+            </div>
             <nav className="flex flex-col gap-0.5">
-              {group.items.map((item) => {
-                const isActive = isSecondaryItemActive(item);
-
+              {[
+                {
+                  id: "all",
+                  label: "All",
+                  icon: FiInbox,
+                  count: inboxAllCount,
+                  path: "/inbox",
+                },
+                {
+                  id: "shopify",
+                  label: "Shopify",
+                  icon: FiShoppingBag,
+                  count: inboxShopifyCount,
+                  path: "/inbox?filter=shopify",
+                },
+                {
+                  id: "custom",
+                  label: "Custom",
+                  icon: FiSliders,
+                  count: inboxCustomCount,
+                  path: "/inbox?filter=custom",
+                },
+              ].map((item) => {
+                const isActive = inboxActiveFilter === item.id;
                 return (
                   <button
                     key={item.id}
@@ -626,10 +662,138 @@ const isSecondaryItemActive = (item) => {
                     }`}
                   >
                     <span>{item.label}</span>
+                    <span className="rounded-full bg-slate-700 px-2 py-0.5 text-[10px] font-semibold text-white">
+                      {item.count}
+                    </span>
+                  </button>
+                );
+              })}
+            </nav>
 
-                    {item.badge && (
+            {/* ---- STATUS FILTERS group ---- */}
+            <div className="mt-5 mb-3 flex items-center gap-2 border-b border-slate-200 px-2 pb-3">
+              <FiSliders className="h-4 w-4 text-slate-900" />
+              <h2 className="text-[13px] font-bold text-slate-900">
+                Status Filters
+              </h2>
+            </div>
+            <nav className="flex flex-col gap-0.5">
+              {[
+                {
+                  id: "awaiting",
+                  label: "Awaiting reply",
+                  count: inboxAwaitingCount,
+                  path: "/inbox?filter=awaiting",
+                },
+                {
+                  id: "replied",
+                  label: "Replied",
+                  count: inboxRepliedCount,
+                  path: "/inbox?filter=replied",
+                },
+                {
+                  id: "secured",
+                  label: "Secured",
+                  count: inboxSecuredCount,
+                  path: "/inbox?filter=secured",
+                },
+              ].map((item) => {
+                const isActive = inboxActiveFilter === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => navigate(item.path)}
+                    className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-[13px] transition ${
+                      isActive
+                        ? "bg-slate-200 font-semibold text-slate-950"
+                        : "font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-950"
+                    }`}
+                  >
+                    <span>{item.label}</span>
+                    <span className="rounded-full bg-slate-700 px-2 py-0.5 text-[10px] font-semibold text-white">
+                      {item.count}
+                    </span>
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+        </aside>
+      ) : secondaryNav.type === "organization" ? (
+        <aside className="w-[230px] shrink-0 border-r border-slate-200 bg-white">
+          <div className="px-3 py-4">
+            {secondaryNav.groups.map((group, groupIndex) => {
+              const GroupIcon = group.icon;
+
+              return (
+                <div key={group.id} className={groupIndex > 0 ? "mt-5" : ""}>
+                  <div className="mb-3 flex items-center gap-2 border-b border-slate-200 px-2 pb-3">
+                    <GroupIcon className="h-4 w-4 text-slate-900" />
+
+                    <h2 className="text-[13px] font-bold text-slate-900">
+                      {group.title}
+                    </h2>
+                  </div>
+
+                  <nav className="flex flex-col gap-0.5">
+                    {group.items.map((item) => {
+                      const isActive = isSecondaryItemActive(item);
+
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => navigate(item.path)}
+                          className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-[13px] transition ${
+                            isActive
+                              ? "bg-slate-200 font-semibold text-slate-950"
+                              : "font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-950"
+                          }`}
+                        >
+                          <span>{item.label}</span>
+
+                          {item.badge && (
+                            <span className="rounded-full bg-slate-700 px-2 py-0.5 text-[10px] font-semibold text-white">
+                              {item.badge}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </nav>
+                </div>
+              );
+            })}
+          </div>
+        </aside>
+      ) : (
+        <aside className="w-[230px] shrink-0 border-r border-slate-200 bg-white">
+          <div className="px-3 py-4">
+            {/* Section header — same style as Organization groups */}
+            <div className="mb-3 flex items-center gap-2 border-b border-slate-200 px-2 pb-3">
+              <h2 className="text-[13px] font-bold text-slate-900">
+                {secondaryNav.title}
+              </h2>
+            </div>
+            <nav className="flex flex-col gap-0.5">
+              {secondaryNav.items.map((sub) => {
+                const isSubActive = isSecondaryItemActive(sub);
+                return (
+                  <button
+                    key={sub.id}
+                    type="button"
+                    onClick={() => navigate(sub.path)}
+                    className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-[13px] transition ${
+                      isSubActive
+                        ? "bg-slate-200 font-semibold text-slate-950"
+                        : "font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-950"
+                    }`}
+                  >
+                    <span>{sub.label}</span>
+                    {sub.badge && (
                       <span className="rounded-full bg-slate-700 px-2 py-0.5 text-[10px] font-semibold text-white">
-                        {item.badge}
+                        {sub.badge}
                       </span>
                     )}
                   </button>
@@ -637,44 +801,8 @@ const isSecondaryItemActive = (item) => {
               })}
             </nav>
           </div>
-        );
-      })}
-    </div>
-  </aside>
-) : (
-  <aside className="w-[230px] shrink-0 border-r border-slate-200 bg-white">
-    <div className="px-3 py-4">
-      {/* Section header — same style as Organization groups */}
-      <div className="mb-3 flex items-center gap-2 border-b border-slate-200 px-2 pb-3">
-        <h2 className="text-[13px] font-bold text-slate-900">{secondaryNav.title}</h2>
-      </div>
-      <nav className="flex flex-col gap-0.5">
-        {secondaryNav.items.map((sub) => {
-          const isSubActive = isSecondaryItemActive(sub);
-          return (
-            <button
-              key={sub.id}
-              type="button"
-              onClick={() => navigate(sub.path)}
-              className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-[13px] transition ${
-                isSubActive
-                  ? "bg-slate-200 font-semibold text-slate-950"
-                  : "font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-950"
-              }`}
-            >
-              <span>{sub.label}</span>
-              {sub.badge && (
-                <span className="rounded-full bg-slate-700 px-2 py-0.5 text-[10px] font-semibold text-white">
-                  {sub.badge}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </nav>
-    </div>
-  </aside>
-)}
+        </aside>
+      )}
 
       {/* ------------------------------------------------------------- */}
       {/* 3. MAIN CONTENT CANVAS WRAPPER WITH TOP HEADER */}
@@ -689,7 +817,9 @@ const isSecondaryItemActive = (item) => {
             </div>
             <div className="flex flex-col min-w-0">
               <span className="text-xs font-bold text-slate-900 truncate">
-                {user?.organizationName || user?.companyName || "My Organization"}
+                {user?.organizationName ||
+                  user?.companyName ||
+                  "My Organization"}
               </span>
               <span className="text-[10px] text-slate-500 truncate">
                 {user?.email || "My Team"}
@@ -699,6 +829,23 @@ const isSecondaryItemActive = (item) => {
 
           {/* Right Header Controls */}
           <div className="flex items-center gap-3">
+            {/* AI Replies Active/Paused Toggle Button */}
+            <button
+              type="button"
+              onClick={handleToggleAiReplies}
+              disabled={togglingAi}
+              className={`h-8 px-3 rounded-[8px] border text-xs font-bold transition cursor-pointer flex items-center gap-1.5 shadow-2xs ${
+                aiActive
+                  ? "bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100"
+                  : "bg-slate-100 text-slate-600 border-slate-300 hover:bg-slate-200"
+              }`}
+              title={aiActive ? "AI Replies are ACTIVE (Click to pause)" : "AI Replies are PAUSED (Click to activate)"}
+            >
+              <span className={`h-2 w-2 rounded-full ${aiActive ? "bg-emerald-600 animate-pulse" : "bg-slate-400"}`} />
+              <FiZap size={13} className={aiActive ? "text-emerald-700" : "text-slate-500"} />
+              <span>{aiActive ? "AI Replies: Active" : "AI Replies: Paused"}</span>
+            </button>
+
             <button
               type="button"
               onClick={() => setShowOrgSettingsModal(true)}
@@ -736,7 +883,9 @@ const isSecondaryItemActive = (item) => {
               {showNotificationsDropdown && (
                 <div className="absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-xl border border-slate-200 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
                   <div className="px-4 py-2 border-b border-slate-100 flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-900">Notifications</span>
+                    <span className="text-xs font-bold text-slate-900">
+                      Notifications
+                    </span>
                     <span className="text-[10px] bg-slate-100 px-2 py-0.5 rounded-full font-semibold text-slate-600">
                       {emails.length} New
                     </span>
@@ -783,8 +932,12 @@ const isSecondaryItemActive = (item) => {
               {showProfileDropdown && (
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-[200] animate-in fade-in slide-in-from-top-2 duration-150">
                   <div className="px-4 py-2 border-b border-slate-100">
-                    <p className="text-xs font-bold text-slate-900 truncate">{userName}</p>
-                    <p className="text-[10px] text-slate-400 truncate">{user?.email}</p>
+                    <p className="text-xs font-bold text-slate-900 truncate">
+                      {userName}
+                    </p>
+                    <p className="text-[10px] text-slate-400 truncate">
+                      {user?.email}
+                    </p>
                   </div>
                   <button
                     type="button"
@@ -824,7 +977,9 @@ const isSecondaryItemActive = (item) => {
         </header>
 
         {/* Main Body Canvas */}
-        <main className={`flex-1 overflow-hidden ${location.pathname.startsWith("/inbox") || location.pathname.startsWith("/scenarios") || location.pathname.startsWith("/connection") || location.pathname.startsWith("/templates") ? "" : "overflow-y-auto p-4 md:p-6"}`}>
+        <main
+          className={`flex-1 overflow-hidden ${location.pathname.startsWith("/inbox") || location.pathname.startsWith("/scenarios") || location.pathname.startsWith("/connection") || location.pathname.startsWith("/templates") ? "" : "overflow-y-auto p-4 md:p-6"}`}
+        >
           {children}
         </main>
       </div>
@@ -838,7 +993,8 @@ const isSecondaryItemActive = (item) => {
             <div className="bg-black text-white p-6 flex items-start justify-between">
               <div>
                 <h3 className="text-lg font-bold flex items-center gap-2">
-                  <span className="text-slate-300 font-normal">+</span> Create New Scenario
+                  <span className="text-slate-300 font-normal">+</span> Create
+                  New Scenario
                 </h3>
                 <p className="text-xs text-slate-400 mt-1">
                   Select a scenario type to build for your workspace
@@ -875,10 +1031,14 @@ const isSecondaryItemActive = (item) => {
                   </span>
                 </div>
                 <p className="text-xs text-slate-500 leading-relaxed pl-13">
-                  Capture directory inquiry leads automatically and trigger personalized email response flows.
+                  Capture directory inquiry leads automatically and trigger
+                  personalized email response flows.
                 </p>
                 <div className="text-[11px] text-slate-400 font-medium pl-13">
-                  Plan Limit: <span className="font-bold text-slate-700">Max 1 scenario</span>
+                  Plan Limit:{" "}
+                  <span className="font-bold text-slate-700">
+                    Max 1 scenario
+                  </span>
                 </div>
               </div>
 
@@ -903,10 +1063,14 @@ const isSecondaryItemActive = (item) => {
                   </span>
                 </div>
                 <p className="text-xs text-slate-500 leading-relaxed pl-13">
-                  Build custom multi-branch triggers, delay filters, and custom webhook connections.
+                  Build custom multi-branch triggers, delay filters, and custom
+                  webhook connections.
                 </p>
                 <div className="text-[11px] text-slate-400 font-medium pl-13">
-                  Plan Limit: <span className="font-bold text-slate-700">Max 2 scenarios</span>
+                  Plan Limit:{" "}
+                  <span className="font-bold text-slate-700">
+                    Max 2 scenarios
+                  </span>
                 </div>
               </div>
             </div>
@@ -955,7 +1119,9 @@ const isSecondaryItemActive = (item) => {
                 </label>
                 <select
                   value={orgForm.region}
-                  onChange={(e) => setOrgForm({ ...orgForm, region: e.target.value })}
+                  onChange={(e) =>
+                    setOrgForm({ ...orgForm, region: e.target.value })
+                  }
                   className="w-full px-3 py-2 rounded-[8px] border border-slate-300 bg-slate-100 text-xs text-slate-800"
                 >
                   <option value="US">US</option>
@@ -971,12 +1137,18 @@ const isSecondaryItemActive = (item) => {
                 </label>
                 <select
                   value={orgForm.timezone}
-                  onChange={(e) => setOrgForm({ ...orgForm, timezone: e.target.value })}
+                  onChange={(e) =>
+                    setOrgForm({ ...orgForm, timezone: e.target.value })
+                  }
                   className="w-full px-3 py-2 rounded-[8px] border border-slate-300 bg-white text-xs text-slate-800"
                 >
-                  <option value="(GMT-05:00) America/Toronto">(GMT-05:00) America/Toronto</option>
+                  <option value="(GMT-05:00) America/Toronto">
+                    (GMT-05:00) America/Toronto
+                  </option>
                   <option value="(GMT+00:00) UTC">(GMT+00:00) UTC</option>
-                  <option value="(GMT+05:00) Asia/Karachi">(GMT+05:00) Asia/Karachi</option>
+                  <option value="(GMT+05:00) Asia/Karachi">
+                    (GMT+05:00) Asia/Karachi
+                  </option>
                 </select>
               </div>
 
@@ -986,7 +1158,9 @@ const isSecondaryItemActive = (item) => {
                 </label>
                 <select
                   value={orgForm.country}
-                  onChange={(e) => setOrgForm({ ...orgForm, country: e.target.value })}
+                  onChange={(e) =>
+                    setOrgForm({ ...orgForm, country: e.target.value })
+                  }
                   className="w-full px-3 py-2 rounded-[8px] border border-slate-300 bg-white text-xs text-slate-800"
                 >
                   <option value="Canada">Canada</option>
@@ -1003,7 +1177,9 @@ const isSecondaryItemActive = (item) => {
                 <input
                   type="text"
                   value={orgForm.partnerLink}
-                  onChange={(e) => setOrgForm({ ...orgForm, partnerLink: e.target.value })}
+                  onChange={(e) =>
+                    setOrgForm({ ...orgForm, partnerLink: e.target.value })
+                  }
                   placeholder="Optional partner link"
                   className="w-full px-3 py-2 rounded-[8px] border border-slate-300 bg-white text-xs text-slate-800"
                 />

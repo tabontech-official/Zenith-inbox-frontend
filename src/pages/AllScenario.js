@@ -649,7 +649,7 @@ const AllScenariosPage = () => {
 
   return (
     <AppLayout>
-      <div className="flex-1 overflow-y-auto bg-zinc-100 font-sans text-zinc-900">
+      <div className="flex-1 overflow-y-auto px-6 py-3 bg-zinc-100 font-sans text-zinc-900">
         {/* Full-width container */}
         <div className="w-full ">
           {/* Header */}
