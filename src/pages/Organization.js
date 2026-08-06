@@ -161,22 +161,48 @@ const Organization = () => {
           </div>
 
           {/* Card 2: AI Replies Left */}
-          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs flex items-center justify-between">
-            <div className="flex flex-col">
-              <span className="text-xs font-medium text-slate-500 mb-1 flex items-center gap-1">
-                AI replies left <FiExternalLink size={11} className="text-slate-400" />
-              </span>
-              <div className="flex items-baseline gap-1">
-                <span className="text-xl font-bold text-slate-900">
-                  {user?.creditsLeft || 1000}
-                </span>
-                <span className="text-xs font-medium text-slate-400">/ 1,000</span>
+          {(() => {
+            const plan = (user?.subscription?.plan || "Explore").toLowerCase();
+            const baseLimit =
+              plan === "elevate" ? 500 :
+              plan === "unite" ? 1000 :
+              50; // Explore free
+            const extra = user?.subscription?.extraAiReplies || 0;
+            const totalLimit = baseLimit + extra;
+            const used = user?.subscription?.aiRepliesUsed || 0;
+            const left = Math.max(0, totalLimit - used);
+            const pct = Math.min(100, Math.round((used / (totalLimit || 1)) * 100));
+            return (
+              <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs flex items-center justify-between">
+                <div className="flex flex-col">
+                  <Link
+                    to="/pricing"
+                    className="text-xs font-medium text-slate-500 mb-1 flex items-center gap-1 hover:text-slate-700 transition"
+                  >
+                    AI replies left <FiExternalLink size={11} className="text-slate-400" />
+                  </Link>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-xl font-bold text-slate-900">
+                      {left.toLocaleString()}
+                    </span>
+                    <span className="text-xs font-medium text-slate-400">
+                      / {totalLimit.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="mt-2 w-full bg-slate-100 rounded-full h-1.5 overflow-hidden" style={{ minWidth: 100 }}>
+                    <div
+                      className={`h-1.5 rounded-full transition-all ${pct >= 90 ? "bg-red-500" : pct >= 60 ? "bg-amber-400" : "bg-emerald-500"}`}
+                      style={{ width: `${100 - pct}%` }}
+                    />
+                  </div>
+                  <span className="text-[10px] text-slate-400 mt-0.5">{pct}% used</span>
+                </div>
+                <div className="h-10 w-10 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center flex-shrink-0">
+                  <FiZap size={16} />
+                </div>
               </div>
-            </div>
-            <div className="h-10 w-10 rounded-full bg-slate-100 text-slate-900 flex items-center justify-center font-bold text-sm">
-              O
-            </div>
-          </div>
+            );
+          })()}
 
           {/* Card 3: Total Secured Leads */}
           <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs flex items-center justify-between">
@@ -197,28 +223,47 @@ const Organization = () => {
           </div>
 
           {/* Card 4: Total Active Scenario */}
-          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs flex items-center justify-between">
-            <div className="flex flex-col">
-              <span className="text-xs font-medium text-slate-500 mb-1">
-                Total active scenario
-              </span>
-              <div className="flex items-baseline gap-1">
-                <span className="text-xl font-bold text-slate-900">
-                  {activeScenarios.length}
-                </span>
-                <span className="text-xs font-medium text-slate-400">
-                  / {recentScenarios.length || 2}
-                </span>
+          {(() => {
+            const plan = (user?.subscription?.plan || "Explore").toLowerCase();
+            const activeLimit =
+              plan === "elevate" ? 5 :
+              plan === "unite" ? 15 :
+              plan === "enterprise" ? 999 :
+              1; // Explore free
+            const activeCount = activeScenarios.length;
+            const pct = activeLimit === 999 ? 0 : Math.min(100, Math.round((activeCount / activeLimit) * 100));
+            return (
+              <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs flex items-center justify-between">
+                <div className="flex flex-col flex-1 min-w-0">
+                  <span className="text-xs font-medium text-slate-500 mb-1">
+                    Active scenarios
+                  </span>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-xl font-bold text-slate-900">
+                      {activeCount}
+                    </span>
+                    <span className="text-xs font-medium text-slate-400">
+                      / {activeLimit === 999 ? "∞" : activeLimit}
+                    </span>
+                  </div>
+                  <div className="mt-2 w-full bg-slate-100 rounded-full h-1.5 overflow-hidden" style={{ minWidth: 100 }}>
+                    <div
+                      className={`h-1.5 rounded-full transition-all ${pct >= 100 ? "bg-red-500" : pct >= 60 ? "bg-amber-400" : "bg-emerald-500"}`}
+                      style={{ width: activeLimit === 999 ? "20%" : `${pct}%` }}
+                    />
+                  </div>
+                  <span className="text-[10px] text-slate-400 mt-0.5 capitalize">{user?.subscription?.plan || "Explore"} plan</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => navigate("/pricing")}
+                  className="ml-3 flex-shrink-0 rounded-[8px] bg-black hover:bg-slate-800 px-3 py-1.5 text-xs font-semibold text-white transition cursor-pointer"
+                >
+                  Upgrade
+                </button>
               </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => navigate("/pricing")}
-              className="rounded-[8px] bg-black hover:bg-slate-800 px-3 py-1.5 text-xs font-semibold text-white transition cursor-pointer"
-            >
-              Upgrade
-            </button>
-          </div>
+            );
+          })()}
         </div>
 
         {/* ----------------------------------------------------------- */}
