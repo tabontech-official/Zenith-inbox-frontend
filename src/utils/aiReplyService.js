@@ -9,7 +9,7 @@ const OPENROUTER_API_KEY =
 const OPENROUTER_MODEL = "google/gemma-4-26b-a4b-it:free";
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
-const BACKEND_URL = "http://localhost:5000";
+const BACKEND_URL = "https://email-syncing-backend.vercel.app";
 
 /**
  * Fetch the company profile for the given user.

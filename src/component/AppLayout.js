@@ -106,7 +106,7 @@ const AppLayout = ({ children }) => {
 
     try {
       setTogglingAi(true);
-      const res = await axios.post(`http://localhost:5000/auth/toggle-ai-replies/${targetUserId}`, {
+      const res = await axios.post(`https://email-syncing-backend.vercel.app/auth/toggle-ai-replies/${targetUserId}`, {
         enabled: nextStatus,
         userId: targetUserId,
       });
@@ -117,7 +117,7 @@ const AppLayout = ({ children }) => {
     } catch (err) {
       console.error("Error toggling AI replies:", err);
       try {
-        await axios.patch(`http://localhost:5000/auth/user/ai`, {
+        await axios.patch(`https://email-syncing-backend.vercel.app/auth/user/ai`, {
           userId: targetUserId,
           enabled: nextStatus,
         });
@@ -149,7 +149,7 @@ const AppLayout = ({ children }) => {
     try {
       if (!userId) return;
       const res = await axios.get(
-        `http://localhost:5000/auth/getUsers/${userId}`,
+        `https://email-syncing-backend.vercel.app/auth/getUsers/${userId}`,
       );
       const fetchedUser = res.data?.data || contextUser || null;
       if (fetchedUser) {
@@ -178,7 +178,7 @@ const AppLayout = ({ children }) => {
     try {
       if (!userId) return;
       const res = await axios.get(
-        `http://localhost:5000/auth/organization/get/${userId}`,
+        `https://email-syncing-backend.vercel.app/auth/organization/get/${userId}`,
       );
       const orgData = res.data?.data;
       if (orgData) {
@@ -193,7 +193,7 @@ const AppLayout = ({ children }) => {
       }
 
       const emailsRes = await axios.get(
-        `http://localhost:5000/mailhook/getAllEmailsData/${userId}`,
+        `https://email-syncing-backend.vercel.app/mailhook/getAllEmailsData/${userId}`,
       );
       const threads = emailsRes.data?.data?.threads || [];
       // Normalize: flatten thread root emails
@@ -258,8 +258,8 @@ const AppLayout = ({ children }) => {
     const fetchSidebarData = async () => {
       try {
         const [scenRes, connRes] = await Promise.all([
-          axios.get(`http://localhost:5000/scenario/user/${userId}`).catch(() => null),
-          axios.get(`http://localhost:5000/auth/getConnection/${userId}`).catch(() => null),
+          axios.get(`https://email-syncing-backend.vercel.app/scenario/user/${userId}`).catch(() => null),
+          axios.get(`https://email-syncing-backend.vercel.app/auth/getConnection/${userId}`).catch(() => null),
         ]);
 
         let scens = Array.isArray(scenRes?.data)
@@ -395,7 +395,7 @@ const AppLayout = ({ children }) => {
       const currentUserId = userId || user?._id;
       if (currentUserId) {
         await axios.put(
-          `http://localhost:5000/auth/updateUserAndOrganization/${currentUserId}`,
+          `https://email-syncing-backend.vercel.app/auth/updateUserAndOrganization/${currentUserId}`,
           {
             organizationName: orgForm.organizationName,
             Region: orgForm.region,
@@ -430,7 +430,7 @@ const AppLayout = ({ children }) => {
       const currentUserId = localStorage.getItem("userid") || user?._id;
       if (currentUserId) {
         await fetch(
-          `http://localhost:5000/auth/logout/${currentUserId}`,
+          `https://email-syncing-backend.vercel.app/auth/logout/${currentUserId}`,
           {
             method: "POST",
           },

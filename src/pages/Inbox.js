@@ -42,7 +42,7 @@ import {
   FiChevronDown,
 } from "react-icons/fi";
 
-const API_BASE_URL = "http://localhost:5000/mailhook";
+const API_BASE_URL = "https://email-syncing-backend.vercel.app/mailhook";
 
 const Inbox = () => {
   const [emails, setEmails] = useState([]);
@@ -412,7 +412,7 @@ const Inbox = () => {
 
     // Check AI status from backend
     axios
-      .get(`http://localhost:5000/auth/getUsers/${userId}`)
+      .get(`https://email-syncing-backend.vercel.app/auth/getUsers/${userId}`)
       .then((res) => {
         const userData = res.data?.data;
         if (userData) {

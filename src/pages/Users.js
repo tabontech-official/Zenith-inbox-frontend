@@ -19,7 +19,7 @@ import axios from "axios";
 import AppLayout from "../component/AppLayout";
 import { UserContext } from "../component/UserContext";
 
-const API_BASE_URL = "http://localhost:5000";
+const API_BASE_URL = "https://email-syncing-backend.vercel.app";
 
 const initialPermissions = {
   templates: { view: true, edit: true, delete: false },

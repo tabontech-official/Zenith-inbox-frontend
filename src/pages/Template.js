@@ -32,7 +32,7 @@ export default function Template() {
     // If activating, first check company profile is filled
     if (nextStatus) {
       try {
-        const cpRes = await axios.get(`http://localhost:5000/api/company-profile/${targetUserId}`);
+        const cpRes = await axios.get(`https://email-syncing-backend.vercel.app/api/company-profile/${targetUserId}`);
         // API returns { success, data: { company: { companyName, businessDescription, ... }, ... } }
         const profileData = cpRes.data?.data || cpRes.data;
         const cp = profileData?.company || profileData;
@@ -56,10 +56,10 @@ export default function Template() {
     try {
       setTogglingAi(true);
       const res = await axios.post(
-        `http://localhost:5000/auth/toggle-ai-replies/${targetUserId}`,
+        `https://email-syncing-backend.vercel.app/auth/toggle-ai-replies/${targetUserId}`,
         { enabled: nextStatus, userId: targetUserId }
       );
-      await axios.patch("http://localhost:5000/template/ai-toggle-all", {
+      await axios.patch("https://email-syncing-backend.vercel.app/template/ai-toggle-all", {
         userId: targetUserId,
         platform: "shopify",
         aiResponse: nextStatus,
@@ -102,7 +102,7 @@ export default function Template() {
       setLoading(true);
       const userId = localStorage.getItem("userid");
       const res = await axios.get(
-        "http://localhost:5000/template/all",
+        "https://email-syncing-backend.vercel.app/template/all",
         {
           params: { userId },
         },
@@ -129,7 +129,7 @@ export default function Template() {
       prev.map((t) => (t._id === templateId ? { ...t, aiResponse: nextStatus } : t))
     );
     try {
-      await axios.patch(`http://localhost:5000/template/ai-toggle/${templateId}`, {
+      await axios.patch(`https://email-syncing-backend.vercel.app/template/ai-toggle/${templateId}`, {
         aiResponse: nextStatus,
       });
       toast.success(nextStatus ? "AI Response enabled for template!" : "Switched to Fixed Template.");
@@ -146,7 +146,7 @@ export default function Template() {
     if (!userId) return;
     setTemplates((prev) => prev.map((t) => ({ ...t, aiResponse: enableAll })));
     try {
-      await axios.patch("http://localhost:5000/template/ai-toggle-all", {
+      await axios.patch("https://email-syncing-backend.vercel.app/template/ai-toggle-all", {
         userId,
         platform: "shopify",
         aiResponse: enableAll,
@@ -254,13 +254,13 @@ export default function Template() {
 
       if (editingId) {
         await axios.put(
-          `http://localhost:5000/template/update/${editingId}`,
+          `https://email-syncing-backend.vercel.app/template/update/${editingId}`,
           payload,
         );
         toast.success("Template updated successfully!");
       } else {
         await axios.post(
-          "http://localhost:5000/template/create",
+          "https://email-syncing-backend.vercel.app/template/create",
           payload,
         );
         toast.success("Template created successfully!");
@@ -293,7 +293,7 @@ export default function Template() {
 
     try {
       await axios.put(
-        `http://localhost:5000/template/update/${id}`,
+        `https://email-syncing-backend.vercel.app/template/update/${id}`,
         {
           active: !currentStatus,
         },
@@ -315,7 +315,7 @@ export default function Template() {
     try {
       const userId = localStorage.getItem("userid");
       const res = await axios.patch(
-        "http://localhost:5000/template/templatestatus/all",
+        "https://email-syncing-backend.vercel.app/template/templatestatus/all",
         { userId },
       );
       if (res.data.success) {

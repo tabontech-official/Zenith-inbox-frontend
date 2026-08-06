@@ -49,7 +49,7 @@ const TalkToSales = () => {
     try{
 
       const res = await fetch(
-        "http://localhost:5000/talk/talk-to-sales",
+        "https://email-syncing-backend.vercel.app/talk/talk-to-sales",
         {
           method:"POST",
           headers:{

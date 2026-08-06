@@ -87,7 +87,7 @@ new_return = split_str + """
                   onClick={async () => {
                     try {
                       const res = await axios.post(
-                        "http://localhost:5000/mailhookcard/create",
+                        "https://email-syncing-backend.vercel.app/mailhookcard/create",
                         {
                           userId: user._id,
                           forwardingEmail: "",

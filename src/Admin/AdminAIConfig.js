@@ -13,7 +13,7 @@ import Sidebar from "../component/Sidebar";
 import Navbar from "../component/Navbar";
 import toast from "react-hot-toast";
 
-const API_BASE_URL = "http://localhost:5000/api/ai-config";
+const API_BASE_URL = "https://email-syncing-backend.vercel.app/api/ai-config";
 
 // Preset Free OpenRouter Models
 const OPENROUTER_FREE_MODELS = [
