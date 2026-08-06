@@ -49,7 +49,7 @@
 //     setLoading(true);
 //     try {
 //       const response = await axios.post(
-//         "http://localhost:5000/auth/google-login",
+//         "https://email-syncing-backend.vercel.app/auth/google-login",
 //         { credential: credentialResponse.credential }
 //       );
 
@@ -95,7 +95,7 @@
 
 //     setLoading(true);
 //     try {
-//       const response = await axios.post("http://localhost:5000/auth/signUp", {
+//       const response = await axios.post("https://email-syncing-backend.vercel.app/auth/signUp", {
 //         fullName,
 //         email,
 //         password,
@@ -391,7 +391,7 @@
 //     setLoading(true);
 //     try {
 //       const response = await axios.post(
-//         "http://localhost:5000/auth/google-login",
+//         "https://email-syncing-backend.vercel.app/auth/google-login",
 //         { credential: credentialResponse.credential }
 //       );
 
@@ -437,7 +437,7 @@
 
 //     setLoading(true);
 //     try {
-//       const response = await axios.post("http://localhost:5000/auth/signUp", {
+//       const response = await axios.post("https://email-syncing-backend.vercel.app/auth/signUp", {
 //         fullName,
 //         email,
 //         password,
@@ -779,7 +779,7 @@ const RegisterPage = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:5000/auth/google-login",
+        "https://email-syncing-backend.vercel.app/auth/google-login",
         { credential: credentialResponse.credential },
       );
 
@@ -831,7 +831,7 @@ const RegisterPage = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:5000/auth/signUp",
+        "https://email-syncing-backend.vercel.app/auth/signUp",
         {
           fullName,
           email,

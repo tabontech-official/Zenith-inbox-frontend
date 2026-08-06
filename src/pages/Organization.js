@@ -42,7 +42,7 @@ const Organization = () => {
     try {
       if (!userId) return;
       const res = await axios.get(
-        `http://localhost:5000/auth/getUsers/${userId}`
+        `https://email-syncing-backend.vercel.app/auth/getUsers/${userId}`
       );
       const fetchedUser = res.data?.data || contextUser || null;
       setUser(fetchedUser);
@@ -61,7 +61,7 @@ const Organization = () => {
       if (!userId) return;
       setLoading(true);
       const res = await axios.get(
-        `http://localhost:5000/mailhook/getAllEmailsData/${userId}`
+        `https://email-syncing-backend.vercel.app/mailhook/getAllEmailsData/${userId}`
       );
       const threads = res.data?.data?.threads || [];
       // Normalize threads the same way Inbox.js does
@@ -101,11 +101,11 @@ const Organization = () => {
       let res;
       try {
         res = await axios.get(
-          `http://localhost:5000/scenario/user/${userId}`
+          `https://email-syncing-backend.vercel.app/scenario/user/${userId}`
         );
       } catch (e) {
         res = await axios.get(
-          `http://localhost:5000/scenario/getScenariosByUser/${userId}`
+          `https://email-syncing-backend.vercel.app/scenario/getScenariosByUser/${userId}`
         );
       }
       // Handle multiple response shapes

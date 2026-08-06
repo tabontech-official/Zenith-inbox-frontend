@@ -38,7 +38,7 @@
 //     const fetchContent = async () => {
 //       try {
 //         const res = await fetch(
-//           "http://localhost:5000/api/landing-page",
+//           "https://email-syncing-backend.vercel.app/api/landing-page",
 //         );
 //         if (res.ok) setContent(await res.json());
 //         else console.error("Failed to fetch landing page content");
@@ -1007,7 +1007,7 @@ const LandingPage = () => {
     const fetchContent = async () => {
       try {
         const res = await fetch(
-          "http://localhost:5000/api/landing-page",
+          "https://email-syncing-backend.vercel.app/api/landing-page",
         );
         if (res.ok) setContent(await res.json());
         else console.error("Failed to fetch landing page content");

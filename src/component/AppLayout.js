@@ -90,7 +90,7 @@ const AppLayout = ({ children }) => {
     try {
       if (!userId) return;
       const res = await axios.get(
-        `http://localhost:5000/auth/getUsers/${userId}`
+        `https://email-syncing-backend.vercel.app/auth/getUsers/${userId}`
       );
       const fetchedUser = res.data?.data || contextUser || null;
       if (fetchedUser) {
@@ -113,7 +113,7 @@ const AppLayout = ({ children }) => {
     try {
       if (!userId) return;
       const res = await axios.get(
-        `http://localhost:5000/auth/organization/get/${userId}`
+        `https://email-syncing-backend.vercel.app/auth/organization/get/${userId}`
       );
       const orgData = res.data?.data;
       if (orgData) {
@@ -128,7 +128,7 @@ const AppLayout = ({ children }) => {
       }
 
       const emailsRes = await axios.get(
-        `http://localhost:5000/mailhook/getAllEmailsData/${userId}`
+        `https://email-syncing-backend.vercel.app/mailhook/getAllEmailsData/${userId}`
       );
       const threads = emailsRes.data?.data?.threads || [];
       // Normalize: flatten thread root emails
@@ -189,7 +189,7 @@ const AppLayout = ({ children }) => {
       const currentUserId = userId || user?._id;
       if (currentUserId) {
         await axios.put(
-          `http://localhost:5000/auth/updateUserAndOrganization/${currentUserId}`,
+          `https://email-syncing-backend.vercel.app/auth/updateUserAndOrganization/${currentUserId}`,
           {
             organizationName: orgForm.organizationName,
             Region: orgForm.region,
@@ -223,7 +223,7 @@ const AppLayout = ({ children }) => {
     try {
       const currentUserId = localStorage.getItem("userid") || user?._id;
       if (currentUserId) {
-        await fetch(`http://localhost:5000/auth/logout/${currentUserId}`, {
+        await fetch(`https://email-syncing-backend.vercel.app/auth/logout/${currentUserId}`, {
           method: "POST",
         }).catch(() => {});
       }
