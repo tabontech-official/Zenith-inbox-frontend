@@ -146,8 +146,8 @@ const ShopifyScenariosPage = () => {
       }
     }
 
-    setAutomationOn(nextVal);
-    toast.success(nextVal ? "Scenario activated successfully!" : "Scenario deactivated.");
+    // Save full scenario with updated active status so no scenario data is wiped
+    await handleSaveScenario(null, nextVal);
   };
   const [templateList, setTemplateList] = useState([]);
   const [loadingTemplates, setLoadingTemplates] = useState(false);
@@ -433,10 +433,11 @@ const ShopifyScenariosPage = () => {
     }
   }, []);
 
-  const handleSaveScenario = async (customBranches = null) => {
+  const handleSaveScenario = async (customBranches = null, overrideScenarioActive = null) => {
     const rawBranches = customBranches || routerBranches;
     const activeConnectionId = incomingLeadsConnection || selectedConnection || "";
     const branchesToSave = rawBranches;
+    const activeStatus = overrideScenarioActive !== null ? overrideScenarioActive : automationOn;
 
     const payload = {
       userId: localStorage.getItem("userid"),
@@ -455,7 +456,7 @@ const ShopifyScenariosPage = () => {
         enabled: Boolean(activeConnectionId),
       },
       routerBranches: branchesToSave,
-      scenarioActive: automationOn,
+      scenarioActive: activeStatus,
     };
 
     try {
@@ -561,19 +562,11 @@ const ShopifyScenariosPage = () => {
         if (data.incomingLead.subjectFilter) setIncomingLeadsSubjectFilter(data.incomingLead.subjectFilter);
       }
 
-      if (typeof data.scenarioActive === "boolean") {
-        setAutomationOn(data.scenarioActive);
-        if (data.scenarioActive) {
-          localStorage.setItem("scenarioActive", "true");
-        } else {
-          localStorage.removeItem("scenarioActive");
-        }
+      setAutomationOn(activeStatus);
+      if (activeStatus) {
+        localStorage.setItem("scenarioActive", "true");
       } else {
-        if (automationOn) {
-          localStorage.setItem("scenarioActive", "true");
-        } else {
-          localStorage.removeItem("scenarioActive");
-        }
+        localStorage.removeItem("scenarioActive");
       }
 
       const refresh = await fetch(
@@ -610,7 +603,9 @@ const ShopifyScenariosPage = () => {
       setShowValidation(false);
       setCompletedSteps([]);
       setIsScenarioUpdated(true);
+      toast.success(activeStatus ? "Scenario activated successfully!" : "Scenario deactivated.");
     } catch (err) {
+      console.error("Error saving scenario:", err);
       toast.error("Failed to save scenario.");
     }
   };

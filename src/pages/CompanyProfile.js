@@ -27,7 +27,7 @@ import {
   FiUploadCloud,
 } from "react-icons/fi";
 import { UserContext } from "../component/UserContext";
-import Sidebar from "../component/Sidebar";
+import AppLayout from "../component/AppLayout";
 import toast from "react-hot-toast";
 import FillWithAiModal from "../modals/FillWithAiModal";
 import ImportJsonModal from "../modals/ImportJsonModal";
@@ -226,13 +226,16 @@ const CompanyProfile = () => {
     { id: "knowledge", label: "Company Knowledge", icon: FiBookOpen },
   ];
 
-  return (
-    <div className="min-h-screen bg-gray-50 font-inter text-gray-900">
-      <Sidebar />
+  // Profile completion check — requires at minimum companyName + businessDescription
+  const isProfileComplete =
+    company.companyName?.trim().length > 0 &&
+    company.businessDescription?.trim().length > 0;
 
-      <main className="min-h-screen pt-[60px]">
-        {/* System status bar (Identical to Dashboard) */}
-        <div className="border-b border-gray-200 bg-white">
+  return (
+    <AppLayout>
+      <div className="flex-1 h-full overflow-y-auto w-full">
+        {/* System status bar — sticky, attached to top bar & secondary sidebar */}
+        <div className="sticky top-0 z-20 border-b border-gray-200 bg-white">
           <div className="flex min-h-[30px] items-center justify-between gap-4 px-6 text-[11px] text-gray-500">
             <div className="flex min-w-0 items-center divide-x divide-gray-200">
               <div className="flex items-center gap-1.5 pr-4 font-medium text-green-700">
@@ -242,134 +245,98 @@ const CompanyProfile = () => {
                 </span>
                 <span>Knowledge Base active</span>
               </div>
-
               {company.companyName ? (
-                <div className="hidden px-4 sm:block">
-                  {company.companyName}
-                </div>
+                <div className="hidden px-4 sm:block">{company.companyName}</div>
               ) : null}
-
               <div className="hidden px-4 md:block">
                 {services.length} Services · {products.length} Products · {faqs.length} FAQs
               </div>
             </div>
-
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={saving}
-              className="shrink-0 font-semibold text-indigo-600 underline underline-offset-2 hover:text-indigo-700"
-            >
+            <button type="button" onClick={handleSave} disabled={saving}
+              className="shrink-0 font-semibold text-slate-600 underline underline-offset-2 hover:text-slate-900">
               {saving ? "Saving..." : "Save Profile"}
             </button>
           </div>
         </div>
 
-        {/* Page Content Container (Identical to Dashboard) */}
-        <div className="px-5 py-7 sm:px-7 lg:px-10">
-          {/* Header section */}
-          <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+        {/* Incomplete Profile Banner */}
+        {!isProfileComplete && (
+          <div className="border-b border-red-200 bg-red-50 px-6 py-2.5 flex items-center gap-2.5">
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-100 shrink-0">
+              <svg className="w-3 h-3 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              </svg>
+            </span>
+            <p className="text-[12px] font-semibold text-red-700">
+              Your company profile is incomplete — please fill in your <strong>Company Name</strong> and <strong>Business Description</strong> to activate AI replies.
+            </p>
+            <button
+              type="button"
+              onClick={() => setActiveTab("company")}
+              className="ml-auto shrink-0 text-[11px] font-bold text-red-700 underline underline-offset-2 hover:text-red-900 transition whitespace-nowrap"
+            >
+              Complete now →
+            </button>
+          </div>
+        )}
+
+        {/* Page Content */}
+        <div className="px-6 py-6 lg:px-8 bg-[#FAF8F5] min-h-full">
+
+          {/* Page Header */}
+          <div className="mb-5 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
             <div>
-              <p className="text-[13px] text-gray-500">
-                Manage your business details, products, services, policies, and AI knowledge base.
-              </p>
+              <h1 className="text-[15px] font-bold text-slate-900">Company Profile</h1>
+              <p className="text-[12px] text-slate-500 mt-0.5">Manage your business details, products, services, policies, and AI knowledge base.</p>
             </div>
-
             <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setShowFillWithAiModal(true)}
-                className="h-9 rounded-[8px] bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 px-3 text-[12px] font-semibold transition-all flex items-center gap-1.5 shadow-sm"
-              >
-                <FiZap className="w-3.5 h-3.5 text-indigo-600" />
-                <span>Fill with AI</span>
+              <button type="button" onClick={() => setShowFillWithAiModal(true)}
+                className="h-8 rounded-[8px] bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 px-3 text-xs font-semibold transition flex items-center gap-1.5">
+                <FiZap className="w-3.5 h-3.5" /><span>Fill with AI</span>
               </button>
-
-              <button
-                type="button"
-                onClick={() => setShowImportJsonModal(true)}
-                className="h-9 rounded-[8px] bg-gray-100 hover:bg-gray-200 text-gray-800 border border-gray-200 px-3 text-[12px] font-semibold transition-all flex items-center gap-1.5"
-              >
-                <FiUploadCloud className="w-3.5 h-3.5 text-gray-600" />
-                <span>Import JSON</span>
+              <button type="button" onClick={() => setShowImportJsonModal(true)}
+                className="h-8 rounded-[8px] bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 px-3 text-xs font-semibold transition flex items-center gap-1.5">
+                <FiUploadCloud className="w-3.5 h-3.5" /><span>Import JSON</span>
               </button>
-
-              <button
-                type="button"
-                onClick={handleSave}
-                disabled={saving}
-                className="h-9 rounded-[8px] bg-[#111110] px-4 text-[12px] font-semibold text-white shadow-sm transition hover:bg-black flex items-center gap-2"
-              >
-                {saving ? (
-                  <span className="animate-spin inline-block w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full" />
-                ) : (
-                  <FiSave className="w-4 h-4 text-emerald-400" />
-                )}
+              <button type="button" onClick={handleSave} disabled={saving}
+                className="h-8 rounded-[8px] bg-[#111110] hover:bg-black text-white px-4 text-xs font-semibold transition flex items-center gap-1.5 shadow-xs">
+                {saving ? <span className="animate-spin inline-block w-3 h-3 border-2 border-white border-t-transparent rounded-full" /> : <FiSave className="w-3.5 h-3.5 text-emerald-400" />}
                 <span>{saving ? "Saving..." : "Save Profile"}</span>
               </button>
             </div>
           </div>
 
-          {/* Top Summary Stat Cards (Identical to Dashboard Cards) */}
-          <section className="mb-7 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <div className="min-h-[100px] rounded-[18px] border border-gray-200 bg-white px-5 py-4 shadow-sm flex flex-col justify-between">
-              <div className="flex items-center justify-between">
-                <span className="text-[12px] font-medium text-gray-500">Services Offered</span>
-                <div className="p-2.5 rounded-full bg-indigo-50 text-indigo-600">
-                  <FiLayers className="w-4 h-4" />
+          {/* Stat Cards */}
+          <section className="mb-5 grid grid-cols-2 xl:grid-cols-4 gap-3">
+            {[
+              { label: "Services", count: services.length, icon: FiLayers },
+              { label: "Products", count: products.length, icon: FiPackage },
+              { label: "FAQs", count: faqs.length, icon: FiHelpCircle },
+              { label: "Knowledge Base", count: `${companyKnowledge.length} chars`, icon: FiBookOpen },
+            ].map(({ label, count, icon: Icon }) => (
+              <div key={label} className="rounded-xl border border-slate-200 bg-white px-4 py-3.5 shadow-xs flex items-center justify-between">
+                <div>
+                  <p className="text-[11px] font-medium text-slate-500">{label}</p>
+                  <p className="text-[18px] font-bold text-slate-900 mt-0.5">{count}</p>
+                </div>
+                <div className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center">
+                  <Icon className="w-4 h-4 text-slate-600" />
                 </div>
               </div>
-              <p className="mt-2 text-[22px] font-semibold text-gray-900">{services.length}</p>
-            </div>
-
-            <div className="min-h-[100px] rounded-[18px] border border-gray-200 bg-white px-5 py-4 shadow-sm flex flex-col justify-between">
-              <div className="flex items-center justify-between">
-                <span className="text-[12px] font-medium text-gray-500">Products Catalog</span>
-                <div className="p-2.5 rounded-full bg-green-50 text-green-600">
-                  <FiPackage className="w-4 h-4" />
-                </div>
-              </div>
-              <p className="mt-2 text-[22px] font-semibold text-gray-900">{products.length}</p>
-            </div>
-
-            <div className="min-h-[100px] rounded-[18px] border border-gray-200 bg-white px-5 py-4 shadow-sm flex flex-col justify-between">
-              <div className="flex items-center justify-between">
-                <span className="text-[12px] font-medium text-gray-500">Active FAQs</span>
-                <div className="p-2.5 rounded-full bg-yellow-50 text-yellow-600">
-                  <FiHelpCircle className="w-4 h-4" />
-                </div>
-              </div>
-              <p className="mt-2 text-[22px] font-semibold text-gray-900">{faqs.length}</p>
-            </div>
-
-            <div className="min-h-[100px] rounded-[18px] border border-gray-200 bg-white px-5 py-4 shadow-sm flex flex-col justify-between">
-              <div className="flex items-center justify-between">
-                <span className="text-[12px] font-medium text-gray-500">Knowledge Base</span>
-                <div className="p-2.5 rounded-full bg-purple-50 text-purple-600">
-                  <FiBookOpen className="w-4 h-4" />
-                </div>
-              </div>
-              <p className="mt-2 text-[22px] font-semibold text-gray-900">{companyKnowledge.length} chars</p>
-            </div>
+            ))}
           </section>
 
-          {/* Section Navigation Tabs */}
-          <div className="mb-6 flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none border-b border-gray-200">
+          {/* Tab Navigation */}
+          <div className="mb-4 flex items-center gap-1 overflow-x-auto scrollbar-none border-b border-slate-200">
             {tabs.map((t) => {
               const Icon = t.icon;
               const isActive = activeTab === t.id;
               return (
-                <button
-                  key={t.id}
-                  type="button"
-                  onClick={() => setActiveTab(t.id)}
-                  className={`flex h-9 items-center gap-2 rounded-[8px] px-4 text-[13px] font-medium transition-colors whitespace-nowrap ${
-                    isActive
-                      ? "bg-gray-100 text-black font-semibold"
-                      : "text-zinc-600 hover:bg-gray-100 hover:text-black"
-                  }`}
-                >
-                  <Icon className={`h-4 w-4 ${isActive ? "text-indigo-600" : "text-zinc-500"}`} />
+                <button key={t.id} type="button" onClick={() => setActiveTab(t.id)}
+                  className={`flex h-8 items-center gap-1.5 px-3 text-[12px] font-medium transition whitespace-nowrap border-b-2 -mb-px ${
+                    isActive ? "border-slate-900 text-slate-900 font-semibold" : "border-transparent text-slate-500 hover:text-slate-800"
+                  }`}>
+                  <Icon className={`h-3.5 w-3.5 ${isActive ? "text-slate-900" : "text-slate-400"}`} />
                   <span>{t.label}</span>
                 </button>
               );
@@ -378,174 +345,85 @@ const CompanyProfile = () => {
 
           {/* TAB 1: COMPANY INFO */}
           {activeTab === "company" && (
-            <div className="rounded-[18px] border border-gray-200 bg-white p-6 shadow-sm space-y-6">
-              <h2 className="text-[15px] font-semibold text-gray-900 border-b border-gray-100 pb-3 flex items-center gap-2">
-                <FiBriefcase className="w-4 h-4 text-indigo-600" />
-                General Company Information
+            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs space-y-5">
+              <h2 className="text-[13px] font-bold text-slate-900 border-b border-slate-100 pb-3 flex items-center gap-2">
+                <FiBriefcase className="w-4 h-4 text-slate-500" /> General Company Information
+                {!isProfileComplete && (
+                  <span className="ml-auto text-[10px] font-bold text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" />
+                    Required fields missing
+                  </span>
+                )}
               </h2>
-
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Company Name</label>
-                  <input
-                    type="text"
-                    value={company.companyName}
-                    onChange={(e) => setCompany({ ...company, companyName: e.target.value })}
-                    placeholder="e.g. Acme Tech Solutions"
-                    className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-[10px] text-xs text-gray-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  <label className="block text-[11px] font-bold mb-1.5 uppercase tracking-wide flex items-center gap-1 text-slate-500">
+                    Company Name
+                    <span className="text-red-500">*</span>
+                  </label>
+                  <input type="text" value={company.companyName} onChange={(e) => setCompany({ ...company, companyName: e.target.value })} placeholder="e.g. Acme Tech Solutions"
+                    className={`w-full px-3.5 py-2 bg-white border rounded-[8px] text-xs text-slate-800 focus:outline-none focus:ring-2 transition ${
+                      !company.companyName?.trim()
+                        ? "border-red-300 focus:ring-red-500/10 focus:border-red-400"
+                        : "border-slate-200 focus:ring-slate-900/10 focus:border-slate-400"
+                    }`}
                   />
+                  {!company.companyName?.trim() && (
+                    <p className="mt-1 text-[10px] font-semibold text-red-600">Company name is required.</p>
+                  )}
                 </div>
-
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Industry</label>
-                  <input
-                    type="text"
-                    value={company.industry}
-                    onChange={(e) => setCompany({ ...company, industry: e.target.value })}
-                    placeholder="e.g. E-Commerce / Software Automation"
-                    className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-[10px] text-xs text-gray-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  />
+                  <label className="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Industry</label>
+                  <input type="text" value={company.industry} onChange={(e) => setCompany({ ...company, industry: e.target.value })} placeholder="e.g. E-Commerce / Software Automation" className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-[8px] text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 transition" />
                 </div>
-
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Business Description</label>
-                  <textarea
-                    rows={3}
-                    value={company.businessDescription}
-                    onChange={(e) => setCompany({ ...company, businessDescription: e.target.value })}
-                    placeholder="Brief description of what your business does..."
-                    className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-[10px] text-xs text-gray-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  <label className="block text-[11px] font-bold mb-1.5 uppercase tracking-wide flex items-center gap-1 text-slate-500">
+                    Business Description
+                    <span className="text-red-500">*</span>
+                  </label>
+                  <textarea rows={3} value={company.businessDescription} onChange={(e) => setCompany({ ...company, businessDescription: e.target.value })} placeholder="Brief description of what your business does..."
+                    className={`w-full px-3.5 py-2 bg-white border rounded-[8px] text-xs text-slate-800 focus:outline-none focus:ring-2 transition resize-none ${
+                      !company.businessDescription?.trim()
+                        ? "border-red-300 focus:ring-red-500/10 focus:border-red-400"
+                        : "border-slate-200 focus:ring-slate-900/10 focus:border-slate-400"
+                    }`}
                   />
+                  {!company.businessDescription?.trim() && (
+                    <p className="mt-1 text-[10px] font-semibold text-red-600">Business description is required.</p>
+                  )}
                 </div>
-
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Website URL</label>
-                  <input
-                    type="url"
-                    value={company.website}
-                    onChange={(e) => setCompany({ ...company, website: e.target.value })}
-                    placeholder="https://example.com"
-                    className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-[10px] text-xs text-gray-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  />
+                  <label className="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Website URL</label>
+                  <input type="url" value={company.website} onChange={(e) => setCompany({ ...company, website: e.target.value })} placeholder="https://example.com" className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-[8px] text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 transition" />
                 </div>
-
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Support Email</label>
-                  <input
-                    type="email"
-                    value={company.email}
-                    onChange={(e) => setCompany({ ...company, email: e.target.value })}
-                    placeholder="support@example.com"
-                    className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-[10px] text-xs text-gray-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  />
+                  <label className="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Support Email</label>
+                  <input type="email" value={company.email} onChange={(e) => setCompany({ ...company, email: e.target.value })} placeholder="support@example.com" className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-[8px] text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 transition" />
                 </div>
-
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Phone Number</label>
-                  <input
-                    type="text"
-                    value={company.phone}
-                    onChange={(e) => setCompany({ ...company, phone: e.target.value })}
-                    placeholder="+1 (555) 000-0000"
-                    className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-[10px] text-xs text-gray-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  />
+                  <label className="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Phone Number</label>
+                  <input type="text" value={company.phone} onChange={(e) => setCompany({ ...company, phone: e.target.value })} placeholder="+1 (555) 000-0000" className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-[8px] text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 transition" />
                 </div>
-
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Physical Address</label>
-                  <input
-                    type="text"
-                    value={company.address}
-                    onChange={(e) => setCompany({ ...company, address: e.target.value })}
-                    placeholder="123 Innovation Way, Suite 100, New York, NY"
-                    className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-[10px] text-xs text-gray-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  />
+                  <label className="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Physical Address</label>
+                  <input type="text" value={company.address} onChange={(e) => setCompany({ ...company, address: e.target.value })} placeholder="123 Innovation Way, Suite 100, New York, NY" className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-[8px] text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 transition" />
                 </div>
               </div>
-
-              {/* Social Links */}
-              <div className="pt-4 border-t border-gray-100">
-                <h3 className="text-xs font-semibold text-gray-900 mb-3">Social Media Profiles</h3>
+              <div className="pt-4 border-t border-slate-100">
+                <h3 className="text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-3">Social Media Profiles</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  <div className="flex items-center gap-2 bg-gray-50 p-2 rounded-[10px] border border-gray-200">
-                    <FiLinkedin className="w-4 h-4 text-blue-600 shrink-0" />
-                    <input
-                      type="text"
-                      value={company.socialLinks?.linkedin || ""}
-                      onChange={(e) =>
-                        setCompany({
-                          ...company,
-                          socialLinks: { ...company.socialLinks, linkedin: e.target.value },
-                        })
-                      }
-                      placeholder="LinkedIn URL"
-                      className="w-full bg-transparent text-xs text-gray-800 focus:outline-none"
-                    />
-                  </div>
-
-                  <div className="flex items-center gap-2 bg-gray-50 p-2 rounded-[10px] border border-gray-200">
-                    <FiTwitter className="w-4 h-4 text-sky-500 shrink-0" />
-                    <input
-                      type="text"
-                      value={company.socialLinks?.twitter || ""}
-                      onChange={(e) =>
-                        setCompany({
-                          ...company,
-                          socialLinks: { ...company.socialLinks, twitter: e.target.value },
-                        })
-                      }
-                      placeholder="Twitter / X URL"
-                      className="w-full bg-transparent text-xs text-gray-800 focus:outline-none"
-                    />
-                  </div>
-
-                  <div className="flex items-center gap-2 bg-gray-50 p-2 rounded-[10px] border border-gray-200">
-                    <FiFacebook className="w-4 h-4 text-blue-700 shrink-0" />
-                    <input
-                      type="text"
-                      value={company.socialLinks?.facebook || ""}
-                      onChange={(e) =>
-                        setCompany({
-                          ...company,
-                          socialLinks: { ...company.socialLinks, facebook: e.target.value },
-                        })
-                      }
-                      placeholder="Facebook URL"
-                      className="w-full bg-transparent text-xs text-gray-800 focus:outline-none"
-                    />
-                  </div>
-
-                  <div className="flex items-center gap-2 bg-gray-50 p-2 rounded-[10px] border border-gray-200">
-                    <FiInstagram className="w-4 h-4 text-pink-600 shrink-0" />
-                    <input
-                      type="text"
-                      value={company.socialLinks?.instagram || ""}
-                      onChange={(e) =>
-                        setCompany({
-                          ...company,
-                          socialLinks: { ...company.socialLinks, instagram: e.target.value },
-                        })
-                      }
-                      placeholder="Instagram URL"
-                      className="w-full bg-transparent text-xs text-gray-800 focus:outline-none"
-                    />
-                  </div>
-
-                  <div className="flex items-center gap-2 bg-gray-50 p-2 rounded-[10px] border border-gray-200">
-                    <FiYoutube className="w-4 h-4 text-red-600 shrink-0" />
-                    <input
-                      type="text"
-                      value={company.socialLinks?.youtube || ""}
-                      onChange={(e) =>
-                        setCompany({
-                          ...company,
-                          socialLinks: { ...company.socialLinks, youtube: e.target.value },
-                        })
-                      }
-                      placeholder="YouTube Channel URL"
-                      className="w-full bg-transparent text-xs text-gray-800 focus:outline-none"
-                    />
-                  </div>
+                  {[
+                    { icon: FiLinkedin, key: "linkedin", placeholder: "LinkedIn URL", color: "text-blue-600" },
+                    { icon: FiTwitter, key: "twitter", placeholder: "Twitter / X URL", color: "text-sky-500" },
+                    { icon: FiFacebook, key: "facebook", placeholder: "Facebook URL", color: "text-blue-700" },
+                    { icon: FiInstagram, key: "instagram", placeholder: "Instagram URL", color: "text-pink-600" },
+                    { icon: FiYoutube, key: "youtube", placeholder: "YouTube Channel URL", color: "text-red-600" },
+                  ].map(({ icon: SIcon, key, placeholder, color }) => (
+                    <div key={key} className="flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-[8px] border border-slate-200">
+                      <SIcon className={`w-4 h-4 shrink-0 ${color}`} />
+                      <input type="text" value={company.socialLinks?.[key] || ""} onChange={(e) => setCompany({ ...company, socialLinks: { ...company.socialLinks, [key]: e.target.value } })} placeholder={placeholder} className="w-full bg-transparent text-xs text-slate-800 focus:outline-none placeholder:text-slate-400" />
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -553,74 +431,27 @@ const CompanyProfile = () => {
 
           {/* TAB 2: SERVICES */}
           {activeTab === "services" && (
-            <div className="rounded-[18px] border border-gray-200 bg-white p-6 shadow-sm space-y-6">
-              <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-                <h2 className="text-[15px] font-semibold text-gray-900 flex items-center gap-2">
-                  <FiLayers className="w-4 h-4 text-indigo-600" />
-                  Services Offered ({services.length})
-                </h2>
-                <button
-                  type="button"
-                  onClick={addService}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-[8px] text-xs font-semibold transition-all"
-                >
-                  <FiPlus className="w-3.5 h-3.5" />
-                  Add Service
-                </button>
+            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs space-y-5">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h2 className="text-[13px] font-bold text-slate-900 flex items-center gap-2"><FiLayers className="w-4 h-4 text-slate-500" /> Services Offered ({services.length})</h2>
+                <button type="button" onClick={addService} className="flex items-center gap-1.5 px-3 py-1.5 bg-[#111110] hover:bg-black text-white rounded-[8px] text-xs font-semibold transition"><FiPlus className="w-3.5 h-3.5" /> Add Service</button>
               </div>
-
               {services.length === 0 ? (
-                <div className="text-center py-8 border border-dashed border-gray-200 rounded-[12px]">
-                  <FiLayers className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                  <p className="text-xs text-gray-400">No services added yet.</p>
-                  <button onClick={addService} className="mt-2 text-xs text-indigo-600 font-semibold hover:underline">
-                    + Add your first service
-                  </button>
+                <div className="text-center py-10 border border-dashed border-slate-200 rounded-[10px]">
+                  <FiLayers className="w-7 h-7 text-slate-300 mx-auto mb-2" />
+                  <p className="text-xs text-slate-400 mb-2">No services added yet.</p>
+                  <button onClick={addService} className="text-xs font-semibold text-slate-700 hover:underline">+ Add your first service</button>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {services.map((item, idx) => (
-                    <div key={item.id || idx} className="p-4 bg-gray-50 rounded-[12px] border border-gray-200 space-y-3">
+                    <div key={item.id || idx} className="p-4 bg-slate-50 rounded-[10px] border border-slate-200 space-y-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-semibold text-gray-400">Service #{idx + 1}</span>
-                        <button
-                          type="button"
-                          onClick={() => setServices(services.filter((_, i) => i !== idx))}
-                          className="text-gray-400 hover:text-red-600 transition-colors p-1"
-                        >
-                          <FiTrash2 className="w-4 h-4" />
-                        </button>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Service #{idx + 1}</span>
+                        <button type="button" onClick={() => setServices(services.filter((_, i) => i !== idx))} className="text-slate-400 hover:text-red-500 transition p-1"><FiTrash2 className="w-3.5 h-3.5" /></button>
                       </div>
-                      <div className="space-y-3">
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">Service Name</label>
-                          <input
-                            type="text"
-                            value={item.name}
-                            onChange={(e) => {
-                              const updated = [...services];
-                              updated[idx].name = e.target.value;
-                              setServices(updated);
-                            }}
-                            placeholder="Service Name"
-                            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-[8px] text-xs font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">Service Details & Description</label>
-                          <textarea
-                            rows={3}
-                            value={item.description}
-                            onChange={(e) => {
-                              const updated = [...services];
-                              updated[idx].description = e.target.value;
-                              setServices(updated);
-                            }}
-                            placeholder="Service details & deliverables..."
-                            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-[8px] text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                          />
-                        </div>
-                      </div>
+                      <input type="text" value={item.name} onChange={(e) => { const u = [...services]; u[idx].name = e.target.value; setServices(u); }} placeholder="Service Name" className="w-full px-3 py-2 bg-white border border-slate-200 rounded-[8px] text-xs text-slate-800 focus:outline-none focus:border-slate-400 transition" />
+                      <textarea rows={2} value={item.description} onChange={(e) => { const u = [...services]; u[idx].description = e.target.value; setServices(u); }} placeholder="Service details & deliverables..." className="w-full px-3 py-2 bg-white border border-slate-200 rounded-[8px] text-xs text-slate-800 focus:outline-none focus:border-slate-400 transition resize-none" />
                     </div>
                   ))}
                 </div>
@@ -630,74 +461,27 @@ const CompanyProfile = () => {
 
           {/* TAB 3: PRODUCTS */}
           {activeTab === "products" && (
-            <div className="rounded-[18px] border border-gray-200 bg-white p-6 shadow-sm space-y-6">
-              <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-                <h2 className="text-[15px] font-semibold text-gray-900 flex items-center gap-2">
-                  <FiPackage className="w-4 h-4 text-indigo-600" />
-                  Products Catalog ({products.length})
-                </h2>
-                <button
-                  type="button"
-                  onClick={addProduct}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-[8px] text-xs font-semibold transition-all"
-                >
-                  <FiPlus className="w-3.5 h-3.5" />
-                  Add Product
-                </button>
+            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs space-y-5">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h2 className="text-[13px] font-bold text-slate-900 flex items-center gap-2"><FiPackage className="w-4 h-4 text-slate-500" /> Products Catalog ({products.length})</h2>
+                <button type="button" onClick={addProduct} className="flex items-center gap-1.5 px-3 py-1.5 bg-[#111110] hover:bg-black text-white rounded-[8px] text-xs font-semibold transition"><FiPlus className="w-3.5 h-3.5" /> Add Product</button>
               </div>
-
               {products.length === 0 ? (
-                <div className="text-center py-8 border border-dashed border-gray-200 rounded-[12px]">
-                  <FiPackage className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                  <p className="text-xs text-gray-400">No products added yet.</p>
-                  <button onClick={addProduct} className="mt-2 text-xs text-indigo-600 font-semibold hover:underline">
-                    + Add your first product
-                  </button>
+                <div className="text-center py-10 border border-dashed border-slate-200 rounded-[10px]">
+                  <FiPackage className="w-7 h-7 text-slate-300 mx-auto mb-2" />
+                  <p className="text-xs text-slate-400 mb-2">No products added yet.</p>
+                  <button onClick={addProduct} className="text-xs font-semibold text-slate-700 hover:underline">+ Add your first product</button>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {products.map((item, idx) => (
-                    <div key={item.id || idx} className="p-4 bg-gray-50 rounded-[12px] border border-gray-200 space-y-3">
+                    <div key={item.id || idx} className="p-4 bg-slate-50 rounded-[10px] border border-slate-200 space-y-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-semibold text-gray-400">Product #{idx + 1}</span>
-                        <button
-                          type="button"
-                          onClick={() => setProducts(products.filter((_, i) => i !== idx))}
-                          className="text-gray-400 hover:text-red-600 transition-colors p-1"
-                        >
-                          <FiTrash2 className="w-4 h-4" />
-                        </button>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Product #{idx + 1}</span>
+                        <button type="button" onClick={() => setProducts(products.filter((_, i) => i !== idx))} className="text-slate-400 hover:text-red-500 transition p-1"><FiTrash2 className="w-3.5 h-3.5" /></button>
                       </div>
-                      <div className="space-y-3">
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">Product Name</label>
-                          <input
-                            type="text"
-                            value={item.name}
-                            onChange={(e) => {
-                              const updated = [...products];
-                              updated[idx].name = e.target.value;
-                              setProducts(updated);
-                            }}
-                            placeholder="Product Name"
-                            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-[8px] text-xs font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">Product Description</label>
-                          <textarea
-                            rows={3}
-                            value={item.description}
-                            onChange={(e) => {
-                              const updated = [...products];
-                              updated[idx].description = e.target.value;
-                              setProducts(updated);
-                            }}
-                            placeholder="Product Description..."
-                            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-[8px] text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                          />
-                        </div>
-                      </div>
+                      <input type="text" value={item.name} onChange={(e) => { const u = [...products]; u[idx].name = e.target.value; setProducts(u); }} placeholder="Product Name" className="w-full px-3 py-2 bg-white border border-slate-200 rounded-[8px] text-xs text-slate-800 focus:outline-none focus:border-slate-400 transition" />
+                      <textarea rows={2} value={item.description} onChange={(e) => { const u = [...products]; u[idx].description = e.target.value; setProducts(u); }} placeholder="Product Description..." className="w-full px-3 py-2 bg-white border border-slate-200 rounded-[8px] text-xs text-slate-800 focus:outline-none focus:border-slate-400 transition resize-none" />
                     </div>
                   ))}
                 </div>
@@ -707,90 +491,30 @@ const CompanyProfile = () => {
 
           {/* TAB 4: PORTFOLIO */}
           {activeTab === "portfolio" && (
-            <div className="rounded-[18px] border border-gray-200 bg-white p-6 shadow-sm space-y-6">
-              <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-                <h2 className="text-[15px] font-semibold text-gray-900 flex items-center gap-2">
-                  <FiFolder className="w-4 h-4 text-indigo-600" />
-                  Portfolio & Case Studies ({portfolio.length})
-                </h2>
-                <button
-                  type="button"
-                  onClick={addPortfolio}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-[8px] text-xs font-semibold transition-all"
-                >
-                  <FiPlus className="w-3.5 h-3.5" />
-                  Add Project
-                </button>
+            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs space-y-5">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h2 className="text-[13px] font-bold text-slate-900 flex items-center gap-2"><FiFolder className="w-4 h-4 text-slate-500" /> Portfolio & Case Studies ({portfolio.length})</h2>
+                <button type="button" onClick={addPortfolio} className="flex items-center gap-1.5 px-3 py-1.5 bg-[#111110] hover:bg-black text-white rounded-[8px] text-xs font-semibold transition"><FiPlus className="w-3.5 h-3.5" /> Add Project</button>
               </div>
-
               {portfolio.length === 0 ? (
-                <div className="text-center py-8 border border-dashed border-gray-200 rounded-[12px]">
-                  <FiFolder className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                  <p className="text-xs text-gray-400">No portfolio projects added yet.</p>
-                  <button onClick={addPortfolio} className="mt-2 text-xs text-indigo-600 font-semibold hover:underline">
-                    + Add your first project
-                  </button>
+                <div className="text-center py-10 border border-dashed border-slate-200 rounded-[10px]">
+                  <FiFolder className="w-7 h-7 text-slate-300 mx-auto mb-2" />
+                  <p className="text-xs text-slate-400 mb-2">No portfolio projects added yet.</p>
+                  <button onClick={addPortfolio} className="text-xs font-semibold text-slate-700 hover:underline">+ Add your first project</button>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {portfolio.map((item, idx) => (
-                    <div key={item.id || idx} className="p-4 bg-gray-50 rounded-[12px] border border-gray-200 space-y-3">
+                    <div key={item.id || idx} className="p-4 bg-slate-50 rounded-[10px] border border-slate-200 space-y-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-semibold text-gray-400">Project #{idx + 1}</span>
-                        <button
-                          type="button"
-                          onClick={() => setPortfolio(portfolio.filter((_, i) => i !== idx))}
-                          className="text-gray-400 hover:text-red-600 transition-colors p-1"
-                        >
-                          <FiTrash2 className="w-4 h-4" />
-                        </button>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Project #{idx + 1}</span>
+                        <button type="button" onClick={() => setPortfolio(portfolio.filter((_, i) => i !== idx))} className="text-slate-400 hover:text-red-500 transition p-1"><FiTrash2 className="w-3.5 h-3.5" /></button>
                       </div>
-                      <div className="space-y-3">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">Project Name</label>
-                            <input
-                              type="text"
-                              value={item.projectName}
-                              onChange={(e) => {
-                                const updated = [...portfolio];
-                                updated[idx].projectName = e.target.value;
-                                setPortfolio(updated);
-                              }}
-                              placeholder="Project Name"
-                              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-[8px] text-xs font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">Project Link</label>
-                            <input
-                              type="text"
-                              value={item.links}
-                              onChange={(e) => {
-                                const updated = [...portfolio];
-                                updated[idx].links = e.target.value;
-                                setPortfolio(updated);
-                              }}
-                              placeholder="Project Link (e.g. https://...)"
-                              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-[8px] text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                            />
-                          </div>
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">Description</label>
-                          <textarea
-                            rows={3}
-                            value={item.description}
-                            onChange={(e) => {
-                              const updated = [...portfolio];
-                              updated[idx].description = e.target.value;
-                              setPortfolio(updated);
-                            }}
-                            placeholder="Project Description..."
-                            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-[8px] text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                          />
-                        </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <input type="text" value={item.projectName} onChange={(e) => { const u = [...portfolio]; u[idx].projectName = e.target.value; setPortfolio(u); }} placeholder="Project Name" className="w-full px-3 py-2 bg-white border border-slate-200 rounded-[8px] text-xs text-slate-800 focus:outline-none focus:border-slate-400 transition" />
+                        <input type="text" value={item.links} onChange={(e) => { const u = [...portfolio]; u[idx].links = e.target.value; setPortfolio(u); }} placeholder="Project Link (e.g. https://...)" className="w-full px-3 py-2 bg-white border border-slate-200 rounded-[8px] text-xs text-slate-800 focus:outline-none focus:border-slate-400 transition" />
                       </div>
+                      <textarea rows={2} value={item.description} onChange={(e) => { const u = [...portfolio]; u[idx].description = e.target.value; setPortfolio(u); }} placeholder="Project Description..." className="w-full px-3 py-2 bg-white border border-slate-200 rounded-[8px] text-xs text-slate-800 focus:outline-none focus:border-slate-400 transition resize-none" />
                     </div>
                   ))}
                 </div>
@@ -800,68 +524,27 @@ const CompanyProfile = () => {
 
           {/* TAB 5: FAQS */}
           {activeTab === "faqs" && (
-            <div className="rounded-[18px] border border-gray-200 bg-white p-6 shadow-sm space-y-6">
-              <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-                <h2 className="text-[15px] font-semibold text-gray-900 flex items-center gap-2">
-                  <FiHelpCircle className="w-4 h-4 text-indigo-600" />
-                  Frequently Asked Questions ({faqs.length})
-                </h2>
-                <button
-                  type="button"
-                  onClick={addFaq}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-[8px] text-xs font-semibold transition-all"
-                >
-                  <FiPlus className="w-3.5 h-3.5" />
-                  Add FAQ
-                </button>
+            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs space-y-5">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h2 className="text-[13px] font-bold text-slate-900 flex items-center gap-2"><FiHelpCircle className="w-4 h-4 text-slate-500" /> FAQs ({faqs.length})</h2>
+                <button type="button" onClick={addFaq} className="flex items-center gap-1.5 px-3 py-1.5 bg-[#111110] hover:bg-black text-white rounded-[8px] text-xs font-semibold transition"><FiPlus className="w-3.5 h-3.5" /> Add FAQ</button>
               </div>
-
               {faqs.length === 0 ? (
-                <div className="text-center py-8 border border-dashed border-gray-200 rounded-[12px]">
-                  <FiHelpCircle className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                  <p className="text-xs text-gray-400">No FAQs added yet.</p>
-                  <button onClick={addFaq} className="mt-2 text-xs text-indigo-600 font-semibold hover:underline">
-                    + Add your first FAQ
-                  </button>
+                <div className="text-center py-10 border border-dashed border-slate-200 rounded-[10px]">
+                  <FiHelpCircle className="w-7 h-7 text-slate-300 mx-auto mb-2" />
+                  <p className="text-xs text-slate-400 mb-2">No FAQs added yet.</p>
+                  <button onClick={addFaq} className="text-xs font-semibold text-slate-700 hover:underline">+ Add your first FAQ</button>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {faqs.map((item, idx) => (
-                    <div key={item.id || idx} className="p-4 bg-gray-50 rounded-[12px] border border-gray-200 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-semibold text-gray-400">FAQ #{idx + 1}</span>
-                        <button
-                          type="button"
-                          onClick={() => setFaqs(faqs.filter((_, i) => i !== idx))}
-                          className="text-gray-400 hover:text-red-600 transition-colors p-1"
-                        >
-                          <FiTrash2 className="w-4 h-4" />
-                        </button>
+                    <div key={item.id || idx} className="p-4 bg-slate-50 rounded-[10px] border border-slate-200 space-y-2">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">FAQ #{idx + 1}</span>
+                        <button type="button" onClick={() => setFaqs(faqs.filter((_, i) => i !== idx))} className="text-slate-400 hover:text-red-500 transition p-1"><FiTrash2 className="w-3.5 h-3.5" /></button>
                       </div>
-                      <div className="space-y-2">
-                        <input
-                          type="text"
-                          value={item.question}
-                          onChange={(e) => {
-                            const updated = [...faqs];
-                            updated[idx].question = e.target.value;
-                            setFaqs(updated);
-                          }}
-                          placeholder="Question (e.g. What are your turnaround times?)"
-                          className="w-full px-3 py-1.5 bg-white border border-gray-200 rounded-[8px] text-xs font-medium text-gray-800"
-                        />
-                        <textarea
-                          rows={2}
-                          value={item.answer}
-                          onChange={(e) => {
-                            const updated = [...faqs];
-                            updated[idx].answer = e.target.value;
-                            setFaqs(updated);
-                          }}
-                          placeholder="Answer details..."
-                          className="w-full px-3 py-1.5 bg-white border border-gray-200 rounded-[8px] text-xs text-gray-800"
-                        />
-                      </div>
+                      <input type="text" value={item.question} onChange={(e) => { const u = [...faqs]; u[idx].question = e.target.value; setFaqs(u); }} placeholder="Question (e.g. What are your turnaround times?)" className="w-full px-3 py-2 bg-white border border-slate-200 rounded-[8px] text-xs text-slate-800 focus:outline-none focus:border-slate-400 transition" />
+                      <textarea rows={2} value={item.answer} onChange={(e) => { const u = [...faqs]; u[idx].answer = e.target.value; setFaqs(u); }} placeholder="Answer details..." className="w-full px-3 py-2 bg-white border border-slate-200 rounded-[8px] text-xs text-slate-800 focus:outline-none focus:border-slate-400 transition resize-none" />
                     </div>
                   ))}
                 </div>
@@ -871,119 +554,37 @@ const CompanyProfile = () => {
 
           {/* TAB 6: POLICIES */}
           {activeTab === "policies" && (
-            <div className="rounded-[18px] border border-gray-200 bg-white p-6 shadow-sm space-y-6">
-              <h2 className="text-[15px] font-semibold text-gray-900 border-b border-gray-100 pb-3 flex items-center gap-2">
-                <FiShield className="w-4 h-4 text-indigo-600" />
-                Company Policies & Terms
-              </h2>
-
+            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs space-y-5">
+              <h2 className="text-[13px] font-bold text-slate-900 border-b border-slate-100 pb-3 flex items-center gap-2"><FiShield className="w-4 h-4 text-slate-500" /> Company Policies & Terms</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Return Policy</label>
-                  <textarea
-                    rows={3}
-                    value={policies.returnPolicy}
-                    onChange={(e) => setPolicies({ ...policies, returnPolicy: e.target.value })}
-                    placeholder="Details about returns..."
-                    className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-[10px] text-xs text-gray-800"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Refund Policy</label>
-                  <textarea
-                    rows={3}
-                    value={policies.refundPolicy}
-                    onChange={(e) => setPolicies({ ...policies, refundPolicy: e.target.value })}
-                    placeholder="Details about refunds..."
-                    className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-[10px] text-xs text-gray-800"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Shipping Policy</label>
-                  <textarea
-                    rows={3}
-                    value={policies.shippingPolicy}
-                    onChange={(e) => setPolicies({ ...policies, shippingPolicy: e.target.value })}
-                    placeholder="Shipping methods & dispatch windows..."
-                    className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-[10px] text-xs text-gray-800"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Privacy Policy Highlights</label>
-                  <textarea
-                    rows={3}
-                    value={policies.privacyPolicy}
-                    onChange={(e) => setPolicies({ ...policies, privacyPolicy: e.target.value })}
-                    placeholder="Key data privacy points..."
-                    className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-[10px] text-xs text-gray-800"
-                  />
-                </div>
-
+                {[
+                  { label: "Return Policy", key: "returnPolicy", placeholder: "Details about returns..." },
+                  { label: "Refund Policy", key: "refundPolicy", placeholder: "Details about refunds..." },
+                  { label: "Shipping Policy", key: "shippingPolicy", placeholder: "Shipping methods & dispatch windows..." },
+                  { label: "Privacy Policy Highlights", key: "privacyPolicy", placeholder: "Key data privacy points..." },
+                ].map(({ label, key, placeholder }) => (
+                  <div key={key}>
+                    <label className="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wide">{label}</label>
+                    <textarea rows={3} value={policies[key]} onChange={(e) => setPolicies({ ...policies, [key]: e.target.value })} placeholder={placeholder} className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-[8px] text-xs text-slate-800 focus:outline-none focus:border-slate-400 transition resize-none" />
+                  </div>
+                ))}
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Terms & Conditions Summary</label>
-                  <textarea
-                    rows={3}
-                    value={policies.termsAndConditions}
-                    onChange={(e) => setPolicies({ ...policies, termsAndConditions: e.target.value })}
-                    placeholder="Terms of service, warranties, liabilities..."
-                    className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-[10px] text-xs text-gray-800"
-                  />
+                  <label className="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Terms & Conditions Summary</label>
+                  <textarea rows={3} value={policies.termsAndConditions} onChange={(e) => setPolicies({ ...policies, termsAndConditions: e.target.value })} placeholder="Terms of service, warranties, liabilities..." className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-[8px] text-xs text-slate-800 focus:outline-none focus:border-slate-400 transition resize-none" />
                 </div>
               </div>
-
-              {/* Custom Policies */}
-              <div className="pt-4 border-t border-gray-100 space-y-3">
+              <div className="pt-4 border-t border-slate-100 space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-semibold text-gray-900">Custom Policies</h3>
-                  <button
-                    type="button"
-                    onClick={addCustomPolicy}
-                    className="flex items-center gap-1.5 px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-[8px] text-xs font-semibold"
-                  >
-                    <FiPlus className="w-3.5 h-3.5" />
-                    Add Policy
-                  </button>
+                  <h3 className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Custom Policies</h3>
+                  <button type="button" onClick={addCustomPolicy} className="flex items-center gap-1.5 px-3 py-1.5 bg-[#111110] hover:bg-black text-white rounded-[8px] text-xs font-semibold transition"><FiPlus className="w-3.5 h-3.5" /> Add Policy</button>
                 </div>
-
                 {policies.customPolicies?.map((cp, idx) => (
-                  <div key={cp.id || idx} className="p-3 bg-gray-50 rounded-[12px] border border-gray-200 space-y-2">
+                  <div key={cp.id || idx} className="p-3 bg-slate-50 rounded-[10px] border border-slate-200 space-y-2">
                     <div className="flex items-center justify-between">
-                      <input
-                        type="text"
-                        value={cp.name}
-                        onChange={(e) => {
-                          const updated = [...policies.customPolicies];
-                          updated[idx].name = e.target.value;
-                          setPolicies({ ...policies, customPolicies: updated });
-                        }}
-                        placeholder="Policy Name (e.g. SLA Guarantee)"
-                        className="px-3 py-1 bg-white border border-gray-200 rounded-[8px] text-xs font-medium text-gray-800 w-1/2"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const updated = policies.customPolicies.filter((_, i) => i !== idx);
-                          setPolicies({ ...policies, customPolicies: updated });
-                        }}
-                        className="text-gray-400 hover:text-red-600 p-1"
-                      >
-                        <FiTrash2 className="w-4 h-4" />
-                      </button>
+                      <input type="text" value={cp.name} onChange={(e) => { const u = [...policies.customPolicies]; u[idx].name = e.target.value; setPolicies({ ...policies, customPolicies: u }); }} placeholder="Policy Name (e.g. SLA Guarantee)" className="px-3 py-1.5 bg-white border border-slate-200 rounded-[8px] text-xs text-slate-800 w-1/2 focus:outline-none focus:border-slate-400 transition" />
+                      <button type="button" onClick={() => setPolicies({ ...policies, customPolicies: policies.customPolicies.filter((_, i) => i !== idx) })} className="text-slate-400 hover:text-red-500 p-1 transition"><FiTrash2 className="w-3.5 h-3.5" /></button>
                     </div>
-                    <textarea
-                      rows={2}
-                      value={cp.details}
-                      onChange={(e) => {
-                        const updated = [...policies.customPolicies];
-                        updated[idx].details = e.target.value;
-                        setPolicies({ ...policies, customPolicies: updated });
-                      }}
-                      placeholder="Policy details..."
-                      className="w-full px-3 py-1.5 bg-white border border-gray-200 rounded-[8px] text-xs text-gray-800"
-                    />
+                    <textarea rows={2} value={cp.details} onChange={(e) => { const u = [...policies.customPolicies]; u[idx].details = e.target.value; setPolicies({ ...policies, customPolicies: u }); }} placeholder="Policy details..." className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-[8px] text-xs text-slate-800 focus:outline-none focus:border-slate-400 transition resize-none" />
                   </div>
                 ))}
               </div>
@@ -992,133 +593,47 @@ const CompanyProfile = () => {
 
           {/* TAB 7: TIMELINES */}
           {activeTab === "timelines" && (
-            <div className="rounded-[18px] border border-gray-200 bg-white p-6 shadow-sm space-y-6">
-              <h2 className="text-[15px] font-semibold text-gray-900 border-b border-gray-100 pb-3 flex items-center gap-2">
-                <FiClock className="w-4 h-4 text-indigo-600" />
-                Turnaround Timelines & Support Hours
-              </h2>
-
+            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs space-y-5">
+              <h2 className="text-[13px] font-bold text-slate-900 border-b border-slate-100 pb-3 flex items-center gap-2"><FiClock className="w-4 h-4 text-slate-500" /> Turnaround Timelines & Support Hours</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Delivery Time</label>
-                  <input
-                    type="text"
-                    value={timelines.deliveryTime}
-                    onChange={(e) => setTimelines({ ...timelines, deliveryTime: e.target.value })}
-                    placeholder="e.g. 2-4 business days"
-                    className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-[10px] text-xs text-gray-800"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Project Milestone Timeline</label>
-                  <input
-                    type="text"
-                    value={timelines.projectTimeline}
-                    onChange={(e) => setTimelines({ ...timelines, projectTimeline: e.target.value })}
-                    placeholder="e.g. Discovery: 1 week, Build: 2 weeks"
-                    className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-[10px] text-xs text-gray-800"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Support Hours / Response SLA</label>
-                  <input
-                    type="text"
-                    value={timelines.supportHours}
-                    onChange={(e) => setTimelines({ ...timelines, supportHours: e.target.value })}
-                    placeholder="e.g. Response within 2 hours (Mon-Fri)"
-                    className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-[10px] text-xs text-gray-800"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Business Working Hours</label>
-                  <input
-                    type="text"
-                    value={timelines.businessWorkingHours}
-                    onChange={(e) => setTimelines({ ...timelines, businessWorkingHours: e.target.value })}
-                    placeholder="e.g. Mon - Fri: 9:00 AM - 6:00 PM EST"
-                    className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-[10px] text-xs text-gray-800"
-                  />
-                </div>
+                {[
+                  { label: "Delivery Time", key: "deliveryTime", placeholder: "e.g. 2-4 business days" },
+                  { label: "Project Milestone Timeline", key: "projectTimeline", placeholder: "e.g. Discovery: 1 week, Build: 2 weeks" },
+                  { label: "Support Hours / Response SLA", key: "supportHours", placeholder: "e.g. Response within 2 hours (Mon-Fri)" },
+                  { label: "Business Working Hours", key: "businessWorkingHours", placeholder: "e.g. Mon - Fri: 9:00 AM - 6:00 PM EST" },
+                ].map(({ label, key, placeholder }) => (
+                  <div key={key}>
+                    <label className="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wide">{label}</label>
+                    <input type="text" value={timelines[key]} onChange={(e) => setTimelines({ ...timelines, [key]: e.target.value })} placeholder={placeholder} className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-[8px] text-xs text-slate-800 focus:outline-none focus:border-slate-400 transition" />
+                  </div>
+                ))}
               </div>
             </div>
           )}
 
           {/* TAB 8: WRITING STYLE */}
           {activeTab === "writingStyle" && (
-            <div className="rounded-[18px] border border-gray-200 bg-white p-6 shadow-sm space-y-6">
-              <h2 className="text-[15px] font-semibold text-gray-900 border-b border-gray-100 pb-3 flex items-center gap-2">
-                <FiFeather className="w-4 h-4 text-indigo-600" />
-                Brand Voice & Communication Style
-              </h2>
-
+            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs space-y-5">
+              <h2 className="text-[13px] font-bold text-slate-900 border-b border-slate-100 pb-3 flex items-center gap-2"><FiFeather className="w-4 h-4 text-slate-500" /> Brand Voice & Communication Style</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Tone of Voice</label>
-                  <input
-                    type="text"
-                    value={writingStyle.toneOfVoice}
-                    onChange={(e) => setWritingStyle({ ...writingStyle, toneOfVoice: e.target.value })}
-                    placeholder="e.g. Professional, Friendly, Empathetic"
-                    className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-[10px] text-xs text-gray-800"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Brand Personality</label>
-                  <input
-                    type="text"
-                    value={writingStyle.brandPersonality}
-                    onChange={(e) => setWritingStyle({ ...writingStyle, brandPersonality: e.target.value })}
-                    placeholder="e.g. Innovative, Helpful, Premium"
-                    className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-[10px] text-xs text-gray-800"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Communication Style</label>
-                  <input
-                    type="text"
-                    value={writingStyle.communicationStyle}
-                    onChange={(e) => setWritingStyle({ ...writingStyle, communicationStyle: e.target.value })}
-                    placeholder="e.g. Direct, Bullet points, Action-oriented"
-                    className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-[10px] text-xs text-gray-800"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Preferred Language</label>
-                  <input
-                    type="text"
-                    value={writingStyle.preferredLanguage}
-                    onChange={(e) => setWritingStyle({ ...writingStyle, preferredLanguage: e.target.value })}
-                    placeholder="e.g. English (US / UK)"
-                    className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-[10px] text-xs text-gray-800"
-                  />
-                </div>
-
+                {[
+                  { label: "Tone of Voice", key: "toneOfVoice", placeholder: "e.g. Professional, Friendly, Empathetic" },
+                  { label: "Brand Personality", key: "brandPersonality", placeholder: "e.g. Innovative, Helpful, Premium" },
+                  { label: "Communication Style", key: "communicationStyle", placeholder: "e.g. Direct, Bullet points, Action-oriented" },
+                  { label: "Preferred Language", key: "preferredLanguage", placeholder: "e.g. English (US / UK)" },
+                ].map(({ label, key, placeholder }) => (
+                  <div key={key}>
+                    <label className="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wide">{label}</label>
+                    <input type="text" value={writingStyle[key]} onChange={(e) => setWritingStyle({ ...writingStyle, [key]: e.target.value })} placeholder={placeholder} className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-[8px] text-xs text-slate-800 focus:outline-none focus:border-slate-400 transition" />
+                  </div>
+                ))}
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Words to Avoid / Banned Phrases</label>
-                  <input
-                    type="text"
-                    value={writingStyle.wordsToAvoid}
-                    onChange={(e) => setWritingStyle({ ...writingStyle, wordsToAvoid: e.target.value })}
-                    placeholder="e.g. Cheap, guaranteed, ASAP"
-                    className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-[10px] text-xs text-gray-800"
-                  />
+                  <label className="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Words to Avoid / Banned Phrases</label>
+                  <input type="text" value={writingStyle.wordsToAvoid} onChange={(e) => setWritingStyle({ ...writingStyle, wordsToAvoid: e.target.value })} placeholder="e.g. Cheap, guaranteed, ASAP" className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-[8px] text-xs text-slate-800 focus:outline-none focus:border-slate-400 transition" />
                 </div>
-
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Example Ideal Responses</label>
-                  <textarea
-                    rows={3}
-                    value={writingStyle.exampleResponses}
-                    onChange={(e) => setWritingStyle({ ...writingStyle, exampleResponses: e.target.value })}
-                    placeholder="Paste sample ideal email responses here..."
-                    className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-[10px] text-xs text-gray-800"
-                  />
+                  <label className="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Example Ideal Responses</label>
+                  <textarea rows={3} value={writingStyle.exampleResponses} onChange={(e) => setWritingStyle({ ...writingStyle, exampleResponses: e.target.value })} placeholder="Paste sample ideal email responses here..." className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-[8px] text-xs text-slate-800 focus:outline-none focus:border-slate-400 transition resize-none" />
                 </div>
               </div>
             </div>
@@ -1126,64 +641,26 @@ const CompanyProfile = () => {
 
           {/* TAB 9: COMPANY KNOWLEDGE */}
           {activeTab === "knowledge" && (
-            <div className="rounded-[18px] border border-gray-200 bg-white p-6 shadow-sm space-y-6">
-              <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs space-y-5">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div>
-                  <h2 className="text-[15px] font-semibold text-gray-900 flex items-center gap-2">
-                    <FiBookOpen className="w-4 h-4 text-indigo-600" />
-                    Company Knowledge Base
-                  </h2>
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    Write everything about your business (SOPs, history, pricing, workflows, internal documentation) to provide complete context.
-                  </p>
+                  <h2 className="text-[13px] font-bold text-slate-900 flex items-center gap-2"><FiBookOpen className="w-4 h-4 text-slate-500" /> Company Knowledge Base</h2>
+                  <p className="text-[11px] text-slate-400 mt-0.5">Write SOPs, history, pricing, workflows — complete context for AI replies.</p>
                 </div>
-
-                <span className="text-[11px] font-semibold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full">
-                  {companyKnowledge.length} Characters
-                </span>
+                <span className="text-[11px] font-bold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-full border border-slate-200">{companyKnowledge.length} chars</span>
               </div>
-
-              <div>
-                <textarea
-                  rows={16}
-                  value={companyKnowledge}
-                  onChange={(e) => setCompanyKnowledge(e.target.value)}
-                  placeholder={`# Company Overview & History
-Our company was founded in 2020...
-
-# Core Mission & Vision
-We aim to deliver world-class automation...
-
-# Service Processes & SOPs
-1. Discovery call
-2. Setup and onboarding
-3. Quality check and support
-
-# Pricing & Billing Details
-- Starter Plan: $49/mo
-- Growth Plan: $199/mo
-
-# Internal Documentation & Rules...`}
-                  className="w-full p-4 bg-gray-50 border border-gray-200 rounded-[12px] text-xs font-mono text-gray-800 leading-relaxed focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                />
-              </div>
+              <textarea rows={18} value={companyKnowledge} onChange={(e) => setCompanyKnowledge(e.target.value)}
+                placeholder={`# Company Overview & History\nOur company was founded in 2020...\n\n# Core Mission & Vision\nWe aim to deliver world-class automation...\n\n# Service Processes & SOPs\n1. Discovery call\n2. Setup and onboarding\n3. Quality check and support\n\n# Pricing & Billing Details\n- Starter Plan: $49/mo\n- Growth Plan: $199/mo\n\n# Internal Documentation & Rules...`}
+                className="w-full p-4 bg-slate-50 border border-slate-200 rounded-[10px] text-xs font-mono text-slate-800 leading-relaxed focus:bg-white focus:outline-none focus:border-slate-400 transition resize-none" />
             </div>
           )}
-          {/* Modals */}
-          <FillWithAiModal
-            isOpen={showFillWithAiModal}
-            onClose={() => setShowFillWithAiModal(false)}
-            onOpenImportModal={() => setShowImportJsonModal(true)}
-          />
 
-          <ImportJsonModal
-            isOpen={showImportJsonModal}
-            onClose={() => setShowImportJsonModal(false)}
-            onImportSuccess={handleImportSuccess}
-          />
+          {/* Modals */}
+          <FillWithAiModal isOpen={showFillWithAiModal} onClose={() => setShowFillWithAiModal(false)} onOpenImportModal={() => setShowImportJsonModal(true)} />
+          <ImportJsonModal isOpen={showImportJsonModal} onClose={() => setShowImportJsonModal(false)} onImportSuccess={handleImportSuccess} />
         </div>
-      </main>
-    </div>
+      </div>
+    </AppLayout>
   );
 };
 

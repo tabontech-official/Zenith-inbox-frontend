@@ -920,10 +920,14 @@ const Inbox = () => {
     return formatEmailBody(content, content, isDark);
   };
 
-  // Sidebar navigation option state: 'all' | 'shopify' | 'custom' | 'awaiting' | 'replied' | 'secured'
+  // Sidebar navigation option state & URL filters
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const sidebarFilter = searchParams.get("filter") || "all";
+  const targetScenarioId = searchParams.get("scenarioId");
+  const targetScenarioName = searchParams.get("scenario");
+  const targetConnectionId = searchParams.get("connectionId");
+  const targetConnectionName = searchParams.get("connection");
 
   const isThreadReplied = (e) => {
     if (!e) return false;
@@ -960,22 +964,72 @@ const Inbox = () => {
   ).length;
 
   const filteredEmails = emails.filter((email) => {
-    // 1. Sidebar Category/Status Filter
-    if (sidebarFilter === "shopify") {
-      const isShopify =
-        (email.service || "").toLowerCase().includes("shopify") ||
-        (email.subject || "").toLowerCase().includes("shopify") ||
-        email.stepType === "shopify-test-parent" ||
-        !!email.extraFields?.storeName;
-      if (!isShopify) return false;
-    } else if (sidebarFilter === "custom") {
-      const isCustom =
-        (email.service || "").toLowerCase() === "custom" ||
-        email.emailType === "custom" ||
-        (email.subject || "").toLowerCase().includes("custom test") ||
-        (!((email.service || "").toLowerCase().includes("shopify") || (email.subject || "").toLowerCase().includes("shopify")));
-      if (!isCustom) return false;
-    } else if (sidebarFilter === "awaiting") {
+    // 1. Specific Scenario Filter
+    if (targetScenarioId || targetScenarioName) {
+      const tId = String(targetScenarioId || "");
+      const tName = (targetScenarioName || "").toLowerCase().trim();
+      const eScenId = String(email.scenarioId || email.scenario_id || "");
+      const eScenName = (email.scenarioName || email.scenario || email.service || "").toLowerCase().trim();
+
+      let matchScen = false;
+      if (tId && eScenId && eScenId === tId) matchScen = true;
+      else if (tName && eScenName && (eScenName === tName || eScenName.includes(tName) || tName.includes(eScenName))) matchScen = true;
+      else if (tName && tName.includes("shopify")) {
+        matchScen =
+          (email.service || "").toLowerCase().includes("shopify") ||
+          (email.subject || "").toLowerCase().includes("shopify") ||
+          email.stepType === "shopify-test-parent" ||
+          !!email.extraFields?.storeName;
+      } else if (tName && tName.includes("custom")) {
+        matchScen =
+          (email.service || "").toLowerCase().includes("custom") ||
+          email.emailType === "custom" ||
+          (email.subject || "").toLowerCase().includes("custom") ||
+          (!((email.service || "").toLowerCase().includes("shopify") || (email.subject || "").toLowerCase().includes("shopify")));
+      }
+
+      if (!matchScen) return false;
+    }
+
+    // 2. Specific Connection Filter
+    if (targetConnectionId || targetConnectionName) {
+      const tId = String(targetConnectionId || "");
+      const tConnName = (targetConnectionName || "").toLowerCase().trim();
+      const eConnId = String(email.connectionId || email.connection_id || "");
+      const recip = (email.recipientAddress || "").toLowerCase();
+      const sender = (email.senderAddress || "").toLowerCase();
+
+      let matchConn = false;
+      if (tId && eConnId && eConnId === tId) matchConn = true;
+      else if (tConnName) {
+        if (recip.includes(tConnName) || sender.includes(tConnName)) matchConn = true;
+        const cleanUser = tConnName.split("@")[0];
+        if (!matchConn && cleanUser && cleanUser.length >= 2 && (recip.includes(cleanUser) || sender.includes(cleanUser))) matchConn = true;
+      }
+
+      if (!matchConn) return false;
+    }
+
+    // 3. Category/Status Filter
+    if (!targetScenarioId && !targetScenarioName && !targetConnectionId && !targetConnectionName) {
+      if (sidebarFilter === "shopify") {
+        const isShopify =
+          (email.service || "").toLowerCase().includes("shopify") ||
+          (email.subject || "").toLowerCase().includes("shopify") ||
+          email.stepType === "shopify-test-parent" ||
+          !!email.extraFields?.storeName;
+        if (!isShopify) return false;
+      } else if (sidebarFilter === "custom") {
+        const isCustom =
+          (email.service || "").toLowerCase() === "custom" ||
+          email.emailType === "custom" ||
+          (email.subject || "").toLowerCase().includes("custom test") ||
+          (!((email.service || "").toLowerCase().includes("shopify") || (email.subject || "").toLowerCase().includes("shopify")));
+        if (!isCustom) return false;
+      }
+    }
+
+    if (sidebarFilter === "awaiting") {
       if (email.leadStatus === "secured" || email.leadStatus === "closed") return false;
       if (isThreadReplied(email)) return false;
     } else if (sidebarFilter === "replied") {
@@ -984,7 +1038,7 @@ const Inbox = () => {
       if (email.leadStatus !== "secured") return false;
     }
 
-    // 2. Search Term Filter
+    // 4. Search Term Filter
     const term = searchTerm.trim().toLowerCase();
     if (!term) return true;
 

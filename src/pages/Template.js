@@ -7,10 +7,11 @@ import toast from "react-hot-toast";
 import { useLocation, useNavigate } from "react-router-dom";
 import { UserContext } from "../component/UserContext";
 import { BoltIcon, CheckCircle2, Layout, Sparkles, X, Zap } from "lucide-react";
+import { FiZap } from "react-icons/fi";
 
 export default function Template() {
   const location = useLocation();
-  const { user } = useContext(UserContext);
+  const { user, setUser: setContextUser } = useContext(UserContext);
   const plan = user?.subscription?.plan || "free";
   const isPro = plan === "pro";
   const [aiLoadingId, setAiLoadingId] = useState(null);
@@ -18,6 +19,50 @@ export default function Template() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [templates, setTemplates] = useState([]);
   const urlParams = new URLSearchParams(location.search);
+
+  // AI Replies toggle — with company profile guard
+  const [aiActive, setAiActive] = useState(() => user?.Ai ?? user?.subscription?.aiRepliesActive ?? true);
+  const [togglingAi, setTogglingAi] = useState(false);
+
+  const handleToggleAiReplies = async () => {
+    const targetUserId = localStorage.getItem("userid") || user?._id;
+    if (!targetUserId) return;
+    const nextStatus = !aiActive;
+
+    // If activating, first check company profile is filled
+    if (nextStatus) {
+      try {
+        const cpRes = await axios.get(`https://email-syncing-backend.vercel.app/api/company-profile/${targetUserId}`);
+        const cp = cpRes.data?.data || cpRes.data;
+        const isComplete = cp?.companyName && cp.companyName.trim().length > 0 && cp?.businessDescription && cp.businessDescription.trim().length > 0;
+        if (!isComplete) {
+          toast.error("Please complete your company profile before activating AI replies.", { duration: 4000 });
+          navigate("/company-profile");
+          return;
+        }
+      } catch (err) {
+        toast.error("Please complete your company profile before activating AI replies.", { duration: 4000 });
+        navigate("/company-profile");
+        return;
+      }
+    }
+
+    setAiActive(nextStatus);
+    try {
+      setTogglingAi(true);
+      const res = await axios.post(
+        `https://email-syncing-backend.vercel.app/auth/toggle-ai-replies/${targetUserId}`,
+        { enabled: nextStatus, userId: targetUserId }
+      );
+      if (res.data?.user && setContextUser) setContextUser(res.data.user);
+      toast.success(nextStatus ? "AI Replies activated!" : "AI Replies paused.");
+    } catch (err) {
+      setAiActive(!nextStatus);
+      toast.error("Failed to update AI replies status.");
+    } finally {
+      setTogglingAi(false);
+    }
+  };
 
   const viewType = urlParams.get("view");
   const [filteredTemplates, setFilteredTemplates] = useState([]);
@@ -281,6 +326,8 @@ export default function Template() {
   return (
     <AppLayout>
       <div className="w-full flex-1 min-w-0 h-full overflow-y-auto bg-[#FAF8F5]">
+        {/* Sticky header: status bar + filter bar */}
+        <div className="sticky top-0 z-20">
         {/* Main Header */}
        <div className="border-b border-gray-200 bg-white">
         <div className="flex min-h-[30px] items-center justify-between gap-4 px-6 text-[11px] text-gray-500">
@@ -312,8 +359,8 @@ export default function Template() {
         </div>
       </div>
         {/* Filter Bar & Controls */}
-        <div className="px-4 sm:px-6 lg:px-8 py-4">
-          <div className="bg-white rounded-[12px] border border-slate-200 p-4 shadow-2xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="border-b border-gray-200 bg-white">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 px-6 py-3">
             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
               <div className="flex items-center gap-2">
                 <label className="text-xs font-bold text-slate-700 whitespace-nowrap">
@@ -360,7 +407,25 @@ export default function Template() {
               </div>
             </div>
 
-            <div className="flex items-center justify-end">
+            <div className="flex items-center justify-end gap-2">
+              {/* AI Replies Toggle */}
+              <button
+                type="button"
+                onClick={handleToggleAiReplies}
+                disabled={togglingAi}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-[10px] border text-xs font-bold transition cursor-pointer shadow-2xs ${
+                  aiActive
+                    ? "bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100"
+                    : "bg-slate-100 text-slate-600 border-slate-300 hover:bg-slate-200"
+                }`}
+                title={aiActive ? "AI Replies are ACTIVE — click to pause" : "AI Replies are PAUSED — click to activate"}
+              >
+                <span className={`h-2 w-2 rounded-full ${aiActive ? "bg-emerald-500 animate-pulse" : "bg-slate-400"}`} />
+                <FiZap size={13} className={aiActive ? "text-emerald-700" : "text-slate-500"} />
+                <span>{aiActive ? "AI Replies: Active" : "AI Replies: Paused"}</span>
+              </button>
+
+              {/* Template Status */}
               <div className="flex items-center gap-3 px-3.5 py-1.5 bg-slate-50 rounded-[10px] border border-slate-200">
                 <div className="flex items-center gap-1.5">
                   <Zap
@@ -412,9 +477,10 @@ export default function Template() {
             </div>
           )}
         </div>
+        </div>{/* end sticky */}
 
         {/* Content Table */}
-        <main className="px-4 sm:px-6 lg:px-8 pb-12">
+        <main className="px-4 sm:px-6 lg:px-8 pb-12 mt-4">
           <div className="bg-white rounded-[12px] border border-slate-200 shadow-2xs overflow-hidden">
             <div className="hidden sm:block overflow-x-auto">
               <table className="min-w-full border-collapse text-xs">

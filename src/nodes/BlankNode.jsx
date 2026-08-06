@@ -9,13 +9,13 @@ const BlankNode = ({ data, selected }) => {
         onClick={() => data?.openModuleModal?.(data?.id)}
         className={`
           relative 
-          px-6 py-7 
+          px-4 py-4
           bg-white/95 
           backdrop-blur-xs
-          rounded-[26px] 
+          rounded-[18px] 
           border-2 border-dashed border-[#CBD5E1]
           hover:border-slate-400 hover:shadow-md
-          w-[270px] 
+          w-[190px] 
           cursor-pointer
           transition-all duration-200 group
           flex flex-col items-center justify-center text-center
@@ -23,15 +23,15 @@ const BlankNode = ({ data, selected }) => {
         `}
       >
         {/* Top Centered Circular Plus Icon */}
-        <div className="w-14 h-14 rounded-full bg-[#F1F5F9] flex items-center justify-center group-hover:scale-105 transition-transform shadow-2xs">
-          <Plus size={24} className="text-[#1E293B]" />
+        <div className="w-9 h-9 rounded-full bg-[#F1F5F9] flex items-center justify-center group-hover:scale-105 group-hover:bg-[#111110] group-hover:text-white transition-all shadow-2xs">
+          <Plus size={18} className="text-[#1E293B] group-hover:text-white transition-colors" />
         </div>
 
         {/* Text Details */}
-        <h3 className="text-base font-bold text-[#0F172A] mt-3.5 mb-0.5">
+        <h3 className="text-xs font-bold text-[#0F172A] mt-2 mb-0.5">
           + Add Node / Module
         </h3>
-        <p className="text-xs font-medium text-[#64748B]">
+        <p className="text-[11px] font-medium text-[#64748B]">
           {data?.subtitle || "Follow-up or Delay"}
         </p>
 
@@ -40,15 +40,15 @@ const BlankNode = ({ data, selected }) => {
           type="source"
           position={Position.Bottom}
           id="a"
-          className="!w-3 !h-2 !rounded-full !bg-slate-300 !border-2 !border-white hover:!bg-indigo-500 transition-colors"
-          style={{ bottom: -7 }}
+          className="!w-2.5 !h-1.5 !rounded-full !bg-slate-300 !border-2 !border-white hover:!bg-indigo-500 transition-colors"
+          style={{ bottom: -6 }}
         />
         <Handle
           type="target"
           position={Position.Top}
           id="b"
-          className="!w-3 !h-2 !rounded-full !bg-slate-300 !border-2 !border-white hover:!bg-indigo-500 transition-colors"
-          style={{ top: -7 }}
+          className="!w-2.5 !h-1.5 !rounded-full !bg-slate-300 !border-2 !border-white hover:!bg-indigo-500 transition-colors"
+          style={{ top: -6 }}
         />
       </div>
     </div>

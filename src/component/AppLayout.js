@@ -22,6 +22,7 @@ import {
   FiClock,
   FiCheckCircle,
   FiTrendingUp,
+  FiLink,
 } from "react-icons/fi";
 import axios from "axios";
 import { UserContext } from "./UserContext";
@@ -207,24 +208,123 @@ const AppLayout = ({ children }) => {
     }
   };
 
-  // ---- Inbox filter counts (used by secondary sidebar) ----
-  const inboxAllCount = emails.length;
-  const inboxShopifyCount = emails.filter(
-    (e) =>
-      (e.service || "").toLowerCase().includes("shopify") ||
-      (e.subject || "").toLowerCase().includes("shopify") ||
-      e.stepType === "shopify-test-parent" ||
-      !!e.extraFields?.storeName,
-  ).length;
-  const inboxCustomCount = emails.filter(
-    (e) =>
-      !(
-        (e.service || "").toLowerCase().includes("shopify") ||
-        (e.subject || "").toLowerCase().includes("shopify") ||
-        e.stepType === "shopify-test-parent" ||
-        !!e.extraFields?.storeName
-      ),
-  ).length;
+  const [userScenarios, setUserScenarios] = useState([]);
+  const [userConnections, setUserConnections] = useState([]);
+
+  useEffect(() => {
+    if (!userId) return;
+    const fetchSidebarData = async () => {
+      try {
+        const [scenRes, connRes] = await Promise.all([
+          axios.get(`https://email-syncing-backend.vercel.app/scenario/user/${userId}`).catch(() => null),
+          axios.get(`https://email-syncing-backend.vercel.app/auth/getConnection/${userId}`).catch(() => null),
+        ]);
+
+        let scens = Array.isArray(scenRes?.data)
+          ? scenRes.data
+          : Array.isArray(scenRes?.data?.data)
+          ? scenRes.data.data
+          : [];
+        setUserScenarios(scens);
+
+        let conns = Array.isArray(connRes?.data)
+          ? connRes.data
+          : Array.isArray(connRes?.data?.data)
+          ? connRes.data.data
+          : [];
+        setUserConnections(conns);
+      } catch (err) {
+        console.error("Error fetching scenarios/connections for sidebar:", err);
+      }
+    };
+
+    fetchSidebarData();
+  }, [userId]);
+
+  const searchParams = new URLSearchParams(location.search);
+  const inboxActiveFilter = searchParams.get("filter") || "all";
+  const activeScenarioId = searchParams.get("scenarioId");
+  const activeScenarioName = searchParams.get("scenario");
+  const activeConnectionId = searchParams.get("connectionId");
+  const activeConnectionName = searchParams.get("connection");
+
+  // Helper: Match email to scenario
+  const isEmailInScenario = (email, scenario) => {
+    if (!email || !scenario) return false;
+    const targetId = String(scenario._id || "");
+    const targetName = (scenario.name || "").toLowerCase().trim();
+
+    const emailScenId = String(email.scenarioId || email.scenario_id || "");
+    if (targetId && emailScenId && emailScenId === targetId) return true;
+
+    const emailScenName = (email.scenarioName || email.scenario || email.service || "").toLowerCase().trim();
+    if (targetName && emailScenName) {
+      if (emailScenName === targetName || emailScenName.includes(targetName) || targetName.includes(emailScenName)) return true;
+    }
+
+    const isShopifyScen = scenario.type === "shopify" || targetName.includes("shopify");
+    if (isShopifyScen) {
+      return (
+        (email.service || "").toLowerCase().includes("shopify") ||
+        (email.subject || "").toLowerCase().includes("shopify") ||
+        email.stepType === "shopify-test-parent" ||
+        !!email.extraFields?.storeName
+      );
+    }
+
+    const isCustomScen = scenario.type === "custom" || targetName.includes("custom");
+    if (isCustomScen) {
+      return (
+        (email.service || "").toLowerCase().includes("custom") ||
+        email.emailType === "custom" ||
+        (email.subject || "").toLowerCase().includes("custom") ||
+        (!((email.service || "").toLowerCase().includes("shopify") || (email.subject || "").toLowerCase().includes("shopify")))
+      );
+    }
+
+    return false;
+  };
+
+  // Helper: Match email to connection
+  const isEmailInConnection = (email, conn) => {
+    if (!email || !conn) return false;
+    const targetId = String(conn._id || "");
+    const targetEmail = (conn.userEmail || conn.email || conn.name || "").toLowerCase().trim();
+
+    const emailConnId = String(email.connectionId || email.connection_id || "");
+    if (targetId && emailConnId && emailConnId === targetId) return true;
+
+    const recip = (email.recipientAddress || "").toLowerCase();
+    const sender = (email.senderAddress || "").toLowerCase();
+
+    if (targetEmail) {
+      if (recip.includes(targetEmail) || sender.includes(targetEmail)) return true;
+      const cleanUsername = targetEmail.split("@")[0];
+      if (cleanUsername && cleanUsername.length >= 2 && (recip.includes(cleanUsername) || sender.includes(cleanUsername))) return true;
+    }
+    return false;
+  };
+
+  // Process Scenarios lists
+  const shopifyScenariosList = userScenarios.filter(
+    (s) => s.type === "shopify" || (s.name || "").toLowerCase().includes("shopify")
+  );
+  if (shopifyScenariosList.length === 0) {
+    shopifyScenariosList.push({ _id: "shopify_default", name: "Shopify Scenario", type: "shopify" });
+  }
+
+  const customScenariosList = userScenarios.filter(
+    (s) => s.type !== "shopify" && !(s.name || "").toLowerCase().includes("shopify")
+  );
+  if (customScenariosList.length === 0) {
+    customScenariosList.push({ _id: "custom_default", name: "Custom Scenario", type: "custom" });
+  }
+
+  // Process Connections list
+  const connectionsList = userConnections.length > 0
+    ? userConnections
+    : [{ _id: "conn_default", name: user?.email || "Connection 1", userEmail: user?.email || "2014tabontech@gmail.com" }];
+
   // isReplied: matches Inbox.js isThreadReplied logic exactly
   const isReplied = (e) => {
     if (!e) return false;
@@ -244,9 +344,6 @@ const AppLayout = ({ children }) => {
   const inboxSecuredCount = emails.filter(
     (e) => e.leadStatus === "secured",
   ).length;
-
-  const inboxActiveFilter =
-    new URLSearchParams(location.search).get("filter") || "all";
 
   const handleSaveOrgSettings = async () => {
     try {
@@ -376,11 +473,16 @@ const AppLayout = ({ children }) => {
       };
     }
 
-    if (path.startsWith("/templates")) {
+    if (path.startsWith("/templates") || path.startsWith("/company-profile")) {
       return {
         type: "standard",
         title: "Templates",
         items: [
+          {
+            id: "company-profile",
+            label: "Company profile",
+            path: "/company-profile",
+          },
           {
             id: "shopify",
             label: "Shopify template",
@@ -632,108 +734,178 @@ const AppLayout = ({ children }) => {
       {/* ------------------------------------------------------------- */}
 
       {secondaryNav.type === "inbox" ? (
-        <aside className="w-[230px] shrink-0 border-r border-slate-200 bg-white">
-          <div className="px-3 py-4">
+        <aside className="w-[230px] shrink-0 border-r border-slate-200 bg-white flex flex-col h-full overflow-y-auto">
+          <div className="px-3 py-4 space-y-4">
             {/* ---- LEAD INBOX group ---- */}
-            <div className="mb-3 flex items-center gap-2 border-b border-slate-200 px-2 pb-3">
-              <FiInbox className="h-4 w-4 text-slate-900" />
-              <h2 className="text-[13px] font-bold text-slate-900">
-                Lead Inbox
-              </h2>
+            <div>
+              <div className="mb-2 flex items-center gap-2 border-b border-slate-200 px-2 pb-2.5">
+                <FiInbox className="h-4 w-4 text-slate-900" />
+                <h2 className="text-[13px] font-bold text-slate-900">Lead Inbox</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => navigate("/inbox")}
+                className={`flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-left text-[12px] transition ${
+                  inboxActiveFilter === "all" && !activeScenarioId && !activeScenarioName && !activeConnectionId && !activeConnectionName
+                    ? "bg-slate-200 font-semibold text-slate-950"
+                    : "font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-950"
+                }`}
+              >
+                <span>All</span>
+                <span className="rounded-full bg-slate-700 px-2 py-0.5 text-[10px] font-semibold text-white">
+                  {emails.length}
+                </span>
+              </button>
             </div>
-            <nav className="flex flex-col gap-0.5">
-              {[
-                {
-                  id: "all",
-                  label: "All",
-                  icon: FiInbox,
-                  count: inboxAllCount,
-                  path: "/inbox",
-                },
-                {
-                  id: "shopify",
-                  label: "Shopify",
-                  icon: FiShoppingBag,
-                  count: inboxShopifyCount,
-                  path: "/inbox?filter=shopify",
-                },
-                {
-                  id: "custom",
-                  label: "Custom",
-                  icon: FiSliders,
-                  count: inboxCustomCount,
-                  path: "/inbox?filter=custom",
-                },
-              ].map((item) => {
-                const isActive = inboxActiveFilter === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => navigate(item.path)}
-                    className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-[13px] transition ${
-                      isActive
-                        ? "bg-slate-200 font-semibold text-slate-950"
-                        : "font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-950"
-                    }`}
-                  >
-                    <span>{item.label}</span>
-                    <span className="rounded-full bg-slate-700 px-2 py-0.5 text-[10px] font-semibold text-white">
-                      {item.count}
-                    </span>
-                  </button>
-                );
-              })}
-            </nav>
+
+            {/* ---- SHOPIFY SCENARIOS group ---- */}
+            <div>
+              <div className="mb-2 flex items-center gap-1.5 border-b border-slate-200 px-2 pb-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <FiShoppingBag className="h-3.5 w-3.5 text-slate-700" />
+                <span>Shopify Scenarios</span>
+              </div>
+              <nav className="flex flex-col gap-0.5">
+                {shopifyScenariosList.map((scen) => {
+                  const count = emails.filter((e) => isEmailInScenario(e, scen)).length;
+                  const isActive =
+                    (activeScenarioId && String(activeScenarioId) === String(scen._id)) ||
+                    (activeScenarioName && activeScenarioName.toLowerCase() === (scen.name || "").toLowerCase());
+                  return (
+                    <button
+                      key={scen._id || scen.name}
+                      type="button"
+                      onClick={() => navigate(`/inbox?scenarioId=${scen._id}&scenario=${encodeURIComponent(scen.name)}`)}
+                      className={`flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-left text-[12px] transition ${
+                        isActive
+                          ? "bg-slate-200 font-semibold text-slate-950"
+                          : "font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-950"
+                      }`}
+                    >
+                      <span className="truncate pr-1" title={scen.name}>{scen.name}</span>
+                      <span className="rounded-full bg-slate-100 border border-slate-200 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">
+                        {count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </nav>
+            </div>
+
+            {/* ---- CUSTOM SCENARIOS group ---- */}
+            <div>
+              <div className="mb-2 flex items-center gap-1.5 border-b border-slate-200 px-2 pb-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <FiSliders className="h-3.5 w-3.5 text-slate-700" />
+                <span>Custom Scenarios</span>
+              </div>
+              <nav className="flex flex-col gap-0.5">
+                {customScenariosList.map((scen) => {
+                  const count = emails.filter((e) => isEmailInScenario(e, scen)).length;
+                  const isActive =
+                    (activeScenarioId && String(activeScenarioId) === String(scen._id)) ||
+                    (activeScenarioName && activeScenarioName.toLowerCase() === (scen.name || "").toLowerCase());
+                  return (
+                    <button
+                      key={scen._id || scen.name}
+                      type="button"
+                      onClick={() => navigate(`/inbox?scenarioId=${scen._id}&scenario=${encodeURIComponent(scen.name)}`)}
+                      className={`flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-left text-[12px] transition ${
+                        isActive
+                          ? "bg-slate-200 font-semibold text-slate-950"
+                          : "font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-950"
+                      }`}
+                    >
+                      <span className="truncate pr-1" title={scen.name}>{scen.name}</span>
+                      <span className="rounded-full bg-slate-100 border border-slate-200 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">
+                        {count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </nav>
+            </div>
+
+            {/* ---- CONNECTIONS group ---- */}
+            <div>
+              <div className="mb-2 flex items-center gap-1.5 border-b border-slate-200 px-2 pb-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <FiLink className="h-3.5 w-3.5 text-slate-700" />
+                <span>Connections</span>
+              </div>
+              <nav className="flex flex-col gap-0.5">
+                {connectionsList.map((conn) => {
+                  const connLabel = conn.name || conn.userEmail || conn.email || "Connection";
+                  const count = emails.filter((e) => isEmailInConnection(e, conn)).length;
+                  const isActive =
+                    (activeConnectionId && String(activeConnectionId) === String(conn._id)) ||
+                    (activeConnectionName && activeConnectionName.toLowerCase() === connLabel.toLowerCase());
+                  return (
+                    <button
+                      key={conn._id || connLabel}
+                      type="button"
+                      onClick={() => navigate(`/inbox?connectionId=${conn._id}&connection=${encodeURIComponent(connLabel)}`)}
+                      className={`flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-left text-[12px] transition ${
+                        isActive
+                          ? "bg-slate-200 font-semibold text-slate-950"
+                          : "font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-950"
+                      }`}
+                    >
+                      <span className="truncate pr-1" title={connLabel}>{connLabel}</span>
+                      <span className="rounded-full bg-slate-100 border border-slate-200 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">
+                        {count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </nav>
+            </div>
 
             {/* ---- STATUS FILTERS group ---- */}
-            <div className="mt-5 mb-3 flex items-center gap-2 border-b border-slate-200 px-2 pb-3">
-              <FiSliders className="h-4 w-4 text-slate-900" />
-              <h2 className="text-[13px] font-bold text-slate-900">
-                Status Filters
-              </h2>
+            <div>
+              <div className="mb-2 flex items-center gap-1.5 border-b border-slate-200 px-2 pb-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <FiSliders className="h-3.5 w-3.5 text-slate-700" />
+                <span>Status Filters</span>
+              </div>
+              <nav className="flex flex-col gap-0.5">
+                {[
+                  {
+                    id: "awaiting",
+                    label: "Awaiting reply",
+                    count: inboxAwaitingCount,
+                    path: "/inbox?filter=awaiting",
+                  },
+                  {
+                    id: "replied",
+                    label: "Replied",
+                    count: inboxRepliedCount,
+                    path: "/inbox?filter=replied",
+                  },
+                  {
+                    id: "secured",
+                    label: "Secured",
+                    count: inboxSecuredCount,
+                    path: "/inbox?filter=secured",
+                  },
+                ].map((item) => {
+                  const isActive = inboxActiveFilter === item.id && !activeScenarioId && !activeConnectionId;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => navigate(item.path)}
+                      className={`flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-left text-[12px] transition ${
+                        isActive
+                          ? "bg-slate-200 font-semibold text-slate-950"
+                          : "font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-950"
+                      }`}
+                    >
+                      <span>{item.label}</span>
+                      <span className="rounded-full bg-slate-700 px-2 py-0.5 text-[10px] font-semibold text-white">
+                        {item.count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </nav>
             </div>
-            <nav className="flex flex-col gap-0.5">
-              {[
-                {
-                  id: "awaiting",
-                  label: "Awaiting reply",
-                  count: inboxAwaitingCount,
-                  path: "/inbox?filter=awaiting",
-                },
-                {
-                  id: "replied",
-                  label: "Replied",
-                  count: inboxRepliedCount,
-                  path: "/inbox?filter=replied",
-                },
-                {
-                  id: "secured",
-                  label: "Secured",
-                  count: inboxSecuredCount,
-                  path: "/inbox?filter=secured",
-                },
-              ].map((item) => {
-                const isActive = inboxActiveFilter === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => navigate(item.path)}
-                    className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-[13px] transition ${
-                      isActive
-                        ? "bg-slate-200 font-semibold text-slate-950"
-                        : "font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-950"
-                    }`}
-                  >
-                    <span>{item.label}</span>
-                    <span className="rounded-full bg-slate-700 px-2 py-0.5 text-[10px] font-semibold text-white">
-                      {item.count}
-                    </span>
-                  </button>
-                );
-              })}
-            </nav>
           </div>
         </aside>
       ) : secondaryNav.type === "organization" ? (
@@ -845,22 +1017,7 @@ const AppLayout = ({ children }) => {
 
           {/* Right Header Controls */}
           <div className="flex items-center gap-3">
-            {/* AI Replies Active/Paused Toggle Button */}
-            <button
-              type="button"
-              onClick={handleToggleAiReplies}
-              disabled={togglingAi}
-              className={`h-8 px-3 rounded-[8px] border text-xs font-bold transition cursor-pointer flex items-center gap-1.5 shadow-2xs ${
-                aiActive
-                  ? "bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100"
-                  : "bg-slate-100 text-slate-600 border-slate-300 hover:bg-slate-200"
-              }`}
-              title={aiActive ? "AI Replies are ACTIVE (Click to pause)" : "AI Replies are PAUSED (Click to activate)"}
-            >
-              <span className={`h-2 w-2 rounded-full ${aiActive ? "bg-emerald-600 animate-pulse" : "bg-slate-400"}`} />
-              <FiZap size={13} className={aiActive ? "text-emerald-700" : "text-slate-500"} />
-              <span>{aiActive ? "AI Replies: Active" : "AI Replies: Paused"}</span>
-            </button>
+
 
             <button
               type="button"
@@ -994,7 +1151,7 @@ const AppLayout = ({ children }) => {
 
         {/* Main Body Canvas */}
         <main
-          className={`flex-1 overflow-hidden ${location.pathname.startsWith("/inbox") || location.pathname.startsWith("/scenarios") || location.pathname.startsWith("/connection") || location.pathname.startsWith("/templates") ? "" : "overflow-y-auto p-4 md:p-6"}`}
+          className={`flex-1 overflow-hidden ${location.pathname.startsWith("/inbox") || location.pathname.startsWith("/scenarios") || location.pathname.startsWith("/connection") || location.pathname.startsWith("/templates") || location.pathname.startsWith("/company-profile") ? "" : "overflow-y-auto p-4 md:p-6"}`}
         >
           {children}
         </main>

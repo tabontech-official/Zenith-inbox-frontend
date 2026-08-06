@@ -1,4 +1,4 @@
-﻿const fs = require('fs');
+const fs = require('fs');
 
 const path = 'C:/react apps/Replex Engine/Zenith-inbox-frontend/src/component/MailhookConnectionModal.js';
 const code = fs.readFileSync(path, 'utf8');
@@ -66,7 +66,7 @@ const newReturn = `  if (!isOpen) return null;
                 Your Mailhook Connection
               </h2>
               <p className="text-gray-600 text-xs sm:text-sm mb-6 leading-relaxed max-w-xs mx-auto">
-                We’ll create your mailhook and help you forward new leads to it.
+                We�ll create your mailhook and help you forward new leads to it.
                 This ensures you never miss an incoming email.
               </p>
 
