@@ -388,7 +388,7 @@
 // };
 
 // export default AllScenariosPage;
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useContext } from "react";
 import {
   Mail,
   Clock,
@@ -411,10 +411,12 @@ import {
   ChevronUp,
   Zap,
   Settings,
+  Lock,
 } from "lucide-react";
+import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
-
 import AppLayout from "../component/AppLayout";
+import { UserContext } from "../component/UserContext";
 
 const getScenarioName = (scenario) => {
   if (scenario.name?.trim()) {
@@ -592,19 +594,46 @@ const AllScenariosPage = () => {
     );
   };
 
+  const { user: contextUser } = useContext(UserContext);
+  const userPlan = contextUser?.subscription?.plan || "Explore";
+
+  const getPlanActiveLimit = (plan) => {
+    const p = (plan || "Explore").toLowerCase();
+    if (p === "elevate") return 5;
+    if (p === "unite") return 15;
+    if (p === "enterprise") return 999;
+    return 1;
+  };
+
+  const planActiveLimit = getPlanActiveLimit(userPlan);
+
+  const handleToggleScenarioStatus = async (event, scenario) => {
+    event.stopPropagation();
+    const willBeActive = !scenario.scenarioActive;
+
+    if (willBeActive && activeCount >= planActiveLimit) {
+      setSelectedScenario(scenario);
+      setUpgradeModalOpen(true);
+      return;
+    }
+
+    try {
+      await fetch(
+        `https://email-syncing-backend.vercel.app/scenario/detail/${scenario._id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ scenarioActive: willBeActive }),
+        }
+      );
+      fetchScenarios();
+    } catch (err) {
+      console.error("Error toggling scenario active status:", err);
+    }
+  };
+
   const handleCreateScenario = (type) => {
     setDropdownOpen(false);
-
-    if (type === "shopify" && shopifyCount >= 1) {
-      setUpgradeModalOpen(true);
-      return;
-    }
-
-    if (type === "custom" && customCount >= 2) {
-      setUpgradeModalOpen(true);
-      return;
-    }
-
     navigate(
       type === "shopify"
         ? "/scenarios/shopify"
@@ -634,6 +663,11 @@ const AllScenariosPage = () => {
 
   const openDeleteModal = (event, scenario) => {
     event.stopPropagation();
+
+    if (scenario?.type === "shopify") {
+      toast.error("Shopify prebuilt system scenarios cannot be deleted.");
+      return;
+    }
 
     setSelectedScenario(scenario);
     setDeleteModalOpen(true);
@@ -667,57 +701,6 @@ const AllScenariosPage = () => {
                 Manage, edit and organize your automated workflows.
               </p>
             </div>
-
-            {/* Split Button Matching Image */}
-            {/* <div className="relative inline-block text-left" ref={dropdownRef}>
-              <div className="inline-flex items-center rounded-[8px] bg-zinc-950 p-0.5 shadow-xs">
-                <button
-                  type="button"
-                  onClick={() => handleCreateScenario("shopify")}
-                  className="flex h-9 items-center gap-2 rounded-l-[6px] bg-zinc-950 px-3.5 text-xs font-bold text-white transition hover:bg-zinc-800"
-                >
-                  <Plus className="h-4 w-4 stroke-[2.5]" />
-                  <span>New scenario</span>
-                </button>
-
-                <div className="h-5 w-[1px] bg-zinc-800" />
-
-                <button
-                  type="button"
-                  onClick={() => setDropdownOpen((prev) => !prev)}
-                  className="flex h-9 w-9 items-center justify-center rounded-r-[6px] bg-zinc-950 text-white transition hover:bg-zinc-800"
-                  aria-label="Toggle options menu"
-                >
-                  {dropdownOpen ? (
-                    <ChevronUp className="h-4 w-4 stroke-[2.5]" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4 stroke-[2.5]" />
-                  )}
-                </button>
-              </div>
-
-              {dropdownOpen && (
-                <div className="absolute right-0 top-full z-50 mt-2 w-56 rounded-[12px] border border-zinc-200 bg-white p-1.5 shadow-xl transition-all">
-                  <button
-                    type="button"
-                    onClick={() => handleCreateScenario("shopify")}
-                    className="flex w-full items-center gap-3 rounded-[8px] px-3 py-2.5 text-left text-xs font-semibold text-zinc-800 transition hover:bg-zinc-100"
-                  >
-                    <Zap className="h-4 w-4 text-zinc-700" />
-                    <span>Shopify Scenario</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleCreateScenario("custom")}
-                    className="flex w-full items-center gap-3 rounded-[8px] px-3 py-2.5 text-left text-xs font-semibold text-zinc-800 transition hover:bg-zinc-100"
-                  >
-                    <Settings className="h-4 w-4 text-zinc-700" />
-                    <span>Custom Scenario</span>
-                  </button>
-                </div>
-              )}
-            </div> */}
           </div>
 
           {/* Metric Cards Grid */}
@@ -742,14 +725,14 @@ const AllScenariosPage = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-[11px] font-semibold uppercase  text-zinc-500">
-                    Shopify Limit
+                    Shopify Prebuilt
                   </p>
                   <div className="mt-2 flex items-baseline gap-1">
                     <span className="text-2xl font-bold text-zinc-900">
                       {shopifyCount}
                     </span>
                     <span className="text-xs font-medium text-zinc-400">
-                      / 1 max
+                      template
                     </span>
                   </div>
                 </div>
@@ -763,14 +746,14 @@ const AllScenariosPage = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-[11px] font-semibold uppercase  text-zinc-500">
-                    Custom Limit
+                    Custom Workflows
                   </p>
                   <div className="mt-2 flex items-baseline gap-1">
                     <span className="text-2xl font-bold text-zinc-900">
                       {customCount}
                     </span>
-                    <span className="text-xs font-medium text-zinc-400">
-                      / 2 max
+                    <span className="text-xs font-semibold text-emerald-600">
+                      (Unlimited)
                     </span>
                   </div>
                 </div>
@@ -786,9 +769,14 @@ const AllScenariosPage = () => {
                   <p className="text-[11px] font-semibold uppercase  text-zinc-500">
                     Active Automations
                   </p>
-                  <p className="mt-2 text-2xl font-bold text-zinc-900">
-                    {activeCount}
-                  </p>
+                  <div className="mt-2 flex items-baseline gap-1">
+                    <span className="text-2xl font-bold text-zinc-900">
+                      {activeCount}
+                    </span>
+                    <span className="text-xs font-medium text-zinc-500">
+                      / {planActiveLimit === 999 ? "∞" : planActiveLimit} max ({userPlan})
+                    </span>
+                  </div>
                 </div>
                 <div className="flex h-10 w-10 items-center justify-center rounded-[8px] bg-zinc-100 text-zinc-900">
                   <PlayCircle className="h-5 w-5" />
@@ -925,17 +913,24 @@ const AllScenariosPage = () => {
                         </td>
 
                         <td className="px-5 py-4">
-                          {scenario.scenarioActive ? (
-                            <span className="inline-flex items-center gap-1.5 rounded-[8px] border border-zinc-300 bg-zinc-900 px-2.5 py-1 text-[10px] font-medium text-white">
-                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                              Active
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1.5 rounded-[8px] border border-zinc-200 bg-zinc-100 px-2.5 py-1 text-[10px] font-medium text-zinc-600">
-                              <span className="h-1.5 w-1.5 rounded-full bg-zinc-400" />
-                              Paused
-                            </span>
-                          )}
+                          <button
+                            type="button"
+                            onClick={(event) => handleToggleScenarioStatus(event, scenario)}
+                            className="cursor-pointer transition hover:scale-105 active:scale-95"
+                            title={scenario.scenarioActive ? "Click to deactivate scenario" : "Click to activate scenario"}
+                          >
+                            {scenario.scenarioActive ? (
+                              <span className="inline-flex items-center gap-1.5 rounded-[8px] border border-zinc-300 bg-zinc-900 px-2.5 py-1 text-[10px] font-medium text-white hover:bg-black">
+                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                                Active
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1.5 rounded-[8px] border border-zinc-200 bg-zinc-100 px-2.5 py-1 text-[10px] font-medium text-zinc-600 hover:bg-zinc-200">
+                                <span className="h-1.5 w-1.5 rounded-full bg-zinc-400" />
+                                Paused
+                              </span>
+                            )}
+                          </button>
                         </td>
 
                         <td className="whitespace-nowrap px-5 py-4 text-xs text-zinc-500">
@@ -944,16 +939,25 @@ const AllScenariosPage = () => {
 
                         <td className="px-5 py-4">
                           <div className="flex items-center justify-end gap-1">
-                            <button
-                              type="button"
-                              onClick={(event) =>
-                                openDeleteModal(event, scenario)
-                              }
-                              className="flex h-8 w-8 items-center justify-center rounded-[8px] text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-900"
-                              aria-label="Delete scenario"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
+                            {scenario.type === "shopify" ? (
+                              <div
+                                className="flex h-8 w-8 items-center justify-center rounded-[8px] text-zinc-400 bg-zinc-100/70 cursor-not-allowed"
+                                title="Prebuilt System Scenario (Non-deletable)"
+                              >
+                                <Lock className="h-3.5 w-3.5 text-zinc-500" />
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={(event) =>
+                                  openDeleteModal(event, scenario)
+                                }
+                                className="flex h-8 w-8 items-center justify-center rounded-[8px] text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-900 cursor-pointer"
+                                aria-label="Delete scenario"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            )}
                             <ChevronRight className="h-4 w-4 text-zinc-300 transition group-hover:translate-x-0.5 group-hover:text-zinc-900" />
                           </div>
                         </td>
@@ -1138,7 +1142,7 @@ const AllScenariosPage = () => {
       {/* Upgrade Modal */}
       {upgradeModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 backdrop-blur-xs">
-          <div className="relative w-full max-w-md rounded-[8px] border border-zinc-200 bg-white p-6 shadow-xl">
+          <div className="relative w-full max-w-md rounded-[12px] border border-zinc-200 bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-150">
             <button
               type="button"
               onClick={() => setUpgradeModalOpen(false)}
@@ -1147,38 +1151,45 @@ const AllScenariosPage = () => {
               <X className="h-4 w-4" />
             </button>
 
-            <div className="flex h-10 w-10 items-center justify-center rounded-[8px] bg-zinc-100 text-zinc-900">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-50 border border-amber-200 text-amber-700">
               <AlertTriangle className="h-5 w-5" />
             </div>
 
-            <h2 className="mt-4 text-base font-semibold text-zinc-900">
-              Scenario Limit Reached
+            <h2 className="mt-4 text-lg font-bold text-zinc-950">
+              Active Scenario Limit Reached
             </h2>
 
-            <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">
-              You have reached the free tier limit of{" "}
-              <span className="font-semibold text-zinc-900">1 Shopify scenario</span>{" "}
-              and{" "}
-              <span className="font-semibold text-zinc-900">2 custom scenarios</span>.
+            <p className="mt-2 text-xs leading-relaxed text-zinc-600">
+              Your account is currently on the <strong className="text-zinc-900">{userPlan}</strong> plan, which allows up to <strong className="text-zinc-900">{planActiveLimit} active scenario{planActiveLimit > 1 ? "s" : ""}</strong> simultaneously ({activeCount} currently active).
             </p>
 
-            <div className="mt-4 rounded-[8px] border border-zinc-200 bg-zinc-50 p-3.5">
-              <div className="flex items-center gap-1.5 text-xs font-semibold text-zinc-900">
-                <Sparkles className="h-3.5 w-3.5 text-zinc-700" />
-                Pro Plan Coming Soon
+            <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50/60 p-4">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-amber-950">
+                <Sparkles className="h-4 w-4 text-amber-600" />
+                Why activation is blocked
               </div>
-              <p className="mt-1 text-[11px] leading-relaxed text-zinc-600">
-                Higher limits and advanced workflow automation features will be available with the Pro plan.
+              <p className="mt-1 text-xs leading-relaxed text-amber-900">
+                To activate <strong className="text-zinc-950">{selectedScenario?.name || "this scenario"}</strong>, please deactivate an existing active scenario or upgrade your plan to unlock higher concurrent automation limits.
               </p>
             </div>
 
-            <div className="mt-6 flex justify-end">
+            <div className="mt-6 flex items-center justify-end gap-2.5 border-t border-zinc-100 pt-4">
               <button
                 type="button"
                 onClick={() => setUpgradeModalOpen(false)}
-                className="h-9 rounded-[8px] bg-zinc-900 px-4 text-xs font-semibold text-white transition hover:bg-black shadow-xs"
+                className="h-9 rounded-lg border border-zinc-300 bg-white px-4 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 transition cursor-pointer"
               >
-                Got It
+                Keep Current Scenarios
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setUpgradeModalOpen(false);
+                  navigate("/pricing");
+                }}
+                className="h-9 rounded-lg bg-zinc-900 px-4 text-xs font-bold text-white transition hover:bg-black shadow-xs cursor-pointer"
+              >
+                Upgrade Plan
               </button>
             </div>
           </div>

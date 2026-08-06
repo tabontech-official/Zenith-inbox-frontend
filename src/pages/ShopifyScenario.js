@@ -71,6 +71,7 @@ const ShopifyScenariosPage = () => {
   const quillRef = useRef(null);
   const [guideStep, setGuideStep] = useState(0);
   const [showInsertFields, setShowInsertFields] = useState(false);
+  const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   useEffect(() => {
     const closeFields = () => setShowInsertFields(false);
 
@@ -108,6 +109,46 @@ const ShopifyScenariosPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [showTemplateModal, setShowTemplateModal] = useState(false);
+
+  const handleToggleShopifyAutomation = async () => {
+    const nextVal = !automationOn;
+
+    if (nextVal) {
+      const targetUserId = localStorage.getItem("userid") || user?._id;
+      const userPlan = user?.subscription?.plan || "Explore";
+
+      const getPlanActiveLimit = (p) => {
+        const plan = (p || "Explore").toLowerCase();
+        if (plan === "elevate") return 5;
+        if (plan === "unite") return 15;
+        if (plan === "enterprise") return 999;
+        return 1;
+      };
+      const limit = getPlanActiveLimit(userPlan);
+
+      if (targetUserId) {
+        try {
+          const res = await fetch(`https://email-syncing-backend.vercel.app/scenario/user/${targetUserId}`);
+          const data = await res.json();
+          const list = Array.isArray(data) ? data : data?.data || [];
+          const activeCount = list.filter((s) => s.scenarioActive && s._id !== id).length;
+
+          if (activeCount >= limit) {
+            toast.error(
+              `Active scenario limit reached for your ${userPlan} plan (max ${limit === 999 ? "unlimited" : limit} active). Please deactivate an existing active scenario or upgrade your plan.`
+            );
+            setUpgradeModalOpen(true);
+            return;
+          }
+        } catch (err) {
+          console.error("Error checking active scenario limit:", err);
+        }
+      }
+    }
+
+    setAutomationOn(nextVal);
+    toast.success(nextVal ? "Scenario activated successfully!" : "Scenario deactivated.");
+  };
   const [templateList, setTemplateList] = useState([]);
   const [loadingTemplates, setLoadingTemplates] = useState(false);
   const [selectedServiceForTemplates, setSelectedServiceForTemplates] =
@@ -3012,6 +3053,8 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                     Send test lead
                   </button>
 
+
+
                   <div className="flex items-center gap-2 rounded-full border border-[#E0DDD5] bg-white px-3 py-1 shadow-2xs">
                     <span className="text-xs font-semibold text-slate-700">
                       {automationOn ? "On" : "Off"}
@@ -3020,15 +3063,7 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                       <input
                         type="checkbox"
                         checked={automationOn}
-                        onChange={() => {
-                          const nextVal = !automationOn;
-                          setAutomationOn(nextVal);
-                          toast.success(
-                            nextVal
-                              ? "Scenario activated successfully!"
-                              : "Scenario deactivated.",
-                          );
-                        }}
+                        onChange={handleToggleShopifyAutomation}
                         className="sr-only peer"
                       />
                       <div className="w-8 h-4 bg-slate-300 peer-checked:bg-[#137333] rounded-full transition-colors"></div>
@@ -5398,6 +5433,62 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                 className="rounded-lg bg-[#7375E8] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#5B5FD6]"
               >
                 Continue with General Templates
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Upgrade Active Scenario Modal */}
+      {upgradeModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 backdrop-blur-xs">
+          <div className="relative w-full max-w-md rounded-[12px] border border-slate-200 bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-150">
+            <button
+              type="button"
+              onClick={() => setUpgradeModalOpen(false)}
+              className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-[8px] text-slate-400 hover:bg-slate-100 hover:text-slate-700 cursor-pointer"
+            >
+              <X className="h-4 w-4" />
+            </button>
+
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-50 border border-amber-200 text-amber-700">
+              <Zap className="h-5 w-5" />
+            </div>
+
+            <h2 className="mt-4 text-lg font-bold text-slate-950">
+              Active Scenario Limit Reached
+            </h2>
+
+            <p className="mt-2 text-xs leading-relaxed text-slate-600">
+              Your account is currently on the <strong className="text-slate-900">{user?.subscription?.plan || "Explore"}</strong> plan, which allows up to <strong className="text-slate-900">{((user?.subscription?.plan || "Explore").toLowerCase() === "elevate" ? 5 : (user?.subscription?.plan || "Explore").toLowerCase() === "unite" ? 15 : 1)} active scenario</strong> at a time.
+            </p>
+
+            <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50/60 p-4">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-amber-950">
+                <Zap className="h-4 w-4 text-amber-600" />
+                Why activation is blocked
+              </div>
+              <p className="mt-1 text-xs leading-relaxed text-amber-900">
+                To activate this scenario, please deactivate an existing active scenario or upgrade your plan.
+              </p>
+            </div>
+
+            <div className="mt-6 flex items-center justify-end gap-2.5 border-t border-slate-100 pt-4">
+              <button
+                type="button"
+                onClick={() => setUpgradeModalOpen(false)}
+                className="h-9 rounded-lg border border-slate-300 bg-white px-4 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+              >
+                Keep Current Scenarios
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setUpgradeModalOpen(false);
+                  navigate("/pricing");
+                }}
+                className="h-9 rounded-lg bg-slate-900 px-4 text-xs font-bold text-white transition hover:bg-black shadow-xs cursor-pointer"
+              >
+                Upgrade Plan
               </button>
             </div>
           </div>

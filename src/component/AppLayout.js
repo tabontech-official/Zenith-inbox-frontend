@@ -21,6 +21,7 @@ import {
   FiSliders,
   FiClock,
   FiCheckCircle,
+  FiTrendingUp,
 } from "react-icons/fi";
 import axios from "axios";
 import { UserContext } from "./UserContext";
@@ -600,10 +601,25 @@ const AppLayout = ({ children }) => {
           <button
             type="button"
             onClick={() => navigate("/pricing")}
-            className="w-full py-1.5 rounded-[8px] bg-slate-900 text-white hover:bg-black font-bold text-[10px] transition cursor-pointer shadow-xs text-center border border-slate-900"
+            className="group flex flex-col items-center justify-center w-full py-1 cursor-pointer"
             title="Upgrade Plan"
           >
-            Upgrade
+            <div
+              className={`flex items-center justify-center h-9 w-9 rounded-xl transition ${
+                location.pathname === "/pricing"
+                  ? "bg-gray-300 border border-gray-400/60 text-slate-950 shadow-2xs"
+                  : "bg-transparent group-hover:bg-gray-300/50 text-slate-700"
+              }`}
+            >
+              <FiTrendingUp size={18} className={location.pathname === "/pricing" ? "text-slate-950" : "text-slate-700 group-hover:text-slate-950"} />
+            </div>
+            <span
+              className={`text-[9px] mt-0.5 tracking-tight ${
+                location.pathname === "/pricing" ? "font-bold text-slate-950" : "font-medium text-slate-700"
+              }`}
+            >
+              Upgrade
+            </span>
           </button>
         </div>
       </aside>
@@ -1027,7 +1043,7 @@ const AppLayout = ({ children }) => {
                     </span>
                   </div>
                   <span className="px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-[10px] font-bold text-amber-800 shrink-0">
-                    1 of 1 Used (Limit)
+                    Prebuilt Template
                   </span>
                 </div>
                 <p className="text-xs text-slate-500 leading-relaxed pl-13">
@@ -1035,9 +1051,9 @@ const AppLayout = ({ children }) => {
                   personalized email response flows.
                 </p>
                 <div className="text-[11px] text-slate-400 font-medium pl-13">
-                  Plan Limit:{" "}
+                  Template Type:{" "}
                   <span className="font-bold text-slate-700">
-                    Max 1 scenario
+                    Prebuilt Lead Capture Flow
                   </span>
                 </div>
               </div>
@@ -1059,7 +1075,7 @@ const AppLayout = ({ children }) => {
                     </span>
                   </div>
                   <span className="px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-[10px] font-bold text-emerald-800 shrink-0">
-                    0 of 2 Used
+                    Unlimited Creation
                   </span>
                 </div>
                 <p className="text-xs text-slate-500 leading-relaxed pl-13">
@@ -1067,9 +1083,9 @@ const AppLayout = ({ children }) => {
                   webhook connections.
                 </p>
                 <div className="text-[11px] text-slate-400 font-medium pl-13">
-                  Plan Limit:{" "}
+                  Creation Limit:{" "}
                   <span className="font-bold text-slate-700">
-                    Max 2 scenarios
+                    Unlimited Scenarios (Active limits apply per plan)
                   </span>
                 </div>
               </div>
