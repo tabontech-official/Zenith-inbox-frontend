@@ -14,7 +14,7 @@ import {
   FiType,
 } from "react-icons/fi";
 
-const API_URL = "https://email-syncing-backend.vercel.app/api/product-page/product-page";
+const API_URL = "http://localhost:5000/api/product-page/product-page";
 
 const iconOptions = ["FiMail", "FiZap", "FiSend", "FiRepeat", "FiBarChart2"];
 

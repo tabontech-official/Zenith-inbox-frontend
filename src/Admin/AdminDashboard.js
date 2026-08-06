@@ -28,7 +28,7 @@ const AdminDashboard = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch("https://email-syncing-backend.vercel.app/auth/summary");
+        const res = await fetch("http://localhost:5000/auth/summary");
         const data = await res.json();
         setStats(data);
         setRecentUsers(data.recentUsers || []);

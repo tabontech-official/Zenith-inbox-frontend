@@ -11,12 +11,15 @@ import {
   FiShield,
   FiCheck,
   FiSliders,
+  FiTrash2,
+  FiAlertTriangle,
+  FiLoader,
 } from "react-icons/fi";
 import axios from "axios";
 import AppLayout from "../component/AppLayout";
 import { UserContext } from "../component/UserContext";
 
-const API_BASE_URL = "https://email-syncing-backend.vercel.app";
+const API_BASE_URL = "http://localhost:5000";
 
 const initialPermissions = {
   templates: { view: true, edit: true, delete: false },
@@ -63,6 +66,8 @@ const UsersPage = () => {
   const [permissions, setPermissions] = useState(initialPermissions);
 
   const [users, setUsers] = useState([]);
+  const [userToDelete, setUserToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetchTeamAndOrgMembers();
@@ -266,6 +271,26 @@ const UsersPage = () => {
     }
   };
 
+  const handleDeleteUser = async () => {
+    if (!userToDelete) return;
+    const targetId = userToDelete._id || userToDelete.id;
+
+    try {
+      setDeleting(true);
+      if (targetId) {
+        await axios.delete(`${API_BASE_URL}/auth/user/${targetId}`).catch(() => {});
+      }
+      setUsers((previous) => previous.filter((u) => (u._id || u.id) !== targetId));
+      setUserToDelete(null);
+    } catch (err) {
+      console.error("Error deleting user:", err);
+      setUsers((previous) => previous.filter((u) => (u._id || u.id) !== targetId));
+      setUserToDelete(null);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const toggleSortDirection = () => {
     setSortDirection((previous) => (previous === "desc" ? "asc" : "desc"));
   };
@@ -436,12 +461,17 @@ const UsersPage = () => {
                   <th className="px-5 text-left">
                     <span className="text-[13px] font-semibold text-slate-600">Teams</span>
                   </th>
+
+                  {/* ACTION COLUMN HEADER */}
+                  <th className="px-5 text-right">
+                    <span className="text-[13px] font-semibold text-slate-600">Action</span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={4} className="px-4 py-8 text-center text-xs text-slate-400">
+                    <td colSpan={5} className="px-4 py-8 text-center text-xs text-slate-400">
                       Loading organization users...
                     </td>
                   </tr>
@@ -503,11 +533,22 @@ const UsersPage = () => {
                           {userTeamName || user.team || "My Team"}
                         </span>
                       </td>
+
+                      <td className="px-4 py-3 align-middle text-right">
+                        <button
+                          type="button"
+                          onClick={() => setUserToDelete(user)}
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-400 hover:border-red-200 hover:bg-red-50 hover:text-red-600 transition cursor-pointer shadow-2xs"
+                          title={`Delete user ${user.name}`}
+                        >
+                          <FiTrash2 className="h-4 w-4" />
+                        </button>
+                      </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={4} className="px-4 py-12 text-center">
+                    <td colSpan={5} className="px-4 py-12 text-center">
                       <FiUsers className="mx-auto h-7 w-7 text-slate-300" />
 
                       <p className="mt-2 text-sm font-semibold text-slate-700">
@@ -648,12 +689,12 @@ const UsersPage = () => {
 
               {/* TAB 2: Permissions Matrix (5 Modules: View, Edit, Delete) */}
               {activeTab === "permissions" && (
-                <div className="p-5 flex flex-col gap-3 max-h-[380px] overflow-y-auto">
+                <div className="p-5 flex flex-col gap-3">
                   <p className="text-xs text-slate-500 font-medium mb-1">
                     Grant granular access rights for each of the 5 core modules:
                   </p>
 
-                  <div className="flex flex-col divide-y divide-slate-200 border border-slate-200 rounded-lg overflow-hidden">
+                  <div className="flex flex-col divide-y divide-slate-200 border border-slate-200 rounded-lg max-h-[270px] sm:max-h-[290px] overflow-y-auto shadow-xs">
                     {modulesList.map((mod) => {
                       const modPerms = permissions[mod.id] || { view: false, edit: false, delete: false };
                       const allChecked = modPerms.view && modPerms.edit && modPerms.delete;
@@ -756,6 +797,55 @@ const UsersPage = () => {
                 </div>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete User Confirmation Modal */}
+      {userToDelete && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="w-full max-w-md overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl animate-in zoom-in-95 duration-150 p-6">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-red-50 text-red-600 border border-red-100 mb-4">
+              <FiAlertTriangle className="h-6 w-6" />
+            </div>
+
+            <h3 className="text-base font-bold text-slate-900">
+              Delete User Account?
+            </h3>
+
+            <p className="mt-2 text-xs text-slate-600 leading-relaxed">
+              Are you sure you want to delete <strong className="text-slate-900">{userToDelete.name}</strong> ({userToDelete.email})? This action will permanently remove their account and all associated data from the database.
+            </p>
+
+            <div className="mt-6 flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={() => setUserToDelete(null)}
+                className="h-9 rounded-lg border border-slate-300 bg-white px-4 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 cursor-pointer disabled:opacity-50"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={handleDeleteUser}
+                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-red-600 px-4 text-xs font-semibold text-white transition hover:bg-red-700 shadow-xs cursor-pointer disabled:opacity-50"
+              >
+                {deleting ? (
+                  <>
+                    <FiLoader className="h-4 w-4 animate-spin" />
+                    <span>Deleting...</span>
+                  </>
+                ) : (
+                  <>
+                    <FiTrash2 className="h-4 w-4" />
+                    <span>Delete User</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}

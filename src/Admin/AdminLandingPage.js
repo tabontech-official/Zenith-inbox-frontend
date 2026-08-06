@@ -25,7 +25,7 @@
 //     const fetchContent = async () => {
 //       try {
 //         const res = await fetch(
-//           "https://email-syncing-backend.vercel.app/api/landing-page",
+//           "http://localhost:5000/api/landing-page",
 //         );
 //         if (res.ok) {
 //           const data = await res.json();
@@ -47,7 +47,7 @@
 //     try {
 //       const token = localStorage.getItem("usertoken");
 //       const res = await fetch(
-//         "https://email-syncing-backend.vercel.app/api/landing-page",
+//         "http://localhost:5000/api/landing-page",
 //         {
 //           method: "PUT",
 //           headers: {
@@ -377,7 +377,7 @@ import {
   FiStar,
 } from "react-icons/fi";
 
-const API_URL = "https://email-syncing-backend.vercel.app/api/landing-page";
+const API_URL = "http://localhost:5000/api/landing-page";
 
 const AdminLandingPage = () => {
   const [content, setContent] = useState(null);
