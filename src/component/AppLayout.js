@@ -208,6 +208,47 @@ const AppLayout = ({ children }) => {
     }
   };
 
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const computeUnreadCount = (emailsList = emails) => {
+    try {
+      const readIds = new Set(JSON.parse(localStorage.getItem("readEmailIds") || "[]"));
+      const unread = (emailsList || []).filter((e) => {
+        if (!e || e.isDeleted) return false;
+        const eId = String(e._id || "");
+        return !readIds.has(eId);
+      }).length;
+      setUnreadCount(unread);
+    } catch (err) {
+      setUnreadCount(0);
+    }
+  };
+
+  useEffect(() => {
+    computeUnreadCount(emails);
+  }, [emails]);
+
+  useEffect(() => {
+    const handleReadUpdate = () => {
+      computeUnreadCount(emails);
+    };
+    window.addEventListener("readEmailUpdated", handleReadUpdate);
+    window.addEventListener("storage", handleReadUpdate);
+    return () => {
+      window.removeEventListener("readEmailUpdated", handleReadUpdate);
+      window.removeEventListener("storage", handleReadUpdate);
+    };
+  }, [emails]);
+
+  useEffect(() => {
+    if (!userId) return;
+    fetchRecentEmails();
+    const interval = setInterval(() => {
+      fetchRecentEmails();
+    }, 6000);
+    return () => clearInterval(interval);
+  }, [userId]);
+
   const [userScenarios, setUserScenarios] = useState([]);
   const [userConnections, setUserConnections] = useState([]);
 
@@ -289,20 +330,19 @@ const AppLayout = ({ children }) => {
   const isEmailInConnection = (email, conn) => {
     if (!email || !conn) return false;
     const targetId = String(conn._id || "");
-    const targetEmail = (conn.userEmail || conn.email || conn.name || "").toLowerCase().trim();
+    const targetEmail = (conn.email || conn.userEmail || "").toLowerCase().trim();
 
     const emailConnId = String(email.connectionId || email.connection_id || "");
     if (targetId && emailConnId && emailConnId === targetId) return true;
 
-    const recip = (email.recipientAddress || "").toLowerCase();
-    const sender = (email.senderAddress || "").toLowerCase();
-
-    if (targetEmail) {
+    if (targetEmail && targetEmail.includes("@")) {
+      const recip = (email.recipientAddress || "").toLowerCase();
+      const sender = (email.senderAddress || "").toLowerCase();
       if (recip.includes(targetEmail) || sender.includes(targetEmail)) return true;
       const cleanUsername = targetEmail.split("@")[0];
       if (cleanUsername && cleanUsername.length >= 2 && (recip.includes(cleanUsername) || sender.includes(cleanUsername))) return true;
     }
-    return false;
+    return true;
   };
 
   // Process Scenarios lists
@@ -477,12 +517,12 @@ const AppLayout = ({ children }) => {
           },
           {
             id: "shopify",
-            label: "Shopify template",
+            label: "Shopify templates",
             path: "/templates",
           },
           {
             id: "custom",
-            label: "Custom template",
+            label: "Custom templates",
             path: "/templates/general",
           },
         ],
@@ -642,14 +682,21 @@ const AppLayout = ({ children }) => {
                   className="group flex flex-col items-center justify-center w-full py-1 cursor-pointer"
                   title={item.label}
                 >
-                  <div
-                    className={`flex items-center justify-center h-10 w-10 rounded-xl transition ${
-                      isActive
-                        ? "bg-gray-300 border border-gray-400/60 text-slate-950 shadow-2xs"
-                        : "bg-transparent group-hover:bg-gray-300/50 text-slate-700"
-                    }`}
-                  >
-                    <Icon size={20} className={isActive ? "text-slate-950" : "text-slate-700 group-hover:text-slate-950"} />
+                  <div className="relative">
+                    <div
+                      className={`flex items-center justify-center h-10 w-10 rounded-xl transition ${
+                        isActive
+                          ? "bg-gray-300 border border-gray-400/60 text-slate-950 shadow-2xs"
+                          : "bg-transparent group-hover:bg-gray-300/50 text-slate-700"
+                      }`}
+                    >
+                      <Icon size={20} className={isActive ? "text-slate-950" : "text-slate-700 group-hover:text-slate-950"} />
+                    </div>
+                    {item.id === "inbox" && unreadCount > 0 && (
+                      <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[9px] font-extrabold text-white shadow-xs animate-in zoom-in-50">
+                        {unreadCount > 99 ? "99+" : unreadCount}
+                      </span>
+                    )}
                   </div>
                   <span
                     className={`text-[10px] mt-1 tracking-tight ${
@@ -838,7 +885,7 @@ const AppLayout = ({ children }) => {
                       <button
                         key={conn._id || connLabel}
                         type="button"
-                        onClick={() => navigate(`/inbox?connectionId=${conn._id}&connection=${encodeURIComponent(connLabel)}`)}
+                        onClick={() => navigate(`/inbox?connectionId=${conn._id}&connection=${encodeURIComponent(connLabel)}&connEmail=${encodeURIComponent(conn.userEmail || conn.email || "")}`)}
                         className={`flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-left text-[12px] transition ${
                           isActive
                             ? "bg-slate-200 font-semibold text-slate-950"

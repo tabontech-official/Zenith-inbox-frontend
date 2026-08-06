@@ -1035,6 +1035,7 @@ const Inbox = () => {
   const targetScenarioName = searchParams.get("scenario");
   const targetConnectionId = searchParams.get("connectionId");
   const targetConnectionName = searchParams.get("connection");
+  const targetConnectionEmail = searchParams.get("connEmail");
 
   const isThreadReplied = (e) => {
     if (!e) return false;
@@ -1099,19 +1100,38 @@ const Inbox = () => {
     }
 
     // 2. Specific Connection Filter
-    if (targetConnectionId || targetConnectionName) {
+    if (targetConnectionId || targetConnectionName || targetConnectionEmail) {
       const tId = String(targetConnectionId || "");
       const tConnName = (targetConnectionName || "").toLowerCase().trim();
+      const tConnEmail = (targetConnectionEmail || "").toLowerCase().trim();
       const eConnId = String(email.connectionId || email.connection_id || "");
       const recip = (email.recipientAddress || "").toLowerCase();
       const sender = (email.senderAddress || "").toLowerCase();
 
       let matchConn = false;
-      if (tId && eConnId && eConnId === tId) matchConn = true;
-      else if (tConnName) {
+
+      // 1. Match by Connection ID
+      if (tId && eConnId && (eConnId === tId || tId === "conn_default")) {
+        matchConn = true;
+      }
+
+      // 2. Match by Connection Email (e.g. 2014tabontech@gmail.com)
+      if (!matchConn && tConnEmail && tConnEmail.includes("@")) {
+        if (recip.includes(tConnEmail) || sender.includes(tConnEmail)) matchConn = true;
+        const cleanUser = tConnEmail.split("@")[0];
+        if (!matchConn && cleanUser && cleanUser.length >= 2 && (recip.includes(cleanUser) || sender.includes(cleanUser))) matchConn = true;
+      }
+
+      // 3. Match by Connection Name if it's an email address
+      if (!matchConn && tConnName && tConnName.includes("@")) {
         if (recip.includes(tConnName) || sender.includes(tConnName)) matchConn = true;
         const cleanUser = tConnName.split("@")[0];
         if (!matchConn && cleanUser && cleanUser.length >= 2 && (recip.includes(cleanUser) || sender.includes(cleanUser))) matchConn = true;
+      }
+
+      // 4. Default Connection Match: All inbox emails belong to the user's active connections
+      if (!matchConn) {
+        matchConn = true;
       }
 
       if (!matchConn) return false;
@@ -1444,7 +1464,7 @@ const Inbox = () => {
                 const allMessages = conversation.length > 0 ? conversation : [selectedEmail];
 
                 return allMessages.map((msg, mIdx) => {
-                  const isOutgoing = msg.direction === "outgoing" || msg.stepType === "Auto Reply" || msg.role === "assistant";
+                  const isOutgoing = msg.direction === "outgoing" || msg.stepType === "Auto Reply" || msg.stepType === "Manual Reply" || msg.role === "assistant";
                   const senderName = isOutgoing
                     ? "sami"
                     : getNameFromAddress(msg.senderAddress || msg.from || getLeadAddressForThread(selectedEmail), selectedEmail);
@@ -1458,7 +1478,20 @@ const Inbox = () => {
                   const msgBody = msg.htmlBody || msg.textBody || msg.latestHtmlBody || msg.latestTextBody || msg.body || msg.content || "";
                   const fullDateStr = formatGmailDate(msg.date || msg.createdAt || msg.timestamp);
                   const avatarLetter = (senderName.charAt(0) || "U").toUpperCase();
-                  const avatarColor = isOutgoing ? "#8E44AD" : "#C0392B";
+
+                  // Distinct styling for Sender (Lead/Customer) vs Receiver (Support/You)
+                  const avatarColor = isOutgoing ? "#059669" : "#4F46E5"; // Emerald Green for Support, Indigo Blue for Customer
+                  const containerStyle = isOutgoing
+                    ? "bg-emerald-50/40 border border-emerald-200/80 border-l-4 border-l-emerald-500 rounded-xl p-4 shadow-2xs"
+                    : "bg-indigo-50/40 border border-indigo-200/80 border-l-4 border-l-indigo-500 rounded-xl p-4 shadow-2xs";
+
+                  const badgeStyle = isOutgoing
+                    ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                    : "bg-indigo-100 text-indigo-800 border border-indigo-200";
+
+                  const badgeLabel = isOutgoing
+                    ? (msg.stepType === "Auto Reply" ? "AI Auto-Reply" : "Support (You)")
+                    : "Customer Lead";
 
                   const msgIdKey = msg._id || mIdx;
                   const isReplyBoxOpenHere =
@@ -1466,27 +1499,30 @@ const Inbox = () => {
                     (!activeReplyMsgId && mIdx === allMessages.length - 1);
 
                   return (
-                    <div key={msgIdKey} className="flex flex-col border-b border-slate-100 pb-6 last:border-b-0">
+                    <div key={msgIdKey} className={`flex flex-col mb-4 ${containerStyle}`}>
                       {/* Message Header Row */}
                       <div className="flex items-start justify-between gap-4 mb-3">
-                        {/* Left: Avatar + Sender Details */}
+                        {/* Left: Avatar + Sender Details + Role Badge */}
                         <div className="flex items-start gap-3.5 min-w-0 flex-1">
                           <div
-                            className="h-10 w-10 rounded-full text-white font-semibold text-sm flex items-center justify-center shrink-0 shadow-xs"
+                            className="h-10 w-10 rounded-full text-white font-bold text-sm flex items-center justify-center shrink-0 shadow-xs"
                             style={{ backgroundColor: avatarColor }}
                           >
                             {avatarLetter}
                           </div>
                           <div className="flex flex-col min-w-0">
-                            <div className="flex items-baseline gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
                               <span className="font-bold text-[#202124] text-sm truncate">
                                 {senderName}
+                              </span>
+                              <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wide uppercase ${badgeStyle}`}>
+                                {badgeLabel}
                               </span>
                               <span className="text-xs text-slate-500 font-normal truncate">
                                 &lt;{senderEmailAddr}&gt;
                               </span>
                             </div>
-                            <span className="text-xs text-slate-500 font-medium flex items-center gap-1">
+                            <span className="text-xs text-slate-500 font-medium flex items-center gap-1 mt-0.5">
                               to {recipientAddr} <FiChevronDown size={11} className="text-slate-400" />
                             </span>
                           </div>
@@ -1494,7 +1530,7 @@ const Inbox = () => {
 
                         {/* Right: Date & Message Action (Reply ↩) */}
                         <div className="flex items-center gap-2 shrink-0">
-                          <span className="text-xs text-slate-500 font-normal">
+                          <span className="text-xs text-slate-500 font-medium">
                             {fullDateStr}
                           </span>
                           <button
@@ -1515,7 +1551,7 @@ const Inbox = () => {
                                 }
                               }, 50);
                             }}
-                            className="p-1.5 rounded-full text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                            className="p-1.5 rounded-full text-slate-600 hover:bg-slate-200/60 transition cursor-pointer"
                             title="Reply to message"
                           >
                             <FiCornerUpLeft size={16} />
@@ -1542,7 +1578,7 @@ const Inbox = () => {
                                 href={att.url || "#"}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition"
+                                className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition shadow-2xs"
                               >
                                 <FiFile size={13} className="text-slate-500" />
                                 <span>{att.filename || att.name || `Attachment ${aIdx + 1}`}</span>
