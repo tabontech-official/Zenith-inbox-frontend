@@ -535,14 +535,16 @@ const UsersPage = () => {
                       </td>
 
                       <td className="px-4 py-3 align-middle text-right">
-                        <button
-                          type="button"
-                          onClick={() => setUserToDelete(user)}
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-400 hover:border-red-200 hover:bg-red-50 hover:text-red-600 transition cursor-pointer shadow-2xs"
-                          title={`Delete user ${user.name}`}
-                        >
-                          <FiTrash2 className="h-4 w-4" />
-                        </button>
+                        {user.role?.toLowerCase() !== "owner" && (
+                          <button
+                            type="button"
+                            onClick={() => setUserToDelete(user)}
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-400 hover:border-red-200 hover:bg-red-50 hover:text-red-600 transition cursor-pointer shadow-2xs"
+                            title={`Delete user ${user.name}`}
+                          >
+                            <FiTrash2 className="h-4 w-4" />
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))

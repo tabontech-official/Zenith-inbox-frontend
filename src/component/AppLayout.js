@@ -375,7 +375,7 @@ const isOrganizationActive =
           },
           {
             id: "credit-usage",
-            label: "Credit usage",
+            label: "AI replies usage",
             path: "/organization/credit-usage",
           },
           {
@@ -431,7 +431,7 @@ const isSecondaryItemActive = (item) => {
   return location.search === `?${itemQuery}`;
 };
   return (
-    <div className="flex h-screen bg-[#F7F7FA] font-inter text-slate-900 overflow-hidden">
+    <div className="flex h-screen bg-[#F7F7FA] font-sans text-slate-900 overflow-hidden">
       {/* ------------------------------------------------------------- */}
       {/* 1. PRIMARY MAIN SIDEBAR (Black Vertical Strip with Upgrade & Security) */}
       {/* ------------------------------------------------------------- */}

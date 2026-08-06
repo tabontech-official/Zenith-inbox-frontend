@@ -51,6 +51,8 @@ import FooterLinksPage from "./pages/FooterLinksPage";
 import AdminProductPage from "./Admin/AdminProductPage";
 import Security from "./pages/Security";
 import UsersPage from "./pages/Users";
+import UtilitiesPage from "./pages/UtilitiesPage";
+import AiRepliesUsagePage from "./pages/AiRepliesUsagePage";
 
 function App() {
   return (
@@ -191,7 +193,46 @@ function App() {
                 <UsersPage />
               </ProtectedRoute>
             }
-            
+          />
+          <Route
+            path="/organization/credit-usage"
+            element={
+              <ProtectedRoute>
+                <AiRepliesUsagePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/organization/apps"
+            element={
+              <ProtectedRoute>
+                <UtilitiesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/organization/variables"
+            element={
+              <ProtectedRoute>
+                <UtilitiesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/organization/scenario-properties"
+            element={
+              <ProtectedRoute>
+                <UtilitiesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/organization/notifications"
+            element={
+              <ProtectedRoute>
+                <UtilitiesPage />
+              </ProtectedRoute>
+            }
           />
           <Route
             path="/pages/mailhook/instruction"

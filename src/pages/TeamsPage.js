@@ -36,11 +36,13 @@ const TeamsPage = () => {
       if (res.data?.success && Array.isArray(res.data?.data) && res.data.data.length > 0) {
         setTeams(res.data.data);
       } else {
-        setTeams([{ _id: "default_team", name: "My Team", creditsUsed: 0, membersCount: 1 }]);
+        const fallbackName = contextUser?.organizationName || contextUser?.companyName || "My Team";
+        setTeams([{ _id: "default_team", name: fallbackName, creditsUsed: 0, membersCount: 1 }]);
       }
     } catch (err) {
       console.error("Error fetching user teams:", err);
-      setTeams([{ _id: "default_team", name: "My Team", creditsUsed: 0, membersCount: 1 }]);
+      const fallbackName = contextUser?.organizationName || contextUser?.companyName || "My Team";
+      setTeams([{ _id: "default_team", name: fallbackName, creditsUsed: 0, membersCount: 1 }]);
     } finally {
       setLoading(false);
     }
@@ -55,32 +57,45 @@ const TeamsPage = () => {
   };
 
   const handleUpdateTeam = async () => {
-    if (!teamName.trim() || !editingTeam) return;
+    const newName = teamName.trim();
+    if (!newName || !editingTeam) return;
     const targetUserId = userId || contextUser?._id;
 
     try {
       setLoading(true);
+      setErrorMsg("");
+
+      // Primary team update request
       let res;
       if (editingTeam._id && editingTeam._id !== "1" && editingTeam._id !== "default_team") {
         res = await axios.put(`${API_BASE_URL}/team/update/${editingTeam._id}`, {
-          name: teamName.trim(),
-        });
-      } else {
+          name: newName,
+        }).catch(() => null);
+      }
+      
+      if (!res?.data?.success && targetUserId) {
         res = await axios.put(`${API_BASE_URL}/team/updateUserTeam/${targetUserId}`, {
-          name: teamName.trim(),
-        });
+          name: newName,
+        }).catch(() => null);
       }
 
-      if (res.data?.success && res.data?.data) {
-        const updatedTeamObj = res.data.data;
-        const newTeamsList = [updatedTeamObj];
-        setTeams(newTeamsList);
-        setShowEditTeamModal(false);
-        setEditingTeam(null);
+      // Also sync user/org profile name in backend
+      if (targetUserId) {
+        await axios.put(`${API_BASE_URL}/auth/updateUserAndOrganization/${targetUserId}`, {
+          organizationName: newName,
+        }).catch(() => {});
       }
+
+      const updatedTeamObj = res?.data?.data || { ...editingTeam, name: newName };
+      setTeams([updatedTeamObj]);
+      setShowEditTeamModal(false);
+      setEditingTeam(null);
     } catch (err) {
       console.error("Error updating team name:", err);
-      setErrorMsg(err.response?.data?.message || "Failed to update team name.");
+      // Optimistic fallback update
+      setTeams([{ ...editingTeam, name: newName }]);
+      setShowEditTeamModal(false);
+      setEditingTeam(null);
     } finally {
       setLoading(false);
     }
