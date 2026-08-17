@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import Sidebar from "../component/Sidebar";
+import PlatformAdminLayout from "./PlatformAdminLayout";
 import {
   FiChevronDown,
   FiChevronUp,
@@ -42,10 +42,8 @@ const AdminScenarioStats = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50  flex">
-      <Sidebar />
-
-      <main className="flex-1 p-6">
+    <PlatformAdminLayout>
+      <div>
         <h1 className="text-2xl font-semibold mb-6 text-gray-800 flex items-center gap-2">
           <FiLayers className="text-indigo-600" /> Scenario Statistics Overview
         </h1>
@@ -179,8 +177,8 @@ const AdminScenarioStats = () => {
             </div>
           )}
         </div>
-      </main>
-    </div>
+      </div>
+    </PlatformAdminLayout>
   );
 };
 

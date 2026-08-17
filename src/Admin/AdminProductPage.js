@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import Sidebar from "../component/Sidebar";
+import PlatformAdminLayout from "./PlatformAdminLayout";
 import toast from "react-hot-toast";
 import {
   FiSave,
@@ -275,10 +275,8 @@ const AdminProductPage = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50  flex">
-      <Sidebar />
-
-      <div className="flex-1 max-w-7xl mx-auto w-full">
+    <PlatformAdminLayout>
+      <div className="max-w-7xl mx-auto w-full">
         <div className="sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-gray-200 px-8 py-5 flex justify-between items-center shadow-sm">
           <div>
             <h1 className="text-2xl font-bold text-slate-800 tracking-tight">
@@ -904,7 +902,7 @@ const AdminProductPage = () => {
           </div>
         )}
       </div>
-    </div>
+    </PlatformAdminLayout>
   );
 };
 

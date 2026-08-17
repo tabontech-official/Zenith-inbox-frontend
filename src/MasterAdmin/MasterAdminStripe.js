@@ -7,7 +7,7 @@ import {
   FiSave,
   FiKey,
 } from "react-icons/fi";
-import MasterAdminLayout from "./MasterAdminLayout";
+import PlatformAdminLayout from "../Admin/PlatformAdminLayout";
 
 const MasterAdminStripe = () => {
   const [config, setConfig] = useState({
@@ -97,7 +97,7 @@ const MasterAdminStripe = () => {
   };
 
   return (
-    <MasterAdminLayout>
+    <PlatformAdminLayout>
       <div className="flex flex-col gap-6 max-w-4xl">
         <div>
           <h1 className="text-xl font-bold text-slate-900">Stripe Integration & Secret Vault</h1>
@@ -220,7 +220,7 @@ const MasterAdminStripe = () => {
           </div>
         </form>
       </div>
-    </MasterAdminLayout>
+    </PlatformAdminLayout>
   );
 };
 

@@ -133,7 +133,7 @@ import {
   FiMessageSquare,
   FiX,
 } from "react-icons/fi";
-import Sidebar from "../component/Sidebar";
+import PlatformAdminLayout from "./PlatformAdminLayout";
 
 const AdminUserEmails = () => {
   const { userId } = useParams();
@@ -168,10 +168,8 @@ const AdminUserEmails = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]  flex font-sans">
-      <Sidebar />
-
-      <div className="flex-1 p-4 md:p-8">
+    <PlatformAdminLayout pageTitle="User Email Timeline">
+      <div className="p-4 md:p-8 font-sans">
         {/* HEADER */}
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
           <div>
@@ -356,7 +354,7 @@ const AdminUserEmails = () => {
           </div>
         )}
       </div>
-    </div>
+    </PlatformAdminLayout>
   );
 };
 

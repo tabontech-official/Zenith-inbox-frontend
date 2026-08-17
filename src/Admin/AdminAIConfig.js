@@ -9,8 +9,7 @@ import {
   FiShield,
   FiZap,
 } from "react-icons/fi";
-import Sidebar from "../component/Sidebar";
-import Navbar from "../component/Navbar";
+import PlatformAdminLayout from "./PlatformAdminLayout";
 import toast from "react-hot-toast";
 
 const API_BASE_URL = "https://email-syncing-backend.vercel.app/api/ai-config";
@@ -113,15 +112,8 @@ const AdminAIConfig = () => {
   }
 
   return (
-    <div className="flex min-h-screen bg-[#f4f7fc] text-[#334155] font-sans antialiased">
-      <Sidebar />
-
-      <div className="flex-1 flex flex-col min-w-0">
-        <div className="hidden sm:block">
-          <Navbar />
-        </div>
-
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-[1400px] w-full mx-auto space-y-6">
+    <PlatformAdminLayout>
+      <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-[1400px] w-full mx-auto space-y-6">
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl border border-slate-200/70 shadow-sm">
             <div>
@@ -286,9 +278,8 @@ Response Rules:
               </div>
             </div>
           </div>
-        </main>
-      </div>
-    </div>
+      </main>
+    </PlatformAdminLayout>
   );
 };
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import Sidebar from "../component/Sidebar";
+import PlatformAdminLayout from "./PlatformAdminLayout";
 import {
   FiMail,
   FiCheckCircle,
@@ -73,10 +73,8 @@ const AdminConnections = () => {
   }, [search, selectedUser, connections]);
 
   return (
-    <div className="min-h-screen bg-gray-50  flex">
-      <Sidebar />
-
-      <div className="flex-1 p-6">
+    <PlatformAdminLayout>
+      <div>
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
           <div>
@@ -191,7 +189,7 @@ const AdminConnections = () => {
           <p className="text-center text-gray-500 py-10">No connections found</p>
         )}
       </div>
-    </div>
+    </PlatformAdminLayout>
   );
 };
 

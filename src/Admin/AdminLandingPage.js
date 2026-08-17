@@ -358,7 +358,7 @@
 
 // export default AdminLandingPage;
 import React, { useState, useEffect } from "react";
-import Sidebar from "../component/Sidebar";
+import PlatformAdminLayout from "./PlatformAdminLayout";
 import toast from "react-hot-toast";
 import {
   FiPlus,
@@ -647,10 +647,8 @@ const AdminLandingPage = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50  flex">
-      <Sidebar />
-
-      <div className="flex-1 max-w-7xl mx-auto w-full">
+    <PlatformAdminLayout pageTitle="Landing Page CMS">
+      <div className="max-w-7xl mx-auto w-full">
         <div className="sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-gray-200 px-8 py-5 flex justify-between items-center shadow-sm">
           <div>
             <h1 className="text-2xl font-bold text-slate-800 tracking-tight">
@@ -1579,7 +1577,7 @@ const AdminLandingPage = () => {
           </div>
         )}
       </div>
-    </div>
+    </PlatformAdminLayout>
   );
 };
 

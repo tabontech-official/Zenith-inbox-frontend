@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { FiHome, FiUsers, FiGlobe, FiLayers } from "react-icons/fi";
-import MasterAdminLayout from "./MasterAdminLayout";
+import PlatformAdminLayout from "../Admin/PlatformAdminLayout";
 
 const MasterAdminOrganizations = () => {
   const [organizations, setOrganizations] = useState([]);
@@ -29,7 +29,7 @@ const MasterAdminOrganizations = () => {
   };
 
   return (
-    <MasterAdminLayout>
+    <PlatformAdminLayout>
       <div className="flex flex-col gap-6">
         <div>
           <h1 className="text-xl font-bold text-slate-900">Organizations & Clinic Accounts</h1>
@@ -89,7 +89,7 @@ const MasterAdminOrganizations = () => {
           </table>
         </div>
       </div>
-    </MasterAdminLayout>
+    </PlatformAdminLayout>
   );
 };
 

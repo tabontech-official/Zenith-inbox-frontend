@@ -48,7 +48,6 @@ import AdminLandingPage from "./Admin/AdminLandingPage";
 import AdminScriptsPage from "./pages/Script";
 import DynamicScripts from "./pages/DynamicScripts";
 import FooterLinksPage from "./pages/FooterLinksPage";
-import MasterAdminDashboard from "./MasterAdmin/MasterAdminDashboard";
 import MasterAdminPlans from "./MasterAdmin/MasterAdminPlans";
 import MasterAdminStripe from "./MasterAdmin/MasterAdminStripe";
 import MasterAdminUsers from "./MasterAdmin/MasterAdminUsers";
@@ -443,19 +442,15 @@ function App() {
           {/* 👑 SAAS OWNER / PLATFORM ADMIN ROUTES */}
           <Route
             path="/master-admin"
-            element={<Navigate to="/admin/master-dashboard" replace />}
+            element={<Navigate to="/admin/dashboard" replace />}
           />
           <Route
             path="/master-admin/*"
-            element={<Navigate to="/admin/master-dashboard" replace />}
+            element={<Navigate to="/admin/dashboard" replace />}
           />
           <Route
             path="/admin/master-dashboard"
-            element={
-              <ProtectedRoute adminOnly={true}>
-                <MasterAdminDashboard />
-              </ProtectedRoute>
-            }
+            element={<Navigate to="/admin/dashboard" replace />}
           />
           <Route
             path="/admin/plans"
@@ -474,7 +469,7 @@ function App() {
             }
           />
           <Route
-            path="/admin/users"
+            path="/admin/platform-users"
             element={
               <ProtectedRoute adminOnly={true}>
                 <MasterAdminUsers />

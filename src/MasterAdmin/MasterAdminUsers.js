@@ -9,7 +9,7 @@ import {
   FiX,
   FiSliders,
 } from "react-icons/fi";
-import MasterAdminLayout from "./MasterAdminLayout";
+import PlatformAdminLayout from "../Admin/PlatformAdminLayout";
 
 const MasterAdminUsers = () => {
   const [users, setUsers] = useState([]);
@@ -96,7 +96,7 @@ const MasterAdminUsers = () => {
   };
 
   return (
-    <MasterAdminLayout>
+    <PlatformAdminLayout>
       <div className="flex flex-col gap-6">
         <div className="flex items-center justify-between">
           <div>
@@ -286,7 +286,7 @@ const MasterAdminUsers = () => {
           </div>
         )}
       </div>
-    </MasterAdminLayout>
+    </PlatformAdminLayout>
   );
 };
 

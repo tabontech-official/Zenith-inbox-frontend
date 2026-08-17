@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import Sidebar from "../component/Sidebar";
+import PlatformAdminLayout from "./PlatformAdminLayout";
 import {
   FiSearch,
   FiCheckCircle,
@@ -427,8 +427,8 @@ const handleLoginAsUser = async (userId) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]  flex font-sans">
-      <Sidebar />
+    <PlatformAdminLayout pageTitle="User Management">
+      <div className="font-sans">
 
       {/* CUSTOM CONFIRMATION MODAL */}
       {isModalOpen && (
@@ -889,7 +889,8 @@ const handleLoginAsUser = async (userId) => {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </PlatformAdminLayout>
   );
 };
 

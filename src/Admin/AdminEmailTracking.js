@@ -359,7 +359,7 @@
 
 // export default AdminEmailTracking;
 import React, { useEffect, useState, useMemo } from "react";
-import Sidebar from "../component/Sidebar";
+import PlatformAdminLayout from "./PlatformAdminLayout";
 import { useNavigate } from "react-router-dom";
 import {
   FiMail,
@@ -461,119 +461,106 @@ const AdminEmailTracking = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50  flex">
-      <Sidebar />
-
-      <main className="flex-1 p-6">
+    <PlatformAdminLayout pageTitle="Email Tracking">
+      <div className="p-2">
         {/* Header */}
         <h1 className="text-2xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
           <FiMail className="text-indigo-600" />
-          Email Tracking Overview
+          Email Tracking & Template Usage
         </h1>
 
         {/* Filters */}
-        <div className="bg-white shadow-md border rounded-xl p-4 mb-6 flex flex-wrap gap-4 items-center">
-          <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-            <FiFilter className="text-indigo-600" />
-            Filters
-          </div>
-
-          {/* Service */}
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-wrap gap-4 mb-6">
+          {/* Service Dropdown */}
           <div className="flex items-center gap-2">
-            <FiLayers className="text-indigo-500" />
+            <FiFilter className="text-gray-500" />
             <select
               value={serviceFilter}
-              onChange={(e) =>
-                setServiceFilter(e.target.value)
-              }
-              className="border rounded-md px-3 py-1 text-sm"
+              onChange={(e) => setServiceFilter(e.target.value)}
+              className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
             >
               <option value="">All Services</option>
               {allServices.map((s) => (
-                <option key={s}>{s}</option>
+                <option key={s} value={s}>
+                  {s}
+                </option>
               ))}
             </select>
           </div>
 
-          {/* Template */}
+          {/* Template Dropdown */}
           <div className="flex items-center gap-2">
-            <FiFileText className="text-indigo-500" />
+            <FiFileText className="text-gray-500" />
             <select
               value={templateFilter}
-              onChange={(e) =>
-                setTemplateFilter(e.target.value)
-              }
-              className="border rounded-md px-3 py-1 text-sm"
+              onChange={(e) => setTemplateFilter(e.target.value)}
+              className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
             >
               <option value="">All Templates</option>
               {allTemplates.map((t) => (
-                <option key={t}>{t}</option>
+                <option key={t} value={t}>
+                  {t}
+                </option>
               ))}
             </select>
           </div>
 
-          {/* Reset */}
-          <button
-            onClick={() => {
-              setServiceFilter("");
-              setTemplateFilter("");
-            }}
-            className="flex items-center gap-1 text-sm text-gray-600 hover:text-indigo-600"
-          >
-            <FiRefreshCcw /> Reset
-          </button>
+          {/* Reset Filters */}
+          {(serviceFilter || templateFilter) && (
+            <button
+              onClick={() => {
+                setServiceFilter("");
+                setTemplateFilter("");
+              }}
+              className="text-sm text-indigo-600 hover:text-indigo-800 flex items-center gap-1 self-center"
+            >
+              <FiRefreshCcw /> Reset Filters
+            </button>
+          )}
         </div>
 
-        {/* Table */}
-        <div className="bg-white rounded-xl shadow-md border overflow-hidden">
+        {/* Users Table */}
+        <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
           {filteredSummary.length === 0 ? (
-            <div className="p-6 text-center text-gray-500">
-              No users found.
+            <div className="p-8 text-center text-gray-500">
+              No email tracking data found for the selected filters.
             </div>
           ) : (
-            <table className="min-w-full text-sm">
-              <thead className="bg-gray-100 text-gray-500 uppercase text-xs">
+            <table className="w-full text-sm text-left">
+              <thead className="bg-gray-50 border-b text-gray-600 uppercase text-xs">
                 <tr>
-                  <th className="px-4 py-3">User</th>
-                  <th className="px-4 py-3 text-center">
-                    Emails
-                  </th>
-                  <th className="px-4 py-3 text-center">
-                    Active
-                  </th>
-                  <th className="px-4 py-3 text-center">
-                    Inactive
-                  </th>
-                  <th className="px-4 py-3 text-center">
-                    Action
-                  </th>
+                  <th className="py-3 px-4">User</th>
+                  <th className="py-3 px-4">Email</th>
+                  <th className="py-3 px-4">Role</th>
+                  <th className="py-3 px-4 text-center">Services</th>
+                  <th className="py-3 px-4 text-center">Templates Used</th>
+                  <th className="py-3 px-4 text-center">Total Sent</th>
+                  <th className="py-3 px-4 text-center">Action</th>
                 </tr>
               </thead>
-
-              <tbody>
+              <tbody className="divide-y divide-gray-100">
                 {filteredSummary.map((item) => (
-                  <tr
-                    key={item.user._id}
-                    className="hover:bg-gray-50"
-                  >
-                    <td className="px-4 py-3 flex items-center gap-2 font-medium">
-                      <FiUser className="text-indigo-500" />
-                      {item.user.fullName}
+                  <tr key={item.user._id} className="hover:bg-gray-50">
+                    <td className="py-3 px-4 font-medium text-gray-800 flex items-center gap-2">
+                      <FiUser className="text-gray-400" />
+                      {item.user.fullName || "—"}
                     </td>
-
-                    <td className="px-4 py-3 text-center">
-                      {item.totalEmails}
+                    <td className="py-3 px-4 text-gray-600">
+                      {item.user.email}
                     </td>
-
-                    <td className="px-4 py-3 text-center text-green-600 font-semibold">
-                      {item.activeTemplates}
+                    <td className="py-3 px-4 capitalize text-gray-600">
+                      {item.user.role}
                     </td>
-
-                    <td className="px-4 py-3 text-center text-gray-400 font-semibold">
-                      {item.inactiveTemplates}
+                    <td className="py-3 px-4 text-center text-gray-700 font-semibold">
+                      {item.servicesCount}
                     </td>
-
-                    <td className="px-4 py-3 text-center">
+                    <td className="py-3 px-4 text-center text-gray-700 font-semibold">
+                      {item.templatesCount}
+                    </td>
+                    <td className="py-3 px-4 text-center font-bold text-indigo-600">
+                      {item.totalEmailsSent}
+                    </td>
+                    <td className="py-3 px-4 text-center">
                       <button
                         onClick={() =>
                           navigate(
@@ -591,8 +578,8 @@ const AdminEmailTracking = () => {
             </table>
           )}
         </div>
-      </main>
-    </div>
+      </div>
+    </PlatformAdminLayout>
   );
 };
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
-import Sidebar from "../component/Sidebar";
+import PlatformAdminLayout from "./PlatformAdminLayout";
 import {
   FiMail,
   FiFileText,
@@ -85,10 +85,8 @@ const AdminTemplateUsage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50  flex">
-      <Sidebar />
-
-      <main className="flex-1 p-6">
+    <PlatformAdminLayout>
+      <div>
         {/* Header */}
         <div className="flex flex-wrap justify-between items-center mb-6 gap-3">
           <h1 className="text-2xl font-semibold text-gray-800 flex items-center gap-2">
@@ -345,8 +343,8 @@ const AdminTemplateUsage = () => {
             </div>
           )}
         </div>
-      </main>
-    </div>
+      </div>
+    </PlatformAdminLayout>
   );
 };
 

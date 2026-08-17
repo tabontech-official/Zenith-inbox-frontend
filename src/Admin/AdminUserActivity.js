@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import Sidebar from "../component/Sidebar";
+import PlatformAdminLayout from "./PlatformAdminLayout";
 import {
   FiSearch,
   FiClock,
@@ -64,10 +64,8 @@ const AdminUserActivity = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50  flex">
-      <Sidebar />
-
-      <div className="flex-1 p-6">
+    <PlatformAdminLayout>
+      <div>
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
           <div>
             <h1 className="text-2xl font-semibold text-gray-800">
@@ -303,7 +301,7 @@ const AdminUserActivity = () => {
           )}
         </div>
       </div>
-    </div>
+    </PlatformAdminLayout>
   );
 };
 

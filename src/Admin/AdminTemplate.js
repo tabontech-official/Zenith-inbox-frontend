@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import Sidebar from "../component/Sidebar";
+import PlatformAdminLayout from "./PlatformAdminLayout";
 import axios from "axios";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
@@ -267,9 +267,8 @@ export default function AdminTemplate() {
   );
 
   return (
-    <div className="flex">
-      <Sidebar />
-      <div className="flex-1 min-h-screen bg-gray-50 lg:ml-64">
+    <PlatformAdminLayout>
+      <div className="min-h-screen bg-gray-50">
         <header className="flex items-center justify-between px-8 py-5 bg-white border-b shadow-sm">
           <div>
             <h1 className="text-2xl font-semibold text-gray-800 tracking-tight">
@@ -618,6 +617,6 @@ export default function AdminTemplate() {
           </div>
         </div>
       </div>
-    </div>
+    </PlatformAdminLayout>
   );
 }

@@ -9,7 +9,7 @@ import {
   FiCheckCircle,
   FiLayers,
 } from "react-icons/fi";
-import MasterAdminLayout from "./MasterAdminLayout";
+import PlatformAdminLayout from "../Admin/PlatformAdminLayout";
 
 const MasterAdminPlans = () => {
   const [plans, setPlans] = useState([]);
@@ -170,7 +170,7 @@ const MasterAdminPlans = () => {
   };
 
   return (
-    <MasterAdminLayout>
+    <PlatformAdminLayout>
       <div className="flex flex-col gap-6">
         <div className="flex items-center justify-between">
           <div>
@@ -430,7 +430,7 @@ const MasterAdminPlans = () => {
           </div>
         )}
       </div>
-    </MasterAdminLayout>
+    </PlatformAdminLayout>
   );
 };
 

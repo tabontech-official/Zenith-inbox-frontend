@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { FiList, FiShield, FiClock, FiCheckCircle } from "react-icons/fi";
-import MasterAdminLayout from "./MasterAdminLayout";
+import PlatformAdminLayout from "../Admin/PlatformAdminLayout";
 
 const MasterAdminAuditLogs = () => {
   const [logs, setLogs] = useState([]);
@@ -29,7 +29,7 @@ const MasterAdminAuditLogs = () => {
   };
 
   return (
-    <MasterAdminLayout>
+    <PlatformAdminLayout>
       <div className="flex flex-col gap-6">
         <div>
           <h1 className="text-xl font-bold text-slate-900">Master Admin Security Audit Logs</h1>
@@ -98,7 +98,7 @@ const MasterAdminAuditLogs = () => {
           </table>
         </div>
       </div>
-    </MasterAdminLayout>
+    </PlatformAdminLayout>
   );
 };
 
