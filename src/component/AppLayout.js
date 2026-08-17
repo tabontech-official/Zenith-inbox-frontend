@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   FiGrid,
@@ -46,6 +46,24 @@ const AppLayout = ({ children }) => {
   const [showNotificationsDropdown, setShowNotificationsDropdown] =
     useState(false);
   const [isSavingOrg, setIsSavingOrg] = useState(false);
+  const headerRightRef = useRef(null);
+
+  // Close header dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        headerRightRef.current &&
+        !headerRightRef.current.contains(event.target)
+      ) {
+        setShowNotificationsDropdown(false);
+        setShowProfileDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const [orgForm, setOrgForm] = useState({
     organizationName:
@@ -1038,9 +1056,7 @@ const AppLayout = ({ children }) => {
           </div>
 
           {/* Right Header Controls */}
-          <div className="flex items-center gap-3">
-
-
+          <div ref={headerRightRef} className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => setShowOrgSettingsModal(true)}
@@ -1065,7 +1081,10 @@ const AppLayout = ({ children }) => {
             <div className="relative">
               <button
                 type="button"
-                onClick={() => setShowNotificationsDropdown((prev) => !prev)}
+                onClick={() => {
+                  setShowProfileDropdown(false);
+                  setShowNotificationsDropdown((prev) => !prev);
+                }}
                 className="h-8 w-8 rounded-[8px] border border-slate-300 bg-white flex items-center justify-center text-slate-600 hover:bg-slate-50 transition cursor-pointer relative"
                 title="Notifications"
               >
@@ -1117,7 +1136,10 @@ const AppLayout = ({ children }) => {
             {/* User Profile Avatar Dropdown */}
             <div className="relative">
               <div
-                onClick={() => setShowProfileDropdown((prev) => !prev)}
+                onClick={() => {
+                  setShowNotificationsDropdown(false);
+                  setShowProfileDropdown((prev) => !prev);
+                }}
                 className="h-8 w-8 rounded-full bg-black text-white flex items-center justify-center font-bold text-xs shadow-sm cursor-pointer hover:ring-2 hover:ring-slate-400 transition select-none"
                 title={userName}
               >
