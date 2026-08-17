@@ -42,7 +42,7 @@ import {
   FiChevronDown,
 } from "react-icons/fi";
 
-const API_BASE_URL = "https://email-syncing-backend.vercel.app/mailhook";
+const API_BASE_URL = "http://localhost:5000/mailhook";
 
 const Inbox = () => {
   const [emails, setEmails] = useState([]);
@@ -313,11 +313,15 @@ const Inbox = () => {
 
   const fetchEmails = async (showLoading = true) => {
     try {
-      if (showLoading) setLoading(true);
       const userId = localStorage.getItem("userid");
+      const token = localStorage.getItem("usertoken");
       if (!userId) return;
 
-      const res = await axios.get(`${API_BASE_URL}/getAllEmailsData/${userId}`);
+      const res = await axios.get(`${API_BASE_URL}/getAllEmailsData/${userId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       const raw = res.data?.data?.threads || [];
 
       let data = normalizeEmails(raw);
@@ -410,9 +414,13 @@ const Inbox = () => {
     const userId = localStorage.getItem("userid");
     if (!userId) return;
 
-    // Check AI status from backend
+    const token = localStorage.getItem("usertoken");
     axios
-      .get(`https://email-syncing-backend.vercel.app/auth/getUsers/${userId}`)
+      .get(`http://localhost:5000/auth/getUsers/${userId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
       .then((res) => {
         const userData = res.data?.data;
         if (userData) {
@@ -654,8 +662,13 @@ const Inbox = () => {
     setLeadStatuses((prev) => ({ ...prev, [emailId]: leadStatus }));
 
     try {
+      const token = localStorage.getItem("usertoken");
       await axios.patch(`${API_BASE_URL}/lead-status/${emailId}`, {
         leadStatus,
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       setEmails((prev) =>
@@ -687,8 +700,13 @@ const Inbox = () => {
       message: `Are you sure you want to delete ${idsToDelete.length} selected lead(s)?`,
       onConfirm: async () => {
         try {
+          const token = localStorage.getItem("usertoken");
           await axios.post(`${API_BASE_URL}/leads/delete-many`, {
             emailIds: idsToDelete,
+          }, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
           });
 
           setEmails((prev) =>
@@ -785,6 +803,7 @@ const Inbox = () => {
 
     const message = replyText.trim();
     const userId = localStorage.getItem("userid");
+    const token = localStorage.getItem("usertoken");
 
     try {
       setReplySending(true);
@@ -810,6 +829,7 @@ const Inbox = () => {
         {
           headers: {
             "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${token}`,
           },
         }
       );
@@ -1106,6 +1126,11 @@ const Inbox = () => {
           email.emailType === "custom" ||
           (email.subject || "").toLowerCase().includes("custom") ||
           (!((email.service || "").toLowerCase().includes("shopify") || (email.subject || "").toLowerCase().includes("shopify")));
+      }
+
+      // Fallback: If root email in DB doesn't have an explicit scenarioId yet, display it as part of the user's scenario inbox
+      if (!matchScen && (!eScenId || eScenId === "undefined" || eScenId === "null")) {
+        matchScen = true;
       }
 
       if (!matchScen) return false;

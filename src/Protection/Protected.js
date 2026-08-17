@@ -1,4 +1,3 @@
-
 import React, { useContext } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { UserContext } from "../component/UserContext";
@@ -12,7 +11,7 @@ const ProtectedRoute = ({ children, adminOnly = false }) => {
   // 🔐 Not logged in
   if (!user) return <Navigate to="/login" replace />;
 
-  // 👑 Admin routes
+  // 👑 Admin routes (SaaS Owner / Platform Admin)
   if (adminOnly && user.role !== "admin") {
     return <Navigate to="/dashboard" replace />;
   }

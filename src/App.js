@@ -1,5 +1,5 @@
 import React from "react";
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./Auth/Login";
@@ -48,6 +48,12 @@ import AdminLandingPage from "./Admin/AdminLandingPage";
 import AdminScriptsPage from "./pages/Script";
 import DynamicScripts from "./pages/DynamicScripts";
 import FooterLinksPage from "./pages/FooterLinksPage";
+import MasterAdminDashboard from "./MasterAdmin/MasterAdminDashboard";
+import MasterAdminPlans from "./MasterAdmin/MasterAdminPlans";
+import MasterAdminStripe from "./MasterAdmin/MasterAdminStripe";
+import MasterAdminUsers from "./MasterAdmin/MasterAdminUsers";
+import MasterAdminOrganizations from "./MasterAdmin/MasterAdminOrganizations";
+import MasterAdminAuditLogs from "./MasterAdmin/MasterAdminAuditLogs";
 import AdminProductPage from "./Admin/AdminProductPage";
 import Security from "./pages/Security";
 import UsersPage from "./pages/Users";
@@ -125,11 +131,7 @@ function App() {
           />
           <Route
             path="/teams"
-            element={
-              <ProtectedRoute>
-                <TeamsPage />
-              </ProtectedRoute>
-            }
+            element={<Navigate to="/dashboard" replace />}
           />
           <Route
             path="/connection"
@@ -187,13 +189,9 @@ function App() {
             }
             
           />
-            <Route
+          <Route
             path="/organization/users"
-            element={
-              <ProtectedRoute>
-                <UsersPage />
-              </ProtectedRoute>
-            }
+            element={<Navigate to="/dashboard" replace />}
           />
           <Route
             path="/organization/credit-usage"
@@ -407,7 +405,14 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route path="/admin/email/:userId" element={<AdminUserEmails />} />
+          <Route
+            path="/admin/email/:userId"
+            element={
+              <ProtectedRoute adminOnly={true}>
+                <AdminUserEmails />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/admin/reports/scenarios"
             element={
@@ -431,6 +436,64 @@ function App() {
             element={
               <ProtectedRoute adminOnly={true}>
                 <AdminTemplate />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* 👑 SAAS OWNER / PLATFORM ADMIN ROUTES */}
+          <Route
+            path="/master-admin"
+            element={<Navigate to="/admin/master-dashboard" replace />}
+          />
+          <Route
+            path="/master-admin/*"
+            element={<Navigate to="/admin/master-dashboard" replace />}
+          />
+          <Route
+            path="/admin/master-dashboard"
+            element={
+              <ProtectedRoute adminOnly={true}>
+                <MasterAdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/plans"
+            element={
+              <ProtectedRoute adminOnly={true}>
+                <MasterAdminPlans />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/stripe"
+            element={
+              <ProtectedRoute adminOnly={true}>
+                <MasterAdminStripe />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/users"
+            element={
+              <ProtectedRoute adminOnly={true}>
+                <MasterAdminUsers />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/organizations"
+            element={
+              <ProtectedRoute adminOnly={true}>
+                <MasterAdminOrganizations />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/audit-logs"
+            element={
+              <ProtectedRoute adminOnly={true}>
+                <MasterAdminAuditLogs />
               </ProtectedRoute>
             }
           />

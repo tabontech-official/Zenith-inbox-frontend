@@ -10,15 +10,16 @@ import {
 } from "react-icons/fi";
 import axios from "axios";
 import { UserContext } from "../component/UserContext";
+import { getDashboardSummaryCached } from "../utils/dashboardCache";
 import AppLayout from "../component/AppLayout";
 
 const Organization = () => {
   const navigate = useNavigate();
   const { user: contextUser } = useContext(UserContext);
 
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(contextUser || null);
   const [emails, setEmails] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     total: 0,
     processed: 0,
@@ -27,44 +28,80 @@ const Organization = () => {
     pending: 0,
   });
   const [recentScenarios, setRecentScenarios] = useState([]);
-  const [scenariosLoading, setScenariosLoading] = useState(false);
+  const [scenariosLoading, setScenariosLoading] = useState(true);
 
   const userId = localStorage.getItem("userid") || contextUser?._id;
 
   useEffect(() => {
-    fetchUser();
-    fetchStats();
-    fetchEmails();
-    fetchRecentScenarios();
+    if (contextUser) {
+      setUser(contextUser);
+    }
+  }, [contextUser]);
+
+  useEffect(() => {
+    if (!userId) return;
+    loadDashboardData();
   }, [userId]);
 
-  const fetchUser = async () => {
+  const loadDashboardData = async () => {
     try {
-      if (!userId) return;
-      const res = await axios.get(
-        `https://email-syncing-backend.vercel.app/auth/getUsers/${userId}`
-      );
-      const fetchedUser = res.data?.data || contextUser || null;
-      setUser(fetchedUser);
+      setLoading(true);
+      setScenariosLoading(true);
+      
+      let summary = null;
+      try {
+        summary = await getDashboardSummaryCached(userId);
+      } catch (e) {
+        console.warn("Dashboard summary endpoint unavailable on remote backend, using standard fallback:", e);
+      }
+
+      if (summary && summary.success) {
+        if (summary.user) setUser(summary.user);
+        if (summary.stats) {
+          setStats({
+            total: summary.stats.total || 0,
+            processed: summary.stats.secured || 0,
+            partial: summary.stats.replied || 0,
+            failed: 0,
+            pending: summary.stats.pending || 0,
+          });
+        }
+        if (summary.recentScenarios) {
+          setRecentScenarios(summary.recentScenarios);
+        }
+        if (summary.recentEmails && summary.recentEmails.length > 0) {
+          setEmails(summary.recentEmails);
+        } else {
+          await fetchEmailsFallback();
+        }
+      } else {
+        // 🔄 Graceful fallback for non-deployed backend environments
+        await Promise.all([
+          fetchEmailsFallback(),
+          fetchScenariosFallback(),
+        ]);
+      }
     } catch (err) {
-      console.error("Error fetching user:", err);
+      console.error("Error loading dashboard data:", err);
+    } finally {
+      setLoading(false);
+      setScenariosLoading(false);
     }
   };
 
-  const fetchStats = async () => {
-    // Stats are derived from the email threads - computed in fetchEmails
-    // This function is kept for future dedicated stats endpoint support
-  };
-
-  const fetchEmails = async () => {
+  const fetchEmailsFallback = async () => {
     try {
       if (!userId) return;
-      setLoading(true);
+      const token = localStorage.getItem("usertoken");
       const res = await axios.get(
-        `https://email-syncing-backend.vercel.app/mailhook/getAllEmailsData/${userId}`
+        `http://localhost:5000/getAllEmailsData/${userId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       const threads = res.data?.data?.threads || [];
-      // Normalize threads the same way Inbox.js does
       const normalized = threads.map((t) => ({
         ...t,
         replies: t.replies || t.conversation || [],
@@ -72,7 +109,6 @@ const Organization = () => {
       }));
       setEmails(normalized);
 
-      // Derive stats from real data
       const secured = normalized.filter((e) => e.leadStatus === "secured").length;
       const replied = normalized.filter((e) => {
         const msgs = e.replies || e.conversation || e.discussion || [];
@@ -88,27 +124,26 @@ const Organization = () => {
         pending: normalized.length - secured - replied,
       });
     } catch (err) {
-      console.error("Error fetching email threads:", err);
-    } finally {
-      setLoading(false);
+      console.error("Error fetching emails fallback:", err);
     }
   };
 
-  const fetchRecentScenarios = async () => {
+  const fetchScenariosFallback = async () => {
     try {
       if (!userId) return;
-      setScenariosLoading(true);
+      const token = localStorage.getItem("usertoken");
       let res;
       try {
         res = await axios.get(
-          `https://email-syncing-backend.vercel.app/scenario/user/${userId}`
+          `http://localhost:5000/scenario/user/${userId}`,
+          { headers: { Authorization: `Bearer ${token}` } }
         );
       } catch (e) {
         res = await axios.get(
-          `https://email-syncing-backend.vercel.app/scenario/getScenariosByUser/${userId}`
+          `http://localhost:5000/scenario/getScenariosByUser/${userId}`,
+          { headers: { Authorization: `Bearer ${token}` } }
         );
       }
-      // Handle multiple response shapes
       const data =
         Array.isArray(res.data) ? res.data :
         Array.isArray(res.data?.scenarios) ? res.data.scenarios :
@@ -116,9 +151,7 @@ const Organization = () => {
         res.data?.data?.scenarios || [];
       setRecentScenarios(data);
     } catch (err) {
-      console.error("Error fetching user scenarios:", err);
-    } finally {
-      setScenariosLoading(false);
+      console.error("Error fetching scenarios fallback:", err);
     }
   };
 
@@ -338,10 +371,10 @@ const Organization = () => {
                         </div>
                         <div className="flex flex-col min-w-0">
                           <span className="text-sm font-bold text-slate-900 truncate group-hover:text-black transition">
-                            {sc.name || "Shopify Partner Directory Scenario"}
+                            {sc.name || "Unnamed Scenario"}
                           </span>
                           <span className="text-xs text-slate-400 mt-0.5 font-medium truncate">
-                            {sc.type || "Shopify"} directory • created by system
+                            {sc.description ? sc.description.substring(0, 60) + (sc.description.length > 60 ? "..." : "") : (sc.type === "shopify" ? "Shopify automation" : "Custom automation")}
                           </span>
                         </div>
                       </div>
@@ -447,10 +480,10 @@ const Organization = () => {
                       </div>
                       <div className="flex flex-col">
                         <span className="text-xs font-semibold text-slate-800">
-                          {sc.name || "Untitled Scenario"}
+                          {sc.name || "Unnamed Scenario"}
                         </span>
                         <span className="text-[10px] text-slate-400 capitalize">
-                          {sc.type || "Custom"} Scenario
+                          {sc.type === "shopify" ? "Shopify" : "Custom"} Scenario
                         </span>
                       </div>
                     </div>

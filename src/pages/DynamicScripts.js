@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import axios from "axios";
 
-const API_URL = "https://email-syncing-backend.vercel.app/admin/scripts";
+const API_URL = "http://localhost:5000/admin/scripts";
 
 const injectScripts = (scriptText, target) => {
   if (!scriptText) return;
@@ -37,20 +37,24 @@ const injectScripts = (scriptText, target) => {
 
 const DynamicScripts = () => {
   useEffect(() => {
-    // Intercept third-party widget errors (e.g. Tawk.to BufferLoader sound file XHR errors)
+    // Intercept third-party widget errors (e.g. Tawk.to BufferLoader sound file XHR errors & generic cross-origin Script error)
     const handleGlobalError = (event) => {
       const msg = event?.message || "";
       const filename = event?.filename || "";
       const stack = event?.error?.stack || "";
 
       if (
+        msg.includes("Script error") ||
         msg.includes("BufferLoader") ||
-        msg.includes("XHR error for undefined") ||
+        msg.includes("XHR error") ||
         filename.includes("tawk.to") ||
         stack.includes("tawk.to")
       ) {
         if (typeof event.preventDefault === "function") {
           event.preventDefault();
+        }
+        if (typeof event.stopImmediatePropagation === "function") {
+          event.stopImmediatePropagation();
         }
         return true;
       }
@@ -58,7 +62,11 @@ const DynamicScripts = () => {
 
     const handleUnhandledRejection = (event) => {
       const reason = event?.reason?.toString() || "";
-      if (reason.includes("BufferLoader") || reason.includes("tawk.to")) {
+      if (
+        reason.includes("Script error") ||
+        reason.includes("BufferLoader") ||
+        reason.includes("tawk.to")
+      ) {
         if (typeof event.preventDefault === "function") {
           event.preventDefault();
         }

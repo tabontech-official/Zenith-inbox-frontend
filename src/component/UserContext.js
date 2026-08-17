@@ -19,7 +19,7 @@
 
 //       try {
 //         const res = await fetch(
-//           `https://email-syncing-backend.vercel.app/auth/getUsers/${userId}`
+//           `http://localhost:5000/auth/getUsers/${userId}`
 //         );
 //         const data = await res.json();
 
@@ -31,7 +31,7 @@
 //         } else {
 //           // if not nested, fetch organization manually
 //           const orgRes = await fetch(
-//             `https://email-syncing-backend.vercel.app/organization/${userId}`
+//             `http://localhost:5000/organization/${userId}`
 //           );
 //           const orgData = await orgRes.json();
 //           setOrganization(orgData.data);
@@ -88,8 +88,12 @@ export const UserProvider = ({ children }) => {
     try {
       setLoading(true);
 
+      const token = localStorage.getItem("usertoken");
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/auth/getUsers/${userId}`
+        `http://localhost:5000/auth/getUsers/${userId}`,
+        { headers }
       );
       const data = await res.json();
 
@@ -104,7 +108,8 @@ export const UserProvider = ({ children }) => {
       } else {
         try {
           const orgRes = await fetch(
-            `https://email-syncing-backend.vercel.app/auth/organization/get/${userId}`
+            `http://localhost:5000/auth/organization/get/${userId}`,
+            { headers }
           );
           const orgData = await orgRes.json();
           if (orgData?.data) {

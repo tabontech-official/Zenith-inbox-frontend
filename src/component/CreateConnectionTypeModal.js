@@ -211,7 +211,7 @@ const CreateConnectionTypeModal = ({ isOpen, onClose, onSelectType }) => {
                 onClick={async () => {
   try {
     const res = await fetch(
-      "https://email-syncing-backend.vercel.app/api/connection/create",
+      "http://localhost:5000/api/connection/create",
       {
         method: "POST",
         headers: {

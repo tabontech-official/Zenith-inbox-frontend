@@ -124,7 +124,7 @@ const AppLayout = ({ children }) => {
 
     try {
       setTogglingAi(true);
-      const res = await axios.post(`https://email-syncing-backend.vercel.app/auth/toggle-ai-replies/${targetUserId}`, {
+      const res = await axios.post(`http://localhost:5000/auth/toggle-ai-replies/${targetUserId}`, {
         enabled: nextStatus,
         userId: targetUserId,
       });
@@ -135,7 +135,7 @@ const AppLayout = ({ children }) => {
     } catch (err) {
       console.error("Error toggling AI replies:", err);
       try {
-        await axios.patch(`https://email-syncing-backend.vercel.app/auth/user/ai`, {
+        await axios.patch(`http://localhost:5000/auth/user/ai`, {
           userId: targetUserId,
           enabled: nextStatus,
         });
@@ -154,20 +154,20 @@ const AppLayout = ({ children }) => {
   }, [contextEmails]);
 
   useEffect(() => {
-    // Only fetch if data is not present in context yet
-    if (!contextUser) {
+    // Only fetch user if not available in UserContext
+    if (!contextUser && userId) {
       fetchUser();
     }
-    if (!contextEmails || contextEmails.length === 0) {
-      fetchRecentEmails();
-    }
-  }, [userId]);
+  }, [userId, contextUser]);
 
   const fetchUser = async () => {
     try {
       if (!userId) return;
+      const token = localStorage.getItem("usertoken");
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
       const res = await axios.get(
-        `https://email-syncing-backend.vercel.app/auth/getUsers/${userId}`,
+        `http://localhost:5000/auth/getUsers/${userId}`,
+        { headers }
       );
       const fetchedUser = res.data?.data || contextUser || null;
       if (fetchedUser) {
@@ -195,8 +195,11 @@ const AppLayout = ({ children }) => {
   const fetchRecentEmails = async () => {
     try {
       if (!userId) return;
+      const token = localStorage.getItem("usertoken");
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
       const res = await axios.get(
-        `https://email-syncing-backend.vercel.app/auth/organization/get/${userId}`,
+        `http://localhost:5000/auth/organization/get/${userId}`,
+        { headers }
       );
       const orgData = res.data?.data;
       if (orgData) {
@@ -211,7 +214,8 @@ const AppLayout = ({ children }) => {
       }
 
       const emailsRes = await axios.get(
-        `https://email-syncing-backend.vercel.app/mailhook/getAllEmailsData/${userId}`,
+        `http://localhost:5000/mailhook/getAllEmailsData/${userId}`,
+        { headers }
       );
       const threads = emailsRes.data?.data?.threads || [];
       // Normalize: flatten thread root emails
@@ -276,8 +280,8 @@ const AppLayout = ({ children }) => {
     const fetchSidebarData = async () => {
       try {
         const [scenRes, connRes] = await Promise.all([
-          axios.get(`https://email-syncing-backend.vercel.app/scenario/user/${userId}`).catch(() => null),
-          axios.get(`https://email-syncing-backend.vercel.app/auth/getConnection/${userId}`).catch(() => null),
+          axios.get(`http://localhost:5000/scenario/user/${userId}`).catch(() => null),
+          axios.get(`http://localhost:5000/auth/getConnection/${userId}`).catch(() => null),
         ]);
 
         let scens = Array.isArray(scenRes?.data)
@@ -413,7 +417,7 @@ const AppLayout = ({ children }) => {
       const currentUserId = userId || user?._id;
       if (currentUserId) {
         await axios.put(
-          `https://email-syncing-backend.vercel.app/auth/updateUserAndOrganization/${currentUserId}`,
+          `http://localhost:5000/auth/updateUserAndOrganization/${currentUserId}`,
           {
             organizationName: orgForm.organizationName,
             Region: orgForm.region,
@@ -448,7 +452,7 @@ const AppLayout = ({ children }) => {
       const currentUserId = localStorage.getItem("userid") || user?._id;
       if (currentUserId) {
         await fetch(
-          `https://email-syncing-backend.vercel.app/auth/logout/${currentUserId}`,
+          `http://localhost:5000/auth/logout/${currentUserId}`,
           {
             method: "POST",
           },
@@ -590,16 +594,6 @@ const AppLayout = ({ children }) => {
               id: "dashboard",
               label: "Dashboard",
               path: "/dashboard",
-            },
-            {
-              id: "teams",
-              label: "Teams",
-              path: "/teams",
-            },
-            {
-              id: "users",
-              label: "Users",
-              path: "/organization/users",
             },
           ],
         },

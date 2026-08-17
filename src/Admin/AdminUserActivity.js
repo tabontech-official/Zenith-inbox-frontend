@@ -28,8 +28,8 @@ const AdminUserActivity = () => {
   useEffect(() => {
     const fetchActivity = async () => {
       try {
-        const token = localStorage.getItem("token");
-        const res = await fetch("https://email-syncing-backend.vercel.app/auth/user-activity", {
+        const token = localStorage.getItem("usertoken");
+        const res = await fetch("http://localhost:5000/auth/user-activity", {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();

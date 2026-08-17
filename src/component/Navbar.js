@@ -8,7 +8,7 @@ import { UserContext } from "./UserContext";
 import axios from "axios";
 import { MdSecurity } from "react-icons/md";
 
-const API = "https://email-syncing-backend.vercel.app/auth/guide";
+const API = "http://localhost:5000/auth/guide";
 
 const Navbar = () => {
   const [open, setOpen] = useState(false);
@@ -122,7 +122,7 @@ const Navbar = () => {
   const handleLogout = async () => {
     try {
       if (userId) {
-        await fetch(`https://email-syncing-backend.vercel.app/auth/logout/${userId}`, {
+        await fetch(`http://localhost:5000/auth/logout/${userId}`, {
           method: "POST",
         }).catch(() => {});
       }
@@ -191,12 +191,7 @@ const Navbar = () => {
             )}
           </div> */}
 
-          {(role === "admin" ||
-            role === "superadmin" ||
-            role === "master_admin" ||
-            user?.role === "admin" ||
-            user?.role === "superadmin" ||
-            user?.role === "master_admin") && (
+          {(role === "admin" || user?.role === "admin") && (
             <Link
               to="/admin/ai-config"
               className="hidden md:inline-flex h-10 items-center justify-center gap-2 bg-[#111110] hover:bg-black text-white px-4 rounded-xl text-sm font-semibold shadow-sm transition duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
@@ -269,12 +264,7 @@ const Navbar = () => {
                   <FiUser className="text-gray-600" /> Company Profile
                 </button>
 
-                {(role === "admin" ||
-                  role === "superadmin" ||
-                  role === "master_admin" ||
-                  user?.role === "admin" ||
-                  user?.role === "superadmin" ||
-                  user?.role === "master_admin") && (
+                {(role === "admin" || user?.role === "admin") && (
                   <button
                     onClick={() => {
                       setShowProfileMenu(false);

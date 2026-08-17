@@ -23,7 +23,7 @@ import AppLayout from "../component/AppLayout";
 import Header from "../component/Header";
 import { UserContext } from "../component/UserContext";
 
-const API_BASE_URL = "https://email-syncing-backend.vercel.app";
+const API_BASE_URL = "http://localhost:5000";
 
 const Pricing = () => {
   const navigate = useNavigate();
@@ -265,7 +265,6 @@ const Pricing = () => {
     { name: "AI Replies", explore: "50/month", elevate: "500/month", unite: "1,000/month", enterprise: "Custom" },
     { name: "Active Scenarios", explore: "1", elevate: "5", unite: "15", enterprise: "Unlimited" },
     { name: "Connections", explore: "1", elevate: "Up to 3", unite: "Up to 10", enterprise: "Unlimited" },
-    { name: "Team Members", explore: "1", elevate: "Up to 5", unite: "Up to 20", enterprise: "Unlimited" },
     { name: "Shared Inbox", explore: "Yes", elevate: "Yes", unite: "Yes", enterprise: "Yes" },
     { name: "Scenario Builder", explore: "No", elevate: "Yes", unite: "Advanced", enterprise: "Advanced" },
     { name: "Templates", explore: "Basic", elevate: "Unlimited", unite: "Unlimited", enterprise: "Unlimited" },
@@ -526,10 +525,6 @@ const Pricing = () => {
               </li>
               <li className="flex items-center gap-2">
                 <FiCheck className="text-emerald-600 shrink-0" size={15} />
-                <span>1 Team Member</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <FiCheck className="text-emerald-600 shrink-0" size={15} />
                 <span>Shared Inbox</span>
               </li>
               <li className="flex items-center gap-2">
@@ -602,10 +597,6 @@ const Pricing = () => {
               <li className="flex items-center gap-2">
                 <FiCheck className="text-slate-900 shrink-0" size={15} />
                 <span>Up to 3 Connections</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <FiCheck className="text-slate-900 shrink-0" size={15} />
-                <span>Up to 5 Team Members</span>
               </li>
               <li className="flex items-center gap-2">
                 <FiCheck className="text-slate-900 shrink-0" size={15} />
@@ -702,10 +693,6 @@ const Pricing = () => {
               </li>
               <li className="flex items-center gap-2">
                 <FiCheck className="text-emerald-600 shrink-0" size={15} />
-                <span>Up to 20 Team Members</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <FiCheck className="text-emerald-600 shrink-0" size={15} />
                 <span>Shared Inbox</span>
               </li>
               <li className="flex items-center gap-2">
@@ -795,10 +782,6 @@ const Pricing = () => {
             <div className="flex items-center gap-2">
               <FiCheck className="text-emerald-600 shrink-0" size={14} />
               <span>Unlimited Connections</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <FiCheck className="text-emerald-600 shrink-0" size={14} />
-              <span>Unlimited Team Members</span>
             </div>
             <div className="flex items-center gap-2">
               <FiCheck className="text-emerald-600 shrink-0" size={14} />
@@ -1025,7 +1008,6 @@ const Pricing = () => {
                 <li>Your account will revert to the <strong>Explore (Free)</strong> plan.</li>
                 <li>Monthly AI replies limit will reset to 50 replies/mo.</li>
                 <li>Active scenarios limit will be capped at 1.</li>
-                <li>Team members limit will revert to 1.</li>
               </ul>
             </div>
 

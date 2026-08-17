@@ -24,7 +24,7 @@
 
 //     try {
 //       const res = await axios.get(
-//         `https://email-syncing-backend.vercel.app/auth/organization/get/${userId}`,
+//         `http://localhost:5000/auth/organization/get/${userId}`,
 //       );
 
 //       if (res.data?.success && res.data.data) {
@@ -72,7 +72,7 @@
 //       toast.loading("Saving organization...", { id: "org" });
 
 //       const res = await axios.post(
-//         "https://email-syncing-backend.vercel.app/auth/organization/create",
+//         "http://localhost:5000/auth/organization/create",
 //         {
 //           userId,
 //           organizationName: formData.organizationName,
@@ -346,7 +346,7 @@ const OrganizationSettingsModal = ({ open, onClose }) => {
 
     try {
       const res = await axios.get(
-        `https://email-syncing-backend.vercel.app/auth/organization/get/${userId}`,
+        `http://localhost:5000/auth/organization/get/${userId}`,
       );
 
       if (res.data?.success && res.data.data) {
@@ -406,7 +406,7 @@ const OrganizationSettingsModal = ({ open, onClose }) => {
       toast.loading("Saving organization...", { id: "org" });
 
       const res = await axios.post(
-        "https://email-syncing-backend.vercel.app/auth/organization/create",
+        "http://localhost:5000/auth/organization/create",
         {
           userId,
           organizationName: formData.organizationName,

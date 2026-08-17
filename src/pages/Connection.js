@@ -45,10 +45,12 @@ const ConnectionsPage = () => {
   const fetchMailhooks = async () => {
     try {
       const userId = localStorage.getItem("userid");
+      const token = localStorage.getItem("usertoken");
       if (!userId) return;
 
       const res = await axios.get(
-        `https://email-syncing-backend.vercel.app/mailhookcard/${userId}`,
+        `http://localhost:5000/mailhookcard/${userId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       if (res.data.success) {
         setMailhooks(res.data.data);
@@ -71,12 +73,14 @@ const ConnectionsPage = () => {
   const fetchConnections = async () => {
     try {
       const userId = localStorage.getItem("userid");
+      const token = localStorage.getItem("usertoken");
       if (!userId) return setLoading(false);
 
       setLoading(true);
 
       const res = await axios.get(
-        `https://email-syncing-backend.vercel.app/auth/getConnection/${userId}`,
+        `http://localhost:5000/auth/getConnection/${userId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
       const connList = res.data || [];
@@ -85,12 +89,13 @@ const ConnectionsPage = () => {
       if (connList.length > 0) {
         try {
           await axios.put(
-            `https://email-syncing-backend.vercel.app/auth/setup/${userId}`,
+            `http://localhost:5000/auth/setup/${userId}`,
             {
               stepCompleted: 4,
               setupCompleted: true,
               skipped: false,
             },
+            { headers: { Authorization: `Bearer ${token}` } }
           );
         } catch (apiErr) {
           console.error("Failed to auto-complete setup:", apiErr);
@@ -128,15 +133,17 @@ const ConnectionsPage = () => {
 
     try {
       const userId = localStorage.getItem("userid");
+      const token = localStorage.getItem("usertoken");
       if (!userId) return;
 
       await axios.put(
-        `https://email-syncing-backend.vercel.app/auth/setup/${userId}`,
+        `http://localhost:5000/auth/setup/${userId}`,
         {
           stepCompleted: 4,
           setupCompleted: false,
           skipped: false,
         },
+        { headers: { Authorization: `Bearer ${token}` } }
       );
     } catch (err) {
       console.error("Error updating setup progress:", err);
@@ -344,11 +351,12 @@ const ConnectionsPage = () => {
                                   ),
                                 );
                                 const res = await fetch(
-                                  `https://email-syncing-backend.vercel.app/mailhook/verify`,
+                                  `http://localhost:5000/mailhook/verify`,
                                   {
                                     method: "POST",
                                     headers: {
                                       "Content-Type": "application/json",
+                                      Authorization: `Bearer ${localStorage.getItem("usertoken")}`,
                                     },
                                     body: JSON.stringify({
                                       connectionId: conn._id,

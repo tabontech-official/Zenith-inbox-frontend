@@ -21,8 +21,8 @@ const AdminConnections = () => {
   useEffect(() => {
     const fetchConnections = async () => {
       try {
-        const token = localStorage.getItem("token");
-        const res = await fetch("https://email-syncing-backend.vercel.app/auth/connections", {
+        const token = localStorage.getItem("usertoken");
+        const res = await fetch("http://localhost:5000/auth/connections", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -231,7 +231,7 @@ export default AdminConnections;
 
 //       const token = localStorage.getItem("usertoken");
 
-//       const res = await fetch("https://email-syncing-backend.vercel.app/auth/connections", {
+//       const res = await fetch("http://localhost:5000/auth/connections", {
 //         headers: {
 //           Authorization: `Bearer ${token}`,
 //         },
@@ -316,7 +316,7 @@ export default AdminConnections;
 //       const token = localStorage.getItem("usertoken");
 
 //       const res = await fetch(
-//         `https://email-syncing-backend.vercel.app/auth/connection/${selectedConnection._id}`,
+//         `http://localhost:5000/auth/connection/${selectedConnection._id}`,
 //         {
 //           method: "DELETE",
 //           headers: {

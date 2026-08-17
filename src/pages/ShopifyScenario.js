@@ -128,7 +128,10 @@ const ShopifyScenariosPage = () => {
 
       if (targetUserId) {
         try {
-          const res = await fetch(`https://email-syncing-backend.vercel.app/scenario/user/${targetUserId}`);
+          const token = localStorage.getItem("usertoken");
+          const res = await fetch(`http://localhost:5000/scenario/user/${targetUserId}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
           const data = await res.json();
           const list = Array.isArray(data) ? data : data?.data || [];
           const activeCount = list.filter((s) => s.scenarioActive && s._id !== id).length;
@@ -161,7 +164,7 @@ const ShopifyScenariosPage = () => {
         try {
           const userId = localStorage.getItem("userid");
           const res = await fetch(
-            `https://email-syncing-backend.vercel.app/template/alltemplates?userId=${userId}&service=General`,
+            `http://localhost:5000/template/alltemplates?userId=${userId}&service=General`,
           );
           const data = await res.json();
           if (data.success && Array.isArray(data.data) && data.data.length > 0) {
@@ -353,15 +356,24 @@ const ShopifyScenariosPage = () => {
   };
   const fetchConnections = async () => {
     try {
+      const token = localStorage.getItem("usertoken");
+      const userId = localStorage.getItem("userid");
+      if (!userId) return;
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/auth/getConnection/${localStorage.getItem(
-          "userid",
-        )}`,
+        `http://localhost:5000/auth/getConnection/${userId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       const data = await res.json();
-      setConnections(data);
+      if (Array.isArray(data)) {
+        setConnections(data);
+      } else if (Array.isArray(data?.data)) {
+        setConnections(data.data);
+      } else {
+        setConnections([]);
+      }
     } catch (err) {
       console.error("Error fetching connections:", err);
+      setConnections([]);
     }
   };
 
@@ -378,7 +390,7 @@ const ShopifyScenariosPage = () => {
       setHistoryLoading(true);
 
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/scenario-run-log/history/${activeScenarioId}`,
+        `http://localhost:5000/scenario-run-log/history/${activeScenarioId}`,
       );
 
       const data = await res.json();
@@ -478,11 +490,15 @@ const ShopifyScenariosPage = () => {
 
       if (!activeScenarioId) {
         const userId = localStorage.getItem("userid");
+        const token = localStorage.getItem("usertoken");
         const checkRes = await fetch(
-          "https://email-syncing-backend.vercel.app/scenario/details",
+          "http://localhost:5000/scenario/details",
           {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
             body: JSON.stringify({ userId }),
           },
         );
@@ -512,13 +528,17 @@ const ShopifyScenariosPage = () => {
         setEditingMode("update");
       }
 
+      const token = localStorage.getItem("usertoken");
       if (activeScenarioId) {
         console.log("✏️ Updating existing scenario:", activeScenarioId);
         res = await fetch(
-          `https://email-syncing-backend.vercel.app/scenario/detail/${activeScenarioId}`,
+          `http://localhost:5000/scenario/detail/${activeScenarioId}`,
           {
             method: "PUT",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
             body: JSON.stringify(payload),
           },
         );
@@ -528,9 +548,12 @@ const ShopifyScenariosPage = () => {
           throw new Error(data.message || "Failed to update scenario");
       } else {
         console.log("🆕 Creating a new scenario...");
-        res = await fetch(`https://email-syncing-backend.vercel.app/scenario`, {
+        res = await fetch(`http://localhost:5000/scenario`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
           body: JSON.stringify(payload),
         });
         data = await res.json();
@@ -570,10 +593,13 @@ const ShopifyScenariosPage = () => {
       }
 
       const refresh = await fetch(
-        "https://email-syncing-backend.vercel.app/scenario/details",
+        "http://localhost:5000/scenario/details",
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
           body: JSON.stringify({ userId: localStorage.getItem("userid") }),
         },
       );
@@ -613,7 +639,7 @@ const ShopifyScenariosPage = () => {
   const handleToggleTemplate = async (templateId, newStatus) => {
     try {
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/template/status/${templateId}`,
+        `http://localhost:5000/template/status/${templateId}`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -636,7 +662,7 @@ const ShopifyScenariosPage = () => {
   const handleToggleAllTemplates = async (newStatus) => {
     try {
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/template/templatestatus/all`,
+        `http://localhost:5000/template/templatestatus/all`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -709,11 +735,15 @@ const ShopifyScenariosPage = () => {
 
         console.log("🔄 Fetching existing Shopify scenario for user:", userId);
 
+        const token = localStorage.getItem("usertoken");
         const res = await fetch(
-          "https://email-syncing-backend.vercel.app/scenario/details",
+          "http://localhost:5000/scenario/details",
           {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
             body: JSON.stringify({ userId }),
           },
         );
@@ -820,9 +850,13 @@ const ShopifyScenariosPage = () => {
 
     try {
       toast.loading("Creating new Shopify scenario in DB...", { id: "createScenario" });
-      const res = await fetch("https://email-syncing-backend.vercel.app/scenario", {
+      const token = localStorage.getItem("usertoken");
+      const res = await fetch("http://localhost:5000/scenario", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({
           userId,
           name: "Shopify Partner Directory Scenario",
@@ -835,7 +869,7 @@ const ShopifyScenariosPage = () => {
               color: "",
               icon: "",
             },
-            connectionId: activeConnId,
+            connectionId: incomingLeadsConnection || activeConnId,
             subjectFilter: incomingLeadsSubjectFilter || "Shopify Partner Directory: New service inquiry from",
             pollInterval: 60,
             enabled: Boolean(activeConnId),
@@ -876,9 +910,15 @@ const ShopifyScenariosPage = () => {
 
     try {
       toast.loading("Deleting Shopify Scenario...", { id: "deleteScenario" });
+      const token = localStorage.getItem("usertoken");
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/scenario/detail/${activeScenarioId}`,
-        { method: "DELETE" }
+        `http://localhost:5000/scenario/detail/${activeScenarioId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       const data = await res.json();
       toast.dismiss("deleteScenario");
@@ -1387,7 +1427,7 @@ const ShopifyScenariosPage = () => {
         if (!userId || !showRunTestModal) return;
 
         const res = await fetch(
-          `https://email-syncing-backend.vercel.app/mailhook/get-test-data/${userId}`,
+          `http://localhost:5000/mailhook/get-test-data/${userId}`,
         );
         const data = await res.json();
 
@@ -1516,7 +1556,7 @@ const ShopifyScenariosPage = () => {
     try {
       const userId = localStorage.getItem("userid");
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/template/alltemplates/query?userId=${userId}&service=${encodeURIComponent(
+        `http://localhost:5000/template/alltemplates/query?userId=${userId}&service=${encodeURIComponent(
           service,
         )}`,
       );
@@ -1609,7 +1649,8 @@ const ShopifyScenariosPage = () => {
         }
 
         if (isEmailModule && connectionId) {
-          const connectionData = connections.find(
+          const safeConnections = Array.isArray(connections) ? connections : [];
+          const connectionData = safeConnections.find(
             (c) => c._id === connectionId,
           );
           if (connectionData && !connectionData.verified) {
@@ -1661,7 +1702,7 @@ const ShopifyScenariosPage = () => {
     try {
       const activeScenarioId = scenarioId || localStorage.getItem("scenarioId") || null;
       const res = await fetch(
-        "https://email-syncing-backend.vercel.app/mailhook/Run-test-mode",
+        "http://localhost:5000/mailhook/Run-test-mode",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -1693,7 +1734,7 @@ const ShopifyScenariosPage = () => {
 
         const userId = localStorage.getItem("userid");
         const res = await fetch(
-          `https://email-syncing-backend.vercel.app/template/alltemplates?userId=${userId}&service=${encodeURIComponent(
+          `http://localhost:5000/template/alltemplates?userId=${userId}&service=${encodeURIComponent(
             formData.service,
           )}`,
         );
@@ -1802,7 +1843,7 @@ const ShopifyScenariosPage = () => {
       toast.loading("Fetching test email...", { id: "email" });
 
       const res = await fetch(
-        `https://email-syncing-backend.vercel.app/mailhook/get-test-email/${userId}`,
+        `http://localhost:5000/mailhook/get-test-email/${userId}`,
       );
       const data = await res.json();
 
@@ -1837,9 +1878,13 @@ const ShopifyScenariosPage = () => {
       setShowServiceModal(true);
       setLoadingServices(true);
       const userId = localStorage.getItem("userid");
+      const token = localStorage.getItem("usertoken");
       try {
         const res = await fetch(
-          `https://email-syncing-backend.vercel.app/template/all?userId=${userId}`,
+          `http://localhost:5000/template/all?userId=${userId}`,
+          {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          }
         );
         const data = await res.json();
 
@@ -1877,7 +1922,7 @@ const ShopifyScenariosPage = () => {
   //       const userId = localStorage.getItem("userid");
   //       try {
   //         const { data } = await axios.get(
-  //           `https://email-syncing-backend.vercel.app/template/all?userId=${userId}`
+  //           `http://localhost:5000/template/all?userId=${userId}`
   //         );
 
   //         const grouped = data.reduce((acc, item) => {
@@ -1908,9 +1953,13 @@ const ShopifyScenariosPage = () => {
     if (showServiceModal) {
       (async () => {
         const userId = localStorage.getItem("userid");
+        const token = localStorage.getItem("usertoken");
         try {
           const { data } = await axios.get(
-            `https://email-syncing-backend.vercel.app/template/all?userId=${userId}`,
+            `http://localhost:5000/template/all?userId=${userId}`,
+            {
+              headers: token ? { Authorization: `Bearer ${token}` } : {},
+            }
           );
 
           const grouped = data.reduce((acc, item) => {
@@ -2062,7 +2111,7 @@ const ShopifyScenariosPage = () => {
     });
 
   const selectedConnections = emailModules
-    .map((m) => connections.find((c) => c._id === m.connectionId))
+    .map((m) => (Array.isArray(connections) ? connections : []).find((c) => c._id === m.connectionId))
     .filter(Boolean);
 
   const allSelectedConnectionsVerified =
@@ -2980,7 +3029,7 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                       const isConn = Boolean(
                         selectedConnection ||
                           incomingLeadsConnection ||
-                          (connections && connections.length > 0),
+                          (Array.isArray(connections) && connections.length > 0),
                       );
                       const allCanvasModules = routerBranches.flatMap((b) => b.modules || []);
                       const unconfiguredEmailModules = allCanvasModules.filter((m) => {
@@ -3081,7 +3130,7 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                     {(() => {
                       const isInboxConnected = Boolean(
                         incomingLeadsConnection &&
-                          connections &&
+                          Array.isArray(connections) &&
                           connections.some((c) => c._id === incomingLeadsConnection),
                       );
                       const isTriggerConfirmed = true;
@@ -3096,7 +3145,7 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                         const isDelay = m.type === "Delay" || m.app?.name === "Delay" || m.app?.displayName === "Delay" || Boolean(m.delayValue);
                         const hasValidConnection = Boolean(
                           m.connectionId &&
-                            connections &&
+                            Array.isArray(connections) &&
                             connections.some((c) => c._id === m.connectionId),
                         );
                         return !isDelay && !hasValidConnection;
@@ -3251,7 +3300,7 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                   <div className="flex items-start gap-4 overflow-x-auto pb-4 pt-1 no-scrollbar">
                     {/* CARD 1: Incoming Leads */}
                     {(() => {
-                      const activeConn = connections.find((c) => c._id === incomingLeadsConnection);
+                      const activeConn = (Array.isArray(connections) ? connections : []).find((c) => c._id === incomingLeadsConnection);
                       const isIncConfigured = Boolean(incomingLeadsConnection && activeConn);
                       return (
                         <div
@@ -3426,7 +3475,7 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                             m.app?.name === "Initial Email" ||
                             m.template === "Initial Email",
                         );
-                      const activeInitialConn = connections.find((c) => c._id === initialMod?.connectionId);
+                      const activeInitialConn = (Array.isArray(connections) ? connections : []).find((c) => c._id === initialMod?.connectionId);
                       const isSaved = Boolean(
                         initialMod && initialMod.connectionId && activeInitialConn
                       );
@@ -4571,7 +4620,7 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                                 const newStatus = e.target.checked;
                                 const updates = templateList.map((t) =>
                                   fetch(
-                                    `https://email-syncing-backend.vercel.app/template/status/${t._id}`,
+                                    `http://localhost:5000/template/status/${t._id}`,
                                     {
                                       method: "PATCH",
                                       headers: {
@@ -4856,7 +4905,7 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                     );
 
                     await fetch(
-                      `https://email-syncing-backend.vercel.app/template/update/${editingTemplate._id}`,
+                      `http://localhost:5000/template/update/${editingTemplate._id}`,
                       {
                         method: "PUT",
                         headers: { "Content-Type": "application/json" },
@@ -4926,7 +4975,7 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
 
                               try {
                                 const res = await fetch(
-                                  `https://email-syncing-backend.vercel.app/template/templatestatus/all`,
+                                  `http://localhost:5000/template/templatestatus/all`,
                                   {
                                     method: "PATCH",
                                     headers: {
@@ -5121,7 +5170,7 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                                               );
 
                                               await fetch(
-                                                `https://email-syncing-backend.vercel.app/template/status/${t._id}`,
+                                                `http://localhost:5000/template/status/${t._id}`,
                                                 {
                                                   method: "PATCH",
                                                   headers: {
@@ -5259,7 +5308,7 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
 
                               try {
                                 const res = await fetch(
-                                  `https://email-syncing-backend.vercel.app/mailhook/verify`,
+                                  `http://localhost:5000/mailhook/verify`,
                                   {
                                     method: "POST",
                                     headers: {
