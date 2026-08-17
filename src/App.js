@@ -54,6 +54,7 @@ import MasterAdminUsers from "./MasterAdmin/MasterAdminUsers";
 import MasterAdminOrganizations from "./MasterAdmin/MasterAdminOrganizations";
 import MasterAdminAuditLogs from "./MasterAdmin/MasterAdminAuditLogs";
 import AdminProductPage from "./Admin/AdminProductPage";
+import AdminLeadsReport from "./Admin/AdminLeadsReport";
 import Security from "./pages/Security";
 import UsersPage from "./pages/Users";
 import UtilitiesPage from "./pages/UtilitiesPage";
@@ -409,6 +410,30 @@ function App() {
             element={
               <ProtectedRoute adminOnly={true}>
                 <AdminUserEmails />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/reports/new-leads"
+            element={
+              <ProtectedRoute adminOnly={true}>
+                <AdminLeadsReport defaultStatus="new_lead" />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/reports/secured-leads"
+            element={
+              <ProtectedRoute adminOnly={true}>
+                <AdminLeadsReport defaultStatus="secured" />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/reports/closed-leads"
+            element={
+              <ProtectedRoute adminOnly={true}>
+                <AdminLeadsReport defaultStatus="closed" />
               </ProtectedRoute>
             }
           />

@@ -18,6 +18,9 @@ import {
   FiChevronRight,
   FiPackage,
   FiCpu,
+  FiMail,
+  FiUserCheck,
+  FiArchive,
 } from "react-icons/fi";
 import { UserContext } from "../component/UserContext";
 
@@ -25,15 +28,13 @@ import { UserContext } from "../component/UserContext";
 
 const NAV_MAIN = [
   { label: "Overview", path: "/admin/dashboard", icon: FiGrid },
-  { label: "Users", path: "/admin/users", icon: FiUsers },
   { label: "Organizations", path: "/admin/organizations", icon: FiHome },
-  { label: "Connections", path: "/admin/connections", icon: FiLink },
 ];
 
 const NAV_REPORTS = [
-  { label: "Scenarios", path: "/admin/reports/scenarios", icon: FiLayers },
-  { label: "Templates", path: "/admin/reports/templates", icon: FiFileText },
-  { label: "Activity", path: "/admin/reports/user-activity", icon: FiActivity },
+  { label: "New Leads", path: "/admin/reports/new-leads", icon: FiMail },
+  { label: "Secured Leads", path: "/admin/reports/secured-leads", icon: FiUserCheck },
+  { label: "Closed Leads", path: "/admin/reports/closed-leads", icon: FiArchive },
 ];
 
 const NAV_CMS = [
@@ -114,15 +115,17 @@ const PlatformAdminLayout = ({ children, pageTitle, pageSubtitle }) => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex">
-      {/* ── SIDEBAR ──────────────────────────────────────────────────────── */}
+      {/* ── FIXED SAAS OWNER SIDEBAR ──────────────────────────────────────── */}
       <aside
-        className={`${
+        className={`fixed top-0 left-0 bottom-0 z-30 h-screen ${
           collapsed ? "w-16" : "w-60"
-        } bg-slate-900 text-white flex flex-col flex-shrink-0 min-h-screen transition-all duration-200`}
+        } bg-slate-900 text-white flex flex-col flex-shrink-0 transition-all duration-200 shadow-xl overflow-hidden`}
       >
         {/* Brand */}
         <div
-          className={`p-4 border-b border-slate-800 flex items-center ${collapsed ? "justify-center" : "justify-between"} gap-2`}
+          className={`p-4 border-b border-slate-800 flex items-center ${
+            collapsed ? "justify-center" : "justify-between"
+          } gap-2 flex-shrink-0`}
         >
           {!collapsed && (
             <div className="flex items-center gap-2.5 min-w-0">
@@ -145,16 +148,21 @@ const PlatformAdminLayout = ({ children, pageTitle, pageSubtitle }) => {
             </div>
           )}
           <button
+            type="button"
             onClick={() => setCollapsed((c) => !c)}
             className="ml-auto text-slate-500 hover:text-slate-300 transition p-1 rounded"
             title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
-            {collapsed ? <FiChevronRight size={14} /> : <FiChevronDown size={14} className="rotate-90" />}
+            {collapsed ? (
+              <FiChevronRight size={14} />
+            ) : (
+              <FiChevronDown size={14} className="rotate-90" />
+            )}
           </button>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-3 space-y-4 overflow-y-auto">
+        <nav className="flex-1 p-3 space-y-4 overflow-y-auto admin-sidebar-scroll">
           <NavSection label="Management" items={NAV_MAIN} collapsed={collapsed} />
           <div className="border-t border-slate-800/80 pt-3">
             <NavSection label="Reports" items={NAV_REPORTS} collapsed={collapsed} />
@@ -168,7 +176,7 @@ const PlatformAdminLayout = ({ children, pageTitle, pageSubtitle }) => {
         </nav>
 
         {/* Bottom Links */}
-        <div className="p-3 border-t border-slate-800 space-y-0.5">
+        <div className="p-3 border-t border-slate-800 space-y-0.5 flex-shrink-0 bg-slate-900">
           <Link
             to="/dashboard"
             className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-white/8 transition"
@@ -187,10 +195,14 @@ const PlatformAdminLayout = ({ children, pageTitle, pageSubtitle }) => {
         </div>
       </aside>
 
-      {/* ── MAIN CONTENT ─────────────────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col min-w-0">
+      {/* ── MAIN CONTENT (OFFSET BY FIXED SIDEBAR) ────────────────────────── */}
+      <div
+        className={`flex-1 flex flex-col min-w-0 transition-all duration-200 ${
+          collapsed ? "ml-16" : "ml-60"
+        }`}
+      >
         {/* Top Header */}
-        <header className="bg-white border-b border-slate-200 h-14 px-6 flex items-center justify-between flex-shrink-0 shadow-sm">
+        <header className="sticky top-0 z-20 bg-white/90 backdrop-blur-md border-b border-slate-200 h-14 px-6 flex items-center justify-between flex-shrink-0 shadow-xs">
           <div className="flex items-center gap-3">
             <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
               Replex Engine
@@ -211,20 +223,24 @@ const PlatformAdminLayout = ({ children, pageTitle, pageSubtitle }) => {
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2.5">
               <div className="h-7 w-7 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-[10px] border border-amber-200">
-                {user?.fullName ? user.fullName[0].toUpperCase() : user?.email?.[0]?.toUpperCase() || "A"}
+                {user?.fullName
+                  ? user.fullName[0].toUpperCase()
+                  : user?.email?.[0]?.toUpperCase() || "A"}
               </div>
               <div className="hidden sm:flex flex-col text-right">
                 <span className="text-[11px] font-semibold text-slate-800 leading-tight">
                   {user?.fullName || "Admin"}
                 </span>
-                <span className="text-[10px] text-slate-400 leading-tight">{user?.email}</span>
+                <span className="text-[10px] text-slate-400 leading-tight">
+                  {user?.email}
+                </span>
               </div>
             </div>
           </div>
         </header>
 
-        {/* Body */}
-        <main className="flex-1 p-6 overflow-y-auto">{children}</main>
+        {/* Body Content */}
+        <main className="flex-1 p-6">{children}</main>
       </div>
     </div>
   );

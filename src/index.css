@@ -127,6 +127,31 @@
   scrollbar-width: thin;
   scrollbar-color: #7C3AED transparent;
 }
+
+/* 👑 Sleek, Ultra-Clean SaaS Admin Dark Sidebar Scrollbar */
+.admin-sidebar-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+
+.admin-sidebar-scroll::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.admin-sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.admin-sidebar-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 9999px;
+  transition: background 0.2s ease;
+}
+
+.admin-sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(245, 158, 11, 0.5); /* subtle amber glow on hover */
+}
 .slide-enter {
   opacity: 0;
   transform: translateX(40px);
