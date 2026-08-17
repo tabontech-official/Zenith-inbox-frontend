@@ -1,4 +1,4 @@
-const BACKEND_URL = "http://localhost:5000";
+const BACKEND_URL = "https://email-syncing-backend.vercel.app";
 
 let summaryCache = null;
 let cacheTime = 0;

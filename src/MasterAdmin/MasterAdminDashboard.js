@@ -35,7 +35,7 @@ const MasterAdminDashboard = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("usertoken");
-      const res = await fetch("http://localhost:5000/admin/dashboard", {
+      const res = await fetch("https://email-syncing-backend.vercel.app/admin/dashboard", {
         headers: {
           Authorization: `Bearer ${token}`,
         },

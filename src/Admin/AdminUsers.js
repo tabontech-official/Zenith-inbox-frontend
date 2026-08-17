@@ -66,7 +66,7 @@ const AdminUsers = () => {
   //     }
 
   //     const res = await fetch(
-  //       `http://localhost:5000/auth/admin/give-pro/${proUserId}`,
+  //       `https://email-syncing-backend.vercel.app/auth/admin/give-pro/${proUserId}`,
   //       {
   //         method: "PUT",
   //         headers: {
@@ -111,7 +111,7 @@ const handleLoginAsUser = async (userId) => {
     const adminToken = localStorage.getItem("usertoken");
 
     const res = await fetch(
-      `http://localhost:5000/auth/admin/login-as/${userId}`,
+      `https://email-syncing-backend.vercel.app/auth/admin/login-as/${userId}`,
       {
         method: "POST",
         headers: {
@@ -155,7 +155,7 @@ const handleLoginAsUser = async (userId) => {
       }
 
       const res = await fetch(
-        `http://localhost:5000/auth/admin/give-pro/${proUserId}`,
+        `https://email-syncing-backend.vercel.app/auth/admin/give-pro/${proUserId}`,
         {
           method: "PUT",
           headers: {
@@ -225,7 +225,7 @@ const handleLoginAsUser = async (userId) => {
       const token = localStorage.getItem("usertoken");
 
       const res = await fetch(
-        `http://localhost:5000/auth/admin/revoke-pro/${id}`,
+        `https://email-syncing-backend.vercel.app/auth/admin/revoke-pro/${id}`,
         {
           method: "PUT",
           headers: {
@@ -268,7 +268,7 @@ const handleLoginAsUser = async (userId) => {
     try {
       const token = localStorage.getItem("usertoken");
       const res = await fetch(
-        "http://localhost:5000/auth/users",
+        "https://email-syncing-backend.vercel.app/auth/users",
         {
           headers: { Authorization: `Bearer ${token}` },
         },
@@ -320,7 +320,7 @@ const handleLoginAsUser = async (userId) => {
         }
 
         const res = await fetch(
-          `http://localhost:5000/auth/user/${activeId}`,
+          `https://email-syncing-backend.vercel.app/auth/user/${activeId}`,
           {
             method: "DELETE",
             headers: {
@@ -351,7 +351,7 @@ const handleLoginAsUser = async (userId) => {
         }
 
         const res = await fetch(
-          `http://localhost:5000/auth/users/bulk-delete`,
+          `https://email-syncing-backend.vercel.app/auth/users/bulk-delete`,
           {
             method: "POST",
             headers: {

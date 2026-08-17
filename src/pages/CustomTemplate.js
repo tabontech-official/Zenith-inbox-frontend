@@ -36,10 +36,10 @@ export default function CustomTemplate() {
   const verifyCompanyProfile = async (targetUserId) => {
     if (!targetUserId) return false;
     const urls = [
-      `http://localhost:5000/api/company-profile/${targetUserId}`,
-      `http://localhost:5000/api/company-profile/${targetUserId}`,
-      `http://localhost:5000/auth/user-profile/${targetUserId}`,
-      `http://localhost:5000/auth/user-profile/${targetUserId}`,
+      `https://email-syncing-backend.vercel.app/api/company-profile/${targetUserId}`,
+      `https://email-syncing-backend.vercel.app/api/company-profile/${targetUserId}`,
+      `https://email-syncing-backend.vercel.app/auth/user-profile/${targetUserId}`,
+      `https://email-syncing-backend.vercel.app/auth/user-profile/${targetUserId}`,
     ];
     for (const url of urls) {
       try {
@@ -77,10 +77,10 @@ export default function CustomTemplate() {
     try {
       setTogglingAi(true);
       const res = await axios.post(
-        `http://localhost:5000/auth/toggle-ai-replies/${targetUserId}`,
+        `https://email-syncing-backend.vercel.app/auth/toggle-ai-replies/${targetUserId}`,
         { enabled: nextStatus, userId: targetUserId }
       );
-      await axios.patch("http://localhost:5000/template/ai-toggle-all", {
+      await axios.patch("https://email-syncing-backend.vercel.app/template/ai-toggle-all", {
         userId: targetUserId,
         platform: "other",
         aiResponse: nextStatus,
@@ -127,7 +127,7 @@ export default function CustomTemplate() {
       const userId = localStorage.getItem("userid") || user?._id;
       const token = localStorage.getItem("usertoken");
       const res = await axios.get(
-        "http://localhost:5000/template/all/custom",
+        "https://email-syncing-backend.vercel.app/template/all/custom",
         {
           params: { userId },
           headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -173,7 +173,7 @@ export default function CustomTemplate() {
       prev.map((t) => (t._id === templateId ? { ...t, aiResponse: nextStatus } : t))
     );
     try {
-      await axios.patch(`http://localhost:5000/template/ai-toggle/${templateId}`, {
+      await axios.patch(`https://email-syncing-backend.vercel.app/template/ai-toggle/${templateId}`, {
         aiResponse: nextStatus,
       });
       toast.success(nextStatus ? "Auto Reply enabled for template!" : "Switched to Fixed Template.");
@@ -200,7 +200,7 @@ export default function CustomTemplate() {
 
     setTemplates((prev) => prev.map((t) => ({ ...t, aiResponse: enableAll })));
     try {
-      await axios.patch("http://localhost:5000/template/ai-toggle-all", {
+      await axios.patch("https://email-syncing-backend.vercel.app/template/ai-toggle-all", {
         userId,
         platform: "other",
         aiResponse: enableAll,
@@ -261,13 +261,13 @@ export default function CustomTemplate() {
 
       if (editingId) {
         await axios.put(
-          `http://localhost:5000/template/update/${editingId}`,
+          `https://email-syncing-backend.vercel.app/template/update/${editingId}`,
           payload,
         );
         toast.success("Template updated successfully!");
       } else {
         await axios.post(
-          "http://localhost:5000/template/create",
+          "https://email-syncing-backend.vercel.app/template/create",
           payload,
         );
         toast.success("Template created successfully!");
@@ -294,7 +294,7 @@ export default function CustomTemplate() {
 
     try {
       await axios.put(
-        `http://localhost:5000/template/update/${id}`,
+        `https://email-syncing-backend.vercel.app/template/update/${id}`,
         {
           active: !currentStatus,
         },
@@ -324,7 +324,7 @@ export default function CustomTemplate() {
   const handleDeleteTemplate = async () => {
     try {
       await axios.delete(
-        `http://localhost:5000/template/delete/${deleteId}`,
+        `https://email-syncing-backend.vercel.app/template/delete/${deleteId}`,
       );
 
       toast.success("Template deleted!");
@@ -342,7 +342,7 @@ export default function CustomTemplate() {
     try {
       const userId = localStorage.getItem("userid");
       const res = await axios.patch(
-        "http://localhost:5000/template/templatestatus/all/other",
+        "https://email-syncing-backend.vercel.app/template/templatestatus/all/other",
         { userId },
       );
       if (res.data.success) {

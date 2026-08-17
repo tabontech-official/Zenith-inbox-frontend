@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import axios from "axios";
 
-const API_URL = "http://localhost:5000/admin/scripts";
+const API_URL = "https://email-syncing-backend.vercel.app/admin/scripts";
 
 const injectScripts = (scriptText, target) => {
   if (!scriptText) return;

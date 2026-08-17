@@ -14,7 +14,7 @@ const MasterAdminOrganizations = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("usertoken");
-      const res = await fetch("http://localhost:5000/admin/organizations", {
+      const res = await fetch("https://email-syncing-backend.vercel.app/admin/organizations", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();

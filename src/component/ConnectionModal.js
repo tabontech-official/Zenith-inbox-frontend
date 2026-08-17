@@ -14,7 +14,7 @@ import {
 import { FiExternalLink, FiMail, FiShield } from "react-icons/fi";
 import { SiGmail } from "react-icons/si";
 
-const API_BASE_URL = "http://localhost:5000";
+const API_BASE_URL = "https://email-syncing-backend.vercel.app";
 
 const Field = ({ label, hint, children }) => (
   <div>

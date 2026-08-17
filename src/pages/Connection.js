@@ -49,7 +49,7 @@ const ConnectionsPage = () => {
       if (!userId) return;
 
       const res = await axios.get(
-        `http://localhost:5000/mailhookcard/${userId}`,
+        `https://email-syncing-backend.vercel.app/mailhookcard/${userId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (res.data.success) {
@@ -79,7 +79,7 @@ const ConnectionsPage = () => {
       setLoading(true);
 
       const res = await axios.get(
-        `http://localhost:5000/auth/getConnection/${userId}`,
+        `https://email-syncing-backend.vercel.app/auth/getConnection/${userId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -89,7 +89,7 @@ const ConnectionsPage = () => {
       if (connList.length > 0) {
         try {
           await axios.put(
-            `http://localhost:5000/auth/setup/${userId}`,
+            `https://email-syncing-backend.vercel.app/auth/setup/${userId}`,
             {
               stepCompleted: 4,
               setupCompleted: true,
@@ -137,7 +137,7 @@ const ConnectionsPage = () => {
       if (!userId) return;
 
       await axios.put(
-        `http://localhost:5000/auth/setup/${userId}`,
+        `https://email-syncing-backend.vercel.app/auth/setup/${userId}`,
         {
           stepCompleted: 4,
           setupCompleted: false,
@@ -351,7 +351,7 @@ const ConnectionsPage = () => {
                                   ),
                                 );
                                 const res = await fetch(
-                                  `http://localhost:5000/mailhook/verify`,
+                                  `https://email-syncing-backend.vercel.app/mailhook/verify`,
                                   {
                                     method: "POST",
                                     headers: {
