@@ -11,6 +11,9 @@
 # production
 /build
 
+# env — never commit; use .env.local for local overrides
+.env
+
 # misc
 .DS_Store
 .env.local
