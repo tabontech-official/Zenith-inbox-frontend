@@ -1,3 +1,4 @@
+import { apiFetch } from "../utils/apiClient";
 import React, { useState } from "react";
 import { FiX } from "react-icons/fi";
 import toast from "react-hot-toast";
@@ -32,7 +33,7 @@ const RunTestModal = ({
     try {
       const userId = localStorage.getItem("userid");
 
-      await fetch(
+      await apiFetch(
         "https://email-syncing-backend.vercel.app/mailhook/test/custom",
         {
           method: "POST",

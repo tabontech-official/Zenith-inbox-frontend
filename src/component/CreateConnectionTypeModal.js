@@ -1,3 +1,4 @@
+import { apiFetch } from "../utils/apiClient";
 import React, { useState, useEffect } from "react";
 import { FiChevronDown, FiChevronRight } from "react-icons/fi";
 import { IoCloseOutline } from "react-icons/io5";
@@ -210,7 +211,7 @@ const CreateConnectionTypeModal = ({ isOpen, onClose, onSelectType }) => {
                   <div className="pt-6 flex justify-end">
                 onClick={async () => {
   try {
-    const res = await fetch(
+    const res = await apiFetch(
       "https://email-syncing-backend.vercel.app/api/connection/create",
       {
         method: "POST",

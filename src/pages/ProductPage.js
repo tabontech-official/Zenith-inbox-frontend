@@ -1,3 +1,4 @@
+import { apiFetch } from "../utils/apiClient";
 // import React, { useState } from "react";
 // import { motion } from "framer-motion";
 // import {
@@ -797,7 +798,7 @@ const ProductPage = () => {
   useEffect(() => {
     const fetchContent = async () => {
       try {
-        const res = await fetch(API_URL);
+        const res = await apiFetch(API_URL);
 
         if (res.ok) {
           const data = await res.json();

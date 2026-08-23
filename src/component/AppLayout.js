@@ -1,3 +1,4 @@
+import { apiFetch } from "../utils/apiClient";
 import React, { useState, useEffect, useContext, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
@@ -451,7 +452,7 @@ const AppLayout = ({ children }) => {
     try {
       const currentUserId = localStorage.getItem("userid") || user?._id;
       if (currentUserId) {
-        await fetch(
+        await apiFetch(
           `https://email-syncing-backend.vercel.app/auth/logout/${currentUserId}`,
           {
             method: "POST",

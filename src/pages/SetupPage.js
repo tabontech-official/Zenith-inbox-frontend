@@ -1,3 +1,4 @@
+import { apiFetch } from "../utils/apiClient";
 import React, { useContext, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
@@ -180,7 +181,16 @@ const SetupFlow = () => {
 
     const redirectURL = `/setup?step=5`;
 
-    const authURL = `https://email-syncing-backend.vercel.app/auth/outlook?userId=${userId}&redirect=${encodeURIComponent(
+    /*
+     * Base URL is overridable via REACT_APP_API_BASE_URL so the real
+     * button can be exercised against a local backend; it defaults to the
+     * deployed API, so production behaviour is unchanged.
+     */
+    const apiBase =
+      process.env.REACT_APP_API_BASE_URL ||
+      "https://email-syncing-backend.vercel.app";
+
+    const authURL = `${apiBase}/auth/outlook/connect?userId=${userId}&redirect=${encodeURIComponent(
       redirectURL,
     )}`;
 
@@ -191,7 +201,7 @@ const SetupFlow = () => {
 
   const saveSetupProgress = async (data = {}) => {
     try {
-      const res = await fetch(
+      const res = await apiFetch(
         `https://email-syncing-backend.vercel.app/auth/setup/${user._id}`,
         {
           method: "PUT",
@@ -228,7 +238,7 @@ const SetupFlow = () => {
     const stepToUpdate = isSkipped ? step : nextStep;
 
     try {
-      const res = await fetch(
+      const res = await apiFetch(
         `https://email-syncing-backend.vercel.app/auth/setup/${user._id}`,
         {
           method: "PUT",
@@ -292,7 +302,7 @@ const SetupFlow = () => {
       console.log(`Checking verification attempt ${attempts}/${maxAttempts}`);
 
       try {
-        const res = await fetch(
+        const res = await apiFetch(
           `https://email-syncing-backend.vercel.app/mailhook/verification/${user._id}`,
         );
         const data = await res.json();
@@ -394,7 +404,7 @@ const SetupFlow = () => {
     try {
       setLoadingMailhookEmails(true);
 
-      const res = await fetch(
+      const res = await apiFetch(
         `https://email-syncing-backend.vercel.app/mailhook/verification/${user._id}`,
       );
 
@@ -451,7 +461,7 @@ const SetupFlow = () => {
   }, [step, user?._id, autoOpenedEmailId]);
   const fetchValidateEmail = async () => {
     try {
-      const res = await fetch(
+      const res = await apiFetch(
         `https://email-syncing-backend.vercel.app/mailhook/validateTest/${user._id}`,
       );
       const data = await res.json();
@@ -499,7 +509,7 @@ const SetupFlow = () => {
       setValidationPhase(true);
 
       // 📨 Send request to backend
-      const res = await fetch(
+      const res = await apiFetch(
         `https://email-syncing-backend.vercel.app/mailhook/validate-forwarding/${user._id}`,
         {
           method: "POST",
@@ -605,7 +615,7 @@ const SetupFlow = () => {
     const fetchSetupProgress = async () => {
       try {
         if (!user?._id) return;
-        const res = await fetch(
+        const res = await apiFetch(
           `https://email-syncing-backend.vercel.app/auth/setup/${user._id}`,
         );
         const data = await res.json();
@@ -713,7 +723,7 @@ const SetupFlow = () => {
       console.log(`Validation check #${attempts}`);
 
       try {
-        const res = await fetch(
+        const res = await apiFetch(
           `https://email-syncing-backend.vercel.app/mailhook/validateTest/${user._id}`,
         );
         const data = await res.json();

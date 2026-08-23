@@ -1,3 +1,4 @@
+import { apiFetch } from "../utils/apiClient";
 import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { FiEye, FiEyeOff, FiMail, FiServer, FiX } from "react-icons/fi";
@@ -133,11 +134,14 @@ const OutlookConnectionModal = ({
           payload.smtp.password = form.password.trim();
         }
 
-        const response = await fetch(
+        const response = await apiFetch(
           `${API_BASE_URL}/auth/connection/${connectionData._id}`,
           {
             method: "PUT",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("usertoken")}`,
+            },
             body: JSON.stringify(payload),
           }
         );
@@ -165,9 +169,12 @@ const OutlookConnectionModal = ({
         port: Number(form.port),
       };
 
-      const response = await fetch(`${API_BASE_URL}/auth/saveSmtpConnection`, {
+      const response = await apiFetch(`${API_BASE_URL}/auth/saveSmtpConnection`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("usertoken")}`,
+        },
         body: JSON.stringify(payload),
       });
 

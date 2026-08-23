@@ -1,3 +1,4 @@
+import { apiFetch } from "../utils/apiClient";
 
 // import { createContext, useState, useEffect } from "react";
 
@@ -18,7 +19,7 @@
 //       }
 
 //       try {
-//         const res = await fetch(
+//         const res = await apiFetch(
 //           `https://email-syncing-backend.vercel.app/auth/getUsers/${userId}`
 //         );
 //         const data = await res.json();
@@ -30,7 +31,7 @@
 //           setOrganization(data.data.organization);
 //         } else {
 //           // if not nested, fetch organization manually
-//           const orgRes = await fetch(
+//           const orgRes = await apiFetch(
 //             `https://email-syncing-backend.vercel.app/organization/${userId}`
 //           );
 //           const orgData = await orgRes.json();
@@ -91,7 +92,7 @@ export const UserProvider = ({ children }) => {
       const token = localStorage.getItem("usertoken");
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-      const res = await fetch(
+      const res = await apiFetch(
         `https://email-syncing-backend.vercel.app/auth/getUsers/${userId}`,
         { headers }
       );
@@ -107,7 +108,7 @@ export const UserProvider = ({ children }) => {
         setOrganization(data.data.organization);
       } else {
         try {
-          const orgRes = await fetch(
+          const orgRes = await apiFetch(
             `https://email-syncing-backend.vercel.app/auth/organization/get/${userId}`,
             { headers }
           );

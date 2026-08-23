@@ -1,7 +1,10 @@
+import { apiFetch } from "../utils/apiClient";
 import React, { useState, useEffect, useContext } from "react";
 import AppLayout from "../component/AppLayout";
 import ConnectionModal from "../component/ConnectionModal";
 import OutlookConnectionModal from "../component/OutlookConnectionModal";
+import MicrosoftConnectionModal from "../component/MicrosoftConnectionModal";
+import CreateConnectionModal from "../component/CreateConnectionModal";
 import {
   FaGoogle,
   FaMicrosoft,
@@ -22,6 +25,8 @@ const ConnectionsPage = () => {
   const { user } = useContext(UserContext);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isOutlookModalOpen, setIsOutlookModalOpen] = useState(false);
+  const [isMicrosoftModalOpen, setIsMicrosoftModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [connections, setConnections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [mailhooks, setMailhooks] = useState([]);
@@ -41,6 +46,100 @@ const ConnectionsPage = () => {
   const closeModal = () => setIsModalOpen(false);
   const openOutlookModal = () => setIsOutlookModalOpen(true);
   const closeOutlookModal = () => setIsOutlookModalOpen(false);
+  const openMicrosoftModal = () => setIsMicrosoftModalOpen(true);
+  const closeMicrosoftModal = () => setIsMicrosoftModalOpen(false);
+  const openCreateModal = () => setIsCreateModalOpen(true);
+  const closeCreateModal = () => setIsCreateModalOpen(false);
+
+  /*
+   * Microsoft no longer uses the app-password modal: Exchange Online
+   * rejects basic auth outright, so this hands off to the MSAL OAuth
+   * flow on the backend. Same env-based base URL as the Setup page —
+   * never a hardcoded production host.
+   */
+  const startOutlookOAuth = () => {
+    const userId = user?._id || localStorage.getItem("userid");
+
+    if (!userId) {
+      toast.error("User not found. Please log in again.");
+      return;
+    }
+
+    const apiBase =
+      process.env.REACT_APP_API_BASE_URL ||
+      "https://email-syncing-backend.vercel.app";
+
+    const authURL = `${apiBase}/auth/outlook/connect?userId=${userId}&redirect=${encodeURIComponent(
+      "/connection"
+    )}`;
+
+    window.location.href = authURL;
+  };
+
+  const handleProviderSelect = (providerId) => {
+    closeCreateModal();
+
+    if (providerId === "gmail") {
+      openModal();
+      return;
+    }
+
+    if (providerId === "microsoft") {
+      startOutlookOAuth();
+      return;
+    }
+
+    /* "other" -> the existing generic custom-SMTP modal, unchanged. */
+    openOutlookModal();
+  };
+
+  /*
+   * The Microsoft OAuth callback returns here with the outcome in the
+   * query string. Report it, then strip the params so a refresh does
+   * not replay the same toast.
+   */
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const outcome = params.get("outlook-auth-success");
+
+    if (!outcome) return;
+
+    if (outcome === "true") {
+      const email = params.get("email");
+      toast.success(
+        email
+          ? `Microsoft account connected: ${email}`
+          : "Microsoft account connected successfully."
+      );
+      fetchConnections();
+    } else {
+      const reason = params.get("reason");
+      const REASON_TEXT = {
+        missing_code: "Microsoft did not return an authorization code.",
+        token_exchange_failed:
+          "Could not exchange the Microsoft authorization code for tokens.",
+        access_denied: "Access was denied on the Microsoft consent screen.",
+      };
+
+      toast.error(
+        REASON_TEXT[reason] ||
+          `Microsoft connection failed${reason ? `: ${reason}` : "."}`,
+        { duration: 8000 }
+      );
+    }
+
+    params.delete("outlook-auth-success");
+    params.delete("reason");
+    params.delete("email");
+
+    const query = params.toString();
+    window.history.replaceState(
+      {},
+      "",
+      window.location.pathname + (query ? `?${query}` : "")
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const fetchMailhooks = async () => {
     try {
@@ -65,6 +164,8 @@ const ConnectionsPage = () => {
     setEditProvider(conn.provider);
     if (conn.provider === "gmail") {
       setIsModalOpen(true);
+    } else if (conn.provider === "microsoft") {
+      setIsMicrosoftModalOpen(true);
     } else if (conn.provider === "outlook" || conn.provider === "smtp") {
       setIsOutlookModalOpen(true);
     }
@@ -115,15 +216,18 @@ const ConnectionsPage = () => {
     const handleMailhookEvent = () => setIsMailhookModalOpen(true);
     const handleGmailEvent = () => openModal();
     const handleOutlookEvent = () => openOutlookModal();
+    const handleMicrosoftEvent = () => openMicrosoftModal();
 
     window.addEventListener("openMailhookModal", handleMailhookEvent);
     window.addEventListener("openGmailModal", handleGmailEvent);
     window.addEventListener("openOutlookModal", handleOutlookEvent);
+    window.addEventListener("openMicrosoftModal", handleMicrosoftEvent);
 
     return () => {
       window.removeEventListener("openMailhookModal", handleMailhookEvent);
       window.removeEventListener("openGmailModal", handleGmailEvent);
       window.removeEventListener("openOutlookModal", handleOutlookEvent);
+      window.removeEventListener("openMicrosoftModal", handleMicrosoftEvent);
     };
   }, []);
 
@@ -155,6 +259,7 @@ const ConnectionsPage = () => {
     switch (provider.toLowerCase()) {
       case "gmail":
         return <FaGoogle className="text-red-500 h-5 w-5" />;
+      case "microsoft":
       case "outlook":
         return <FaMicrosoft className="text-blue-600 h-5 w-5" />;
       default:
@@ -175,11 +280,18 @@ const ConnectionsPage = () => {
     <AppLayout>
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-y-auto bg-[#F7F7FA]">
         {/* Top Title Subheader */}
-        <header className="border-b border-[#EBE8E1] bg-white px-6 py-2">
+        <header className="flex items-center justify-between gap-4 border-b border-[#EBE8E1] bg-white px-6 py-2">
           <p className="text-xs text-slate-500  font-medium">
             Connect and manage your Gmail, Outlook, SMTP, and Mailhook provider
             accounts.
           </p>
+
+          <button
+            onClick={openCreateModal}
+            className="shrink-0 rounded-full bg-[#111111] px-5 py-2 text-xs font-semibold text-white shadow-2xs transition hover:bg-slate-800"
+          >
+            Create Connection
+          </button>
         </header>
 
         {/* Main Canvas Body */}
@@ -350,7 +462,7 @@ const ConnectionsPage = () => {
                                       : c,
                                   ),
                                 );
-                                const res = await fetch(
+                                const res = await apiFetch(
                                   `https://email-syncing-backend.vercel.app/mailhook/verify`,
                                   {
                                     method: "POST",
@@ -459,6 +571,12 @@ const ConnectionsPage = () => {
         onMailhookUpdated={fetchMailhooks}
       />
 
+      <CreateConnectionModal
+        isOpen={isCreateModalOpen}
+        onClose={closeCreateModal}
+        onSelect={handleProviderSelect}
+      />
+
       <ConnectionModal
         isOpen={isModalOpen}
         onClose={() => {
@@ -469,6 +587,20 @@ const ConnectionsPage = () => {
         }}
         onSuccess={handleConnectionAdded}
         editMode={connectionToEdit && editProvider === "gmail"}
+        connectionData={connectionToEdit}
+        onUpdated={fetchConnections}
+      />
+
+      <MicrosoftConnectionModal
+        isOpen={isMicrosoftModalOpen}
+        onClose={() => {
+          closeMicrosoftModal();
+          setConnectionToEdit(null);
+          setEditProvider(null);
+          fetchConnections();
+        }}
+        onSuccess={handleConnectionAdded}
+        editMode={connectionToEdit && editProvider === "microsoft"}
         connectionData={connectionToEdit}
         onUpdated={fetchConnections}
       />

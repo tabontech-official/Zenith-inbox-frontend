@@ -1,3 +1,4 @@
+import { apiFetch } from "../utils/apiClient";
 import React, { useState } from "react";
 import { FiEye, FiEyeOff, FiX } from "react-icons/fi";
 import toast from "react-hot-toast";
@@ -33,7 +34,7 @@ const userId = localStorage.getItem("userid");
 
   const payload = { ...form, userId };
 
-  const res = await fetch(
+  const res = await apiFetch(
     "https://email-syncing-backend.vercel.app/auth/saveSmtpConnection",
     {
       method: "POST",

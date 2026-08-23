@@ -1,3 +1,4 @@
+import { apiFetch } from "../utils/apiClient";
 import React, { useEffect, useState } from "react";
 import PlatformAdminLayout from "./PlatformAdminLayout";
 import {
@@ -22,7 +23,7 @@ const AdminConnections = () => {
     const fetchConnections = async () => {
       try {
         const token = localStorage.getItem("usertoken");
-        const res = await fetch("https://email-syncing-backend.vercel.app/auth/connections", {
+        const res = await apiFetch("https://email-syncing-backend.vercel.app/auth/connections", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -229,7 +230,7 @@ export default AdminConnections;
 
 //       const token = localStorage.getItem("usertoken");
 
-//       const res = await fetch("https://email-syncing-backend.vercel.app/auth/connections", {
+//       const res = await apiFetch("https://email-syncing-backend.vercel.app/auth/connections", {
 //         headers: {
 //           Authorization: `Bearer ${token}`,
 //         },
@@ -313,7 +314,7 @@ export default AdminConnections;
 
 //       const token = localStorage.getItem("usertoken");
 
-//       const res = await fetch(
+//       const res = await apiFetch(
 //         `https://email-syncing-backend.vercel.app/auth/connection/${selectedConnection._id}`,
 //         {
 //           method: "DELETE",

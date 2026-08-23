@@ -1,3 +1,4 @@
+import { apiFetch } from "../utils/apiClient";
 import React, { useEffect, useState } from "react";
 import PlatformAdminLayout from "./PlatformAdminLayout";
 import {
@@ -20,7 +21,7 @@ const AdminScenarioStats = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch("https://email-syncing-backend.vercel.app/scenario/scenario-stats");
+        const res = await apiFetch("https://email-syncing-backend.vercel.app/scenario/scenario-stats");
         const data = await res.json();
         setStats(data.data || []);
       } catch (err) {

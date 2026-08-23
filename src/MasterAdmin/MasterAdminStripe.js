@@ -1,3 +1,4 @@
+import { apiFetch } from "../utils/apiClient";
 import React, { useState, useEffect } from "react";
 import {
   FiLock,
@@ -35,7 +36,7 @@ const MasterAdminStripe = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("usertoken");
-      const res = await fetch("https://email-syncing-backend.vercel.app/admin/stripe-config", {
+      const res = await apiFetch("https://email-syncing-backend.vercel.app/admin/stripe-config", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -70,7 +71,7 @@ const MasterAdminStripe = () => {
         payload.webhookSecret = newWebhookSecret.trim();
       }
 
-      const res = await fetch("https://email-syncing-backend.vercel.app/admin/stripe-config", {
+      const res = await apiFetch("https://email-syncing-backend.vercel.app/admin/stripe-config", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

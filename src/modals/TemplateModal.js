@@ -1,3 +1,4 @@
+import { apiFetch } from "../utils/apiClient";
 import React, { useState, useRef, useEffect } from "react";
 import { X, Plus, ArrowLeft, Sparkles, Edit3 } from "lucide-react";
 import ReactQuill from "react-quill";
@@ -107,7 +108,7 @@ const TemplateModal = ({
 
       if (editingTemplateId) {
         // Update existing template
-        res = await fetch(
+        res = await apiFetch(
           `https://email-syncing-backend.vercel.app/template/update/${editingTemplateId}`,
           {
             method: "PUT",
@@ -122,7 +123,7 @@ const TemplateModal = ({
         );
       } else {
         // Create new template
-        res = await fetch(
+        res = await apiFetch(
           "https://email-syncing-backend.vercel.app/template/save/other",
           {
             method: "POST",

@@ -1,3 +1,4 @@
+import { apiFetch } from "../utils/apiClient";
 import React, { useState, useEffect } from "react";
 import {
   FiCpu,
@@ -41,7 +42,7 @@ const AdminAIConfig = () => {
     const fetchConfig = async () => {
       setLoading(true);
       try {
-        const response = await fetch(API_BASE_URL);
+        const response = await apiFetch(API_BASE_URL);
         const result = await response.json();
 
         if (result.success && result.data) {
@@ -79,7 +80,7 @@ const AdminAIConfig = () => {
     };
 
     try {
-      const response = await fetch(API_BASE_URL, {
+      const response = await apiFetch(API_BASE_URL, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

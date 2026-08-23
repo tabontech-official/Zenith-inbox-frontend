@@ -1,3 +1,4 @@
+import { apiFetch } from "../utils/apiClient";
 // import React, { useState, useEffect } from "react";
 // import { motion } from "framer-motion";
 // import {
@@ -37,7 +38,7 @@
 //   useEffect(() => {
 //     const fetchContent = async () => {
 //       try {
-//         const res = await fetch(
+//         const res = await apiFetch(
 //           "https://email-syncing-backend.vercel.app/api/landing-page",
 //         );
 //         if (res.ok) setContent(await res.json());
@@ -1005,7 +1006,7 @@ const LandingPage = () => {
   useEffect(() => {
     const fetchContent = async () => {
       try {
-        const res = await fetch(
+        const res = await apiFetch(
           "https://email-syncing-backend.vercel.app/api/landing-page",
         );
         if (res.ok) setContent(await res.json());

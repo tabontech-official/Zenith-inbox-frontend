@@ -1,3 +1,4 @@
+import { apiFetch } from "../utils/apiClient";
 import React, { useState, useContext } from "react";
 import {
   FiX,
@@ -69,7 +70,7 @@ const WebhookModal = ({
     try {
       setLoadingMailhookEmails(true);
 
-      const res = await fetch(
+      const res = await apiFetch(
         `https://email-syncing-backend.vercel.app/mailhook/verification/${user._id}`
       );
 

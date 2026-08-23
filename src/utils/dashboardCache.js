@@ -1,3 +1,4 @@
+import { apiFetch } from "./apiClient";
 const BACKEND_URL = "https://email-syncing-backend.vercel.app";
 
 let summaryCache = null;
@@ -22,7 +23,7 @@ export async function getDashboardSummaryCached(userId, forceRefetch = false) {
 
   const token = localStorage.getItem("usertoken");
 
-  pendingPromise = fetch(`${BACKEND_URL}/auth/dashboard-summary/${userId}`, {
+  pendingPromise = apiFetch(`${BACKEND_URL}/auth/dashboard-summary/${userId}`, {
     headers: {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),

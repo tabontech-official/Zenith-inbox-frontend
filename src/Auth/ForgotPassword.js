@@ -1,3 +1,4 @@
+import { apiFetch } from "../utils/apiClient";
 // import React, { useState } from "react";
 // import { FiMail, FiLoader, FiArrowLeft } from "react-icons/fi";
 // import toast from "react-hot-toast";
@@ -17,7 +18,7 @@
 
 //     setLoading(true);
 //     try {
-//       const res = await fetch("https://email-syncing-backend.vercel.app/auth/forgot-password", {
+//       const res = await apiFetch("https://email-syncing-backend.vercel.app/auth/forgot-password", {
 //         method: "POST",
 //         headers: { "Content-Type": "application/json" },
 //         body: JSON.stringify({ email }),
@@ -103,7 +104,7 @@ const ForgotPassword = () => {
     setLoading(true);
 
     try {
-      const res = await fetch(
+      const res = await apiFetch(
         "https://email-syncing-backend.vercel.app/auth/forgot-password",
         {
           method: "POST",

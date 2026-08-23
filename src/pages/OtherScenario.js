@@ -1,3 +1,4 @@
+import { apiFetch } from "../utils/apiClient";
 import React, { useEffect, useState, useCallback } from "react";
 import { ArrowLeft, Plus, Redo, Undo } from "lucide-react";
 import AppLayout from "../component/AppLayout";
@@ -33,6 +34,7 @@ import FilterModal from "../modals/FilterModal";
 import ConnectionModal from "../component/ConnectionModal";
 import flowToScenario from "../utils/flowToScenario";
 import OutlookConnectionModal from "../component/OutlookConnectionModal";
+import MicrosoftConnectionModal from "../component/MicrosoftConnectionModal";
 import WebhookModal from "../component/WebhookModal";
 import { useContext } from "react";
 import { UserContext } from "../component/UserContext";
@@ -91,7 +93,7 @@ const OthersScenariosPage = () => {
       if (userId) {
         try {
           const token = localStorage.getItem("usertoken");
-          const res = await fetch(`https://email-syncing-backend.vercel.app/scenario/user/${userId}`, {
+          const res = await apiFetch(`https://email-syncing-backend.vercel.app/scenario/user/${userId}`, {
             headers: { Authorization: `Bearer ${token}` }
           });
           const data = await res.json();
@@ -219,7 +221,7 @@ const OthersScenariosPage = () => {
 
   const fetchTestEmail = async () => {
     try {
-      const res = await fetch(
+      const res = await apiFetch(
         `https://email-syncing-backend.vercel.app/mailhook/email/latest/${userId}`,
       );
 
@@ -268,7 +270,7 @@ const OthersScenariosPage = () => {
   const fetchActiveTemplates = async () => {
     try {
       const token = localStorage.getItem("usertoken");
-      const res = await fetch(
+      const res = await apiFetch(
         `https://email-syncing-backend.vercel.app/template/other/active?userId=${userId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -337,6 +339,7 @@ const OthersScenariosPage = () => {
 
   const [showGmailModal, setShowGmailModal] = useState(false);
   const [showOutlookModal, setShowOutlookModal] = useState(false);
+  const [showMicrosoftModal, setShowMicrosoftModal] = useState(false);
 
   const addModule = (type) => {
     const parentId = editingNode?.id || editingNode;
@@ -823,7 +826,7 @@ const OthersScenariosPage = () => {
       await fetchActiveTemplates();
 
       const token = localStorage.getItem("usertoken");
-      const res = await fetch(
+      const res = await apiFetch(
         `https://email-syncing-backend.vercel.app/scenario/detail/${id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -847,7 +850,7 @@ const OthersScenariosPage = () => {
   const fetchConnections = async () => {
     try {
       const token = localStorage.getItem("usertoken");
-      const res = await fetch(
+      const res = await apiFetch(
         `https://email-syncing-backend.vercel.app/auth/getConnection/${localStorage.getItem(
           "userid",
         )}`,
@@ -935,7 +938,7 @@ const OthersScenariosPage = () => {
       : `https://email-syncing-backend.vercel.app/scenario`;
 
     const token = localStorage.getItem("usertoken");
-    await fetch(url, {
+    await apiFetch(url, {
       method: id ? "PUT" : "POST",
       headers: {
         "Content-Type": "application/json",
@@ -1243,7 +1246,7 @@ const OthersScenariosPage = () => {
     try {
       const userId = localStorage.getItem("userid");
 
-      const res = await fetch(
+      const res = await apiFetch(
         "https://email-syncing-backend.vercel.app/template/save/other",
         {
           method: "POST",
@@ -1924,6 +1927,15 @@ const OthersScenariosPage = () => {
         onSuccess={() => {
           fetchConnections();
           setShowGmailModal(false);
+        }}
+      />
+
+      <MicrosoftConnectionModal
+        isOpen={showMicrosoftModal}
+        onClose={() => setShowMicrosoftModal(false)}
+        onSuccess={() => {
+          fetchConnections();
+          setShowMicrosoftModal(false);
         }}
       />
 

@@ -1,3 +1,4 @@
+import { apiFetch } from "../utils/apiClient";
 // import React, { useEffect, useState } from "react";
 // import { useParams } from "react-router-dom";
 // import { FiMail, FiEye } from "react-icons/fi";
@@ -12,7 +13,7 @@
 //   useEffect(() => {
 //     const fetchUserEmails = async () => {
 //       try {
-//         const res = await fetch(
+//         const res = await apiFetch(
 //           `https://email-syncing-backend.vercel.app/auth/email-tracking?userId=${userId}`
 //         );
 //         const data = await res.json();
@@ -144,7 +145,7 @@ const AdminUserEmails = () => {
   useEffect(() => {
     const fetchUserEmails = async () => {
       try {
-        const res = await fetch(
+        const res = await apiFetch(
           `https://email-syncing-backend.vercel.app/auth/email-tracking?userId=${userId}`,
         );
         const data = await res.json();

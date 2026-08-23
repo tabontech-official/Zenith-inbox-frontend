@@ -1,3 +1,4 @@
+import { apiFetch } from "./apiClient";
 /**
  * AI Reply Service
  * Uses OpenRouter → Google Gemma 4 26B A4B (free) to generate high-converting email replies
@@ -12,7 +13,7 @@ const BACKEND_URL = "https://email-syncing-backend.vercel.app";
  */
 export async function fetchCompanyProfile(userId) {
   try {
-    const res = await fetch(`${BACKEND_URL}/api/company-profile/${userId}`);
+    const res = await apiFetch(`${BACKEND_URL}/api/company-profile/${userId}`);
     const json = await res.json();
     if (json.success && json.data) {
       return json.data; // { company: {...}, services: [...], faqs: [...], companyKnowledge: "...", ... }
@@ -37,7 +38,7 @@ export async function generateAiReply(customerEmail, profile, customerName = "")
 
   const token = localStorage.getItem("usertoken");
 
-  const response = await fetch(`${BACKEND_URL}/auth/generate-ai-reply`, {
+  const response = await apiFetch(`${BACKEND_URL}/auth/generate-ai-reply`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -72,7 +73,7 @@ export async function generateAiReply(customerEmail, profile, customerName = "")
  */
 export async function recordAiReplyUsed(userId, emailMeta = {}) {
   try {
-    await fetch(`${BACKEND_URL}/auth/increment-ai-replies/${userId}`, {
+    await apiFetch(`${BACKEND_URL}/auth/increment-ai-replies/${userId}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

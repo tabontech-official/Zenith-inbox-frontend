@@ -1,3 +1,4 @@
+import { apiFetch } from "../utils/apiClient";
 import React, { useEffect, useState } from "react";
 import PlatformAdminLayout from "./PlatformAdminLayout";
 import {
@@ -29,7 +30,7 @@ const AdminUserActivity = () => {
     const fetchActivity = async () => {
       try {
         const token = localStorage.getItem("usertoken");
-        const res = await fetch("https://email-syncing-backend.vercel.app/auth/user-activity", {
+        const res = await apiFetch("https://email-syncing-backend.vercel.app/auth/user-activity", {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();

@@ -1,3 +1,4 @@
+import { apiFetch } from "../utils/apiClient";
 
 import React, { useContext, useState, useEffect } from "react";
 import {
@@ -177,7 +178,7 @@ const handleChange = (e) => {
 
       if (profileImageFile) fd.append("image", profileImageFile);
 
-      const res = await fetch(
+      const res = await apiFetch(
         `https://email-syncing-backend.vercel.app/auth/updateUserAndOrganization/${user._id}`,
         {
           method: "PUT",

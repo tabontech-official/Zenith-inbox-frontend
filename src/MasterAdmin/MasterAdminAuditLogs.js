@@ -1,3 +1,4 @@
+import { apiFetch } from "../utils/apiClient";
 import React, { useState, useEffect } from "react";
 import { FiList, FiShield, FiClock, FiCheckCircle } from "react-icons/fi";
 import PlatformAdminLayout from "../Admin/PlatformAdminLayout";
@@ -14,7 +15,7 @@ const MasterAdminAuditLogs = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("usertoken");
-      const res = await fetch("https://email-syncing-backend.vercel.app/admin/audit-logs", {
+      const res = await apiFetch("https://email-syncing-backend.vercel.app/admin/audit-logs", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();

@@ -1,3 +1,4 @@
+import { apiFetch } from "../utils/apiClient";
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { FiCheckCircle, FiArrowRight } from "react-icons/fi";
@@ -48,7 +49,7 @@ const TalkToSales = () => {
 
     try{
 
-      const res = await fetch(
+      const res = await apiFetch(
         "https://email-syncing-backend.vercel.app/talk/talk-to-sales",
         {
           method:"POST",

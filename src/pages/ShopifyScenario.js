@@ -1,3 +1,4 @@
+import { apiFetch } from "../utils/apiClient";
 import React, { useContext, useEffect, useRef, useState } from "react";
 import {
   Plus,
@@ -63,6 +64,7 @@ import { UserContext } from "../component/UserContext";
 import WebhookModal from "../component/WebhookModal";
 import ConnectionModal from "../component/ConnectionModal";
 import OutlookConnectionModal from "../component/OutlookConnectionModal";
+import MicrosoftConnectionModal from "../component/MicrosoftConnectionModal";
 import CreateConnectionTypeModal from "../component/CreateConnectionTypeModal";
 import SetupOtherSMTPModal from "../component/SetupOtherSMTPModal";
 import EmailInspector from "./EmailInspector";
@@ -129,7 +131,7 @@ const ShopifyScenariosPage = () => {
       if (targetUserId) {
         try {
           const token = localStorage.getItem("usertoken");
-          const res = await fetch(`https://email-syncing-backend.vercel.app/scenario/user/${targetUserId}`, {
+          const res = await apiFetch(`https://email-syncing-backend.vercel.app/scenario/user/${targetUserId}`, {
             headers: { Authorization: `Bearer ${token}` }
           });
           const data = await res.json();
@@ -163,7 +165,7 @@ const ShopifyScenariosPage = () => {
         setLoadingTemplates(true);
         try {
           const userId = localStorage.getItem("userid");
-          const res = await fetch(
+          const res = await apiFetch(
             `https://email-syncing-backend.vercel.app/template/alltemplates?userId=${userId}&service=General`,
           );
           const data = await res.json();
@@ -281,6 +283,7 @@ const ShopifyScenariosPage = () => {
   const { user } = useContext(UserContext);
   const [showOutlookModal, setShowOutlookModal] = useState(false);
   const [showGmailModal, setShowGmailModal] = useState(false);
+  const [showMicrosoftModal, setShowMicrosoftModal] = useState(false);
   const [showEditTemplateModal, setShowEditTemplateModal] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState(null);
   const [editContent, setEditContent] = useState("");
@@ -359,7 +362,7 @@ const ShopifyScenariosPage = () => {
       const token = localStorage.getItem("usertoken");
       const userId = localStorage.getItem("userid");
       if (!userId) return;
-      const res = await fetch(
+      const res = await apiFetch(
         `https://email-syncing-backend.vercel.app/auth/getConnection/${userId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -389,7 +392,7 @@ const ShopifyScenariosPage = () => {
 
       setHistoryLoading(true);
 
-      const res = await fetch(
+      const res = await apiFetch(
         `https://email-syncing-backend.vercel.app/scenario-run-log/history/${activeScenarioId}`,
       );
 
@@ -416,7 +419,7 @@ const ShopifyScenariosPage = () => {
 
   useEffect(() => {
     function handleClickOutside(event) {
-      if (showOutlookModal || showGmailModal) return;
+      if (showOutlookModal || showGmailModal || showMicrosoftModal) return;
 
       if (modalRef.current && !modalRef.current.contains(event.target)) {
         setOpen(false);
@@ -430,7 +433,7 @@ const ShopifyScenariosPage = () => {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [showOutlookModal, showGmailModal]);
+  }, [showOutlookModal, showGmailModal, showMicrosoftModal]);
 
   useEffect(() => {
     const savedScenarioId = localStorage.getItem("scenarioId");
@@ -491,7 +494,7 @@ const ShopifyScenariosPage = () => {
       if (!activeScenarioId) {
         const userId = localStorage.getItem("userid");
         const token = localStorage.getItem("usertoken");
-        const checkRes = await fetch(
+        const checkRes = await apiFetch(
           "https://email-syncing-backend.vercel.app/scenario/details",
           {
             method: "POST",
@@ -531,7 +534,7 @@ const ShopifyScenariosPage = () => {
       const token = localStorage.getItem("usertoken");
       if (activeScenarioId) {
         console.log("✏️ Updating existing scenario:", activeScenarioId);
-        res = await fetch(
+        res = await apiFetch(
           `https://email-syncing-backend.vercel.app/scenario/detail/${activeScenarioId}`,
           {
             method: "PUT",
@@ -548,7 +551,7 @@ const ShopifyScenariosPage = () => {
           throw new Error(data.message || "Failed to update scenario");
       } else {
         console.log("🆕 Creating a new scenario...");
-        res = await fetch(`https://email-syncing-backend.vercel.app/scenario`, {
+        res = await apiFetch(`https://email-syncing-backend.vercel.app/scenario`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -592,7 +595,7 @@ const ShopifyScenariosPage = () => {
         localStorage.removeItem("scenarioActive");
       }
 
-      const refresh = await fetch(
+      const refresh = await apiFetch(
         "https://email-syncing-backend.vercel.app/scenario/details",
         {
           method: "POST",
@@ -638,7 +641,7 @@ const ShopifyScenariosPage = () => {
 
   const handleToggleTemplate = async (templateId, newStatus) => {
     try {
-      const res = await fetch(
+      const res = await apiFetch(
         `https://email-syncing-backend.vercel.app/template/status/${templateId}`,
         {
           method: "PATCH",
@@ -661,7 +664,7 @@ const ShopifyScenariosPage = () => {
 
   const handleToggleAllTemplates = async (newStatus) => {
     try {
-      const res = await fetch(
+      const res = await apiFetch(
         `https://email-syncing-backend.vercel.app/template/templatestatus/all`,
         {
           method: "PATCH",
@@ -736,7 +739,7 @@ const ShopifyScenariosPage = () => {
         console.log("🔄 Fetching existing Shopify scenario for user:", userId);
 
         const token = localStorage.getItem("usertoken");
-        const res = await fetch(
+        const res = await apiFetch(
           "https://email-syncing-backend.vercel.app/scenario/details",
           {
             method: "POST",
@@ -851,7 +854,7 @@ const ShopifyScenariosPage = () => {
     try {
       toast.loading("Creating new Shopify scenario in DB...", { id: "createScenario" });
       const token = localStorage.getItem("usertoken");
-      const res = await fetch("https://email-syncing-backend.vercel.app/scenario", {
+      const res = await apiFetch("https://email-syncing-backend.vercel.app/scenario", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -911,7 +914,7 @@ const ShopifyScenariosPage = () => {
     try {
       toast.loading("Deleting Shopify Scenario...", { id: "deleteScenario" });
       const token = localStorage.getItem("usertoken");
-      const res = await fetch(
+      const res = await apiFetch(
         `https://email-syncing-backend.vercel.app/scenario/detail/${activeScenarioId}`,
         {
           method: "DELETE",
@@ -1426,7 +1429,7 @@ const ShopifyScenariosPage = () => {
         const userId = localStorage.getItem("userid");
         if (!userId || !showRunTestModal) return;
 
-        const res = await fetch(
+        const res = await apiFetch(
           `https://email-syncing-backend.vercel.app/mailhook/get-test-data/${userId}`,
         );
         const data = await res.json();
@@ -1555,7 +1558,7 @@ const ShopifyScenariosPage = () => {
 
     try {
       const userId = localStorage.getItem("userid");
-      const res = await fetch(
+      const res = await apiFetch(
         `https://email-syncing-backend.vercel.app/template/alltemplates/query?userId=${userId}&service=${encodeURIComponent(
           service,
         )}`,
@@ -1701,7 +1704,7 @@ const ShopifyScenariosPage = () => {
 
     try {
       const activeScenarioId = scenarioId || localStorage.getItem("scenarioId") || null;
-      const res = await fetch(
+      const res = await apiFetch(
         "https://email-syncing-backend.vercel.app/mailhook/Run-test-mode",
         {
           method: "POST",
@@ -1733,7 +1736,7 @@ const ShopifyScenariosPage = () => {
         setSelectedServiceForTemplates(formData.service);
 
         const userId = localStorage.getItem("userid");
-        const res = await fetch(
+        const res = await apiFetch(
           `https://email-syncing-backend.vercel.app/template/alltemplates?userId=${userId}&service=${encodeURIComponent(
             formData.service,
           )}`,
@@ -1842,7 +1845,7 @@ const ShopifyScenariosPage = () => {
       const userId = localStorage.getItem("userid");
       toast.loading("Fetching test email...", { id: "email" });
 
-      const res = await fetch(
+      const res = await apiFetch(
         `https://email-syncing-backend.vercel.app/mailhook/get-test-email/${userId}`,
       );
       const data = await res.json();
@@ -1880,7 +1883,7 @@ const ShopifyScenariosPage = () => {
       const userId = localStorage.getItem("userid");
       const token = localStorage.getItem("usertoken");
       try {
-        const res = await fetch(
+        const res = await apiFetch(
           `https://email-syncing-backend.vercel.app/template/all?userId=${userId}`,
           {
             headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -3927,10 +3930,13 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                                       <option value="">
                                         -- Choose App Type --
                                       </option>
-                                      <option value="Gmail">Gmail</option>
-                                      <option value="Email">
-                                        Email (SMTP/Outlook)
+                                      <option value="Gmail">
+                                        Gmail / Google Workspace
                                       </option>
+                                      <option value="Microsoft">
+                                        Outlook / Live / Microsoft 365
+                                      </option>
+                                      <option value="Email">Other Email</option>
                                     </select>
 
                                     {/* Add button INSIDE the select box (to the right) */}
@@ -3939,6 +3945,10 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                                       onClick={() => {
                                         if (selectedAppType === "Email") {
                                           setShowOutlookModal(true);
+                                        } else if (
+                                          selectedAppType === "Microsoft"
+                                        ) {
+                                          setShowMicrosoftModal(true);
                                         } else if (
                                           selectedAppType === "Gmail"
                                         ) {
@@ -3991,6 +4001,8 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                                                 c.provider === "smtp" ||
                                                 c.provider === "outlook"
                                               );
+                                            if (selectedAppType === "Microsoft")
+                                              return c.provider === "microsoft";
                                             if (selectedAppType === "Gmail")
                                               return c.provider === "gmail";
                                             return false;
@@ -4258,13 +4270,18 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                           }}
                           className="w-full border border-zinc-300 rounded-[8px] px-3 py-2 pr-20 text-xs text-zinc-800 focus:ring-2 focus:ring-zinc-900 focus:border-transparent bg-white outline-none appearance-none"
                         >
-                          <option value="Gmail">Gmail</option>
-                          <option value="Email">Email (SMTP/Outlook)</option>
+                          <option value="Gmail">Gmail / Google Workspace</option>
+                          <option value="Microsoft">
+                            Outlook / Live / Microsoft 365
+                          </option>
+                          <option value="Email">Other Email</option>
                         </select>
                         <button
                           onClick={() => {
                             if (incomingLeadsAppType === "Email") {
                               setShowOutlookModal(true);
+                            } else if (incomingLeadsAppType === "Microsoft") {
+                              setShowMicrosoftModal(true);
                             } else {
                               setShowGmailModal(true);
                             }
@@ -4296,6 +4313,8 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                           .filter((c) => {
                             if (incomingLeadsAppType === "Email")
                               return c.provider === "smtp" || c.provider === "outlook";
+                            if (incomingLeadsAppType === "Microsoft")
+                              return c.provider === "microsoft";
                             return c.provider === "gmail";
                           })
                           .map((c) => (
@@ -4360,6 +4379,18 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                 setShowOutlookModal(false);
                 fetchConnections();
                 resetFormFields();
+              }}
+            />
+            <MicrosoftConnectionModal
+              isOpen={showMicrosoftModal}
+              onClose={() => setShowMicrosoftModal(false)}
+              onSuccess={async () => {
+                setShowMicrosoftModal(false);
+                await fetchConnections();
+                toast.success("Microsoft connection added successfully!");
+                if (selectedAppType === "Microsoft") {
+                  setSelectedConnection("");
+                }
               }}
             />
             <WebhookModal
@@ -4619,7 +4650,7 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                               onChange={async (e) => {
                                 const newStatus = e.target.checked;
                                 const updates = templateList.map((t) =>
-                                  fetch(
+                                  apiFetch(
                                     `https://email-syncing-backend.vercel.app/template/status/${t._id}`,
                                     {
                                       method: "PATCH",
@@ -4904,7 +4935,7 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                       ),
                     );
 
-                    await fetch(
+                    await apiFetch(
                       `https://email-syncing-backend.vercel.app/template/update/${editingTemplate._id}`,
                       {
                         method: "PUT",
@@ -4974,7 +5005,7 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                               );
 
                               try {
-                                const res = await fetch(
+                                const res = await apiFetch(
                                   `https://email-syncing-backend.vercel.app/template/templatestatus/all`,
                                   {
                                     method: "PATCH",
@@ -5169,7 +5200,7 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                                                 })),
                                               );
 
-                                              await fetch(
+                                              await apiFetch(
                                                 `https://email-syncing-backend.vercel.app/template/status/${t._id}`,
                                                 {
                                                   method: "PATCH",
@@ -5307,7 +5338,7 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                               );
 
                               try {
-                                const res = await fetch(
+                                const res = await apiFetch(
                                   `https://email-syncing-backend.vercel.app/mailhook/verify`,
                                   {
                                     method: "POST",

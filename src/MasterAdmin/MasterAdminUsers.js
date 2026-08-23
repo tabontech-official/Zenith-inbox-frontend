@@ -1,3 +1,4 @@
+import { apiFetch } from "../utils/apiClient";
 import React, { useState, useEffect } from "react";
 import {
   FiUsers,
@@ -33,7 +34,7 @@ const MasterAdminUsers = () => {
       if (selectedPlanFilter !== "all") {
         url += `&plan=${selectedPlanFilter}`;
       }
-      const res = await fetch(url, {
+      const res = await apiFetch(url, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -50,7 +51,7 @@ const MasterAdminUsers = () => {
   const handleToggleLock = async (userItem) => {
     try {
       const token = localStorage.getItem("usertoken");
-      const res = await fetch(`https://email-syncing-backend.vercel.app/admin/users/${userItem._id}/lock`, {
+      const res = await apiFetch(`https://email-syncing-backend.vercel.app/admin/users/${userItem._id}/lock`, {
         method: "PUT",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -77,7 +78,7 @@ const MasterAdminUsers = () => {
     if (!selectedUser) return;
     try {
       const token = localStorage.getItem("usertoken");
-      const res = await fetch(`https://email-syncing-backend.vercel.app/admin/users/${selectedUser._id}/plan`, {
+      const res = await apiFetch(`https://email-syncing-backend.vercel.app/admin/users/${selectedUser._id}/plan`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

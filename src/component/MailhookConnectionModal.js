@@ -1,3 +1,4 @@
+import { apiFetch } from "../utils/apiClient";
 import React, { useState, useEffect } from "react";
 import {
   FiMail,
@@ -141,7 +142,7 @@ const MailhookConnectionModal = ({
     if (!user?._id) return;
 
     try {
-      const res = await fetch(
+      const res = await apiFetch(
         `https://email-syncing-backend.vercel.app/mailhook/verification/${user._id}`
       );
       const data = await res.json();

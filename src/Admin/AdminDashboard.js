@@ -1,3 +1,4 @@
+import { apiFetch } from "../utils/apiClient";
 import React, { useEffect, useState } from "react";
 import {
   FiUsers,
@@ -53,7 +54,7 @@ const AdminDashboard = () => {
 
     await Promise.allSettled([
       // Operational summary
-      fetch("https://email-syncing-backend.vercel.app/auth/summary", {
+      apiFetch("https://email-syncing-backend.vercel.app/auth/summary", {
         headers: { Authorization: `Bearer ${token}` },
       })
         .then((r) => r.json())
@@ -71,7 +72,7 @@ const AdminDashboard = () => {
         .catch(() => {}),
 
       // Platform metrics
-      fetch("https://email-syncing-backend.vercel.app/admin/dashboard", {
+      apiFetch("https://email-syncing-backend.vercel.app/admin/dashboard", {
         headers: { Authorization: `Bearer ${token}` },
       })
         .then((r) => r.json())

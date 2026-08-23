@@ -1,3 +1,4 @@
+import { apiFetch } from "../utils/apiClient";
 // import React, { useState, useEffect } from "react";
 // import Sidebar from "../component/Sidebar";
 // import toast from "react-hot-toast";
@@ -24,7 +25,7 @@
 //   useEffect(() => {
 //     const fetchContent = async () => {
 //       try {
-//         const res = await fetch(
+//         const res = await apiFetch(
 //           "https://email-syncing-backend.vercel.app/api/landing-page",
 //         );
 //         if (res.ok) {
@@ -46,7 +47,7 @@
 //     setSaving(true);
 //     try {
 //       const token = localStorage.getItem("usertoken");
-//       const res = await fetch(
+//       const res = await apiFetch(
 //         "https://email-syncing-backend.vercel.app/api/landing-page",
 //         {
 //           method: "PUT",
@@ -388,7 +389,7 @@ const AdminLandingPage = () => {
   useEffect(() => {
     const fetchContent = async () => {
       try {
-        const res = await fetch(API_URL);
+        const res = await apiFetch(API_URL);
         if (!res.ok) {
           toast.error("Failed to fetch landing page content");
           return;
@@ -463,7 +464,7 @@ const AdminLandingPage = () => {
     try {
       const token = localStorage.getItem("usertoken");
 
-      const res = await fetch(API_URL, {
+      const res = await apiFetch(API_URL, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

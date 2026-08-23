@@ -1,3 +1,4 @@
+import { apiFetch } from "../utils/apiClient";
 import React, { useState, useContext, useRef, useEffect } from "react";
 import { FiEdit3, FiLogOut, FiUser, FiCpu } from "react-icons/fi";
 import { useNavigate, useLocation, Link } from "react-router-dom";
@@ -122,7 +123,7 @@ const Navbar = () => {
   const handleLogout = async () => {
     try {
       if (userId) {
-        await fetch(`https://email-syncing-backend.vercel.app/auth/logout/${userId}`, {
+        await apiFetch(`https://email-syncing-backend.vercel.app/auth/logout/${userId}`, {
           method: "POST",
         }).catch(() => {});
       }

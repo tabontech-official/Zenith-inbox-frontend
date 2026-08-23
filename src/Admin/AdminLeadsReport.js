@@ -1,3 +1,4 @@
+import { apiFetch } from "../utils/apiClient";
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
@@ -78,7 +79,7 @@ const AdminLeadsReport = ({ defaultStatus }) => {
       const token = localStorage.getItem("usertoken");
       const url = `https://email-syncing-backend.vercel.app/admin/leads?status=${activeStatus}`;
 
-      const res = await fetch(url, {
+      const res = await apiFetch(url, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -100,7 +101,7 @@ const AdminLeadsReport = ({ defaultStatus }) => {
 
     try {
       const token = localStorage.getItem("usertoken");
-      const res = await fetch(`https://email-syncing-backend.vercel.app/admin/leads/thread/${lead._id}`, {
+      const res = await apiFetch(`https://email-syncing-backend.vercel.app/admin/leads/thread/${lead._id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();

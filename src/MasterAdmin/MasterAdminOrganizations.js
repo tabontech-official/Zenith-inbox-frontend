@@ -1,3 +1,4 @@
+import { apiFetch } from "../utils/apiClient";
 import React, { useState, useEffect } from "react";
 import {
   FiHome,
@@ -46,10 +47,10 @@ const MasterAdminOrganizations = () => {
       const token = localStorage.getItem("usertoken");
 
       const [orgsRes, plansRes] = await Promise.allSettled([
-        fetch("https://email-syncing-backend.vercel.app/admin/organizations", {
+        apiFetch("https://email-syncing-backend.vercel.app/admin/organizations", {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        fetch("https://email-syncing-backend.vercel.app/admin/plans", {
+        apiFetch("https://email-syncing-backend.vercel.app/admin/plans", {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ]);
@@ -122,7 +123,7 @@ const MasterAdminOrganizations = () => {
       setUpdatingPlan(true);
       const token = localStorage.getItem("usertoken");
 
-      const res = await fetch("https://email-syncing-backend.vercel.app/admin/organizations/plan", {
+      const res = await apiFetch("https://email-syncing-backend.vercel.app/admin/organizations/plan", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -189,7 +190,7 @@ const MasterAdminOrganizations = () => {
       setDeleting(true);
       const token = localStorage.getItem("usertoken");
 
-      const res = await fetch("https://email-syncing-backend.vercel.app/admin/organizations", {
+      const res = await apiFetch("https://email-syncing-backend.vercel.app/admin/organizations", {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",

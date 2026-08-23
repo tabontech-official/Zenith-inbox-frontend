@@ -1,3 +1,4 @@
+import { apiFetch } from "../utils/apiClient";
 import React, { useEffect, useState } from "react";
 import PlatformAdminLayout from "./PlatformAdminLayout";
 import {
@@ -65,7 +66,7 @@ const AdminUsers = () => {
   //       return;
   //     }
 
-  //     const res = await fetch(
+  //     const res = await apiFetch(
   //       `https://email-syncing-backend.vercel.app/auth/admin/give-pro/${proUserId}`,
   //       {
   //         method: "PUT",
@@ -110,7 +111,7 @@ const handleLoginAsUser = async (userId) => {
   try {
     const adminToken = localStorage.getItem("usertoken");
 
-    const res = await fetch(
+    const res = await apiFetch(
       `https://email-syncing-backend.vercel.app/auth/admin/login-as/${userId}`,
       {
         method: "POST",
@@ -154,7 +155,7 @@ const handleLoginAsUser = async (userId) => {
         return;
       }
 
-      const res = await fetch(
+      const res = await apiFetch(
         `https://email-syncing-backend.vercel.app/auth/admin/give-pro/${proUserId}`,
         {
           method: "PUT",
@@ -224,7 +225,7 @@ const handleLoginAsUser = async (userId) => {
 
       const token = localStorage.getItem("usertoken");
 
-      const res = await fetch(
+      const res = await apiFetch(
         `https://email-syncing-backend.vercel.app/auth/admin/revoke-pro/${id}`,
         {
           method: "PUT",
@@ -267,7 +268,7 @@ const handleLoginAsUser = async (userId) => {
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem("usertoken");
-      const res = await fetch(
+      const res = await apiFetch(
         "https://email-syncing-backend.vercel.app/auth/users",
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -319,7 +320,7 @@ const handleLoginAsUser = async (userId) => {
           return;
         }
 
-        const res = await fetch(
+        const res = await apiFetch(
           `https://email-syncing-backend.vercel.app/auth/user/${activeId}`,
           {
             method: "DELETE",
@@ -350,7 +351,7 @@ const handleLoginAsUser = async (userId) => {
           return;
         }
 
-        const res = await fetch(
+        const res = await apiFetch(
           `https://email-syncing-backend.vercel.app/auth/users/bulk-delete`,
           {
             method: "POST",

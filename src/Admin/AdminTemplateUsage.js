@@ -1,3 +1,4 @@
+import { apiFetch } from "../utils/apiClient";
 import React, { useEffect, useState, useMemo } from "react";
 import PlatformAdminLayout from "./PlatformAdminLayout";
 import {
@@ -33,7 +34,7 @@ const AdminTemplateUsage = () => {
   useEffect(() => {
     const fetchUsage = async () => {
       try {
-        const res = await fetch("https://email-syncing-backend.vercel.app/auth/template-usage");
+        const res = await apiFetch("https://email-syncing-backend.vercel.app/auth/template-usage");
         const data = await res.json();
         setUsageData(data.data || []);
         setGlobalStats(data.globalStats || null);

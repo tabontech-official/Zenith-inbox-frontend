@@ -1,3 +1,4 @@
+import { apiFetch } from "../utils/apiClient";
 import React, { useContext, useState, useEffect } from "react";
 import {
   FiBriefcase,
@@ -110,7 +111,7 @@ const CompanyProfile = () => {
       if (!userId) return;
       setLoading(true);
       try {
-        const response = await fetch(`${API_BASE_URL}/${userId}`);
+        const response = await apiFetch(`${API_BASE_URL}/${userId}`);
         const result = await response.json();
 
         if (result.success && result.data) {
@@ -156,7 +157,7 @@ const CompanyProfile = () => {
     };
 
     try {
-      const response = await fetch(`${API_BASE_URL}/${userId}`, {
+      const response = await apiFetch(`${API_BASE_URL}/${userId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

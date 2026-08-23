@@ -1,3 +1,4 @@
+import { apiFetch } from "../utils/apiClient";
 // import React, { useContext, useEffect, useRef, useState } from "react";
 // import { Link, useLocation, useNavigate } from "react-router-dom";
 // import {
@@ -88,7 +89,7 @@
 //       if (!token || !userId) return;
 
 //       try {
-//         const response = await fetch(
+//         const response = await apiFetch(
 //           `https://email-syncing-backend.vercel.app/auth/guide/${userId}`,
 //           {
 //             headers: {
@@ -161,7 +162,7 @@
 //   const handleLogout = async () => {
 //     try {
 //       if (userId) {
-//         await fetch(
+//         await apiFetch(
 //           `https://email-syncing-backend.vercel.app/auth/logout/${userId}`,
 //           {
 //             method: "POST",
@@ -181,7 +182,7 @@
 //     if (!token || !userId) return;
 
 //     try {
-//       await fetch(
+//       await apiFetch(
 //         `https://email-syncing-backend.vercel.app/auth/guide/${userId}`,
 //         {
 //           method: "POST",
@@ -666,7 +667,12 @@ import { FaGoogle, FaMicrosoft, FaEnvelope } from "react-icons/fa";
 import SidebarTooltip from "./SidebarTooltip";
 import { UserContext } from "./UserContext";
 
-const Sidebar = ({ onOpenMailhook, onOpenGmail, onOpenOutlook }) => {
+const Sidebar = ({
+  onOpenMailhook,
+  onOpenGmail,
+  onOpenOutlook,
+  onOpenMicrosoft,
+}) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useContext(UserContext);
@@ -703,7 +709,7 @@ const Sidebar = ({ onOpenMailhook, onOpenGmail, onOpenOutlook }) => {
 
     try {
       // 1. Fetch Shopify Scenario details
-      const resShopify = await fetch(
+      const resShopify = await apiFetch(
         "https://email-syncing-backend.vercel.app/scenario/details",
         {
           method: "POST",
@@ -716,7 +722,7 @@ const Sidebar = ({ onOpenMailhook, onOpenGmail, onOpenOutlook }) => {
       setShopifyScenarioCount(hasShopify ? 1 : 0);
 
       // 2. Fetch Custom Scenarios
-      const resCustom = await fetch(
+      const resCustom = await apiFetch(
         `https://email-syncing-backend.vercel.app/scenario/all?userId=${uid}`,
       );
       const dataCustom = await resCustom.json();
@@ -784,7 +790,7 @@ const Sidebar = ({ onOpenMailhook, onOpenGmail, onOpenOutlook }) => {
       if (!storedUserId) return;
 
       try {
-        const res = await fetch(
+        const res = await apiFetch(
           `https://email-syncing-backend.vercel.app/mailhook/getAllEmailsData/${storedUserId}`
         );
         const data = await res.json();
@@ -848,7 +854,7 @@ const Sidebar = ({ onOpenMailhook, onOpenGmail, onOpenOutlook }) => {
       }
 
       try {
-        const res = await fetch(
+        const res = await apiFetch(
           "https://email-syncing-backend.vercel.app/scenario/details",
           {
             method: "POST",
@@ -894,7 +900,7 @@ const Sidebar = ({ onOpenMailhook, onOpenGmail, onOpenOutlook }) => {
       if (!token || !userId) return;
 
       try {
-        const response = await fetch(
+        const response = await apiFetch(
           `https://email-syncing-backend.vercel.app/auth/guide/${userId}`,
           {
             headers: {
@@ -977,7 +983,7 @@ const Sidebar = ({ onOpenMailhook, onOpenGmail, onOpenOutlook }) => {
   const handleLogout = async () => {
     try {
       if (userId) {
-        await fetch(
+        await apiFetch(
           `https://email-syncing-backend.vercel.app/auth/logout/${userId}`,
           {
             method: "POST",
@@ -997,7 +1003,7 @@ const Sidebar = ({ onOpenMailhook, onOpenGmail, onOpenOutlook }) => {
     if (!token || !userId) return;
 
     try {
-      await fetch(
+      await apiFetch(
         `https://email-syncing-backend.vercel.app/auth/guide/${userId}`,
         {
           method: "POST",
@@ -1275,13 +1281,26 @@ const Sidebar = ({ onOpenMailhook, onOpenGmail, onOpenOutlook }) => {
               <button
                 type="button"
                 onClick={() => {
+                  if (onOpenMicrosoft) onOpenMicrosoft();
+                  else
+                    window.dispatchEvent(new CustomEvent("openMicrosoftModal"));
+                }}
+                className="flex h-9 items-center gap-1.5 rounded-[8px] border border-zinc-300 bg-white px-3.5 text-[12px] font-semibold text-zinc-800 shadow-2xs transition hover:bg-zinc-50"
+              >
+                <FaMicrosoft className="h-3.5 w-3.5 text-blue-600" />
+                <span>+ Microsoft</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
                   if (onOpenOutlook) onOpenOutlook();
                   else window.dispatchEvent(new CustomEvent("openOutlookModal"));
                 }}
                 className="flex h-9 items-center gap-1.5 rounded-[8px] border border-zinc-300 bg-white px-3.5 text-[12px] font-semibold text-zinc-800 shadow-2xs transition hover:bg-zinc-50"
               >
-                <FaMicrosoft className="h-3.5 w-3.5 text-blue-600" />
-                <span>+ Outlook / SMTP</span>
+                <FaEnvelope className="h-3.5 w-3.5 text-zinc-500" />
+                <span>+ Other Email</span>
               </button>
             </div>
           ) : isSectionActive(["/inbox"]) ||

@@ -8,6 +8,7 @@ const EmailModal = ({
   onClose,
   openGmailModal,
   openOutlookModal,
+  openMicrosoftModal,
 }) => {
   const config = node?.data?.config || {};
 
@@ -86,14 +87,19 @@ const EmailModal = ({
                 onChange={(e) => setAppType(e.target.value)}
                 className="flex-1 border border-slate-300 rounded-[8px] px-3.5 py-2 text-xs font-medium text-slate-900 bg-white outline-none focus:border-slate-800 transition"
               >
-                <option value="Gmail">Gmail</option>
-                <option value="Email">Email (Outlook / SMTP)</option>
+                <option value="Gmail">Gmail / Google Workspace</option>
+                <option value="Microsoft">Outlook / Live / Microsoft 365</option>
+                <option value="Email">Other Email</option>
               </select>
 
               <button
                 type="button"
                 onClick={() =>
-                  appType === "Gmail" ? openGmailModal() : openOutlookModal()
+                  appType === "Gmail"
+                    ? openGmailModal()
+                    : appType === "Microsoft"
+                    ? openMicrosoftModal?.()
+                    : openOutlookModal()
                 }
                 className="px-5 py-2 bg-[#111110] hover:bg-black text-white text-xs font-bold rounded-[8px] transition cursor-pointer"
               >

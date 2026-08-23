@@ -1,3 +1,4 @@
+import { apiFetch } from "../utils/apiClient";
 import React, { useEffect, useState } from "react";
 import PlatformAdminLayout from "./PlatformAdminLayout";
 import toast from "react-hot-toast";
@@ -27,7 +28,7 @@ const AdminProductPage = () => {
   useEffect(() => {
     const fetchContent = async () => {
       try {
-        const res = await fetch(API_URL);
+        const res = await apiFetch(API_URL);
 
         if (!res.ok) {
           toast.error("Failed to fetch product page content");
@@ -86,7 +87,7 @@ const AdminProductPage = () => {
     try {
       const token = localStorage.getItem("usertoken");
 
-      const res = await fetch(API_URL, {
+      const res = await apiFetch(API_URL, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

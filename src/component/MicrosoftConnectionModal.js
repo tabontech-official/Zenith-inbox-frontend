@@ -1,5 +1,5 @@
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import {
@@ -8,13 +8,29 @@ import {
   FaEyeSlash,
   FaKey,
   FaLock,
+  FaMicrosoft,
   FaTimes,
   FaUser,
 } from "react-icons/fa";
 import { FiExternalLink, FiMail, FiShield } from "react-icons/fi";
-import { SiGmail } from "react-icons/si";
 
-const API_BASE_URL = "https://email-syncing-backend.vercel.app";
+/*
+ * Defaults to the deployed backend, so production behaviour is unchanged.
+ * Set REACT_APP_API_BASE_URL (e.g. http://localhost:5000) to point the
+ * Microsoft connection flow at a local backend while testing.
+ */
+const API_BASE_URL =
+  process.env.REACT_APP_API_BASE_URL ||
+  "https://email-syncing-backend.vercel.app";
+
+/*
+ * NOTE: there are deliberately no SMTP/IMAP host or port fields in this
+ * modal. Microsoft's mail endpoints (outlook.office365.com:993 and
+ * smtp.office365.com:587) are identical for every customer and are held
+ * server-side in config/providerConfigs.js — exactly like the Gmail flow.
+ * Please don't "improve" this by adding editable host/port inputs; the
+ * separate "Other Email" custom-SMTP modal exists for that case.
+ */
 
 const Field = ({ label, hint, children }) => (
   <div>
@@ -26,7 +42,7 @@ const Field = ({ label, hint, children }) => (
   </div>
 );
 
-const ConnectionModal = ({
+const MicrosoftConnectionModal = ({
   isOpen,
   onClose,
   onSuccess,
@@ -34,7 +50,7 @@ const ConnectionModal = ({
   connectionData = null,
   onUpdated,
 }) => {
-  const [connectionName, setConnectionName] = useState("My Gmail Connection");
+  const [connectionName, setConnectionName] = useState("My Microsoft Connection");
   const [status, setStatus] = useState("active");
   const [email, setEmail] = useState("");
   const [appPassword, setAppPassword] = useState("");
@@ -46,7 +62,7 @@ const ConnectionModal = ({
     if (!isOpen) return;
 
     if (editMode && connectionData) {
-      setConnectionName(connectionData.name || "My Gmail Connection");
+      setConnectionName(connectionData.name || "My Microsoft Connection");
       setStatus(connectionData.status || "active");
       setEmail(connectionData.email || "");
       setAppPassword("");
@@ -55,7 +71,7 @@ const ConnectionModal = ({
       return;
     }
 
-    setConnectionName("My Gmail Connection");
+    setConnectionName("My Microsoft Connection");
     setStatus("active");
     setEmail("");
     setAppPassword("");
@@ -63,21 +79,12 @@ const ConnectionModal = ({
     setShowHelp(false);
   }, [isOpen, editMode, connectionData]);
 
+  /*
+   * Microsoft app passwords are not a fixed 16 characters like Google's,
+   * so the value is only stripped of whitespace — never truncated or
+   * re-grouped.
+   */
   const normalizeAppPassword = (value) => value.replace(/\s/g, "");
-
-  const formatAppPassword = (value) => {
-    const cleaned = value
-      .replace(/\s/g, "")
-      .replace(/[^a-zA-Z0-9]/g, "")
-      .slice(0, 16);
-
-    return cleaned.match(/.{1,4}/g)?.join(" ") || "";
-  };
-
-  const passwordLength = useMemo(
-    () => normalizeAppPassword(appPassword).length,
-    [appPassword]
-  );
 
   const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 
@@ -88,7 +95,7 @@ const ConnectionModal = ({
     }
 
     if (!email.trim()) {
-      toast.error("Gmail address is required.");
+      toast.error("Email address is required.");
       return false;
     }
 
@@ -97,8 +104,8 @@ const ConnectionModal = ({
       return false;
     }
 
-    if (passwordLength !== 16) {
-      toast.error("Google App Password must contain 16 characters.");
+    if (!normalizeAppPassword(appPassword)) {
+      toast.error("Microsoft app password is required.");
       return false;
     }
 
@@ -119,7 +126,7 @@ const ConnectionModal = ({
       setSubmitting(true);
 
       const response = await axios.post(
-        `${API_BASE_URL}/auth/gmail/app-password`,
+        `${API_BASE_URL}/auth/microsoft/app-password`,
         {
           userId,
           name: connectionName.trim(),
@@ -130,20 +137,36 @@ const ConnectionModal = ({
       );
 
       if (!response.data?.success) {
-        toast.error(response.data?.message || "Unable to connect Gmail account.");
+        toast.error(
+          response.data?.message || "Unable to connect Microsoft account."
+        );
         return;
       }
 
-      toast.success(response.data?.message || "Gmail connected successfully!");
+      toast.success(
+        response.data?.message || "Microsoft account connected successfully!"
+      );
       onSuccess?.({ ...response.data, triggerRefresh: true });
       onClose?.();
     } catch (error) {
-      console.error("Gmail App Password connection error:", error);
-      toast.error(
-        error.response?.data?.message ||
-          error.response?.data?.error ||
-          "Unable to connect. Check your Gmail address and App Password."
-      );
+      console.error("Microsoft App Password connection error:", error);
+
+      /*
+       * The backend returns a distinct `reason` per failure mode. Admin
+       * policy failures need a longer-lived toast because they describe
+       * an action the customer has to take with their IT admin.
+       */
+      const data = error.response?.data;
+      const message =
+        data?.message ||
+        data?.error ||
+        "Unable to connect. Check your email address and app password.";
+
+      const needsAdminAction =
+        data?.reason === "smtp_auth_disabled" ||
+        data?.reason === "app_password_blocked";
+
+      toast.error(message, { duration: needsAdminAction ? 12000 : 5000 });
     } finally {
       setSubmitting(false);
     }
@@ -180,11 +203,11 @@ const ConnectionModal = ({
         return;
       }
 
-      toast.success("Gmail connection updated successfully!");
+      toast.success("Microsoft connection updated successfully!");
       onUpdated?.();
       onClose?.();
     } catch (error) {
-      console.error("Error updating Gmail connection:", error);
+      console.error("Error updating Microsoft connection:", error);
       toast.error(
         error.response?.data?.error ||
           error.response?.data?.message ||
@@ -211,16 +234,18 @@ const ConnectionModal = ({
           <header className="flex items-center justify-between bg-[#111110] text-white px-6 py-4 shrink-0">
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10">
-                <SiGmail className="h-5 w-5 text-red-400" />
+                <FaMicrosoft className="h-5 w-5 text-[#4da3ff]" />
               </div>
               <div>
-              <h2 className="text-base font-bold text-white">
-                  {editMode ? "Edit Gmail Connection" : "Connect Gmail"}
+                <h2 className="text-base font-bold text-white">
+                  {editMode
+                    ? "Edit Microsoft Connection"
+                    : "Connect Microsoft Email"}
                 </h2>
                 <p className="text-xs text-slate-300 mt-0.5 font-normal">
                   {editMode
                     ? "Update the connection name or status"
-                    : "Use a Google App Password to connect securely"}
+                    : "Use a Microsoft App Password to connect securely"}
                 </p>
               </div>
             </div>
@@ -245,10 +270,10 @@ const ConnectionModal = ({
                   </div>
                   <div>
                     <p className="text-xs font-bold text-emerald-900">
-                      Your normal Gmail password is not required.
+                      Your normal Microsoft password is not required.
                     </p>
                     <p className="mt-0.5 text-[11px] leading-relaxed text-slate-600 font-normal">
-                      Enter only the 16-character App Password generated by Google.
+                      Enter only the app password generated by Microsoft.
                     </p>
                   </div>
                 </div>
@@ -262,13 +287,13 @@ const ConnectionModal = ({
                     value={connectionName}
                     onChange={(event) => setConnectionName(event.target.value)}
                     disabled={submitting}
-                    placeholder="Work Gmail"
+                    placeholder="Work Outlook"
                     className="h-10 w-full rounded-[8px] border border-slate-300 bg-white pl-9 pr-3 text-xs font-medium text-slate-900 outline-none focus:border-slate-800 transition placeholder:text-slate-400 disabled:bg-slate-100"
                   />
                 </div>
               </Field>
 
-              <Field label="Gmail Address">
+              <Field label="Email Address">
                 <div className="relative">
                   <FiMail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                   <input
@@ -276,7 +301,7 @@ const ConnectionModal = ({
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
                     disabled={editMode || submitting}
-                    placeholder="youremail@gmail.com"
+                    placeholder="you@outlook.com"
                     autoComplete="email"
                     className="h-10 w-full rounded-[8px] border border-slate-300 bg-white pl-9 pr-3 text-xs font-medium text-slate-900 outline-none focus:border-slate-800 transition placeholder:text-slate-400 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
                   />
@@ -285,17 +310,15 @@ const ConnectionModal = ({
 
               {!editMode && (
                 <>
-                  <Field label="Google App Password" hint={`${passwordLength}/16`}>
+                  <Field label="App Password">
                     <div className="relative">
                       <FaKey className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
                       <input
                         type={showPassword ? "text" : "password"}
                         value={appPassword}
-                        onChange={(event) =>
-                          setAppPassword(formatAppPassword(event.target.value))
-                        }
+                        onChange={(event) => setAppPassword(event.target.value)}
                         disabled={submitting}
-                        placeholder="abcd efgh ijkl mnop"
+                        placeholder="Paste the app password from Microsoft"
                         autoComplete="new-password"
                         className="h-10 w-full rounded-[8px] border border-slate-300 bg-white pl-9 pr-10 text-xs font-medium tracking-[0.08em] text-slate-900 outline-none focus:border-slate-800 transition placeholder:text-slate-400 disabled:bg-slate-100"
                       />
@@ -303,7 +326,9 @@ const ConnectionModal = ({
                         type="button"
                         onClick={() => setShowPassword((current) => !current)}
                         disabled={submitting}
-                        aria-label={showPassword ? "Hide App Password" : "Show App Password"}
+                        aria-label={
+                          showPassword ? "Hide app password" : "Show app password"
+                        }
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer"
                       >
                         {showPassword ? (
@@ -316,10 +341,10 @@ const ConnectionModal = ({
 
                     <div className="mt-2 flex items-center justify-between gap-3">
                       <span className="text-[11px] text-slate-500">
-                        This is not your regular Gmail password.
+                        This is not your regular Microsoft password.
                       </span>
                       <a
-                        href="https://myaccount.google.com/apppasswords"
+                        href="https://mysignins.microsoft.com/security-info"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex shrink-0 items-center gap-1 text-[11px] font-bold text-indigo-600 hover:text-indigo-800"
@@ -353,10 +378,33 @@ const ConnectionModal = ({
 
                     {showHelp && (
                       <div className="space-y-2 border-t border-slate-200 bg-white px-3.5 py-3 text-[11px] leading-relaxed text-slate-600 font-normal">
-                        <p><strong className="text-slate-800 font-bold">1.</strong> Enable 2-Step Verification on your Google Account.</p>
-                        <p><strong className="text-slate-800 font-bold">2.</strong> Open Google App Passwords.</p>
-                        <p><strong className="text-slate-800 font-bold">3.</strong> Create a new App Password.</p>
-                        <p><strong className="text-slate-800 font-bold">4.</strong> Copy the 16-character password and paste it above.</p>
+                        <p>
+                          <strong className="text-slate-800 font-bold">1.</strong>{" "}
+                          Go to{" "}
+                          <a
+                            href="https://mysignins.microsoft.com/security-info"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-bold text-indigo-600 hover:text-indigo-800"
+                          >
+                            mysignins.microsoft.com/security-info
+                          </a>
+                          .
+                        </p>
+                        <p>
+                          <strong className="text-slate-800 font-bold">2.</strong>{" "}
+                          Select <strong className="font-bold">Add sign-in method</strong>.
+                        </p>
+                        <p>
+                          <strong className="text-slate-800 font-bold">3.</strong>{" "}
+                          Choose <strong className="font-bold">App password</strong> and
+                          give it a name.
+                        </p>
+                        <p>
+                          <strong className="text-slate-800 font-bold">4.</strong>{" "}
+                          Copy the password immediately — Microsoft shows it only
+                          once — then paste it above.
+                        </p>
                       </div>
                     )}
                   </div>
@@ -400,7 +448,7 @@ const ConnectionModal = ({
                   : "Save Changes"
                 : submitting
                 ? "Connecting..."
-                : "Connect Gmail"}
+                : "Connect Microsoft"}
             </button>
           </footer>
         </form>
@@ -409,4 +457,4 @@ const ConnectionModal = ({
   );
 };
 
-export default ConnectionModal;
+export default MicrosoftConnectionModal;

@@ -1,3 +1,4 @@
+import { apiFetch } from "../utils/apiClient";
 // import React, { useEffect, useState } from "react";
 // import { Mail, Clock, Server, Layers, Trash2, X, Workflow } from "lucide-react";
 // import { useNavigate } from "react-router-dom";
@@ -82,7 +83,7 @@
 //     const userId = localStorage.getItem("userid");
 //     try {
 //       setLoading(true);
-//       const res = await fetch(`https://email-syncing-backend.vercel.app/scenario/user/${userId}`);
+//       const res = await apiFetch(`https://email-syncing-backend.vercel.app/scenario/user/${userId}`);
 //       const data = await res.json();
 //       setScenarios(Array.isArray(data) ? data : data.data || []);
 //     } catch (err) {
@@ -103,7 +104,7 @@
 //   const handleDelete = async () => {
 //     if (!selectedScenario) return;
 //     try {
-//       await fetch(
+//       await apiFetch(
 //         `https://email-syncing-backend.vercel.app/scenario/detail/${selectedScenario._id}`,
 //         { method: "DELETE" },
 //       );
@@ -535,7 +536,7 @@ const AllScenariosPage = () => {
       setLoading(true);
       const token = localStorage.getItem("usertoken");
 
-      const response = await fetch(
+      const response = await apiFetch(
         `https://email-syncing-backend.vercel.app/scenario/user/${userId}`,
         {
           headers: {
@@ -625,7 +626,7 @@ const AllScenariosPage = () => {
 
     try {
       const token = localStorage.getItem("usertoken");
-      await fetch(
+      await apiFetch(
         `https://email-syncing-backend.vercel.app/scenario/detail/${scenario._id}`,
         {
           method: "PUT",
@@ -656,7 +657,7 @@ const AllScenariosPage = () => {
 
     try {
       const token = localStorage.getItem("usertoken");
-      await fetch(
+      await apiFetch(
         `https://email-syncing-backend.vercel.app/scenario/detail/${selectedScenario._id}`,
         {
           method: "DELETE",

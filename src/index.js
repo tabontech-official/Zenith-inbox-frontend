@@ -4,6 +4,13 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import { installAxiosInterceptors } from './utils/apiClient';
+
+/*
+ * Installs the global Authorization header on every axios request.
+ * Must run before any component issues a request.
+ */
+installAxiosInterceptors();
 
 // Intercept & silence cross-origin third-party widget script errors (e.g. Tawk.to / external widgets)
 window.addEventListener('error', (event) => {

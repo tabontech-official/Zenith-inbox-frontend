@@ -1,3 +1,4 @@
+import { apiFetch } from "../utils/apiClient";
 import React, { useState, useEffect } from "react";
 import {
   FiPlus,
@@ -44,7 +45,7 @@ const MasterAdminPlans = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("usertoken");
-      const res = await fetch("https://email-syncing-backend.vercel.app/admin/plans", {
+      const res = await apiFetch("https://email-syncing-backend.vercel.app/admin/plans", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -130,7 +131,7 @@ const MasterAdminPlans = () => {
         : "https://email-syncing-backend.vercel.app/admin/plans";
       const method = editingPlan ? "PUT" : "POST";
 
-      const res = await fetch(url, {
+      const res = await apiFetch(url, {
         method,
         headers: {
           "Content-Type": "application/json",
@@ -156,7 +157,7 @@ const MasterAdminPlans = () => {
     if (!window.confirm("Are you sure you want to delete this plan?")) return;
     try {
       const token = localStorage.getItem("usertoken");
-      const res = await fetch(`https://email-syncing-backend.vercel.app/admin/plans/${id}`, {
+      const res = await apiFetch(`https://email-syncing-backend.vercel.app/admin/plans/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });

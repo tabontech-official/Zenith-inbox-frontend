@@ -1,3 +1,4 @@
+import { apiFetch } from "../utils/apiClient";
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { FiLock, FiLoader } from "react-icons/fi";
@@ -17,7 +18,7 @@ const ResetPassword = () => {
 
     setLoading(true);
     try {
-      const res = await fetch("https://email-syncing-backend.vercel.app/auth/set-password", {
+      const res = await apiFetch("https://email-syncing-backend.vercel.app/auth/set-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, password }),

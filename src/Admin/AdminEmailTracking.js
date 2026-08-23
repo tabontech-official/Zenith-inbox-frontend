@@ -1,3 +1,4 @@
+import { apiFetch } from "../utils/apiClient";
 // import React, { useEffect, useState, useMemo } from "react";
 // import Sidebar from "../component/Sidebar";
 // import {
@@ -29,7 +30,7 @@
 //   useEffect(() => {
 //     const fetchData = async () => {
 //       try {
-//         const res = await fetch("https://email-syncing-backend.vercel.app/auth/email-tracking");
+//         const res = await apiFetch("https://email-syncing-backend.vercel.app/auth/email-tracking");
 //         const data = await res.json();
 //         setSummary(data.data || []);
 //       } catch (err) {
@@ -385,7 +386,7 @@ const AdminEmailTracking = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch(
+        const res = await apiFetch(
           "https://email-syncing-backend.vercel.app/auth/email-tracking"
         );
         const data = await res.json();

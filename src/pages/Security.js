@@ -1,3 +1,4 @@
+import { apiFetch } from "../utils/apiClient";
 import React, { useContext, useState } from "react";
 import {
   FiShield,
@@ -54,7 +55,7 @@ const Security = () => {
     try {
       setTwoFaLoading(true);
 
-      const res = await fetch(`${API_BASE}/auth/2fa/setup`, {
+      const res = await apiFetch(`${API_BASE}/auth/2fa/setup`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -102,7 +103,7 @@ const Security = () => {
     try {
       setVerifyTwoFaLoading(true);
 
-      const res = await fetch(`${API_BASE}/auth/2fa/verify-setup`, {
+      const res = await apiFetch(`${API_BASE}/auth/2fa/verify-setup`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -158,7 +159,7 @@ const Security = () => {
     try {
       setDisableLoading(true);
 
-      const res = await fetch(`${API_BASE}/auth/2fa/disable`, {
+      const res = await apiFetch(`${API_BASE}/auth/2fa/disable`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -221,7 +222,7 @@ const Security = () => {
     try {
       setPasswordLoading(true);
 
-      const res = await fetch(`${API_BASE}/auth/change-password`, {
+      const res = await apiFetch(`${API_BASE}/auth/change-password`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
