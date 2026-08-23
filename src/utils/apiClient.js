@@ -53,13 +53,19 @@ export const getToken = () => {
  * trigger the session-expired redirect.
  */
 const PUBLIC_PATHS = [
-  '/auth/login',
+  /* Verified against Routes/auth.js — these carry no authMiddleware. */
+  '/auth/signIn',
   '/auth/signUp',
   '/auth/google-login',
+  '/auth/google',
+  '/auth/outlook/connect',
+  '/auth/outlook/callback',
   '/auth/request-login',
   '/auth/verify-login',
   '/auth/forgot-password',
   '/auth/set-password',
+  '/auth/organization/accept-invitation',
+  '/auth/2fa/verify-login',
   '/api/landing-page',
   '/api/product-page',
   '/talk',
@@ -149,16 +155,21 @@ export const installAxiosInterceptors = () => {
         if (!config.headers.Authorization && !config.headers.authorization) {
           config.headers.Authorization = `Bearer ${token}`;
         }
-      } else if (!isPublicPath(config.url)) {
-        /*
-         * No token for a route that needs one. Fail fast with a clear
-         * message rather than sending a request that will 401.
-         */
-        handleSessionExpired('You are not signed in. Please log in again.');
-        return Promise.reject(
-          new Error('No auth token available — request cancelled.')
-        );
       }
+
+      /*
+       * NOTE: a missing token does NOT cancel the request.
+       *
+       * An earlier version rejected here when the path was not in
+       * PUBLIC_PATHS. That made the allowlist load-bearing: '/auth/signIn'
+       * was missing from it, so the login request itself was cancelled and
+       * nobody could sign in — a lockout that needed a token to escape.
+       *
+       * The server is the authority on what needs auth. Send the request;
+       * a genuine 401 is handled by the response interceptor below, which
+       * still gives the user a clear session-expired message. A wrong entry
+       * in PUBLIC_PATHS now costs one redundant 401, not a lockout.
+       */
 
       return config;
     },
@@ -199,10 +210,9 @@ export const apiFetch = async (url, options = {}) => {
 
   if (token) {
     if (!headers.has('Authorization')) headers.set('Authorization', `Bearer ${token}`);
-  } else if (!isPublicPath(target)) {
-    handleSessionExpired('You are not signed in. Please log in again.');
-    throw new Error('No auth token available — request cancelled.');
   }
+
+  /* Same reasoning as the axios interceptor: never cancel pre-emptively. */
 
   const response = await fetch(target, { ...options, headers });
 
