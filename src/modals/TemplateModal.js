@@ -4,6 +4,7 @@ import { X, Plus, ArrowLeft, Sparkles, Edit3 } from "lucide-react";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import toast from "react-hot-toast";
+import { providerLabel } from "../utils/connectionProviders";
 
 const TemplateModal = ({
   node,
@@ -201,7 +202,7 @@ const TemplateModal = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/10 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white w-[560px] max-h-[88vh] flex flex-col rounded-[8px] border border-slate-200 overflow-hidden shadow-2xl">
         {/* Header */}
        <div className="flex items-center justify-between bg-[#111110] text-white px-6 py-4 shrink-0">
@@ -244,7 +245,7 @@ const TemplateModal = ({
               <option value="">Select Connection</option>
               {connections.map((c) => (
                 <option key={c._id} value={c._id}>
-                  {c.provider ? c.provider.toUpperCase() : "EMAIL"} - {c.email}
+                  {c.provider ? providerLabel(c.provider) : "EMAIL"} - {c.email}
                 </option>
               ))}
             </select>

@@ -22,6 +22,8 @@ import MailhookSetupGuide from "./pages/MailhookSetupGuide";
 import Profile from "./pages/Profile";
 import CompanyProfile from "./pages/CompanyProfile";
 import AdminAIConfig from "./Admin/AdminAIConfig";
+import AdminScenarioTriggers from "./Admin/AdminScenarioTriggers";
+import AdminPlatformEmail from "./Admin/AdminPlatformEmail";
 import ResetPassword from "./Auth/ResetPassword";
 import ForgotPassword from "./Auth/ForgotPassword";
 import LoginVerify from "./Auth/LoginVerify";
@@ -331,6 +333,22 @@ function App() {
           />
           {/* Admin Routing */}
           <Route
+            path="/admin/platform-email"
+            element={
+              <ProtectedRoute adminOnly={true}>
+                <AdminPlatformEmail />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/scenario-triggers"
+            element={
+              <ProtectedRoute adminOnly={true}>
+                <AdminScenarioTriggers />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/admin/ai-config"
             element={
               <ProtectedRoute adminOnly={true}>
@@ -519,10 +537,19 @@ function App() {
           />
         </Routes>
 
+        {/*
+          Toasts sit top-CENTRE, not top-right.
+
+          At top-right with a 70px offset they landed directly on the
+          header's action buttons — Save Profile, Create scenario — so a
+          confirmation covered the control the user had just pressed and
+          was likely to press again. Centred, they clear the right-aligned
+          actions entirely.
+        */}
         <Toaster
-          position="top-right"
+          position="top-center"
           containerStyle={{
-            top: "70px",
+            top: "16px",
           }}
           toastOptions={{
             duration: 4000,
@@ -532,6 +559,7 @@ function App() {
               border: "1px solid #e5e7eb",
               padding: "12px 16px",
               borderRadius: "8px",
+              boxShadow: "0 8px 24px rgba(15, 23, 42, 0.12)",
             },
           }}
         />

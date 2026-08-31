@@ -66,7 +66,7 @@ export default function CustomTemplate() {
     if (nextStatus) {
       const isComplete = await verifyCompanyProfile(targetUserId);
       if (!isComplete) {
-        toast.error("Please complete your Company Profile (Business Name & Description) first before activating Auto Reply.", { duration: 4000 });
+        toast.error("Please complete your Company Profile (Business Name & Description) first before turning on AI replies.", { duration: 4000 });
         navigate("/company-profile");
         return;
       }
@@ -86,11 +86,11 @@ export default function CustomTemplate() {
         aiResponse: nextStatus,
       });
       if (res.data?.user && setContextUser) setContextUser(res.data.user);
-      toast.success(nextStatus ? "Auto Reply activated on all custom templates!" : "Auto Reply paused on all custom templates.");
+      toast.success(nextStatus ? "AI replies turned on for all custom templates." : "AI replies turned off — templates send as written.");
     } catch (err) {
       setAiActive(!nextStatus);
       fetchTemplates();
-      toast.error("Failed to update Auto Reply status.");
+      toast.error("Could not update the reply mode.");
     } finally {
       setTogglingAi(false);
     }
@@ -106,6 +106,9 @@ export default function CustomTemplate() {
 
   const [editingId, setEditingId] = useState(null);
   const [platform, setPlatform] = useState("");
+
+  /* What the template is called, so several can be told apart. */
+  const [templateName, setTemplateName] = useState("");
   const [service, setService] = useState("");
   const [content, setContent] = useState("");
   const [sequenceType, setSequenceType] = useState("");
@@ -163,7 +166,7 @@ export default function CustomTemplate() {
     if (nextStatus) {
       const isComplete = await verifyCompanyProfile(targetUserId);
       if (!isComplete) {
-        toast.error("Please complete your Company Profile (Business Name & Description) first before activating Auto Reply.", { duration: 4000 });
+        toast.error("Please complete your Company Profile (Business Name & Description) first before turning on AI replies.", { duration: 4000 });
         navigate("/company-profile");
         return;
       }
@@ -176,12 +179,12 @@ export default function CustomTemplate() {
       await axios.patch(`https://email-syncing-backend.vercel.app/template/ai-toggle/${templateId}`, {
         aiResponse: nextStatus,
       });
-      toast.success(nextStatus ? "Auto Reply enabled for template!" : "Switched to Fixed Template.");
+      toast.success(nextStatus ? "This template will now be written by AI." : "This template will now send as written.");
     } catch (err) {
       setTemplates((prev) =>
         prev.map((t) => (t._id === templateId ? { ...t, aiResponse: currentStatus } : t))
       );
-      toast.error("Failed to update template Auto Reply status.");
+      toast.error("Could not update the reply mode for this template.");
     }
   };
 
@@ -192,7 +195,7 @@ export default function CustomTemplate() {
     if (enableAll) {
       const isComplete = await verifyCompanyProfile(userId);
       if (!isComplete) {
-        toast.error("Please complete your Company Profile (Business Name & Description) first before activating Auto Reply.", { duration: 4000 });
+        toast.error("Please complete your Company Profile (Business Name & Description) first before turning on AI replies.", { duration: 4000 });
         navigate("/company-profile");
         return;
       }
@@ -205,10 +208,10 @@ export default function CustomTemplate() {
         platform: "other",
         aiResponse: enableAll,
       });
-      toast.success(enableAll ? "Auto Reply enabled on ALL custom templates!" : "Disabled Auto Reply on all templates.");
+      toast.success(enableAll ? "AI replies turned on for all custom templates." : "AI replies turned off for all templates.");
     } catch (err) {
       fetchTemplates();
-      toast.error("Failed to bulk update templates Auto Reply status.");
+      toast.error("Could not update the reply mode for these templates.");
     }
   };
 
@@ -241,8 +244,31 @@ export default function CustomTemplate() {
     editor.setSelection(index + placeholder.length, 0, "user");
   };
 
+  /*
+   * Opens the drawer in create mode.
+   *
+   * The drawer already handled creating — editingId null posts to
+   * /template/create — but nothing ever opened it that way, so custom
+   * templates could only be edited, never made.
+   */
+  const handleCreateNew = () => {
+    setEditingId(null);
+    setTemplateName("");
+    /*
+     * This page lists templates with platform "other"; a blank platform
+     * fails the model's required enum, so a created template would 500 and
+     * never appear here anyway.
+     */
+    setPlatform("other");
+    setService("");
+    setConditions([{ field: "subject", operator: "contains", value: "" }]);
+    setContent("");
+    setIsDrawerOpen(true);
+  };
+
   const handleEdit = (template) => {
     setEditingId(template._id);
+    setTemplateName(template.name || "");
     setPlatform(template.platform);
     setService(template.service || "");
     setConditions(
@@ -255,9 +281,23 @@ export default function CustomTemplate() {
   };
 
   const handleSaveTemplate = async () => {
+    /* The server requires a name; catching it here saves a round trip. */
+    if (!templateName.trim()) {
+      toast.error("Give the template a name first.");
+      return;
+    }
+
     try {
       const userId = localStorage.getItem("userid");
-      const payload = { userId, platform, service, conditions, content };
+      const payload = {
+        userId,
+        name: templateName.trim(),
+        /* Guard: the model requires one of shopify | other. */
+        platform: platform || "other",
+        service,
+        conditions,
+        content,
+      };
 
       if (editingId) {
         await axios.put(
@@ -275,6 +315,7 @@ export default function CustomTemplate() {
 
       setIsDrawerOpen(false);
       setEditingId(null);
+      setTemplateName("");
       setPlatform("");
       setService("");
       setConditions([{ field: "subject", operator: "contains", value: "" }]);
@@ -455,6 +496,15 @@ export default function CustomTemplate() {
             </div>
 
             <div className="flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={handleCreateNew}
+                className="flex items-center gap-1.5 rounded-[10px] bg-[#111110] px-3.5 py-1.5 text-xs font-bold text-white shadow-2xs transition hover:bg-black cursor-pointer"
+              >
+                <span className="text-sm leading-none">+</span>
+                <span>New template</span>
+              </button>
+
               {/* AI Replies Toggle */}
               <button
                 type="button"
@@ -590,10 +640,10 @@ export default function CustomTemplate() {
                                       ? "bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100"
                                       : "bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200"
                                   }`}
-                                  title="Click to toggle AI response for this specific template"
+                                  title="Switch this template between AI-written and sent as written"
                                 >
                                   <BoltIcon className={`w-3.5 h-3.5 ${t.aiResponse !== false ? "text-emerald-600 fill-emerald-100" : "text-slate-400"}`} />
-                                  <span>{t.aiResponse !== false ? "Auto Reply" : "Fixed Template"}</span>
+                                  <span>{t.aiResponse !== false ? "AI Reply" : "Manual Template"}</span>
                                 </button>
 
                                 <label
@@ -675,11 +725,23 @@ export default function CustomTemplate() {
                     ))
                   ) : (
                     <tr>
-                      <td
-                        colSpan="4"
-                        className="p-8 text-center text-slate-500 text-xs font-medium"
-                      >
-                        No templates found
+                      <td colSpan="4" className="p-8 text-center">
+                        <div className="flex flex-col items-center gap-3 py-6">
+                          <p className="text-xs font-semibold text-slate-700">
+                            No custom templates yet
+                          </p>
+                          <p className="max-w-sm text-[11px] text-slate-500">
+                            Custom templates let you reply to leads that do not
+                            come from the Shopify Partner Directory.
+                          </p>
+                          <button
+                            type="button"
+                            onClick={handleCreateNew}
+                            className="rounded-full bg-[#111110] px-5 py-2 text-xs font-bold text-white transition hover:bg-black cursor-pointer"
+                          >
+                            Create your first template
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   )}
@@ -766,8 +828,23 @@ export default function CustomTemplate() {
                   </div>
                 ))
               ) : (
-                <div className="p-8 text-center text-slate-500 text-xs font-medium">
-                  No templates found
+                <div className="p-8 text-center">
+                  <div className="flex flex-col items-center gap-3 py-6">
+                    <p className="text-xs font-semibold text-slate-700">
+                      No custom templates yet
+                    </p>
+                    <p className="max-w-sm text-[11px] text-slate-500">
+                      Custom templates let you reply to leads that do not
+                      come from the Shopify Partner Directory.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={handleCreateNew}
+                      className="rounded-full bg-[#111110] px-5 py-2 text-xs font-bold text-white transition hover:bg-black cursor-pointer"
+                    >
+                      Create your first template
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -810,6 +887,22 @@ export default function CustomTemplate() {
             <div className="flex-1 overflow-y-auto p-6 space-y-5">
               <div>
                 <label className="block text-xs font-bold text-slate-800 mb-1.5">
+                  Template Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={templateName}
+                  onChange={(e) => setTemplateName(e.target.value)}
+                  placeholder="e.g. Pricing enquiry reply"
+                  className="w-full p-3 border border-slate-300 rounded-[8px] text-xs font-semibold text-slate-900 outline-none focus:border-slate-800 transition"
+                />
+                <p className="mt-1.5 text-[11px] text-slate-500">
+                  How you will recognise this template in lists and pickers.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-800 mb-1.5">
                   Service Request
                 </label>
                 <input
@@ -825,7 +918,7 @@ export default function CustomTemplate() {
                   Template Response Body
                 </label>
 
-                <div className="border border-slate-300 rounded-[8px] overflow-hidden shadow-2xs">
+                <div className="template-editor border border-slate-300 rounded-[8px] overflow-hidden shadow-2xs">
                   <ReactQuill
                     ref={quillRef}
                     theme="snow"
@@ -841,6 +934,15 @@ export default function CustomTemplate() {
                   </h3>
                   <div className="flex flex-wrap gap-2">
                     {[
+                      /*
+                        Greeting first: it is the one most templates want.
+                        It resolves to "Hi Chris" when the lead gave a
+                        name and "Dear Sir/Madam" when they pasted an
+                        email address instead, so an opening line built on
+                        it reads correctly either way.
+                      */
+                      { label: "Greeting", placeholder: "{{Greeting}}" },
+                      { label: "First name", placeholder: "{{FirstName}}" },
                       { label: "Full name", placeholder: "{{FullName}}" },
                       {
                         label: "Business email",
@@ -891,7 +993,7 @@ export default function CustomTemplate() {
 
         {/* Delete Modal */}
         {showDeleteConfirm && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-[9999] p-4">
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
             <div className="bg-white rounded-[12px] w-full max-w-sm border border-slate-200 shadow-2xl overflow-hidden">
               <div className="bg-[#111110] text-white px-6 py-4 flex items-center justify-between">
                 <h2 className="text-base font-bold text-white">
@@ -935,7 +1037,7 @@ export default function CustomTemplate() {
 
         {/* Upgrade Modal */}
         {showUpgradeModal && (
-          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
             <div className="relative bg-white rounded-[12px] shadow-2xl border border-slate-200 max-w-md w-full overflow-hidden">
               <div className="flex justify-between items-center px-6 py-4 bg-[#111110] text-white">
                 <div className="flex items-center gap-2">

@@ -4,6 +4,11 @@ import { useLocation } from "react-router-dom";
 import axios from "axios";
 import { fetchCompanyProfile, generateAiReply, recordAiReplyUsed } from "../utils/aiReplyService";
 import {
+  emailMatchesScenario,
+  emailMatchesConnection,
+} from "../utils/leadFilters";
+import { splitQuotedBody } from "../utils/quotedBody";
+import {
   FiArrowLeft,
   FiSearch,
   FiTrash2,
@@ -44,13 +49,136 @@ import {
 
 const API_BASE_URL = "https://email-syncing-backend.vercel.app/mailhook";
 
+/*
+ * Something to read while the mailbox is being assembled.
+ *
+ * These are real things the inbox does, not filler — someone who reads
+ * one has learnt a feature they might not otherwise find. Rotated on a
+ * timer that runs only while a fetch is pending, so it costs nothing the
+ * rest of the time.
+ */
+/*
+ * A real HTML tag, not merely a "<" somewhere.
+ *
+ * The old test was /<\/?[a-z][\s\S]*>/ — any "<", a letter, and a
+ * ">" later in the string. A plain-text reply containing
+ * "support <support@tabontech.com> wrote:" matched it, so the text
+ * was rendered as markup: every newline collapsed to a space and the
+ * "> " quote markers showed as literal characters.
+ *
+ * The tag name must now be followed by whitespace, "/" or ">", which
+ * an email address in angle brackets never is.
+ */
+const looksLikeMarkup = (value) =>
+  Boolean(value) &&
+  /<\/?(?:div|p|br|span|a|table|tbody|thead|tfoot|tr|td|th|ul|ol|li|h[1-6]|blockquote|strong|b|em|i|u|s|img|pre|code|hr|font|center|section|article)(?:\s[^>]*)?\/?>/i.test(value);
+
+const LOADING_TIPS = [
+  "Right-click any lead for reply, archive, secured and delete.",
+  "Leads shown here are only the ones your scenarios matched.",
+  "Switch a scenario off and its leads queue up instead of being answered.",
+  "Turning a scenario back on asks whether to send the queued replies.",
+  "Templates are matched by service first, then fall back to General.",
+  "A lead that pasted an email instead of a name is greeted “Dear Sir/Madam”.",
+  "Run history times follow the timezone in your organisation settings.",
+];
+
 const Inbox = () => {
   const [emails, setEmails] = useState([]);
   const [selectedEmail, setSelectedEmail] = useState(null);
-  const [loading, setLoading] = useState(false);
+  /*
+   * Starts true. The list mounts with nothing and immediately fetches,
+   * and `loading` was only ever set to FALSE — never to true — so the
+   * first render showed "No leads found" for the whole of the request.
+   * An empty inbox and an inbox that has not arrived yet are different
+   * things and must not look the same.
+   */
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  /*
+   * Has a fetch for the CURRENT view actually completed?
+   *
+   * The empty state is gated on this rather than on `loading` alone.
+   * "Nothing here" is a claim about data we have; until a response has
+   * landed we have not got any, and saying it anyway is how the inbox
+   * came to report "No leads here yet" beside a sidebar count of 7.
+   */
+  const [hasLoaded, setHasLoaded] = useState(false);
+
+  const [tipIndex, setTipIndex] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [totalInView, setTotalInView] = useState(0);
+
+  /*
+   * Which view the list is showing: "new" (needs a reply) or "all".
+   *
+   * Held in a ref as well as state because fetchEmails runs from a timer
+   * and from effects, where a stale closure would silently keep asking
+   * for the previous view.
+   */
+  /*
+   * Seeded from the URL, not from a hardcoded default.
+   *
+   * Starting at "new" regardless meant landing on ?view=all fetched the
+   * WRONG view on mount, and the effect that noticed the mismatch fired
+   * its corrective fetch while the first was still in flight — where the
+   * one-at-a-time guard dropped it. The list ended up empty with loading
+   * already finished, which is the "No leads here yet" over a sidebar
+   * count of 7.
+   */
+  const initialView =
+    (new URLSearchParams(window.location.search).get("view") || "new")
+      .toLowerCase() === "all"
+      ? "all"
+      : "new";
+
+  const [inboxView, setInboxViewState] = useState(initialView);
+  const inboxViewRef = useRef(initialView);
+
+  const setInboxView = (next) => {
+    inboxViewRef.current = next;
+    setInboxViewState(next);
+  };
   const [replySending, setReplySending] = useState(false);
   const [isMobileView, setIsMobileView] = useState(false);
   const [selectedLeadIds, setSelectedLeadIds] = useState(new Set());
+  /*
+   * Right-click menu for a lead row.
+   *
+   * null when closed. When open it carries the row it was opened on AND
+   * the ids it will act on, resolved once at open time: right-clicking a
+   * row that is part of a checkbox selection acts on the whole selection,
+   * right-clicking outside one acts on just that row. Resolving it up
+   * front means the menu cannot act on a different set than the one it
+   * named when it opened.
+   */
+  const [contextMenu, setContextMenu] = useState(null);
+  /*
+   * Which message has its address details expanded. One at a time, the
+   * way a mail client does it — the row is a summary, and the full
+   * from/to/date belongs behind the chevron rather than always on.
+   */
+  const [expandedMsgDetails, setExpandedMsgDetails] = useState(null);
+
+  /*
+   * Which messages have their quoted history expanded.
+   *
+   * A reply carries the whole conversation beneath it, which the
+   * recipient needs but this view does not: the quoted text is already
+   * on screen as its own message above. Collapsed by default, behind the
+   * same "..." every mail client uses.
+   */
+  const [expandedQuotes, setExpandedQuotes] = useState(() => new Set());
+
+  const toggleQuote = (id) =>
+    setExpandedQuotes((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  const [processingLeadId, setProcessingLeadId] = useState(null);
   const [leadStatuses, setLeadStatuses] = useState({});
   const [replyText, setReplyText] = useState("");
   const [replyingToMessage, setReplyingToMessage] = useState(null);
@@ -67,6 +195,18 @@ const Inbox = () => {
     title: "",
     message: "",
     onConfirm: null,
+    /*
+     * The confirm button's own label and tone.
+     *
+     * This dialog hardcoded "Delete" in red, because deleting was the
+     * only thing that ever used it. The first other caller inherited a
+     * red Delete button on a prompt about sending email — a dialog that
+     * describes one action and offers a button naming another is worse
+     * than no dialog. Every confirm now names its own action, and red is
+     * opt-in for the ones that actually destroy something.
+     */
+    confirmLabel: "Confirm",
+    danger: false,
   });
 
   // ── AI Replies ──────────────────────────────────────────────────────────────
@@ -102,13 +242,22 @@ const Inbox = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const showModal = ({ type = "info", title, message, onConfirm = null }) => {
+  const showModal = ({
+    type = "info",
+    title,
+    message,
+    onConfirm = null,
+    confirmLabel = "Confirm",
+    danger = false,
+  }) => {
     setModal({
       open: true,
       type,
       title,
       message,
       onConfirm,
+      confirmLabel,
+      danger,
     });
   };
 
@@ -119,6 +268,8 @@ const Inbox = () => {
       title: "",
       message: "",
       onConfirm: null,
+      confirmLabel: "Confirm",
+      danger: false,
     });
   };
 
@@ -142,12 +293,97 @@ const Inbox = () => {
     }
   };
 
+  /*
+   * The counterpart to markEmailAsRead. Same store, same event, so the
+   * row dot and the sidebar badge move together — see the note in
+   * controller/leadActions.js about why read state stays on the client.
+   */
+  const markEmailAsUnread = (emailId) => {
+    if (!emailId) return;
+    try {
+      const readIds = new Set(
+        JSON.parse(localStorage.getItem("readEmailIds") || "[]")
+      );
+      if (readIds.delete(emailId)) {
+        localStorage.setItem("readEmailIds", JSON.stringify(Array.from(readIds)));
+        window.dispatchEvent(new Event("readEmailUpdated"));
+      }
+    } catch (e) {
+      console.error("Error updating read email status:", e);
+    }
+  };
+
+  const isEmailRead = (emailId) => {
+    try {
+      const readIds = new Set(
+        JSON.parse(localStorage.getItem("readEmailIds") || "[]")
+      );
+      return readIds.has(emailId);
+    } catch {
+      return false;
+    }
+  };
+
+  /*
+   * Message bodies are fetched when a thread is opened, not with the
+   * list.
+   *
+   * htmlBody is ~70% of the mail collection's bytes and the list never
+   * renders it, so the list endpoint no longer sends it. This pulls it
+   * for the one thread being read and merges it in by id.
+   *
+   * The thread opens immediately either way — the pane falls back to
+   * textBody, which the list does carry, so there is no blank frame
+   * while this is in flight.
+   */
+  const loadThreadBodies = async (thread) => {
+    if (!thread?._id) return;
+
+    try {
+      const token = localStorage.getItem("usertoken");
+      const res = await axios.get(`${API_BASE_URL}/thread/${thread._id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const bodies = res.data?.data?.bodies || {};
+      if (!Object.keys(bodies).length) return;
+
+      const withBodies = (message) => {
+        const found = bodies[String(message?._id)];
+        if (!found) return message;
+        return {
+          ...message,
+          htmlBody: found.htmlBody || message.htmlBody || "",
+          textBody: message.textBody || found.textBody || "",
+        };
+      };
+
+      const merge = (item) => ({
+        ...withBodies(item),
+        replies: (item.replies || []).map(withBodies),
+      });
+
+      /* Only if the user is still looking at this thread. */
+      setSelectedEmail((prev) =>
+        prev && prev._id === thread._id ? merge(prev) : prev,
+      );
+
+      /* Cached on the list too, so reopening it is instant. */
+      setEmails((prev) =>
+        prev.map((item) => (item._id === thread._id ? merge(item) : item)),
+      );
+    } catch (err) {
+      console.error("Could not load the conversation bodies:", err);
+    }
+  };
+
   const handleEmailClick = (email) => {
     setSelectedEmail(email);
     setReplyingToMessage(null);
     setActiveReplyMsgId(null);
     if (email && email._id) {
       markEmailAsRead(email._id);
+      loadThreadBodies(email);
     }
   };
 
@@ -229,7 +465,21 @@ const Inbox = () => {
           thread.body ||
           "";
 
+        /*
+         * Spread the thread FIRST, then override.
+         *
+         * This used to be a field whitelist, which silently dropped every
+         * field it did not name — matchedScenarioId, connectionId,
+         * isArchived, queuedForScenarioId, cc, attachments. So the
+         * scenario filter had nothing to match on and returned an empty
+         * list while the sidebar, which spreads the whole thread,
+         * confidently counted the same lead.
+         *
+         * Anything the server adds from now on arrives intact rather than
+         * needing a line added here.
+         */
         return {
+          ...thread,
           _id: thread._id,
           threadId: thread.threadId || thread._id,
           subject: thread.subject || "",
@@ -249,6 +499,7 @@ const Inbox = () => {
           stepType: thread.stepType || null,
           discussion: thread.discussion || [],
           replies: deduplicatedMsgs.map((msg) => ({
+            ...msg,
             _id: msg._id,
             subject: msg.subject || "",
             textBody: msg.textBody || msg.body || "",
@@ -270,9 +521,91 @@ const Inbox = () => {
   const prevEmailMapRef = useRef(new Map());
   const selectedEmailRef = useRef(selectedEmail);
 
+  /*
+   * The current list, readable from inside fetchEmails without making it
+   * depend on a re-render.
+   */
+  const emailsRef = useRef([]);
+
+  /* The scrolling list, watched so the next page loads before you hit the end. */
+  const listScrollRef = useRef(null);
+  const pageRef = useRef(1);
+
+  /* A request that arrived while another was running, to run next. */
+  const queuedFetchRef = useRef(null);
+
+  /*
+   * True while a sidebar filter or a search is narrowing the list. Read
+   * inside fetchEmails, which runs from timers and effects where a stale
+   * closure would use the previous value.
+   */
+  const narrowedRef = useRef(
+    (() => {
+      const p = new URLSearchParams(window.location.search);
+      return Boolean(
+        p.get("scenarioId") ||
+          p.get("scenario") ||
+          p.get("connectionId") ||
+          p.get("connection") ||
+          (p.get("filter") && p.get("filter") !== "all"),
+      );
+    })(),
+  );
+
+  /* True on the Archived view, which is the one place archived rows belong. */
+  const archivedViewRef = useRef(
+    new URLSearchParams(window.location.search).get("filter") === "archived",
+  );
+
   useEffect(() => {
     selectedEmailRef.current = selectedEmail;
   }, [selectedEmail]);
+
+  useEffect(() => {
+    emailsRef.current = emails;
+  }, [emails]);
+
+  /*
+   * Load the next page before the user reaches the bottom.
+   *
+   * Fired at 300px from the end rather than at the end itself, so the
+   * rows are usually already there by the time they scroll into view and
+   * the list never visibly stalls.
+   */
+  useEffect(() => {
+    const node = listScrollRef.current;
+    if (!node || !hasMore || loading) return undefined;
+
+    const onScroll = () => {
+      if (loadingMore || fetchInFlightRef.current) return;
+
+      const remaining =
+        node.scrollHeight - node.scrollTop - node.clientHeight;
+
+      if (remaining < 300) {
+        fetchEmails(false, { page: pageRef.current + 1 });
+      }
+    };
+
+    node.addEventListener("scroll", onScroll, { passive: true });
+
+    /* A short list may not scroll at all — check once on arrival. */
+    onScroll();
+
+    return () => node.removeEventListener("scroll", onScroll);
+  }, [hasMore, loading, loadingMore, emails.length]);
+
+  /* Rotate the tip while a fetch is pending, and only then. */
+  useEffect(() => {
+    if (!loading && hasLoaded) return undefined;
+
+    const timer = setInterval(
+      () => setTipIndex((i) => (i + 1) % LOADING_TIPS.length),
+      3200,
+    );
+
+    return () => clearInterval(timer);
+  }, [loading, hasLoaded]);
 
   const playNotificationSound = () => {
     try {
@@ -311,18 +644,100 @@ const Inbox = () => {
     }
   };
 
-  const fetchEmails = async (showLoading = true) => {
+  /*
+   * One request at a time. A background tick that arrives while a fetch
+   * is still running is dropped rather than queued — the newer response
+   * would carry the same data anyway, and stacking them is what made a
+   * slow endpoint feel frozen.
+   */
+  const fetchInFlightRef = useRef(false);
+
+  /*
+   * One page at a time.
+   *
+   * The whole mailbox used to arrive in a single response, so nothing
+   * could be drawn until all of it had. A page is enough to fill the
+   * screen; the rest arrives as the user scrolls.
+   */
+  const PAGE_SIZE = 25;
+
+  const fetchEmails = async (showLoading = true, { page = 1 } = {}) => {
+    /*
+     * One at a time — but a request the user caused is queued, not lost.
+     *
+     * The guard used to drop everything that arrived while a fetch was
+     * running. Right for a background tick, whose data would be a
+     * duplicate. Wrong for a view change, which is the only request that
+     * will ever carry that view: it vanished, and the list was left
+     * empty with loading already finished.
+     */
+    if (fetchInFlightRef.current) {
+      if (showLoading || page > 1) {
+        queuedFetchRef.current = { showLoading, page };
+      }
+      return;
+    }
+
+    const isFirstPage = page === 1;
+
+    /*
+     * Which view this request is for. If it changes while the request is
+     * in flight, the response belongs to a view the user has left and
+     * must not be rendered.
+     */
+    const requestedFor = inboxViewRef.current;
+
     try {
       const userId = localStorage.getItem("userid");
       const token = localStorage.getItem("usertoken");
-      if (!userId) return;
+      if (!userId) {
+        setLoading(false);
+        return;
+      }
+
+      fetchInFlightRef.current = true;
+      if (showLoading && isFirstPage) setLoading(true);
+      if (!isFirstPage) setLoadingMore(true);
 
       const res = await axios.get(`${API_BASE_URL}/getAllEmailsData/${userId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
+        /*
+         * Paging is skipped whenever a filter or a search is active.
+         *
+         * Those are applied on the client, so a page of 25 threads can
+         * narrow to 2 rows — the list would look empty while "load more"
+         * insisted there was more, and a scenario's count would not match
+         * the rows it opened. Filtered views are small by definition, so
+         * they are fetched whole.
+         */
+        params: {
+          /*
+           * A scenario, connection or status filter is a question about
+           * the whole history, and its sidebar count is computed that
+           * way. Asking the server for view=new as well returned only
+           * the unanswered ones — a scenario showing 7 opened on "You
+           * are all caught up".
+           */
+          view: narrowedRef.current ? "all" : inboxViewRef.current,
+          /*
+           * Archived threads are excluded server-side, so the Archived
+           * view has to ask for them explicitly.
+           */
+          ...(archivedViewRef.current ? { includeArchived: 1 } : {}),
+          ...(narrowedRef.current ? {} : { page, limit: PAGE_SIZE }),
+        },
       });
-      const raw = res.data?.data?.threads || [];
+
+      /* Superseded — the user moved on before this arrived. */
+      if (inboxViewRef.current !== requestedFor) return;
+
+      const payload = res.data?.data || {};
+      const raw = payload.threads || [];
+
+      setHasMore(!narrowedRef.current && Boolean(payload.hasMore));
+      setTotalInView(Number(payload.totalThreads) || raw.length);
 
       let data = normalizeEmails(raw);
 
@@ -361,7 +776,61 @@ const Inbox = () => {
       });
       prevEmailMapRef.current = newMap;
 
+      /*
+       * Carry forward bodies the list does not send.
+       *
+       * The list endpoint omits htmlBody — it is fetched per thread when
+       * one is opened. So a background refresh brings back rows WITHOUT
+       * it, and replacing state wholesale threw away what had already
+       * been loaded: a thread that rendered correctly turned into a wall
+       * of run-on text a few seconds later, when the poll landed.
+       *
+       * A row that arrives without a body keeps the one we already have.
+       */
+      const previousById = new Map(
+        emailsRef.current.map((item) => [String(item._id), item]),
+      );
+
+      const keepLoadedBodies = (incoming) => {
+        const previous = previousById.get(String(incoming._id));
+        if (!previous) return incoming;
+
+        const merged = {
+          ...incoming,
+          htmlBody: incoming.htmlBody || previous.htmlBody || "",
+        };
+
+        /* Same rule for each message inside the thread. */
+        const previousReplies = new Map(
+          (previous.replies || []).map((r) => [String(r._id), r]),
+        );
+
+        merged.replies = (incoming.replies || []).map((reply) => {
+          const before = previousReplies.get(String(reply._id));
+          if (!before) return reply;
+          return { ...reply, htmlBody: reply.htmlBody || before.htmlBody || "" };
+        });
+
+        return merged;
+      };
+
+      data = data.map(keepLoadedBodies);
+
+      /*
+       * Page 1 replaces the list; later pages extend it, skipping any
+       * thread already held — a lead arriving mid-scroll shifts the
+       * pages, and a duplicated row is worse than a missing one.
+       */
+      if (!isFirstPage) {
+        const seen = new Set(emailsRef.current.map((item) => String(item._id)));
+        data = [
+          ...emailsRef.current,
+          ...data.filter((item) => !seen.has(String(item._id))),
+        ];
+      }
+
       setEmails(data);
+      pageRef.current = page;
 
       const initialStatuses = {};
       data.forEach((email) => {
@@ -380,7 +849,16 @@ const Inbox = () => {
             (e.conversationId && e.conversationId === currentSelected.conversationId)
         );
         if (updated) {
-          setSelectedEmail(updated);
+          /*
+           * Belt and braces: the match above can be by thread rather than
+           * by id, in which case keepLoadedBodies had nothing to merge.
+           * Never downgrade an open thread to a body-less row.
+           */
+          setSelectedEmail(
+            updated.htmlBody || !currentSelected.htmlBody
+              ? updated
+              : { ...updated, htmlBody: currentSelected.htmlBody, replies: currentSelected.replies || updated.replies },
+          );
           markEmailAsRead(updated._id);
         }
       }
@@ -390,7 +868,23 @@ const Inbox = () => {
         setEmails([]);
       }
     } finally {
-      if (showLoading) setLoading(false);
+      fetchInFlightRef.current = false;
+      setLoadingMore(false);
+
+      /*
+       * A queued request runs now, and `loading` stays on until it
+       * finishes — clearing it between the two would flash an empty list
+       * with an empty-state message in the gap.
+       */
+      const queued = queuedFetchRef.current;
+      queuedFetchRef.current = null;
+
+      if (queued) {
+        fetchEmails(queued.showLoading, { page: queued.page });
+      } else {
+        setLoading(false);
+        setHasLoaded(true);
+      }
     }
   };
 
@@ -401,12 +895,35 @@ const Inbox = () => {
 
     fetchEmails(true);
 
-    // Automatic real-time background polling every 6 seconds
-    const interval = setInterval(() => {
+    /*
+     * Background refresh.
+     *
+     * Was every 6 seconds with no guard, so on a slow response the
+     * requests piled up: each one still in flight when the next fired,
+     * all of them re-fetching the same list, and the browser's per-host
+     * connection limit then delaying the user's own actions.
+     *
+     * Now: one at a time, paused while the tab is hidden, and refreshed
+     * immediately when the tab comes back so nothing looks stale. The
+     * refresh button remains for an on-demand check.
+     */
+    const tick = () => {
+      if (document.hidden) return;
       fetchEmails(false);
-    }, 6000);
+    };
 
-    return () => clearInterval(interval);
+    const interval = setInterval(tick, 20000);
+
+    const onVisible = () => {
+      if (!document.hidden) fetchEmails(false);
+    };
+
+    document.addEventListener("visibilitychange", onVisible);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, []);
 
   // Sync AI replies status from user settings + pre-load company profile
@@ -696,6 +1213,8 @@ const Inbox = () => {
 
     showModal({
       type: "confirm",
+      danger: true,
+      confirmLabel: "Delete",
       title: "Delete Lead",
       message: `Are you sure you want to delete ${idsToDelete.length} selected lead(s)?`,
       onConfirm: async () => {
@@ -731,6 +1250,171 @@ const Inbox = () => {
       },
     });
   };
+
+  /*
+   * Archive / restore. Sends one request per lead rather than a bulk
+   * endpoint because the server moves a whole thread per call, and the
+   * inbox lists threads — one row is one call.
+   */
+  const handleArchiveLeads = async (ids, archived) => {
+    if (!ids.length) return;
+
+    /* Optimistic: the rows leave the current view immediately. */
+    setEmails((prev) =>
+      prev.map((email) =>
+        ids.includes(email._id) ? { ...email, isArchived: archived } : email
+      )
+    );
+
+    try {
+      const token = localStorage.getItem("usertoken");
+
+      await Promise.all(
+        ids.map((emailId) =>
+          axios.patch(
+            `${API_BASE_URL}/lead-archive/${emailId}`,
+            { archived },
+            { headers: { Authorization: `Bearer ${token}` } }
+          )
+        )
+      );
+
+      setSelectedLeadIds(new Set());
+
+      if (archived && selectedEmail && ids.includes(selectedEmail._id)) {
+        setSelectedEmail(null);
+      }
+    } catch (err) {
+      console.error("Error archiving leads:", err);
+
+      /* Put them back — a failed archive must not look like it worked. */
+      setEmails((prev) =>
+        prev.map((email) =>
+          ids.includes(email._id) ? { ...email, isArchived: !archived } : email
+        )
+      );
+
+      showModal({
+        type: "error",
+        title: archived ? "Archive Failed" : "Restore Failed",
+        message:
+          err.response?.data?.message ||
+          `Unable to ${archived ? "archive" : "restore"} the selected lead(s).`,
+      });
+    }
+  };
+
+  /*
+   * Run the lead's own scenario against it on demand.
+   *
+   * Confirmed first, because it sends real mail to a real customer and
+   * the lead may already have been answered once — the server reports
+   * which case it was, and the result says so.
+   */
+  const handleProcessScenario = (email) => {
+    if (!email?._id) return;
+
+    showModal({
+      type: "confirm",
+      confirmLabel: "Run scenario",
+      title: "Process Scenario",
+      message:
+        "Run this lead's scenario against it now? If the scenario sends a reply, it goes to the real sender.",
+      onConfirm: async () => {
+        closeModal();
+        setProcessingLeadId(email._id);
+
+        try {
+          const token = localStorage.getItem("usertoken");
+          const res = await axios.post(
+            `${API_BASE_URL}/lead-process-scenario/${email._id}`,
+            {},
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+
+          showModal({
+            type: "info",
+            title: "Scenario Processed",
+            message: res.data?.message || "The scenario ran against this lead.",
+          });
+
+          fetchEmails();
+        } catch (err) {
+          console.error("Error processing scenario:", err);
+          showModal({
+            type: "error",
+            title: "Could Not Process",
+            message:
+              err.response?.data?.message ||
+              "The scenario could not be run against this lead.",
+          });
+        } finally {
+          setProcessingLeadId(null);
+        }
+      },
+    });
+  };
+
+  /*
+   * Open the row menu.
+   *
+   * A right-click inside an existing checkbox selection acts on that
+   * whole selection; anywhere else acts on the one row, and does NOT
+   * change the selection — right-clicking to check one thing should not
+   * silently throw away what the user had already ticked.
+   */
+  const openLeadContextMenu = (event, email) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const ids = selectedLeadIds.has(email._id)
+      ? [...selectedLeadIds]
+      : [email._id];
+
+    /*
+     * Clamped so a click near the right or bottom edge does not open a
+     * menu that runs off screen with its last items unreachable.
+     */
+    const MENU_W = 216;
+    const MENU_H = 340;
+
+    setContextMenu({
+      x: Math.min(event.clientX, window.innerWidth - MENU_W - 8),
+      y: Math.min(event.clientY, window.innerHeight - MENU_H - 8),
+      email,
+      ids,
+    });
+  };
+
+  const closeContextMenu = () => setContextMenu(null);
+
+  /*
+   * Dismissal. Anything that moves the menu away from what it points at
+   * closes it: a click elsewhere, Escape, a scroll, a resize.
+   */
+  useEffect(() => {
+    if (!contextMenu) return undefined;
+
+    const close = () => setContextMenu(null);
+    const onKey = (e) => {
+      if (e.key === "Escape") close();
+    };
+
+    window.addEventListener("click", close);
+    window.addEventListener("contextmenu", close);
+    window.addEventListener("resize", close);
+    window.addEventListener("keydown", onKey);
+    /* Capture: the list scrolls in its own container, not on window. */
+    window.addEventListener("scroll", close, true);
+
+    return () => {
+      window.removeEventListener("click", close);
+      window.removeEventListener("contextmenu", close);
+      window.removeEventListener("resize", close);
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("scroll", close, true);
+    };
+  }, [contextMenu]);
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -931,6 +1615,18 @@ const Inbox = () => {
       setActiveReplyMsgId("none");
       setSelectedFiles([]);
       if (fileInputRef.current) fileInputRef.current.value = "";
+
+      /*
+       * Pull the sent message's own body back in.
+       *
+       * The list omits htmlBody, so a reply appended locally has only
+       * its text version until this runs — and the text version is the
+       * one carrying "> " quote markers. Fetching the thread gives the
+       * message the markup it was actually sent with.
+       */
+      if (selectedEmail?._id) {
+        loadThreadBodies(selectedEmail);
+      }
     } catch (err) {
       console.error("Error sending thread reply:", err);
       showModal({
@@ -944,8 +1640,22 @@ const Inbox = () => {
   };
 
   const formatEmailBody = (html, text, isDark = false) => {
-    let isHtml = html && html.trim().length > 0;
-    let content = isHtml ? html : text;
+    /*
+     * Is this markup, or is it text?
+     *
+     * It used to be "html is non-empty", and buildEmailHtml() passes the
+     * same value as both arguments — so ANY content took the HTML branch.
+     * That was harmless while bodies were real HTML. Now that incoming
+     * mail is stored as text (see the backend's utils/emailBody.js), the
+     * same assumption would render a plain-text message as unescaped
+     * markup: no line breaks, no linkified URLs, one run-on paragraph.
+     *
+     * looksLikeMarkup (module scope) tests for actual tags, so text goes
+     * down the text branch — escaped, linkified, line breaks preserved —
+     * and legacy stored HTML still renders the way it always did.
+     */
+    let isHtml = looksLikeMarkup(html);
+    let content = isHtml ? html : text || html;
 
     if (!content) return "";
 
@@ -995,10 +1705,45 @@ const Inbox = () => {
         .replace(/'/g, "&#039;");
 
       const linkColor = isDark ? "#60A5FA" : "#2563EB";
-      content = content.replace(
-        /(https?:\/\/[^\s<]+)/g,
-        `<a href="$1" target="_blank" rel="noreferrer" style="color:${linkColor};text-decoration:underline;font-weight:500">$1</a>`
-      );
+
+      /*
+       * Trailing punctuation is sentence, not URL.
+       *
+       * A plain `[^\s<]+` swallowed it, so "our offer (https://x.com/deal)"
+       * produced a link to ".../deal)" — a 404. Sentence-ending characters
+       * are peeled off and left outside the anchor; a closing bracket is
+       * only peeled when the URL has no matching opener, so genuinely
+       * parenthesised URLs still work.
+       */
+      content = content.replace(/(https?:\/\/[^\s<]+)/g, (match) => {
+        let url = match;
+        let tail = "";
+
+        while (url.length > 1) {
+          const last = url[url.length - 1];
+
+          if (".,;:!?'\"".includes(last)) {
+            tail = last + tail;
+            url = url.slice(0, -1);
+            continue;
+          }
+
+          const opener = last === ")" ? "(" : last === "]" ? "[" : null;
+
+          if (
+            opener &&
+            url.split(last).length - 1 > url.split(opener).length - 1
+          ) {
+            tail = last + tail;
+            url = url.slice(0, -1);
+            continue;
+          }
+
+          break;
+        }
+
+        return `<a href="${url}" target="_blank" rel="noreferrer" style="color:${linkColor};text-decoration:underline;font-weight:500">${url}</a>${tail}`;
+      });
 
       content = content.replace(
         /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g,
@@ -1036,6 +1781,84 @@ const Inbox = () => {
           padding-left: 12px !important;
           opacity: 0.9;
         }
+        /*
+          Bounds for the markup we now keep.
+
+          Incoming HTML is reduced to basic semantic tags with every
+          width, style and class removed, so the sender can no longer
+          size anything — which means WE have to. Without these an
+          800px logo or a wide data table pushes the reading pane out
+          and the whole page scrolls sideways.
+        */
+        .email-body-content-${isDark ? "dark" : "light"} img {
+          max-width: 100% !important;
+          height: auto !important;
+          border-radius: 6px;
+        }
+        .email-body-content-${isDark ? "dark" : "light"} table {
+          width: auto !important;
+          max-width: 100% !important;
+          border-collapse: collapse;
+          margin: 10px 0;
+          font-size: 12.5px;
+          display: block;
+          overflow-x: auto;
+        }
+        .email-body-content-${isDark ? "dark" : "light"} th,
+        .email-body-content-${isDark ? "dark" : "light"} td {
+          border: 1px solid ${quoteBorder};
+          padding: 6px 10px;
+          text-align: left;
+          vertical-align: top;
+        }
+        .email-body-content-${isDark ? "dark" : "light"} th {
+          font-weight: 700;
+          background: ${isDark ? "#1E293B" : "#F1F5F9"};
+        }
+        .email-body-content-${isDark ? "dark" : "light"} h1,
+        .email-body-content-${isDark ? "dark" : "light"} h2,
+        .email-body-content-${isDark ? "dark" : "light"} h3,
+        .email-body-content-${isDark ? "dark" : "light"} h4,
+        .email-body-content-${isDark ? "dark" : "light"} h5,
+        .email-body-content-${isDark ? "dark" : "light"} h6 {
+          font-weight: 700;
+          line-height: 1.3;
+          margin: 14px 0 6px;
+        }
+        .email-body-content-${isDark ? "dark" : "light"} h1 { font-size: 18px; }
+        .email-body-content-${isDark ? "dark" : "light"} h2 { font-size: 16px; }
+        .email-body-content-${isDark ? "dark" : "light"} h3 { font-size: 15px; }
+        .email-body-content-${isDark ? "dark" : "light"} h4,
+        .email-body-content-${isDark ? "dark" : "light"} h5,
+        .email-body-content-${isDark ? "dark" : "light"} h6 { font-size: 14px; }
+        .email-body-content-${isDark ? "dark" : "light"} p { margin: 0 0 10px; }
+        .email-body-content-${isDark ? "dark" : "light"} ul,
+        .email-body-content-${isDark ? "dark" : "light"} ol {
+          margin: 8px 0 10px;
+          padding-left: 22px;
+        }
+        .email-body-content-${isDark ? "dark" : "light"} li { margin: 3px 0; }
+        .email-body-content-${isDark ? "dark" : "light"} a {
+          color: ${isDark ? "#60A5FA" : "#2563EB"};
+          text-decoration: underline;
+          word-break: break-word;
+        }
+        .email-body-content-${isDark ? "dark" : "light"} pre {
+          background: ${isDark ? "#0F172A" : "#F1F5F9"};
+          padding: 10px 12px;
+          border-radius: 8px;
+          overflow-x: auto;
+          font-size: 12.5px;
+        }
+        .email-body-content-${isDark ? "dark" : "light"} code {
+          font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+          font-size: 12.5px;
+        }
+        .email-body-content-${isDark ? "dark" : "light"} hr {
+          border: none;
+          border-top: 1px solid ${quoteBorder};
+          margin: 14px 0;
+        }
       </style>
       <div class="email-body-content email-body-content-${isDark ? "dark" : "light"}" style="font-family: system-ui, -apple-system, sans-serif; font-size: 13.5px; line-height: 1.6; color: ${textColor}; max-width: 100%; word-break: break-word; overflow-wrap: break-word; overflow-x: auto; isolation: isolate;">
         ${content}
@@ -1051,6 +1874,66 @@ const Inbox = () => {
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const sidebarFilter = searchParams.get("filter") || "all";
+
+  /*
+   * Changing view closes the open conversation.
+   *
+   * The route is the same component for every sidebar entry, so
+   * navigating from a thread back to Inbox — or across to a filter — left
+   * the reading pane mounted and the list unreachable. It looked like the
+   * sidebar had stopped responding.
+   */
+  useEffect(() => {
+    /*
+     * The view lives in the URL so the sidebar can link to it and a
+     * refresh keeps you where you were. Absent means "new", which is the
+     * landing view: the leads still waiting on you.
+     */
+    const nextView =
+      (new URLSearchParams(location.search).get("view") || "new").toLowerCase() ===
+      "all"
+        ? "all"
+        : "new";
+
+    const params = new URLSearchParams(location.search);
+
+    /* Any of these narrows the list on the client — see narrowedRef. */
+    const nowNarrowed = Boolean(
+      params.get("scenarioId") ||
+        params.get("scenario") ||
+        params.get("connectionId") ||
+        params.get("connection") ||
+        (params.get("filter") && params.get("filter") !== "all"),
+    );
+
+    const viewChanged = nextView !== inboxViewRef.current;
+    const narrowingChanged = nowNarrowed !== narrowedRef.current;
+    const archivedChanged =
+      (params.get("filter") === "archived") !== archivedViewRef.current;
+
+    narrowedRef.current = nowNarrowed;
+    archivedViewRef.current = params.get("filter") === "archived";
+
+    if (viewChanged || narrowingChanged || archivedChanged) {
+      setInboxView(nextView);
+      setEmails([]);
+      setHasMore(false);
+      setLoading(true);
+      setHasLoaded(false);
+      pageRef.current = 1;
+      fetchEmails(true, { page: 1 });
+    }
+
+    setSelectedEmail(null);
+    setReplyingToMessage(null);
+    setActiveReplyMsgId(null);
+    setSelectedLeadIds(new Set());
+    /*
+     * Keyed on the navigation, not just the query string: clicking Inbox
+     * while already on an unfiltered /inbox produces the same URL, and
+     * watching `search` alone would leave an open thread on screen.
+     */
+  }, [location.key, location.search]);
   const targetScenarioId = searchParams.get("scenarioId");
   const targetScenarioName = searchParams.get("scenario");
   const targetConnectionId = searchParams.get("connectionId");
@@ -1059,6 +1942,14 @@ const Inbox = () => {
 
   const isThreadReplied = (e) => {
     if (!e) return false;
+
+    /*
+     * The server decides this, from the newest message in the thread.
+     * Everything below is the old local guess, kept only for a thread
+     * that arrived without the field.
+     */
+    if (e.newestDirection) return e.newestDirection === "outgoing";
+
     const msgs = e.replies || e.conversation || e.discussion || [];
 
     if (!msgs || msgs.length === 0) {
@@ -1072,9 +1963,14 @@ const Inbox = () => {
       latestMsg.direction === "outgoing" ||
       latestMsg.stepType === "Auto Reply" ||
       latestMsg.stepType === "Manual Reply" ||
-      latestMsg.role === "assistant" ||
-      (latestMsg.senderAddress && latestMsg.senderAddress.includes("2014tabontech@gmail.com"));
+      latestMsg.role === "assistant";
 
+    /*
+     * A hardcoded "or the sender is 2014tabontech@gmail.com" used to sit
+     * here — one developer's mailbox deciding, for every account on the
+     * platform, whether a lead counted as replied to. direction and
+     * stepType already carry that, and they carry it for everyone.
+     */
     return isOutgoing;
   };
 
@@ -1104,74 +2000,31 @@ const Inbox = () => {
   ).length;
 
   const filteredEmails = emails.filter((email) => {
-    // 1. Specific Scenario Filter
+    /*
+     * Scenario and connection matching come from utils/leadFilters.js,
+     * the same definition the sidebar counts use — so a row that says 2
+     * gives you those 2 when you click it.
+     *
+     * Both filters used to end in a blanket "otherwise match anyway",
+     * which meant neither of them ever excluded a single lead: picking a
+     * scenario or a connection returned the whole inbox.
+     */
     if (targetScenarioId || targetScenarioName) {
-      const tId = String(targetScenarioId || "");
-      const tName = (targetScenarioName || "").toLowerCase().trim();
-      const eScenId = String(email.scenarioId || email.scenario_id || "");
-      const eScenName = (email.scenarioName || email.scenario || email.service || "").toLowerCase().trim();
+      const matches = emailMatchesScenario(email, {
+        _id: targetScenarioId,
+        name: targetScenarioName,
+      });
 
-      let matchScen = false;
-      if (tId && eScenId && eScenId === tId) matchScen = true;
-      else if (tName && eScenName && (eScenName === tName || eScenName.includes(tName) || tName.includes(eScenName))) matchScen = true;
-      else if (tName && tName.includes("shopify")) {
-        matchScen =
-          (email.service || "").toLowerCase().includes("shopify") ||
-          (email.subject || "").toLowerCase().includes("shopify") ||
-          email.stepType === "shopify-test-parent" ||
-          !!email.extraFields?.storeName;
-      } else if (tName && tName.includes("custom")) {
-        matchScen =
-          (email.service || "").toLowerCase().includes("custom") ||
-          email.emailType === "custom" ||
-          (email.subject || "").toLowerCase().includes("custom") ||
-          (!((email.service || "").toLowerCase().includes("shopify") || (email.subject || "").toLowerCase().includes("shopify")));
-      }
-
-      // Fallback: If root email in DB doesn't have an explicit scenarioId yet, display it as part of the user's scenario inbox
-      if (!matchScen && (!eScenId || eScenId === "undefined" || eScenId === "null")) {
-        matchScen = true;
-      }
-
-      if (!matchScen) return false;
+      if (!matches) return false;
     }
 
-    // 2. Specific Connection Filter
     if (targetConnectionId || targetConnectionName || targetConnectionEmail) {
-      const tId = String(targetConnectionId || "");
-      const tConnName = (targetConnectionName || "").toLowerCase().trim();
-      const tConnEmail = (targetConnectionEmail || "").toLowerCase().trim();
-      const eConnId = String(email.connectionId || email.connection_id || "");
-      const recip = (email.recipientAddress || "").toLowerCase();
-      const sender = (email.senderAddress || "").toLowerCase();
+      const matches = emailMatchesConnection(email, {
+        _id: targetConnectionId,
+        email: targetConnectionEmail,
+      });
 
-      let matchConn = false;
-
-      // 1. Match by Connection ID
-      if (tId && eConnId && (eConnId === tId || tId === "conn_default")) {
-        matchConn = true;
-      }
-
-      // 2. Match by Connection Email (e.g. 2014tabontech@gmail.com)
-      if (!matchConn && tConnEmail && tConnEmail.includes("@")) {
-        if (recip.includes(tConnEmail) || sender.includes(tConnEmail)) matchConn = true;
-        const cleanUser = tConnEmail.split("@")[0];
-        if (!matchConn && cleanUser && cleanUser.length >= 2 && (recip.includes(cleanUser) || sender.includes(cleanUser))) matchConn = true;
-      }
-
-      // 3. Match by Connection Name if it's an email address
-      if (!matchConn && tConnName && tConnName.includes("@")) {
-        if (recip.includes(tConnName) || sender.includes(tConnName)) matchConn = true;
-        const cleanUser = tConnName.split("@")[0];
-        if (!matchConn && cleanUser && cleanUser.length >= 2 && (recip.includes(cleanUser) || sender.includes(cleanUser))) matchConn = true;
-      }
-
-      // 4. Default Connection Match: All inbox emails belong to the user's active connections
-      if (!matchConn) {
-        matchConn = true;
-      }
-
-      if (!matchConn) return false;
+      if (!matches) return false;
     }
 
     // 3. Category/Status Filter
@@ -1191,6 +2044,16 @@ const Inbox = () => {
           (!((email.service || "").toLowerCase().includes("shopify") || (email.subject || "").toLowerCase().includes("shopify")));
         if (!isCustom) return false;
       }
+    }
+
+    /*
+     * Archived leads are filed away, not deleted: out of every view
+     * except the one that exists to show them.
+     */
+    if (sidebarFilter === "archived") {
+      if (!email.isArchived) return false;
+    } else if (email.isArchived) {
+      return false;
     }
 
     if (sidebarFilter === "awaiting") {
@@ -1225,19 +2088,25 @@ const Inbox = () => {
 
       {/* Alert / Confirm Modal */}
       {modal.open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
           <div className="w-full max-w-[440px] rounded-[24px] bg-white p-7 shadow-2xl border border-slate-100/80">
             <div
               className={`flex h-12 w-12 items-center justify-center rounded-[16px] ${
                 modal.type === "error"
                   ? "bg-red-50 text-red-600 border border-red-100"
                   : modal.type === "confirm"
-                  ? "bg-[#FFF8EE] text-[#D97706] border border-[#FDE68A]/40"
+                  ? modal.danger
+                    ? "bg-red-50 text-red-600 border border-red-100"
+                    : "bg-[#FFF8EE] text-[#D97706] border border-[#FDE68A]/40"
                   : "bg-indigo-50 text-indigo-600 border border-indigo-100"
               }`}
             >
               {modal.type === "confirm" ? (
-                <FiMail size={22} className="text-[#D97706]" />
+                modal.danger ? (
+                  <FiTrash2 size={22} className="text-[#DC2626]" />
+                ) : (
+                  <FiAlertCircle size={22} className="text-[#D97706]" />
+                )
               ) : modal.type === "error" ? (
                 <FiAlertCircle size={22} />
               ) : (
@@ -1265,9 +2134,13 @@ const Inbox = () => {
                 <button
                   type="button"
                   onClick={modal.onConfirm}
-                  className="rounded-[12px] bg-[#DC2626] px-6 py-2.5 text-xs font-bold text-white hover:bg-[#B91C1C] transition cursor-pointer shadow-xs active:scale-[0.98]"
+                  className={`rounded-[12px] px-6 py-2.5 text-xs font-bold text-white transition cursor-pointer shadow-xs active:scale-[0.98] ${
+                    modal.danger
+                      ? "bg-[#DC2626] hover:bg-[#B91C1C]"
+                      : "bg-[#111110] hover:bg-black"
+                  }`}
                 >
-                  Delete
+                  {modal.confirmLabel}
                 </button>
               ) : (
                 <button
@@ -1309,11 +2182,21 @@ const Inbox = () => {
               >
                 <FiRefreshCw size={14} className={loading ? "animate-spin" : ""} />
               </button>
-              <span className="text-xs text-slate-400 font-medium shrink-0">{filteredEmails.length} leads</span>
+              {/*
+                Says how many are loaded out of how many exist, so a
+                partially loaded list never looks like the whole thing.
+              */}
+              <span className="text-xs text-slate-400 font-medium shrink-0">
+                {loading || !hasLoaded
+                  ? "Loading…"
+                  : hasMore && !searchTerm.trim()
+                    ? `${filteredEmails.length} of ${totalInView} leads`
+                    : `${filteredEmails.length} lead${filteredEmails.length === 1 ? "" : "s"}`}
+              </span>
             </div>
 
             {/* Table Header */}
-            {!loading && filteredEmails.length > 0 && (
+            {!loading && hasLoaded && filteredEmails.length > 0 && (
               <div className="shrink-0 bg-white border-b border-slate-200 px-5 py-2 flex items-center gap-4">
                 <input
                   type="checkbox"
@@ -1334,27 +2217,114 @@ const Inbox = () => {
             )}
 
             {/* Lead Rows */}
-            <div className="flex-1 overflow-y-auto bg-white">
-              {loading && (
-                <div className="flex h-40 items-center justify-center">
-                  <div className="flex flex-col items-center gap-2">
-                    <FiRefreshCw className="animate-spin text-slate-400" size={20} />
-                    <p className="text-xs text-slate-500">Loading leads...</p>
+            <div ref={listScrollRef} className="flex-1 overflow-y-auto bg-white">
+              {/*
+                Skeleton rows rather than a spinner in an empty box.
+
+                They occupy the shape the real rows will, so nothing
+                jumps when the data lands, and the page reads as "this is
+                filling in" rather than "this is empty".
+              */}
+              {/*
+                What a pending inbox looks like.
+
+                Centred, because that is where the eye already is, and it
+                names what is being fetched rather than showing a bare
+                spinner. The tip rotates so a slow first load has
+                something to read — several of these are features people
+                would not otherwise find.
+              */}
+              {(loading || !hasLoaded) && (
+                <div
+                  aria-busy="true"
+                  aria-live="polite"
+                  className="flex h-full min-h-[320px] flex-col items-center justify-center px-6 text-center"
+                >
+                  <div className="relative mb-5 flex h-14 w-14 items-center justify-center">
+                    <span className="absolute inline-flex h-full w-full rounded-full bg-slate-200 opacity-60 animate-ping motion-reduce:hidden" />
+                    <span className="relative flex h-14 w-14 items-center justify-center rounded-full border border-slate-200 bg-white">
+                      <FiRefreshCw className="animate-spin text-slate-500" size={20} />
+                    </span>
+                  </div>
+
+                  <p className="text-sm font-semibold text-slate-800">
+                    {narrowedRef.current
+                      ? "Loading these leads…"
+                      : inboxView === "all"
+                        ? "Please wait — loading all of your leads"
+                        : "Loading your new leads…"}
+                  </p>
+
+                  <p className="mt-1 text-xs text-slate-400">
+                    {inboxView === "all" && !narrowedRef.current
+                      ? "The full history can take a moment the first time."
+                      : "This usually takes a second."}
+                  </p>
+
+                  <div className="mt-7 max-w-sm rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Did you know
+                    </p>
+                    <p
+                      key={tipIndex}
+                      className="mt-1 text-xs leading-relaxed text-slate-600 animate-in fade-in duration-500"
+                    >
+                      {LOADING_TIPS[tipIndex]}
+                    </p>
                   </div>
                 </div>
               )}
 
-              {!loading && filteredEmails.length === 0 && (
+              {!loading && hasLoaded && filteredEmails.length === 0 && (
                 <div className="flex h-60 flex-col items-center justify-center text-center px-6">
                   <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
                     <FiInbox size={22} />
                   </div>
-                  <p className="text-sm font-semibold text-slate-700">No leads found</p>
-                  <p className="mt-1 text-xs text-slate-400">Try adjusting your search or filter.</p>
+
+                  {searchTerm.trim() ? (
+                    <>
+                      <p className="text-sm font-semibold text-slate-700">
+                        Nothing matches “{searchTerm.trim()}”
+                      </p>
+                      <p className="mt-1 text-xs text-slate-400">
+                        Try a different search, or clear it to see the list again.
+                      </p>
+                    </>
+                  ) : narrowedRef.current ? (
+                    <>
+                      <p className="text-sm font-semibold text-slate-700">
+                        Nothing here yet
+                      </p>
+                      <p className="mt-1 text-xs text-slate-400">
+                        No leads match this filter. Pick another, or open
+                        All to see everything.
+                      </p>
+                    </>
+                  ) : inboxView === "new" ? (
+                    <>
+                      <p className="text-sm font-semibold text-slate-700">
+                        You are all caught up
+                      </p>
+                      <p className="mt-1 text-xs text-slate-400">
+                        Every lead has been answered. Open All to see the
+                        full history.
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-sm font-semibold text-slate-700">
+                        No leads here yet
+                      </p>
+                      <p className="mt-1 text-xs text-slate-400">
+                        Leads appear once a scenario matches an incoming
+                        email.
+                      </p>
+                    </>
+                  )}
                 </div>
               )}
 
-              {!loading && filteredEmails.map((email, idx) => {
+              {!loading && hasLoaded && filteredEmails.map((email, idx) => {
                 const targetAddress = getLeadAddressForThread(email);
                 const name = getNameFromAddress(targetAddress, email);
                 const { company, snippet } = getCompanyAndSnippet(email);
@@ -1387,6 +2357,7 @@ const Inbox = () => {
                         : "bg-white hover:bg-slate-50"
                     }`}
                     onClick={() => handleEmailClick(email)}
+                    onContextMenu={(e) => openLeadContextMenu(e, email)}
                   >
                     {/* Checkbox */}
                     <input
@@ -1394,7 +2365,7 @@ const Inbox = () => {
                       checked={isChecked}
                       onClick={(e) => e.stopPropagation()}
                       onChange={() => toggleLeadSelection(email._id)}
-                      className="h-4 w-4 rounded border-slate-300 text-slate-900 cursor-pointer shrink-0 opacity-0 group-hover:opacity-100 checked:opacity-100 transition"
+                      className="h-4 w-4 rounded border-slate-300 text-slate-900 cursor-pointer shrink-0 opacity-40 group-hover:opacity-100 checked:opacity-100 transition"
                     />
 
                     {/* Unread dot */}
@@ -1424,6 +2395,38 @@ const Inbox = () => {
                   </div>
                 );
               })}
+
+              {/*
+                End of the loaded rows. Says what is happening rather
+                than leaving the list to just stop — a paged list that
+                ends silently reads as a list that has finished.
+              */}
+              {!loading && loadingMore && (
+                <div className="flex items-center justify-center gap-2 border-b border-slate-100 px-5 py-4 text-xs text-slate-500">
+                  <FiRefreshCw className="animate-spin text-slate-400" size={13} />
+                  Loading more leads…
+                </div>
+              )}
+
+              {!loading && !loadingMore && hasMore && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    fetchEmails(false, { page: pageRef.current + 1 })
+                  }
+                  className="w-full border-b border-slate-100 px-5 py-4 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
+                >
+                  Load more ({totalInView - filteredEmails.length} remaining)
+                </button>
+              )}
+
+              {!loading &&
+                !hasMore &&
+                filteredEmails.length > PAGE_SIZE && (
+                  <p className="px-5 py-4 text-center text-[11px] text-slate-400">
+                    That is all {filteredEmails.length} of them.
+                  </p>
+                )}
             </div>
           </div>
         )}
@@ -1502,15 +2505,59 @@ const Inbox = () => {
 
                 return allMessages.map((msg, mIdx) => {
                   const isOutgoing = msg.direction === "outgoing" || msg.stepType === "Auto Reply" || msg.stepType === "Manual Reply" || msg.role === "assistant";
-                  const senderName = isOutgoing
-                    ? "sami"
-                    : getNameFromAddress(msg.senderAddress || msg.from || getLeadAddressForThread(selectedEmail), selectedEmail);
-                  const senderEmailAddr = isOutgoing
-                    ? "2014tabontech@gmail.com"
-                    : msg.senderAddress || msg.from || getLeadAddressForThread(selectedEmail);
-                  const recipientAddr = isOutgoing
-                    ? getNameFromAddress(getLeadAddressForThread(selectedEmail), selectedEmail)
+
+                  /*
+                   * Who actually sent and received THIS message.
+                   *
+                   * Every outgoing message used to render a hardcoded
+                   * "sami <2014tabontech@gmail.com>" — one developer's
+                   * mailbox, shown to every account on the platform,
+                   * regardless of which connection the reply was really
+                   * sent from. The documents carry the truth already:
+                   * outgoing rows store the sending connection in
+                   * senderAddress and the customer in recipientAddress.
+                   *
+                   * The name is read from the message too, not from the
+                   * thread root — passing the root made every message in
+                   * a thread display the root sender's name.
+                   */
+                  const senderEmailAddr = cleanAddress(
+                    msg.senderAddress ||
+                      msg.from ||
+                      (isOutgoing
+                        ? selectedEmail.recipientAddress
+                        : getLeadAddressForThread(selectedEmail)) ||
+                      ""
+                  );
+
+                  const recipientEmailAddr = cleanAddress(
+                    msg.recipientAddress ||
+                      msg.to ||
+                      (isOutgoing
+                        ? getLeadAddressForThread(selectedEmail)
+                        : selectedEmail.recipientAddress) ||
+                      ""
+                  );
+
+                  const senderName = getNameFromAddress(
+                    senderEmailAddr,
+                    /*
+                     * The stored first/last name belongs to whoever sent
+                     * the thread, so it only describes an incoming
+                     * message from that same address.
+                     */
+                    !isOutgoing &&
+                      cleanAddress(selectedEmail.senderAddress || "") ===
+                        senderEmailAddr
+                      ? selectedEmail
+                      : null
+                  );
+
+                  const recipientName = recipientEmailAddr
+                    ? getNameFromAddress(recipientEmailAddr, null)
                     : "me";
+
+                  const isDetailsOpen = expandedMsgDetails === (msg._id || mIdx);
 
                   const msgBody = msg.htmlBody || msg.textBody || msg.latestHtmlBody || msg.latestTextBody || msg.body || msg.content || "";
                   const fullDateStr = formatGmailDate(msg.date || msg.createdAt || msg.timestamp);
@@ -1527,8 +2574,29 @@ const Inbox = () => {
                     : "bg-indigo-100 text-indigo-800 border border-indigo-200";
 
                   const badgeLabel = isOutgoing
-                    ? (msg.stepType === "Auto Reply" ? "AI Auto-Reply" : "Support (You)")
+                    ? (msg.stepType === "Auto Reply" ? "AI Reply" : "Support (You)")
                     : "Customer Lead";
+
+                  /*
+                   * Where a reply from this thread goes, and what to call
+                   * the person receiving it.
+                   *
+                   * Both come from the server, which resolves them the
+                   * same way the send does — so the composer cannot
+                   * promise one recipient and deliver to another.
+                   */
+                  const replyToAddress =
+                    selectedEmail.leadReplyAddress ||
+                    getLeadAddressForThread(selectedEmail) ||
+                    "";
+
+                  const replyToLabel =
+                    selectedEmail.leadName ||
+                    getNameFromAddress(replyToAddress, null);
+
+                  const replyFirstName =
+                    selectedEmail.leadFirstName ||
+                    String(replyToLabel || "there").split(" ")[0];
 
                   const msgIdKey = msg._id || mIdx;
                   const isReplyBoxOpenHere =
@@ -1559,9 +2627,73 @@ const Inbox = () => {
                                 &lt;{senderEmailAddr}&gt;
                               </span>
                             </div>
-                            <span className="text-xs text-slate-500 font-medium flex items-center gap-1 mt-0.5">
-                              to {recipientAddr} <FiChevronDown size={11} className="text-slate-400" />
-                            </span>
+                            <button
+                              type="button"
+                              aria-expanded={isDetailsOpen}
+                              title={
+                                isDetailsOpen
+                                  ? "Hide details"
+                                  : "Show from, to and date"
+                              }
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setExpandedMsgDetails(
+                                  isDetailsOpen ? null : msg._id || mIdx
+                                );
+                              }}
+                              className="mt-0.5 flex w-fit items-center gap-1 rounded px-1 -ml-1 text-xs font-medium text-slate-500 transition hover:bg-slate-200/60 hover:text-slate-700 cursor-pointer"
+                            >
+                              to {recipientName}
+                              <FiChevronDown
+                                size={11}
+                                className={`text-slate-400 transition-transform ${
+                                  isDetailsOpen ? "rotate-180" : ""
+                                }`}
+                              />
+                            </button>
+
+                            {isDetailsOpen && (
+                              <dl className="mt-2 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 rounded-lg border border-slate-200 bg-white/80 px-3 py-2 text-[11px]">
+                                <dt className="font-semibold text-slate-400">
+                                  from
+                                </dt>
+                                <dd className="break-all text-slate-700">
+                                  {senderName && senderName !== senderEmailAddr
+                                    ? `${senderName} <${senderEmailAddr || "unknown"}>`
+                                    : senderEmailAddr || "unknown"}
+                                </dd>
+
+                                <dt className="font-semibold text-slate-400">
+                                  to
+                                </dt>
+                                <dd className="break-all text-slate-700">
+                                  {recipientEmailAddr || "unknown"}
+                                </dd>
+
+                                {(msg.cc || []).length > 0 && (
+                                  <>
+                                    <dt className="font-semibold text-slate-400">
+                                      cc
+                                    </dt>
+                                    <dd className="break-all text-slate-700">
+                                      {msg.cc.join(", ")}
+                                    </dd>
+                                  </>
+                                )}
+
+                                <dt className="font-semibold text-slate-400">
+                                  date
+                                </dt>
+                                <dd className="text-slate-700">{fullDateStr}</dd>
+
+                                <dt className="font-semibold text-slate-400">
+                                  subject
+                                </dt>
+                                <dd className="break-words text-slate-700">
+                                  {msg.subject || selectedEmail.subject || "—"}
+                                </dd>
+                              </dl>
+                            )}
                           </div>
                         </div>
 
@@ -1575,10 +2707,12 @@ const Inbox = () => {
                             onClick={() => {
                               setActiveReplyMsgId(msgIdKey);
                               setReplyingToMessage(msg);
-                              const targetName = isOutgoing
-                                ? getNameFromAddress(getLeadAddressForThread(selectedEmail), selectedEmail)
-                                : senderName;
-                              const greeting = `Hi ${targetName.split(" ")[0]}, `;
+                              /*
+                                Greet whoever the reply is going to, from
+                                the same resolved identity the header and
+                                placeholder use.
+                              */
+                              const greeting = `Hi ${replyFirstName}, `;
                               if (!replyText || !replyText.startsWith(greeting)) {
                                 setReplyText(greeting);
                               }
@@ -1599,9 +2733,55 @@ const Inbox = () => {
                       {/* Message Body (Gmail Style Full Width) */}
                       <div className="pl-13 pr-4 text-[#202124] text-sm leading-relaxed font-normal">
                         {msgBody ? (
-                          <div
-                            dangerouslySetInnerHTML={{ __html: buildEmailHtml(msgBody, false) }}
-                          />
+                          (() => {
+                            const { main, quoted } = splitQuotedBody(
+                              msgBody,
+                              looksLikeMarkup(msgBody),
+                            );
+
+                            const quoteOpen = expandedQuotes.has(msgIdKey);
+
+                            return (
+                              <>
+                                <div
+                                  dangerouslySetInnerHTML={{
+                                    __html: buildEmailHtml(main, false),
+                                  }}
+                                />
+
+                                {quoted && (
+                                  <div className="mt-1">
+                                    <button
+                                      type="button"
+                                      onClick={() => toggleQuote(msgIdKey)}
+                                      aria-expanded={quoteOpen}
+                                      title={
+                                        quoteOpen
+                                          ? "Hide the quoted conversation"
+                                          : "Show the quoted conversation"
+                                      }
+                                      className={`inline-flex items-center gap-1 rounded border px-2 py-0.5 text-xs font-bold leading-none transition ${
+                                        quoteOpen
+                                          ? "border-slate-400 bg-slate-200 text-slate-700"
+                                          : "border-slate-300 bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700"
+                                      }`}
+                                    >
+                                      •••
+                                    </button>
+
+                                    {quoteOpen && (
+                                      <div
+                                        className="mt-2 border-l-2 border-slate-200 pl-3 text-slate-500"
+                                        dangerouslySetInnerHTML={{
+                                          __html: buildEmailHtml(quoted, false),
+                                        }}
+                                      />
+                                    )}
+                                  </div>
+                                )}
+                              </>
+                            );
+                          })()
                         ) : (
                           <p className="text-sm italic text-slate-400">No content</p>
                         )}
@@ -1634,13 +2814,41 @@ const Inbox = () => {
                               <div className="h-7 w-7 rounded-full bg-[#8E44AD] text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-xs">
                                 S
                               </div>
-                              <div className="flex items-center gap-1.5">
+                              {/*
+                                Where this reply is going.
+
+                                It used to name whoever sent the message
+                                being replied to — which, on a relayed
+                                Partner Directory lead, is
+                                partners@shopify.com. The reply does not
+                                go there, so the header was describing
+                                something that would not happen. The
+                                address is shown in full, because "who
+                                will receive this" is not a detail to
+                                leave to inference.
+                              */}
+                              <div className="flex flex-wrap items-center gap-1.5">
                                 <FiCornerUpLeft size={14} className="text-slate-500" />
-                                <FiChevronDown size={12} className="text-slate-400" />
-                                <span>
-                                  {replyingToMessage
-                                    ? getNameFromAddress(replyingToMessage.senderAddress || replyingToMessage.from, selectedEmail)
-                                    : getNameFromAddress(getLeadAddressForThread(selectedEmail), selectedEmail)}
+                                <span className="text-slate-500 font-medium">To</span>
+                                <span className="font-semibold text-slate-800">
+                                  {replyToLabel}
+                                </span>
+                                {/*
+                                  The address itself is the whole point —
+                                  it is what the send will use. A badge
+                                  explaining that it differs from the
+                                  sender only added noise; anyone who
+                                  wants that detail can hover.
+                                */}
+                                <span
+                                  className="font-normal text-slate-500"
+                                  title={
+                                    selectedEmail.leadIsRelayed
+                                      ? `Relayed by ${selectedEmail.senderAddress} — replies go to the customer directly.`
+                                      : undefined
+                                  }
+                                >
+                                  &lt;{replyToAddress}&gt;
                                 </span>
                               </div>
                             </div>
@@ -1664,7 +2872,7 @@ const Inbox = () => {
                               rows={4}
                               value={replyText}
                               onChange={(e) => setReplyText(e.target.value)}
-                              placeholder="Hi Sami,"
+                              placeholder={`Hi ${replyFirstName},`}
                               className="w-full text-sm text-[#202124] placeholder:text-slate-400 outline-none resize-none bg-transparent font-sans"
                             />
 
@@ -1784,6 +2992,165 @@ const Inbox = () => {
         )}
 
         {/* =================== FOOTER ACTION BAR (when checkboxes selected) =================== */}
+        {/*
+          Lead context menu.
+
+          Ordered by what it does, not by how often it is used: open the
+          conversation, change how it is marked, file it away, run the
+          automation, then delete. Destructive last and visually separated,
+          so the item next to "Archive" is never the one that deletes.
+        */}
+        {contextMenu && (
+          <div
+            role="menu"
+            style={{ top: contextMenu.y, left: contextMenu.x }}
+            onClick={(e) => e.stopPropagation()}
+            onContextMenu={(e) => e.preventDefault()}
+            className="fixed z-50 w-[216px] overflow-hidden rounded-[12px] border border-slate-200 bg-white py-1 shadow-2xl animate-in fade-in zoom-in-95 duration-100"
+          >
+            {contextMenu.ids.length > 1 && (
+              <div className="border-b border-slate-100 px-3 py-2 text-[11px] font-bold text-slate-500">
+                {contextMenu.ids.length} leads selected
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={() => {
+                closeContextMenu();
+                handleEmailClick(contextMenu.email);
+              }}
+              className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-xs font-medium text-slate-700 transition hover:bg-slate-50"
+            >
+              <FiCornerUpLeft size={13} className="text-slate-400" />
+              Reply
+            </button>
+
+            <div className="my-1 h-px bg-slate-100" />
+
+            {/*
+              Labelled by what the click DOES, not by the current state —
+              a menu item reading "Read" next to an unread row is
+              ambiguous about which way it will go.
+            */}
+            {isEmailRead(contextMenu.email._id) ? (
+              <button
+                type="button"
+                onClick={() => {
+                  contextMenu.ids.forEach(markEmailAsUnread);
+                  closeContextMenu();
+                }}
+                className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-xs font-medium text-slate-700 transition hover:bg-slate-50"
+              >
+                <FiMail size={13} className="text-slate-400" />
+                Mark as unread
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  contextMenu.ids.forEach(markEmailAsRead);
+                  closeContextMenu();
+                }}
+                className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-xs font-medium text-slate-700 transition hover:bg-slate-50"
+              >
+                <FiCheck size={13} className="text-slate-400" />
+                Mark as read
+              </button>
+            )}
+
+            <div className="my-1 h-px bg-slate-100" />
+
+            <button
+              type="button"
+              onClick={() => {
+                contextMenu.ids.forEach((id) => handleStatusChange(id, "secured"));
+                setSelectedLeadIds(new Set());
+                closeContextMenu();
+              }}
+              className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-xs font-medium text-slate-700 transition hover:bg-slate-50"
+            >
+              <FiCheckCircle size={13} className="text-emerald-500" />
+              Mark as secured
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                contextMenu.ids.forEach((id) => handleStatusChange(id, "closed"));
+                setSelectedLeadIds(new Set());
+                closeContextMenu();
+              }}
+              className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-xs font-medium text-slate-700 transition hover:bg-slate-50"
+            >
+              <FiX size={13} className="text-slate-400" />
+              Close lead
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                const restoring = Boolean(contextMenu.email.isArchived);
+                handleArchiveLeads(contextMenu.ids, !restoring);
+                closeContextMenu();
+              }}
+              className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-xs font-medium text-slate-700 transition hover:bg-slate-50"
+            >
+              <FiInbox size={13} className="text-slate-400" />
+              {contextMenu.email.isArchived ? "Move to inbox" : "Archive"}
+            </button>
+
+            <div className="my-1 h-px bg-slate-100" />
+
+            {/*
+              Single lead only. Processing sends real mail, and a menu
+              item that fires an unknown number of live replies from one
+              click is not something to offer casually.
+            */}
+            <button
+              type="button"
+              disabled={
+                contextMenu.ids.length > 1 ||
+                processingLeadId === contextMenu.email._id
+              }
+              title={
+                contextMenu.ids.length > 1
+                  ? "Process one lead at a time"
+                  : "Run this lead's scenario against it now"
+              }
+              onClick={() => {
+                const target = contextMenu.email;
+                closeContextMenu();
+                handleProcessScenario(target);
+              }}
+              className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-xs font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-300"
+            >
+              <FiZap
+                size={13}
+                className={
+                  contextMenu.ids.length > 1 ? "text-slate-300" : "text-amber-500"
+                }
+              />
+              Process scenario
+            </button>
+
+            <div className="my-1 h-px bg-slate-100" />
+
+            <button
+              type="button"
+              onClick={() => {
+                const ids = contextMenu.ids;
+                closeContextMenu();
+                handleDeleteLeads(ids);
+              }}
+              className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-xs font-semibold text-red-600 transition hover:bg-red-50"
+            >
+              <FiTrash2 size={13} />
+              Delete
+            </button>
+          </div>
+        )}
+
         {selectedLeadIds.size > 0 && (
           <div className="absolute bottom-0 left-0 right-0 z-30 flex items-center justify-between gap-3 border-t border-slate-200 bg-white px-6 py-3 shadow-lg animate-in slide-in-from-bottom-2 duration-200">
             {/* Left: count + clear */}
@@ -1804,14 +3171,11 @@ const Inbox = () => {
             <div className="flex items-center gap-2 flex-wrap justify-end">
               <button
                 type="button"
-                onClick={() => {
-                  [...selectedLeadIds].forEach((id) => handleStatusChange(id, "archived"));
-                  setSelectedLeadIds(new Set());
-                }}
+                onClick={() => handleArchiveLeads([...selectedLeadIds], true)}
                 className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition cursor-pointer"
               >
                 <FiInbox size={13} />
-                Archived
+                Archive
               </button>
 
               <button

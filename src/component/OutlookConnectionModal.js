@@ -2,6 +2,7 @@ import { apiFetch } from "../utils/apiClient";
 import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { FiEye, FiEyeOff, FiMail, FiServer, FiX } from "react-icons/fi";
+import useModalDismiss from "../hooks/useModalDismiss";
 
 const API_BASE_URL = "https://email-syncing-backend.vercel.app";
 
@@ -28,6 +29,14 @@ const OutlookConnectionModal = ({
   const [status, setStatus] = useState("active");
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState(initialForm);
+
+  /* Dirty when any field differs from the blank form it opened with. */
+  const dismiss = useModalDismiss({
+    onClose,
+    isDirty: Object.keys(initialForm).some(
+      (key) => form[key] !== initialForm[key],
+    ),
+  });
 
   useEffect(() => {
     if (!isOpen) return;
@@ -195,7 +204,10 @@ const OutlookConnectionModal = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/10 backdrop-blur-xs p-4">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4"
+      {...dismiss.backdropProps}
+    >
       <div className="relative flex max-h-[90vh] w-full max-w-[500px] flex-col overflow-hidden rounded-[8px] bg-white border ">
         {/* Dark Theme Header */}
         <header className="flex shrink-0 items-center justify-between bg-[#111110] text-white px-6 py-4">

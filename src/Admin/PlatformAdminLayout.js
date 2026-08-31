@@ -21,6 +21,7 @@ import {
   FiMail,
   FiUserCheck,
   FiArchive,
+  FiFilter,
 } from "react-icons/fi";
 import { UserContext } from "../component/UserContext";
 
@@ -40,11 +41,13 @@ const NAV_REPORTS = [
 const NAV_CMS = [
   { label: "CMS Products", path: "/admin/product-page", icon: FiPackage },
   { label: "Master AI Module", path: "/admin/ai-config", icon: FiCpu },
+  { label: "Scenario Triggers", path: "/admin/scenario-triggers", icon: FiFilter },
 ];
 
 const NAV_SAAS = [
   { label: "Plans & Pricing", path: "/admin/plans", icon: FiLayers },
   { label: "Stripe Vault", path: "/admin/stripe", icon: FiCreditCard },
+  { label: "Platform Email", path: "/admin/platform-email", icon: FiMail },
   { label: "Audit Logs", path: "/admin/audit-logs", icon: FiList },
 ];
 

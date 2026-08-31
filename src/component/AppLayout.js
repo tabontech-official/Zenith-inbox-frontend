@@ -1,5 +1,5 @@
 import { apiFetch } from "../utils/apiClient";
-import React, { useState, useEffect, useContext, useRef } from "react";
+import React, { useState, useEffect, useContext, useRef, useMemo } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   FiGrid,
@@ -25,9 +25,23 @@ import {
   FiTrendingUp,
   FiLink,
   FiLayers,
+  FiChevronLeft,
+  FiChevronRight,
 } from "react-icons/fi";
 import axios from "axios";
+import { providerLabel } from "../utils/connectionProviders";
+import {
+  emailMatchesScenario,
+  emailMatchesConnection,
+} from "../utils/leadFilters";
+import {
+  normalizeTimeZone,
+  systemTimeZone,
+  timeZoneOptions,
+} from "../utils/timezone";
 import { UserContext } from "./UserContext";
+import useModalDismiss from "../hooks/useModalDismiss";
+import StatusDot from "./StatusDot";
 
 const AppLayout = ({ children }) => {
   const navigate = useNavigate();
@@ -193,14 +207,28 @@ const AppLayout = ({ children }) => {
     }
   };
 
-  const fetchRecentEmails = async () => {
+  /*
+   * Organisation details and the lead list are fetched INDEPENDENTLY.
+   *
+   * They used to share one try block, in that order, so a failing
+   * organisation request — a 404 for an account with no organisation row
+   * — threw before the emails were ever requested. The sidebar then
+   * rendered every count as 0 while the inbox page, which fetches the
+   * same endpoint itself, showed the leads. Two unrelated failures must
+   * not be able to take each other down.
+   */
+  const authHeaders = () => {
+    const token = localStorage.getItem("usertoken");
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  };
+
+  const fetchOrganization = async () => {
+    if (!userId) return;
+
     try {
-      if (!userId) return;
-      const token = localStorage.getItem("usertoken");
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
       const res = await axios.get(
         `https://email-syncing-backend.vercel.app/auth/organization/get/${userId}`,
-        { headers }
+        { headers: authHeaders() }
       );
       const orgData = res.data?.data;
       if (orgData) {
@@ -213,10 +241,28 @@ const AppLayout = ({ children }) => {
           partnerLink: orgData.PartnerLink || prev.partnerLink,
         }));
       }
+    } catch (err) {
+      console.error("Error fetching organization in Layout:", err);
+    }
+  };
 
+  /* One request at a time — see the note on the inbox page's guard. */
+  const recentEmailsInFlight = useRef(false);
+
+  const fetchRecentEmails = async () => {
+    if (!userId || recentEmailsInFlight.current) return;
+
+    recentEmailsInFlight.current = true;
+
+    try {
+      /*
+       * stubs=1 — ids and metadata, no bodies and no thread messages.
+       * The sidebar only ever counts and matches, and it was
+       * re-downloading the entire inbox to do it.
+       */
       const emailsRes = await axios.get(
         `https://email-syncing-backend.vercel.app/mailhook/getAllEmailsData/${userId}`,
-        { headers }
+        { headers: authHeaders(), params: { stubs: 1 } }
       );
       const threads = emailsRes.data?.data?.threads || [];
       // Normalize: flatten thread root emails
@@ -229,6 +275,8 @@ const AppLayout = ({ children }) => {
       if (setContextEmails) setContextEmails(normalized);
     } catch (err) {
       console.error("Error fetching recent emails in Layout:", err);
+    } finally {
+      recentEmailsInFlight.current = false;
     }
   };
 
@@ -238,7 +286,7 @@ const AppLayout = ({ children }) => {
     try {
       const readIds = new Set(JSON.parse(localStorage.getItem("readEmailIds") || "[]"));
       const unread = (emailsList || []).filter((e) => {
-        if (!e || e.isDeleted) return false;
+        if (!e || e.isDeleted || e.isArchived) return false;
         const eId = String(e._id || "");
         return !readIds.has(eId);
       }).length;
@@ -266,24 +314,61 @@ const AppLayout = ({ children }) => {
 
   useEffect(() => {
     if (!userId) return;
+
+    /* Once, and not on the 6s poll — organisation details do not change. */
+    fetchOrganization();
+
     fetchRecentEmails();
-    const interval = setInterval(() => {
+
+    /*
+     * The sidebar only needs counts, and it polls the same endpoint the
+     * inbox page does — so on /inbox this was a second full fetch every
+     * 6 seconds, doubling the load for numbers that change rarely.
+     * Slower cadence, skipped while the tab is hidden, refreshed on
+     * return.
+     */
+    const tick = () => {
+      if (document.hidden) return;
       fetchRecentEmails();
-    }, 6000);
-    return () => clearInterval(interval);
+    };
+
+    const interval = setInterval(tick, 60000);
+
+    const onVisible = () => {
+      if (!document.hidden) fetchRecentEmails();
+    };
+
+    document.addEventListener("visibilitychange", onVisible);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, [userId]);
 
   const [userScenarios, setUserScenarios] = useState([]);
   const [userConnections, setUserConnections] = useState([]);
 
+  /* Company profiles, listed individually under AI Replies. */
+  const [companyProfiles, setCompanyProfiles] = useState([]);
+
   useEffect(() => {
     if (!userId) return;
     const fetchSidebarData = async () => {
       try {
-        const [scenRes, connRes] = await Promise.all([
+        const [scenRes, connRes, profRes] = await Promise.all([
           axios.get(`https://email-syncing-backend.vercel.app/scenario/user/${userId}`).catch(() => null),
           axios.get(`https://email-syncing-backend.vercel.app/auth/getConnection/${userId}`).catch(() => null),
+          axios
+            .get(
+              `https://email-syncing-backend.vercel.app/api/company-profile/${userId}/list`,
+            )
+            .catch(() => null),
         ]);
+
+        setCompanyProfiles(
+          Array.isArray(profRes?.data?.data) ? profRes.data.data : [],
+        );
 
         let scens = Array.isArray(scenRes?.data)
           ? scenRes.data
@@ -313,61 +398,14 @@ const AppLayout = ({ children }) => {
   const activeConnectionId = searchParams.get("connectionId");
   const activeConnectionName = searchParams.get("connection");
 
-  // Helper: Match email to scenario
-  const isEmailInScenario = (email, scenario) => {
-    if (!email || !scenario) return false;
-    const targetId = String(scenario._id || "");
-    const targetName = (scenario.name || "").toLowerCase().trim();
-
-    const emailScenId = String(email.scenarioId || email.scenario_id || "");
-    if (targetId && emailScenId && emailScenId === targetId) return true;
-
-    const emailScenName = (email.scenarioName || email.scenario || email.service || "").toLowerCase().trim();
-    if (targetName && emailScenName) {
-      if (emailScenName === targetName || emailScenName.includes(targetName) || targetName.includes(emailScenName)) return true;
-    }
-
-    const isShopifyScen = scenario.type === "shopify" || targetName.includes("shopify");
-    if (isShopifyScen) {
-      return (
-        (email.service || "").toLowerCase().includes("shopify") ||
-        (email.subject || "").toLowerCase().includes("shopify") ||
-        email.stepType === "shopify-test-parent" ||
-        !!email.extraFields?.storeName
-      );
-    }
-
-    const isCustomScen = scenario.type === "custom" || targetName.includes("custom");
-    if (isCustomScen) {
-      return (
-        (email.service || "").toLowerCase().includes("custom") ||
-        email.emailType === "custom" ||
-        (email.subject || "").toLowerCase().includes("custom") ||
-        (!((email.service || "").toLowerCase().includes("shopify") || (email.subject || "").toLowerCase().includes("shopify")))
-      );
-    }
-
-    return false;
-  };
-
-  // Helper: Match email to connection
-  const isEmailInConnection = (email, conn) => {
-    if (!email || !conn) return false;
-    const targetId = String(conn._id || "");
-    const targetEmail = (conn.email || conn.userEmail || "").toLowerCase().trim();
-
-    const emailConnId = String(email.connectionId || email.connection_id || "");
-    if (targetId && emailConnId && emailConnId === targetId) return true;
-
-    if (targetEmail && targetEmail.includes("@")) {
-      const recip = (email.recipientAddress || "").toLowerCase();
-      const sender = (email.senderAddress || "").toLowerCase();
-      if (recip.includes(targetEmail) || sender.includes(targetEmail)) return true;
-      const cleanUsername = targetEmail.split("@")[0];
-      if (cleanUsername && cleanUsername.length >= 2 && (recip.includes(cleanUsername) || sender.includes(cleanUsername))) return true;
-    }
-    return true;
-  };
+  /*
+   * Scenario and connection matching live in utils/leadFilters.js so the
+   * sidebar counts and the inbox list use one definition. They used to be
+   * duplicated here, and this copy's connection matcher ended in
+   * `return true` — every connection reported the same total.
+   */
+  const isEmailInScenario = emailMatchesScenario;
+  const isEmailInConnection = emailMatchesConnection;
 
   // Process Scenarios lists
   const shopifyScenariosList = userScenarios.filter(
@@ -379,11 +417,43 @@ const AppLayout = ({ children }) => {
   );
 
   // Process Connections list
-  const connectionsList = userConnections;
+  /*
+   * Only connections that can actually send or receive.
+   *
+   * An inactive connection in this list is a filter that can only ever
+   * return nothing, and it reads as a working mailbox.
+   */
+  const connectionsList = userConnections.filter(
+    (conn) => String(conn?.status || "").toLowerCase() === "active"
+  );
+
+  /*
+   * What to call a connection.
+   *
+   * `name` is a default assigned at creation ("My Gmail Connection") and
+   * never revised, so a mailbox connected through Microsoft can sit here
+   * calling itself Gmail. The address is the part that is always true,
+   * and the provider comes from the connection's own provider field, so
+   * the row describes the mailbox rather than whatever it was called on
+   * the day it was made.
+   */
+  const connectionLabel = (conn) => {
+    const address = conn?.userEmail || conn?.email || "";
+    if (address) return address;
+    return conn?.name || "Connection";
+  };
 
   // isReplied: matches Inbox.js isThreadReplied logic exactly
   const isReplied = (e) => {
     if (!e) return false;
+
+    /*
+     * The server decides this from the newest message in the thread, and
+     * the stubs endpoint sends it. Everything below is the old local
+     * guess, kept only for data that arrives without the field.
+     */
+    if (e.newestDirection) return e.newestDirection === "outgoing";
+
     const msgs = e.replies || e.conversation || e.discussion || [];
 
     if (!msgs || msgs.length === 0) {
@@ -397,24 +467,55 @@ const AppLayout = ({ children }) => {
       latestMsg.direction === "outgoing" ||
       latestMsg.stepType === "Auto Reply" ||
       latestMsg.stepType === "Manual Reply" ||
-      latestMsg.role === "assistant" ||
-      (latestMsg.senderAddress && latestMsg.senderAddress.includes("2014tabontech@gmail.com"));
+      latestMsg.role === "assistant";
 
+    /*
+     * A hardcoded "or the sender is 2014tabontech@gmail.com" used to sit
+     * here — one developer's mailbox deciding, for every account on the
+     * platform, whether a lead counted as replied to. direction and
+     * stepType already carry that, and they carry it for everyone.
+     */
     return isOutgoing;
   };
-  const inboxRepliedCount = emails.filter(isReplied).length;
+  /*
+   * Archived leads are filed away and are not part of the live counts —
+   * a badge that keeps counting mail the user has already dealt with is
+   * the reason people stop trusting badges.
+   */
+  /* ~400 entries — built once, not on every keystroke in the form. */
+  const tzOptions = useMemo(() => timeZoneOptions(), []);
 
-  const inboxAwaitingCount = emails.filter(
+  const liveEmails = emails.filter((e) => !e?.isArchived);
+
+  const inboxRepliedCount = liveEmails.filter(isReplied).length;
+
+  const inboxAwaitingCount = liveEmails.filter(
     (e) =>
       e.leadStatus !== "secured" && e.leadStatus !== "closed" && !isReplied(e),
   ).length;
-  const inboxSecuredCount = emails.filter(
+  const inboxSecuredCount = liveEmails.filter(
     (e) => e.leadStatus === "secured",
   ).length;
+  const inboxArchivedCount = emails.filter((e) => e?.isArchived).length;
+
+  /*
+   * Needs a reply from us: nobody has answered yet, or the customer has
+   * written back since we did. Mirrors the server's `view=new`, so the
+   * badge and the list it opens agree.
+   */
+  const inboxNewCount = liveEmails.filter(
+    (e) =>
+      e?.newestDirection === "incoming" &&
+      e?.leadStatus !== "secured" &&
+      e?.leadStatus !== "closed",
+  ).length;
+
+  const inboxViewParam = (searchParams.get("view") || "new").toLowerCase();
 
   const handleSaveOrgSettings = async () => {
     try {
       setIsSavingOrg(true);
+      const chosenTimeZone = normalizeTimeZone(orgForm.timezone);
       const currentUserId = userId || user?._id;
       if (currentUserId) {
         await axios.put(
@@ -422,7 +523,13 @@ const AppLayout = ({ children }) => {
           {
             organizationName: orgForm.organizationName,
             Region: orgForm.region,
-            TimeZone: orgForm.timezone,
+            /*
+             * The identifier, never the decorated label — and
+             * TimeZoneAuto false, because saving this form IS the
+             * deliberate choice that stops auto-detection overriding it.
+             */
+            TimeZone: chosenTimeZone,
+            TimeZoneAuto: false,
             country: orgForm.country,
             PartnerLink: orgForm.partnerLink,
           },
@@ -433,7 +540,8 @@ const AppLayout = ({ children }) => {
         organizationName: orgForm.organizationName,
         companyName: orgForm.organizationName,
         Region: orgForm.region,
-        TimeZone: orgForm.timezone,
+        TimeZone: chosenTimeZone,
+        TimeZoneAuto: false,
         country: orgForm.country,
         PartnerLink: orgForm.partnerLink,
       };
@@ -508,6 +616,28 @@ const AppLayout = ({ children }) => {
         location.pathname === route ||
         location.pathname.startsWith(`${route}/`),
     ) || location.pathname.startsWith("/organization/");
+
+  /*
+   * The plan badge beside "Subscription" must name the plan the account is
+   * actually on — it read "Free" for everyone, so upgrading on /pricing left
+   * the nav contradicting the page. Explore is the free tier, so it keeps
+   * reading "Free" rather than showing its internal name.
+   */
+  const subscriptionPlan =
+    user?.subscription?.plan || contextUser?.subscription?.plan || "Explore";
+  const subscriptionBadge =
+    subscriptionPlan.toLowerCase() === "explore" ? "Free" : subscriptionPlan;
+
+  /*
+   * Explore is capped at the single prebuilt Shopify scenario, so its card
+   * in the create modal reopens the one that already exists. Every paid
+   * plan may run more than one, so there the card starts a fresh blank
+   * Shopify scenario — reopening the prebuilt would leave a paid account
+   * with no way to build its second one.
+   */
+  const canBuildExtraShopifyScenarios =
+    subscriptionPlan.toLowerCase() !== "explore";
+
   // Dynamic Secondary Sub-Nav Definitions based on current route
   const getSecondaryNav = () => {
     const path = location.pathname;
@@ -516,75 +646,93 @@ const AppLayout = ({ children }) => {
       return { type: "inbox" };
     }
 
+    /*
+     * Scenarios render no secondary sidebar. The scenario builder is a
+     * wide horizontal canvas and the list added nothing that the page
+     * itself does not already offer, so the space goes to the canvas.
+     */
     if (path.startsWith("/scenarios")) {
-      return {
-        type: "standard",
-        title: "Scenarios",
-        items: [
-          {
-            id: "all",
-            label: "All scenarios",
-            path: "/scenarios/all",
-          },
-          {
-            id: "shopify",
-            label: "Shopify scenarios",
-            path: "/scenarios/shopify",
-          },
-          {
-            id: "custom",
-            label: "Custom scenarios",
-            path: "/scenarios/others",
-          },
-        ],
-      };
+      return { type: "none" };
     }
 
     if (path.startsWith("/templates") || path.startsWith("/company-profile")) {
+      /*
+       * Two different things sat in one flat list, with Company profile at
+       * the top reading like a third kind of template. They are separated:
+       * the templates you write, and the business details the AI writes
+       * from.
+       */
       return {
-        type: "standard",
+        type: "grouped",
         title: "Templates",
-        items: [
+        groups: [
           {
-            id: "company-profile",
-            label: "Company profile",
-            path: "/company-profile",
+            id: "templates",
+            title: "Templates",
+            icon: FiFileText,
+            items: [
+              {
+                id: "shopify",
+                label: "Shopify templates",
+                path: "/templates",
+              },
+              {
+                id: "custom",
+                label: "Custom templates",
+                path: "/templates/general",
+              },
+            ],
           },
           {
-            id: "shopify",
-            label: "Shopify templates",
-            path: "/templates",
-          },
-          {
-            id: "custom",
-            label: "Custom templates",
-            path: "/templates/general",
+            id: "ai",
+            /*
+             * The items under this heading ARE the company profiles, so
+             * the heading names them. "AI Replies" described what they are
+             * for, which read as a separate section rather than a label
+             * for the list beneath it.
+             */
+            title: "Company Profiles",
+            subtitle: "Used for AI replies",
+            icon: FiZap,
+            /*
+             * One entry per company profile, each showing whether it is
+             * active. A single "Company profile" link gave no sense of how
+             * many there were or which were in use.
+             */
+            items:
+              companyProfiles.length > 0
+                ? companyProfiles.map((profile) => ({
+                    id: profile._id,
+                    label: profile.name,
+                    hint: profile.isDefault ? "Default profile" : undefined,
+                    isActive: profile.isActive !== false,
+                    showStatus: true,
+                    path: `/company-profile?profile=${profile._id}`,
+                  }))
+                : [
+                    {
+                      id: "company-profile",
+                      label: "Company profile",
+                      hint: "Business details the AI writes replies from",
+                      path: "/company-profile",
+                    },
+                  ],
           },
         ],
       };
     }
 
+    /*
+     * Connections render no secondary sidebar either — All / Verified are
+     * filters on the page itself, where the list they filter actually is.
+     */
     if (path.startsWith("/connection")) {
-      return {
-        type: "standard",
-        title: "Connections",
-        items: [
-          {
-            id: "all",
-            label: "All connections",
-            path: "/connection",
-          },
-          {
-            id: "verified",
-            label: "Verified connections",
-            path: "/connection?status=verified",
-          },
-        ],
-      };
+      return { type: "none" };
     }
 
     return {
       type: "organization",
+      title: "Organization",
       groups: [
         {
           id: "organization",
@@ -607,7 +755,7 @@ const AppLayout = ({ children }) => {
               id: "subscription",
               label: "Subscription",
               path: "/pricing",
-              badge: "Free",
+              badge: subscriptionBadge,
             },
             {
               id: "credit-usage",
@@ -653,6 +801,33 @@ const AppLayout = ({ children }) => {
   };
 
   const secondaryNav = getSecondaryNav();
+
+  /*
+   * Manual collapse for the sections that still have a secondary nav
+   * (Templates, Connections, Organization). Scenarios render none at all.
+   */
+  const [secondaryNavCollapsed, setSecondaryNavCollapsed] = useState(false);
+
+  /*
+   * The scenario picker holds no input, so an outside click always closes
+   * it. Organisation settings is a form, so it closes only while nothing
+   * has been edited — see hooks/useModalDismiss.js.
+   */
+  const createScenarioDismiss = useModalDismiss({
+    onClose: () => setShowCreateScenarioModal(false),
+  });
+
+  const orgSettingsDismiss = useModalDismiss({
+    onClose: () => setShowOrgSettingsModal(false),
+    isDirty:
+      orgForm.organizationName !==
+        (contextUser?.organizationName || contextUser?.companyName || "") ||
+      orgForm.region !== (contextUser?.Region || contextUser?.region || "US") ||
+      orgForm.country !== (contextUser?.country || "Canada") ||
+      orgForm.partnerLink !==
+        (contextUser?.PartnerLink || contextUser?.partnerLink || ""),
+  });
+
   const isSecondaryItemActive = (item) => {
     const [itemPath, itemQuery = ""] = item.path.split("?");
 
@@ -703,7 +878,13 @@ const AppLayout = ({ children }) => {
                 <button
                   key={item.id}
                   type="button"
-                  onClick={() => navigate(item.path)}
+                  /*
+                   * replace:false on purpose. Inbox must land on the
+                   * plain list every time — including from a filtered
+                   * view or an open thread — so it pushes a fresh entry
+                   * even when the path already matches.
+                   */
+                  onClick={() => navigate(item.path, { replace: false })}
                   className="group flex flex-col items-center justify-center w-full py-1 cursor-pointer"
                   title={item.label}
                 >
@@ -797,7 +978,7 @@ const AppLayout = ({ children }) => {
       {/* 2. SECONDARY SUB-NAVIGATION SIDEBAR */}
       {/* ------------------------------------------------------------- */}
 
-      {secondaryNav.type === "inbox" ? (
+      {secondaryNav.type === "none" ? null : secondaryNav.type === "inbox" ? (
         <aside className="w-[230px] shrink-0 border-r border-slate-200 bg-white flex flex-col h-full overflow-y-auto">
           <div className="px-3 py-4 space-y-4">
             {/* ---- LEAD INBOX group ---- */}
@@ -806,18 +987,45 @@ const AppLayout = ({ children }) => {
                 <FiInbox className="h-4 w-4 text-slate-900" />
                 <h2 className="text-[13px] font-bold text-slate-900">Lead Inbox</h2>
               </div>
+              {/*
+                New Emails first, and the landing view.
+
+                "All" fetches the entire history, which is the slow one.
+                What a user opens the inbox to do is answer what is
+                waiting, and that set is small — so it loads fast and it
+                is what they see first.
+              */}
               <button
                 type="button"
                 onClick={() => navigate("/inbox")}
                 className={`flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-left text-[12px] transition ${
-                  inboxActiveFilter === "all" && !activeScenarioId && !activeScenarioName && !activeConnectionId && !activeConnectionName
+                  inboxViewParam !== "all" && !activeScenarioId && !activeScenarioName && !activeConnectionId && !activeConnectionName
+                    ? "bg-slate-200 font-semibold text-slate-950"
+                    : "font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-950"
+                }`}
+              >
+                <span>New Emails</span>
+                <span
+                  className={`rounded-full px-2 py-0.5 text-[10px] font-semibold text-white ${
+                    inboxNewCount > 0 ? "bg-red-600" : "bg-slate-700"
+                  }`}
+                >
+                  {inboxNewCount}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => navigate("/inbox?view=all")}
+                className={`mt-0.5 flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-left text-[12px] transition ${
+                  inboxViewParam === "all" && !activeScenarioId && !activeScenarioName && !activeConnectionId && !activeConnectionName
                     ? "bg-slate-200 font-semibold text-slate-950"
                     : "font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-950"
                 }`}
               >
                 <span>All</span>
                 <span className="rounded-full bg-slate-700 px-2 py-0.5 text-[10px] font-semibold text-white">
-                  {emails.length}
+                  {liveEmails.length}
                 </span>
               </button>
             </div>
@@ -831,7 +1039,8 @@ const AppLayout = ({ children }) => {
                 </div>
                 <nav className="flex flex-col gap-0.5">
                   {userScenarios.map((scen) => {
-                    const count = emails.filter((e) => isEmailInScenario(e, scen)).length;
+                    /* Archived leads are filed away — see liveEmails. */
+                    const count = liveEmails.filter((e) => isEmailInScenario(e, scen)).length;
                     const isActive =
                       (activeScenarioId && String(activeScenarioId) === String(scen._id)) ||
                       (activeScenarioName && activeScenarioName.toLowerCase() === (scen.name || "").toLowerCase());
@@ -866,8 +1075,8 @@ const AppLayout = ({ children }) => {
                 </div>
                 <nav className="flex flex-col gap-0.5">
                   {connectionsList.map((conn) => {
-                    const connLabel = conn.name || conn.userEmail || conn.email || "Connection";
-                    const count = emails.filter((e) => isEmailInConnection(e, conn)).length;
+                    const connLabel = connectionLabel(conn);
+                    const count = liveEmails.filter((e) => isEmailInConnection(e, conn)).length;
                     const isActive =
                       (activeConnectionId && String(activeConnectionId) === String(conn._id)) ||
                       (activeConnectionName && activeConnectionName.toLowerCase() === connLabel.toLowerCase());
@@ -882,7 +1091,12 @@ const AppLayout = ({ children }) => {
                             : "font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-950"
                         }`}
                       >
-                        <span className="truncate pr-1" title={connLabel}>{connLabel}</span>
+                        <span
+                          className="truncate pr-1"
+                          title={`${connLabel}${conn.provider ? ` · ${providerLabel(conn.provider)}` : ""}`}
+                        >
+                          {connLabel}
+                        </span>
                         <span className="rounded-full bg-slate-100 border border-slate-200 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">
                           {count}
                         </span>
@@ -919,6 +1133,12 @@ const AppLayout = ({ children }) => {
                     count: inboxSecuredCount,
                     path: "/inbox?filter=secured",
                   },
+                  {
+                    id: "archived",
+                    label: "Archived",
+                    count: inboxArchivedCount,
+                    path: "/inbox?filter=archived",
+                  },
                 ].map((item) => {
                   const isActive = inboxActiveFilter === item.id && !activeScenarioId && !activeConnectionId;
                   return (
@@ -943,9 +1163,48 @@ const AppLayout = ({ children }) => {
             </div>
           </div>
         </aside>
-      ) : secondaryNav.type === "organization" ? (
-        <aside className="w-[230px] shrink-0 border-r border-slate-200 bg-white">
+      ) : secondaryNavCollapsed ? (
+        /* Collapsed rail — click anywhere on it to bring the list back. */
+        <aside className="w-9 shrink-0 border-r border-slate-200 bg-white">
+          <button
+            type="button"
+            onClick={() => setSecondaryNavCollapsed(false)}
+            title={`Show ${secondaryNav.title}`}
+            aria-label={`Show ${secondaryNav.title}`}
+            className="group flex h-full w-full flex-col items-center gap-3 pt-4 text-slate-400 transition hover:bg-slate-50 hover:text-slate-900 cursor-pointer"
+          >
+            <FiChevronRight className="h-4 w-4" />
+            <span
+              className="text-[11px] font-bold uppercase tracking-wider whitespace-nowrap"
+              style={{ writingMode: "vertical-rl" }}
+            >
+              {secondaryNav.title}
+            </span>
+          </button>
+        </aside>
+      ) : secondaryNav.groups ? (
+        <aside className="w-[230px] shrink-0 border-r border-slate-200 bg-white overflow-y-auto">
           <div className="px-3 py-4">
+            {/*
+              The grouped nav had no collapse control, so once the flat
+              renderer stopped being used there was no way to reclaim the
+              230px on these screens.
+            */}
+            <div className="mb-3 flex items-center justify-between gap-2 px-2">
+              <h2 className="text-[13px] font-bold text-slate-900">
+                {secondaryNav.title}
+              </h2>
+              <button
+                type="button"
+                onClick={() => setSecondaryNavCollapsed(true)}
+                title="Hide this list"
+                aria-label="Hide this list"
+                className="rounded-md p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-900 cursor-pointer"
+              >
+                <FiChevronLeft className="h-4 w-4" />
+              </button>
+            </div>
+
             {secondaryNav.groups.map((group, groupIndex) => {
               const GroupIcon = group.icon;
 
@@ -954,9 +1213,16 @@ const AppLayout = ({ children }) => {
                   <div className="mb-3 flex items-center gap-2 border-b border-slate-200 px-2 pb-3">
                     <GroupIcon className="h-4 w-4 text-slate-900" />
 
-                    <h2 className="text-[13px] font-bold text-slate-900">
-                      {group.title}
-                    </h2>
+                    <div className="min-w-0">
+                      <h2 className="text-[13px] font-bold text-slate-900">
+                        {group.title}
+                      </h2>
+                      {group.subtitle && (
+                        <p className="text-[10px] font-medium text-slate-400">
+                          {group.subtitle}
+                        </p>
+                      )}
+                    </div>
                   </div>
 
                   <nav className="flex flex-col gap-0.5">
@@ -968,16 +1234,42 @@ const AppLayout = ({ children }) => {
                           key={item.id}
                           type="button"
                           onClick={() => navigate(item.path)}
-                          className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-[13px] transition ${
+                          className={`flex w-full items-start gap-2 rounded-lg px-3 py-2 text-left text-[13px] transition ${
                             isActive
                               ? "bg-slate-200 font-semibold text-slate-950"
                               : "font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-950"
                           }`}
                         >
-                          <span>{item.label}</span>
+                          {item.showStatus && (
+                            <StatusDot
+                              tone={item.isActive ? "active" : "paused"}
+                              size="sm"
+                              title={
+                                item.isActive
+                                  ? "Active — scenarios can write from this profile"
+                                  : "Paused — not offered to scenarios"
+                              }
+                              className="mt-1.5"
+                            />
+                          )}
+
+                          <span className="min-w-0 flex-1">
+                            <span className="block">{item.label}</span>
+
+                            {/*
+                              Says what an entry is for when its name does
+                              not — "Company profile" gives no clue that it
+                              feeds the AI's replies.
+                            */}
+                            {item.hint && (
+                              <span className="mt-0.5 block text-[10px] font-normal leading-snug text-slate-500">
+                                {item.hint}
+                              </span>
+                            )}
+                          </span>
 
                           {item.badge && (
-                            <span className="rounded-full bg-slate-700 px-2 py-0.5 text-[10px] font-semibold text-white">
+                            <span className="shrink-0 rounded-full bg-slate-700 px-2 py-0.5 text-[10px] font-semibold text-white">
                               {item.badge}
                             </span>
                           )}
@@ -994,10 +1286,19 @@ const AppLayout = ({ children }) => {
         <aside className="w-[230px] shrink-0 border-r border-slate-200 bg-white">
           <div className="px-3 py-4">
             {/* Section header — same style as Organization groups */}
-            <div className="mb-3 flex items-center gap-2 border-b border-slate-200 px-2 pb-3">
+            <div className="mb-3 flex items-center justify-between gap-2 border-b border-slate-200 px-2 pb-3">
               <h2 className="text-[13px] font-bold text-slate-900">
                 {secondaryNav.title}
               </h2>
+              <button
+                type="button"
+                onClick={() => setSecondaryNavCollapsed(true)}
+                title="Hide this list"
+                aria-label="Hide this list"
+                className="rounded-md p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-900 cursor-pointer"
+              >
+                <FiChevronLeft className="h-4 w-4" />
+              </button>
             </div>
             <nav className="flex flex-col gap-0.5">
               {secondaryNav.items.map((sub) => {
@@ -1031,8 +1332,17 @@ const AppLayout = ({ children }) => {
       {/* 3. MAIN CONTENT CANVAS WRAPPER WITH TOP HEADER */}
       {/* ------------------------------------------------------------- */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Top Header Bar */}
-        <header className="h-14 bg-white border-b border-slate-200 px-6 flex items-center justify-between shrink-0 relative z-[100]">
+        {/*
+          Top Header Bar
+
+          z-40 is deliberate: this is page chrome, so it must sit above the
+          page content (which tops out at z-30) but BELOW every dialog. At
+          z-[100] it shared the modal tier and painted over the z-50 overlays
+          used across the app, clipping the top of any modal opened from a
+          page — the mailhook setup modal on /connection was cut in half by
+          this bar. Anything that must cover the header belongs at z-50+.
+        */}
+        <header className="h-14 bg-white border-b border-slate-200 px-6 flex items-center justify-between shrink-0 relative z-40">
           {/* Left: Organization Badge */}
           <div className="flex items-center gap-3 min-w-0">
             <div className="h-8 w-8 rounded-[8px] bg-slate-900 text-white flex items-center justify-center font-bold text-xs shrink-0">
@@ -1200,8 +1510,14 @@ const AppLayout = ({ children }) => {
       {/* MODAL 1: CREATE NEW SCENARIO MODAL */}
       {/* ------------------------------------------------------------- */}
       {showCreateScenarioModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-[8px] max-w-[620px] w-full overflow-hidden shadow-2xl border border-slate-200 animate-in fade-in zoom-in duration-200">
+        <div
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          {...createScenarioDismiss.backdropProps}
+        >
+          <div
+            className="bg-white rounded-[8px] max-w-[620px] w-full overflow-hidden shadow-2xl border border-slate-200 animate-in fade-in zoom-in duration-200"
+            {...createScenarioDismiss.panelProps}
+          >
             <div className="bg-black text-white p-6 flex items-start justify-between">
               <div>
                 <h3 className="text-lg font-bold flex items-center gap-2">
@@ -1225,7 +1541,11 @@ const AppLayout = ({ children }) => {
               <div
                 onClick={() => {
                   setShowCreateScenarioModal(false);
-                  navigate("/scenarios/shopify");
+                  navigate(
+                    canBuildExtraShopifyScenarios
+                      ? "/scenarios/shopify/new"
+                      : "/scenarios/shopify",
+                  );
                 }}
                 className="p-5 rounded-[8px] bg-white border border-slate-200 hover:border-black transition cursor-pointer shadow-2xs group flex flex-col gap-2"
               >
@@ -1294,8 +1614,14 @@ const AppLayout = ({ children }) => {
       {/* MODAL 2: ORGANIZATION SETTINGS MODAL */}
       {/* ------------------------------------------------------------- */}
       {showOrgSettingsModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-[8px] max-w-[560px] w-full overflow-hidden shadow-2xl border border-slate-200 animate-in fade-in zoom-in duration-200">
+        <div
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          {...orgSettingsDismiss.backdropProps}
+        >
+          <div
+            className="bg-white rounded-[8px] max-w-[560px] w-full overflow-hidden shadow-2xl border border-slate-200 animate-in fade-in zoom-in duration-200"
+            {...orgSettingsDismiss.panelProps}
+          >
             <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-white">
               <h3 className="text-base font-bold text-slate-900">
                 Organization settings
@@ -1343,25 +1669,47 @@ const AppLayout = ({ children }) => {
                 </select>
               </div>
 
+              {/*
+                Every zone the browser knows, ordered west to east.
+
+                This offered three hardcoded options, and stored a
+                decorated label ("(GMT-05:00) America/Toronto") rather
+                than an identifier — a string no date API can use, and
+                one whose baked-in offset is an hour wrong for half the
+                year. The value saved now is the identifier itself.
+              */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-bold text-slate-700">
-                  Timezone <span className="text-red-500">*</span>
-                </label>
+                <div className="flex items-center justify-between gap-2">
+                  <label className="text-xs font-bold text-slate-700">
+                    Timezone <span className="text-red-500">*</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setOrgForm({ ...orgForm, timezone: systemTimeZone() })
+                    }
+                    className="text-[11px] font-semibold text-slate-500 underline transition hover:text-slate-900"
+                  >
+                    Use my system timezone
+                  </button>
+                </div>
                 <select
-                  value={orgForm.timezone}
+                  value={normalizeTimeZone(orgForm.timezone)}
                   onChange={(e) =>
                     setOrgForm({ ...orgForm, timezone: e.target.value })
                   }
                   className="w-full px-3 py-2 rounded-[8px] border border-slate-300 bg-white text-xs text-slate-800"
                 >
-                  <option value="(GMT-05:00) America/Toronto">
-                    (GMT-05:00) America/Toronto
-                  </option>
-                  <option value="(GMT+00:00) UTC">(GMT+00:00) UTC</option>
-                  <option value="(GMT+05:00) Asia/Karachi">
-                    (GMT+05:00) Asia/Karachi
-                  </option>
+                  {tzOptions.map((tz) => (
+                    <option key={tz.value} value={tz.value}>
+                      {tz.label}
+                    </option>
+                  ))}
                 </select>
+                <p className="text-[11px] text-slate-500">
+                  Run history and lead timestamps are shown in this zone.
+                  Detected: {systemTimeZone()}.
+                </p>
               </div>
 
               <div className="flex flex-col gap-1.5">

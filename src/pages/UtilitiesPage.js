@@ -47,7 +47,9 @@ const UtilitiesPage = () => {
 
   // Variables state
   const [variables, setVariables] = useState([
-    { key: "FullName", value: "Customer Name", desc: "Parsed full name of lead sender" },
+    { key: "Greeting", value: "Hi Chris", desc: "Complete salutation — falls back to \"Dear Sir/Madam\" when the lead gave an email instead of a name" },
+    { key: "FirstName", value: "Chris", desc: "Lead's first name, read from the inquiry subject" },
+    { key: "FullName", value: "Chris Duthie", desc: "Lead's full name, read from the inquiry subject" },
     { key: "BusinessEmail", value: "lead@company.com", desc: "Sender business email address" },
     { key: "StoreName", value: "My Shopify Store", desc: "Shopify store name from lead inquiry" },
     { key: "StoreURL", value: "https://store.myshopify.com", desc: "Parsed Shopify store URL" },

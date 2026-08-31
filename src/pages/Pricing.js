@@ -861,7 +861,7 @@ const Pricing = () => {
       {/* MODAL 1: NEED MORE AI REPLIES? (POPUP MODAL) */}
       {/* ------------------------------------------------------------- */}
       {showBuyExtrasModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs animate-in fade-in duration-150">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-150">
           <div className="bg-white rounded-xl shadow-2xl border border-slate-200 max-w-lg w-full overflow-hidden p-6 animate-in zoom-in-95 duration-150 flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
@@ -978,7 +978,7 @@ const Pricing = () => {
       {/* MODAL 2: CANCEL SUBSCRIPTION MODAL */}
       {/* ------------------------------------------------------------- */}
       {showCancelModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs animate-in fade-in duration-150">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-150">
           <div className="bg-white rounded-xl shadow-2xl border border-slate-200 max-w-md w-full p-6 animate-in zoom-in-95 duration-150 flex flex-col gap-4">
             <div className="flex justify-between items-center border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2 text-red-600">
@@ -1059,7 +1059,7 @@ const Pricing = () => {
       {/* MODAL 3: REDEEM COUPON MODAL */}
       {/* ------------------------------------------------------------- */}
       {showCouponModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs animate-in fade-in duration-150">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-150">
           <div className="bg-white rounded-xl shadow-2xl border border-slate-200 max-w-sm w-full p-6 animate-in zoom-in-95 duration-150">
             <div className="flex justify-between items-center border-b border-slate-100 pb-3 mb-4">
               <h3 className="text-sm font-bold text-slate-950">Redeem Promo Coupon</h3>
@@ -1111,7 +1111,7 @@ const Pricing = () => {
       {/* MODAL 4: HOW DO AI REPLIES WORK MODAL */}
       {/* ------------------------------------------------------------- */}
       {showHowItWorksModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs animate-in fade-in duration-150">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-150">
           <div className="bg-white rounded-xl shadow-2xl border border-slate-200 max-w-md w-full p-6 animate-in zoom-in-95 duration-150">
             <div className="flex justify-between items-center border-b border-slate-100 pb-3 mb-4">
               <h3 className="text-sm font-bold text-slate-950">How AI Replies Work</h3>

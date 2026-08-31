@@ -399,7 +399,7 @@ const AdminLeadsReport = ({ defaultStatus }) => {
 
         {/* ── COMPLETE CONVERSATION THREAD MODAL ─────────────────────────────── */}
         {threadModalOpen && selectedLead && (
-          <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6">
+          <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6">
             <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
               {/* Modal Top Header */}
               <div className="px-6 py-4 border-b border-slate-200 bg-slate-50/80 flex items-center justify-between gap-4 shrink-0">

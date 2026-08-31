@@ -1,7 +1,11 @@
 import React from "react";
 import { FiX, FiMail, FiUser, FiGlobe, FiTag, FiDollarSign, FiClipboard } from "react-icons/fi";
+import useModalDismiss from "../hooks/useModalDismiss";
 
 const TestEmailModal = ({ email, onClose }) => {
+  /* A preview of the test email — read-only, so it always closes. */
+  const dismiss = useModalDismiss({ onClose });
+
   if (!email) return null;
 
   // Classy color palette: Deep Navy/Charcoal for background, soft white/cream for content,
@@ -21,7 +25,10 @@ const TestEmailModal = ({ email, onClose }) => {
 
   return (
     // Backdrop: Darker, more atmospheric
-    <div className="fixed inset-0 bg-gray-900/70 backdrop-blur-md flex justify-center items-center z-50 p-4">
+    <div
+      className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex justify-center items-center z-50 p-4"
+      {...dismiss.backdropProps}
+    >
       
       {/* Modal Container: Higher contrast, rounded corners, subtle shadow, wider for better flow */}
       <div className="bg-white p-8 md:p-10 rounded-2xl w-full max-w-lg shadow-2xl relative transform transition-all duration-300 scale-100 opacity-100">

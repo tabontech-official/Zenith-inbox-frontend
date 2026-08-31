@@ -1,4 +1,5 @@
 import { apiFetch } from "../utils/apiClient";
+import { useLocation, useNavigate } from "react-router-dom";
 import React, { useContext, useState, useEffect } from "react";
 import {
   FiBriefcase,
@@ -8,6 +9,7 @@ import {
   FiMapPin,
   FiPlus,
   FiTrash2,
+  FiX,
   FiEdit3,
   FiSave,
   FiCheckCircle,
@@ -105,12 +107,249 @@ const CompanyProfile = () => {
     if (data.companyKnowledge) setCompanyKnowledge(data.companyKnowledge);
   };
 
+  /*
+   * A user keeps several profiles — one per brand, client or product line —
+   * and a scenario chooses which one its AI replies write from. This page
+   * edits one at a time; activeProfileId says which.
+   */
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const [profiles, setProfiles] = useState([]);
+  const [activeProfileId, setActiveProfileId] = useState(null);
+  const [creatingProfile, setCreatingProfile] = useState(false);
+  const [newProfileName, setNewProfileName] = useState("");
+
+  const applyProfileData = (d) => {
+    if (d.company)
+      setCompany((prev) => sanitizeCompanyObject({ ...prev, ...d.company }));
+    setServices(d.services || []);
+    setProducts(d.products || []);
+    setPortfolio(d.portfolio || []);
+    setFaqs(d.faqs || []);
+    if (d.policies) setPolicies((prev) => ({ ...prev, ...d.policies }));
+    if (d.timelines) setTimelines((prev) => ({ ...prev, ...d.timelines }));
+    if (d.writingStyle)
+      setWritingStyle((prev) => ({ ...prev, ...d.writingStyle }));
+    setCompanyKnowledge(d.companyKnowledge || "");
+  };
+
+  const loadProfileList = async () => {
+    if (!userId) return [];
+
+    try {
+      const res = await apiFetch(`${API_BASE_URL}/${userId}/list`);
+      const result = await res.json();
+      const list = result?.success ? result.data || [] : [];
+
+      setProfiles(list);
+      return list;
+    } catch (err) {
+      console.error("Could not load company profiles:", err);
+      setProfiles([]);
+      return [];
+    }
+  };
+
+  /* Loads one profile into the form. */
+  const openProfile = async (profileId) => {
+    if (!profileId) return;
+
+    setLoading(true);
+    try {
+      const res = await apiFetch(`${API_BASE_URL}/detail/${profileId}`);
+      const result = await res.json();
+
+      if (result.success && result.data) {
+        applyProfileData(result.data);
+        setActiveProfileId(profileId);
+      } else {
+        toast.error(result.message || "Could not open that profile.");
+      }
+    } catch (err) {
+      console.error("Error opening company profile:", err);
+      toast.error("Could not open that profile.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateProfile = async () => {
+    const name = newProfileName.trim();
+
+    if (!name) {
+      toast.error("Give the profile a name first.");
+      return;
+    }
+
+    setCreatingProfile(true);
+
+    try {
+      const res = await apiFetch(`${API_BASE_URL}/${userId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ profileName: name }),
+      });
+
+      const result = await res.json();
+
+      if (!result.success) throw new Error(result.message);
+
+      toast.success(`"${name}" created.`);
+      setNewProfileName("");
+
+      await loadProfileList();
+
+      /* Route to it, so the URL and the open profile stay in step. */
+      if (result.data?._id) {
+        navigate(`/company-profile?profile=${result.data._id}`);
+        await openProfile(result.data._id);
+      }
+    } catch (err) {
+      console.error("Error creating company profile:", err);
+      toast.error(err.message || "Could not create the profile.");
+    } finally {
+      setCreatingProfile(false);
+    }
+  };
+
+  const handleMakeDefault = async () => {
+    if (!activeProfileId) return;
+
+    try {
+      const res = await apiFetch(
+        `${API_BASE_URL}/detail/${activeProfileId}/default`,
+        { method: "PATCH" },
+      );
+      const result = await res.json();
+
+      if (!result.success) throw new Error(result.message);
+
+      toast.success("Default profile updated.");
+      await loadProfileList();
+    } catch (err) {
+      toast.error(err.message || "Could not set the default profile.");
+    }
+  };
+
+  /*
+   * Pausing keeps the profile but stops offering it to scenarios — for a
+   * brand you have shelved, without deleting it and breaking scenarios
+   * that still point at it.
+   */
+  const handleToggleActive = async () => {
+    if (!activeProfileId) return;
+
+    const current = profiles.find((p) => p._id === activeProfileId);
+    const nextActive = current?.isActive === false;
+
+    try {
+      const res = await apiFetch(
+        `${API_BASE_URL}/detail/${activeProfileId}/active`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ isActive: nextActive }),
+        },
+      );
+
+      const result = await res.json();
+
+      if (!result.success) throw new Error(result.message);
+
+      toast.success(result.message);
+      await loadProfileList();
+    } catch (err) {
+      toast.error(err.message || "Could not update the profile status.");
+    }
+  };
+
+  /*
+   * Deleting a profile is irreversible and takes its services, FAQs and
+   * knowledge base with it, so it asks for the name to be typed rather
+   * than a single OK. A browser confirm() could not carry that, and looked
+   * nothing like the rest of the app.
+   */
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deletingProfile, setDeletingProfile] = useState(false);
+
+  const openDeleteDialog = () => {
+    if (!activeProfileId) return;
+
+    setDeleteTarget(profiles.find((p) => p._id === activeProfileId) || null);
+    setDeleteConfirmText("");
+  };
+
+  const closeDeleteDialog = () => {
+    setDeleteTarget(null);
+    setDeleteConfirmText("");
+  };
+
+  const handleDeleteProfile = async () => {
+    if (!activeProfileId || !deleteTarget) return;
+
+    /* Guarded in the UI too, but never trust the button alone. */
+    if (deleteConfirmText.trim() !== deleteTarget.name) return;
+
+    setDeletingProfile(true);
+
+    try {
+      const res = await apiFetch(`${API_BASE_URL}/detail/${activeProfileId}`, {
+        method: "DELETE",
+      });
+      const result = await res.json();
+
+      if (!result.success) throw new Error(result.message);
+
+      toast.success("Profile deleted.");
+      closeDeleteDialog();
+
+      const list = await loadProfileList();
+
+      if (list[0]?._id) {
+        navigate(`/company-profile?profile=${list[0]._id}`);
+        await openProfile(list[0]._id);
+      }
+    } catch (err) {
+      toast.error(err.message || "Could not delete the profile.");
+    } finally {
+      setDeletingProfile(false);
+    }
+  };
+
   // Fetch Existing Company Profile
   useEffect(() => {
     const fetchProfile = async () => {
       if (!userId) return;
       setLoading(true);
       try {
+        /* Open whichever profile is default, and list the rest. */
+        const list = await loadProfileList();
+
+        if (list.length > 0) {
+          /*
+           * The sidebar links to a specific profile with ?profile=<id>;
+           * fall back to the default, then to the first.
+           */
+          const requested = new URLSearchParams(window.location.search).get(
+            "profile",
+          );
+
+          const preferred =
+            list.find((p) => p._id === requested) ||
+            list.find((p) => p.isDefault) ||
+            list[0];
+
+          setActiveProfileId(preferred._id);
+
+          if (requested && requested === preferred._id) {
+            await openProfile(preferred._id);
+            setLoading(false);
+            return;
+          }
+        }
+
         const response = await apiFetch(`${API_BASE_URL}/${userId}`);
         const result = await response.json();
 
@@ -136,6 +375,23 @@ const CompanyProfile = () => {
     fetchProfile();
   }, [userId]);
 
+  /*
+   * The sidebar links to /company-profile?profile=<id>. That is a
+   * client-side navigation, so the component stays mounted and the effect
+   * above — which only runs on userId — never re-reads the URL. The result
+   * was the address bar changing while the form kept showing the previous
+   * profile.
+   */
+  useEffect(() => {
+    const requested = new URLSearchParams(location.search).get("profile");
+
+    if (!requested) return;
+    if (requested === activeProfileId) return;
+
+    openProfile(requested);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search]);
+
   // Handle Save
   const handleSave = async () => {
     if (!userId) {
@@ -157,11 +413,21 @@ const CompanyProfile = () => {
     };
 
     try {
-      const response = await apiFetch(`${API_BASE_URL}/${userId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      /*
+       * Saves the profile currently open. The by-user route still exists
+       * and writes the default profile, which is what accounts with a
+       * single profile fall back to.
+       */
+      const response = await apiFetch(
+        activeProfileId
+          ? `${API_BASE_URL}/detail/${activeProfileId}`
+          : `${API_BASE_URL}/${userId}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        },
+      );
 
       const result = await response.json();
       if (result.success) {
@@ -253,10 +519,6 @@ const CompanyProfile = () => {
                 {services.length} Services · {products.length} Products · {faqs.length} FAQs
               </div>
             </div>
-            <button type="button" onClick={handleSave} disabled={saving}
-              className="shrink-0 font-semibold text-slate-600 underline underline-offset-2 hover:text-slate-900">
-              {saving ? "Saving..." : "Save Profile"}
-            </button>
           </div>
         </div>
 
@@ -306,6 +568,139 @@ const CompanyProfile = () => {
               </button>
             </div>
           </div>
+
+          {/*
+            Profile switcher.
+            A user keeps one profile per brand, client or product line, and
+            a scenario names which one its AI replies write from. Everything
+            below the switcher edits the profile selected here.
+          */}
+          <div className="mb-5 rounded-[12px] border border-[#EBE8E1] bg-white p-4 shadow-2xs">
+            {/* Section heading — says what this block is before the controls. */}
+            <div className="mb-3 flex items-center justify-between gap-3 border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <FiZap className="h-4 w-4 text-slate-700" />
+                <h2 className="text-[13px] font-bold text-slate-900">
+                  Company profiles
+                </h2>
+                <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-bold text-slate-500">
+                  {profiles.length || 1}
+                </span>
+              </div>
+
+              <p className="hidden text-[11px] text-slate-400 sm:block">
+                One per brand, client or product line
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+              <div className="min-w-0 flex-1">
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                  Editing profile
+                </label>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <select
+                    value={activeProfileId || ""}
+                    onChange={(e) => {
+                      /*
+                       * Navigates rather than loading directly, so the URL
+                       * and the open profile can never disagree — the
+                       * ?profile= effect is the single place that loads.
+                       */
+                      if (e.target.value) {
+                        navigate(`/company-profile?profile=${e.target.value}`);
+                      }
+                    }}
+                    className="h-9 min-w-[220px] rounded-[8px] border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-900 outline-none focus:border-slate-800 transition"
+                  >
+                    {profiles.length === 0 && (
+                      <option value="">Default profile</option>
+                    )}
+                    {profiles.map((p) => (
+                      <option key={p._id} value={p._id}>
+                        {p.name}
+                        {p.isDefault ? "  (default)" : ""}
+                        {p.isActive === false ? "  — paused" : ""}
+                      </option>
+                    ))}
+                  </select>
+
+                  {activeProfileId &&
+                    !profiles.find((p) => p._id === activeProfileId)
+                      ?.isDefault && (
+                      <button
+                        type="button"
+                        onClick={handleMakeDefault}
+                        className="h-9 rounded-[8px] border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+                      >
+                        Make default
+                      </button>
+                    )}
+
+                  {activeProfileId && (
+                    <button
+                      type="button"
+                      onClick={handleToggleActive}
+                      className="h-9 rounded-[8px] border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+                    >
+                      {profiles.find((p) => p._id === activeProfileId)
+                        ?.isActive === false
+                        ? "Activate"
+                        : "Pause"}
+                    </button>
+                  )}
+
+                  {profiles.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={openDeleteDialog}
+                      className="h-9 rounded-[8px] border border-red-200 bg-red-50 px-3 text-xs font-semibold text-red-700 transition hover:bg-red-100"
+                    >
+                      Delete
+                    </button>
+                  )}
+                </div>
+
+                <p className="mt-1.5 text-[11px] text-slate-500">
+                  Scenarios set to reply with AI choose one of these profiles
+                  to write from.
+                </p>
+              </div>
+
+              <div className="flex items-end gap-2">
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                    New profile
+                  </label>
+                  <input
+                    type="text"
+                    value={newProfileName}
+                    onChange={(e) => setNewProfileName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleCreateProfile();
+                    }}
+                    placeholder="e.g. Acme Store"
+                    className="h-9 w-[200px] rounded-[8px] border border-slate-300 px-3 text-xs font-medium text-slate-900 outline-none focus:border-slate-800 transition"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleCreateProfile}
+                  disabled={creatingProfile}
+                  className={`h-9 rounded-[8px] px-4 text-xs font-bold text-white transition ${
+                    creatingProfile
+                      ? "bg-slate-400 cursor-wait"
+                      : "bg-[#111110] hover:bg-black"
+                  }`}
+                >
+                  {creatingProfile ? "Creating..." : "Create profile"}
+                </button>
+              </div>
+            </div>
+          </div>
+
 
           {/* Stat Cards */}
           <section className="mb-5 grid grid-cols-2 xl:grid-cols-4 gap-3">
@@ -659,6 +1054,111 @@ const CompanyProfile = () => {
           {/* Modals */}
           <FillWithAiModal isOpen={showFillWithAiModal} onClose={() => setShowFillWithAiModal(false)} onOpenImportModal={() => setShowImportJsonModal(true)} />
           <ImportJsonModal isOpen={showImportJsonModal} onClose={() => setShowImportJsonModal(false)} onImportSuccess={handleImportSuccess} />
+
+          {/*
+            Delete confirmation.
+            Typing the name is deliberate friction: the profile takes its
+            services, FAQs and knowledge base with it, and scenarios
+            pointing at it fall back to the default. A single OK is too
+            easy for something with no undo.
+          */}
+          {deleteTarget && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+              <div className="flex w-full max-w-[440px] flex-col overflow-hidden rounded-[16px] border border-[#EBE8E1] bg-white shadow-2xl">
+                <header className="flex shrink-0 items-center justify-between bg-[#111110] px-5 py-4 text-white">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-500/15">
+                      <FiTrash2 className="h-4 w-4 text-red-400" />
+                    </div>
+                    <div>
+                      <h2 className="text-base font-bold text-white">
+                        Delete profile
+                      </h2>
+                      <p className="mt-0.5 text-xs font-normal text-slate-300">
+                        This cannot be undone
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={closeDeleteDialog}
+                    aria-label="Close"
+                    className="cursor-pointer rounded-full p-1 text-slate-400 transition hover:text-white"
+                  >
+                    <FiX className="h-5 w-5" />
+                  </button>
+                </header>
+
+                <div className="space-y-4 p-5">
+                  <div className="rounded-[10px] border border-red-200 bg-red-50 p-3">
+                    <p className="text-[12px] font-semibold text-red-800">
+                      "{deleteTarget.name}" will be permanently deleted
+                    </p>
+                    <p className="mt-1 text-[11px] leading-relaxed text-red-700">
+                      Its services, products, FAQs, policies and knowledge base
+                      go with it. Scenarios set to write from this profile fall
+                      back to your default.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1.5">
+                      Type{" "}
+                      <span className="font-mono text-slate-900">
+                        {deleteTarget.name}
+                      </span>{" "}
+                      to confirm
+                    </label>
+
+                    <input
+                      type="text"
+                      value={deleteConfirmText}
+                      onChange={(e) => setDeleteConfirmText(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (
+                          e.key === "Enter" &&
+                          deleteConfirmText.trim() === deleteTarget.name
+                        ) {
+                          handleDeleteProfile();
+                        }
+                      }}
+                      placeholder={deleteTarget.name}
+                      autoFocus
+                      className="w-full rounded-[8px] border border-slate-300 px-3 py-2 text-xs font-medium text-slate-900 outline-none focus:border-red-500 transition"
+                    />
+                  </div>
+                </div>
+
+                <footer className="flex shrink-0 items-center justify-end gap-3 border-t border-[#EBE8E1] bg-white px-5 py-3.5">
+                  <button
+                    type="button"
+                    onClick={closeDeleteDialog}
+                    className="cursor-pointer rounded-full border border-slate-300 bg-white px-4 py-1.5 text-xs font-bold text-slate-700 transition hover:bg-slate-100"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleDeleteProfile}
+                    disabled={
+                      deletingProfile ||
+                      deleteConfirmText.trim() !== deleteTarget.name
+                    }
+                    className={`rounded-full px-4 py-1.5 text-xs font-bold text-white transition ${
+                      deletingProfile ||
+                      deleteConfirmText.trim() !== deleteTarget.name
+                        ? "bg-slate-300 cursor-not-allowed"
+                        : "bg-red-600 hover:bg-red-700 cursor-pointer"
+                    }`}
+                  >
+                    {deletingProfile ? "Deleting..." : "Delete profile"}
+                  </button>
+                </footer>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </AppLayout>

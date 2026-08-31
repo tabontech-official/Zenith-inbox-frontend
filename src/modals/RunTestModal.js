@@ -2,6 +2,7 @@ import { apiFetch } from "../utils/apiClient";
 import React, { useState } from "react";
 import { FiX } from "react-icons/fi";
 import toast from "react-hot-toast";
+import useModalDismiss from "../hooks/useModalDismiss";
 
 const RunTestModal = ({
   onClose,
@@ -59,8 +60,21 @@ const RunTestModal = ({
     }
   };
 
+  /*
+   * Refused while a test run is in flight — dismissing mid-run would hide
+   * the progress the user is waiting on.
+   */
+  const dismiss = useModalDismiss({
+    onClose,
+    isDirty: Boolean(loading),
+    dirtyMessage: "The test is still running.",
+  });
+
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center z-50">
+    <div
+      className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50"
+      {...dismiss.backdropProps}
+    >
       <div
         className="
         bg-white/95 backdrop-blur-xl 

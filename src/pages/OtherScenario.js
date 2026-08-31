@@ -34,8 +34,12 @@ import FilterModal from "../modals/FilterModal";
 import ConnectionModal from "../component/ConnectionModal";
 import flowToScenario from "../utils/flowToScenario";
 import OutlookConnectionModal from "../component/OutlookConnectionModal";
-import MicrosoftConnectionModal from "../component/MicrosoftConnectionModal";
 import WebhookModal from "../component/WebhookModal";
+import MailhookConnectionModal from "../component/MailhookConnectionModal";
+import {
+  consumeMicrosoftOAuthResult,
+  startMicrosoftOAuth,
+} from "../utils/microsoftOAuth";
 import { useContext } from "react";
 import { UserContext } from "../component/UserContext";
 import { ListOrdered, MailCheck, Sparkles } from "lucide-react";
@@ -338,8 +342,9 @@ const OthersScenariosPage = () => {
   }, [rfNodes.length]);
 
   const [showGmailModal, setShowGmailModal] = useState(false);
+  const [showMailhookModal, setShowMailhookModal] = useState(false);
+  const [mailhooks, setMailhooks] = useState([]);
   const [showOutlookModal, setShowOutlookModal] = useState(false);
-  const [showMicrosoftModal, setShowMicrosoftModal] = useState(false);
 
   const addModule = (type) => {
     const parentId = editingNode?.id || editingNode;
@@ -701,16 +706,27 @@ const OthersScenariosPage = () => {
       }));
 
       // Sync incomingLead from DB if available
-      if (data.incomingLead && (data.incomingLead.connectionId || data.incomingLead.subjectFilter)) {
+      if (
+        data.incomingLead &&
+        (data.incomingLead.connectionId ||
+          data.incomingLead.mailhookId ||
+          data.incomingLead.subjectFilter)
+      ) {
         const connId =
           data.incomingLead.connectionId?._id ||
           data.incomingLead.connectionId;
+        /* A mailhook trigger stores its id here instead of a connection. */
+        const hookId =
+          data.incomingLead.mailhookId?._id || data.incomingLead.mailhookId;
+        const appName = data.incomingLead.app?.name || "";
         const subj = data.incomingLead.subjectFilter || "";
 
         restoredNodes.forEach((n) => {
           if (n.type === "gmailNode") {
             if (!n.data.config) n.data.config = {};
             if (connId && !n.data.config.connectionId) n.data.config.connectionId = connId;
+            if (hookId && !n.data.config.mailhookId) n.data.config.mailhookId = hookId;
+            if (appName && !n.data.config.appType) n.data.config.appType = appName;
             if (subj && !n.data.config.subject) n.data.config.subject = subj;
           }
         });
@@ -862,8 +878,56 @@ const OthersScenariosPage = () => {
       console.error("Error fetching connections:", err);
     }
   };
+  /*
+   * The Incoming Leads trigger can listen on a mailhook instead of a
+   * mailbox connection, and mailhooks live in their own collection.
+   */
+  /*
+   * Microsoft connects through OAuth, which navigates away from the
+   * builder. Persist the scenario first so unsaved edits survive the round
+   * trip, and come back to this exact scenario.
+   */
+  const connectMicrosoftAccount = async () => {
+    /*
+     * Captured BEFORE saving: saving can route away from the builder, and
+     * the return path has to be the scenario the user was editing, not
+     * wherever the save left them.
+     */
+    const returnTo = `${window.location.pathname}${window.location.search}`;
+
+    try {
+      await saveScenario();
+    } catch (err) {
+      console.error("Could not save before Microsoft sign-in:", err);
+    }
+
+    startMicrosoftOAuth({ redirectPath: returnTo });
+  };
+
+  const fetchMailhooks = async () => {
+    try {
+      const res = await apiFetch(
+        `https://email-syncing-backend.vercel.app/mailhookcard/${localStorage.getItem(
+          "userid",
+        )}`,
+      );
+      const data = await res.json();
+      setMailhooks(data?.success && Array.isArray(data.data) ? data.data : []);
+    } catch (err) {
+      console.error("Error fetching mailhooks:", err);
+      setMailhooks([]);
+    }
+  };
+
   useEffect(() => {
     fetchConnections();
+    fetchMailhooks();
+  }, []);
+
+  /* Returning from Microsoft: report the outcome, then reload connections. */
+  useEffect(() => {
+    consumeMicrosoftOAuthResult({ onSuccess: () => fetchConnections() });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const onConnect = useCallback(
@@ -904,16 +968,22 @@ const OthersScenariosPage = () => {
     const gmailNode = rfNodes.find((n) => n.type === "gmailNode");
     const gmailConfig = gmailNode?.data?.config || {};
 
+    const appName = gmailConfig.appType || gmailConfig.emailType || "Gmail";
+    const isMailhookTrigger = appName === "Mailhook";
+
     const incomingLeadObj = {
       app: {
-        name: gmailConfig.appType || gmailConfig.emailType || "Gmail",
+        name: appName,
         color: "",
         icon: "",
       },
-      connectionId: gmailConfig.connectionId || null,
+      connectionId: isMailhookTrigger ? null : gmailConfig.connectionId || null,
+      mailhookId: isMailhookTrigger ? gmailConfig.mailhookId || null : null,
       subjectFilter: gmailConfig.subject || "",
       pollInterval: 60,
-      enabled: Boolean(gmailConfig.connectionId),
+      enabled: Boolean(
+        isMailhookTrigger ? gmailConfig.mailhookId : gmailConfig.connectionId,
+      ),
     };
 
     console.log("🟥 SAVING SCENARIO INCOMING LEAD:", incomingLeadObj);
@@ -1652,7 +1722,7 @@ const OthersScenariosPage = () => {
       )}
 
       {showEdgeModal && selectedEdge && (
-        <div className="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white p-6 rounded-[20px] shadow-2xl w-80 space-y-5 border border-[#EBE8E1]">
             {/* Title */}
             <div className="flex justify-between items-center">
@@ -1835,9 +1905,12 @@ const OthersScenariosPage = () => {
         <EmailModal
           node={editingNode}
           connections={connections}
+          mailhooks={mailhooks}
           onClose={() => setShowEmailModal(false)}
           openGmailModal={() => setShowGmailModal(true)}
           openOutlookModal={() => setShowOutlookModal(true)}
+          openMicrosoftModal={connectMicrosoftAccount}
+          openMailhookModal={() => setShowMailhookModal(true)}
           templates={otherActiveTemplates}
           showTemplateOption={isTemplateAvailable}
           onSave={(data) => {
@@ -1930,15 +2003,6 @@ const OthersScenariosPage = () => {
         }}
       />
 
-      <MicrosoftConnectionModal
-        isOpen={showMicrosoftModal}
-        onClose={() => setShowMicrosoftModal(false)}
-        onSuccess={() => {
-          fetchConnections();
-          setShowMicrosoftModal(false);
-        }}
-      />
-
       <OutlookConnectionModal
         isOpen={showOutlookModal}
         onClose={() => setShowOutlookModal(false)}
@@ -1946,6 +2010,16 @@ const OthersScenariosPage = () => {
           fetchConnections();
           setShowOutlookModal(false);
         }}
+      />
+
+      <MailhookConnectionModal
+        isOpen={showMailhookModal}
+        onClose={() => {
+          setShowMailhookModal(false);
+          fetchMailhooks();
+        }}
+        user={{ _id: localStorage.getItem("userid"), mailhook: user?.mailhook }}
+        onMailhookUpdated={fetchMailhooks}
       />
       {showRunTestModal && (
         <RunTestModal
@@ -1966,7 +2040,7 @@ const OthersScenariosPage = () => {
       )}
 
       {showDeleteConfirm && (
-        <div className="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white p-6 rounded-[20px] shadow-2xl w-80 space-y-4 border border-[#EBE8E1]">
             <h2 className="text-base font-bold text-slate-900">
               Delete Module?
@@ -2000,7 +2074,7 @@ const OthersScenariosPage = () => {
       )}
       {/* Upgrade Active Scenario Modal */}
       {upgradeModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 backdrop-blur-xs">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 px-4 backdrop-blur-sm">
           <div className="relative w-full max-w-md rounded-[12px] border border-slate-200 bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-150">
             <button
               type="button"

@@ -16,6 +16,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { X, Check } from "lucide-react";
+import useModalDismiss from "../hooks/useModalDismiss";
 
 const MailhookWaitingTimer = ({ message }) => {
   const [seconds, setSeconds] = useState(10);
@@ -109,6 +110,17 @@ const MailhookConnectionModal = ({
   const [verificationFound, setVerificationFound] = useState(false);
   const [validationSuccess, setValidationSuccess] = useState(false);
 
+  /*
+   * The card this run is setting up, and the address to forward to.
+   * Both are seeded from props but re-taken from the create response:
+   * an account that predates mailhook addresses has one generated
+   * server-side at that moment, so `user.mailhook` here would still be
+   * empty and step 2 would show a placeholder instead of a real address.
+   */
+  const [activeCardId, setActiveCardId] = useState(cardId || null);
+  const [mailhookAddress, setMailhookAddress] = useState(user?.mailhook || "");
+  const [creating, setCreating] = useState(false);
+
   useEffect(() => {
     if (alert.message) {
       const timer = setTimeout(() => setAlert({ type: "", message: "" }), 4000);
@@ -135,8 +147,12 @@ const MailhookConnectionModal = ({
 
       setVerificationFound(false);
       setValidationSuccess(false);
+
+      setActiveCardId(cardId || null);
+      setMailhookAddress(user?.mailhook || "");
+      setCreating(false);
     }
-  }, [isOpen, startAtStep3]);
+  }, [isOpen, startAtStep3, cardId, user?.mailhook]);
 
   const fetchMailhookEmails = async ({ autoOpen = false } = {}) => {
     if (!user?._id) return;
@@ -185,6 +201,18 @@ const MailhookConnectionModal = ({
       return;
     }
 
+    const forwardingEmail = (verificationEmail?.toEmail || "").trim();
+
+    /*
+     * The connections page lists the card by this address, and the backend
+     * needs it to know which mailbox forwards in. Submitting the empty
+     * input stored an empty address and produced a nameless connection.
+     */
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(forwardingEmail)) {
+      toast.error("Enter the email address that forwards into your mailhook.");
+      return;
+    }
+
     try {
       setValidating(true);
       setValidationFailed(false);
@@ -193,7 +221,8 @@ const MailhookConnectionModal = ({
         "https://email-syncing-backend.vercel.app/mailhookcard/validate",
         {
           userId: user._id,
-          forwardingEmail: verificationEmail?.toEmail || "",
+          forwardingEmail,
+          cardId: activeCardId || undefined,
         }
       );
 
@@ -212,6 +241,10 @@ const MailhookConnectionModal = ({
         setValidationSuccess(false);
         setValidationFailed(true);
         toast.error(res.data.message || "Forwarding validation failed");
+        setAlert({
+          type: "error",
+          message: res.data.message || "Forwarding validation failed",
+        });
       }
     } catch (err) {
       console.error("Validation error:", err);
@@ -223,16 +256,28 @@ const MailhookConnectionModal = ({
     }
   };
 
+  /*
+   * This modal used to close on ANY outside click, throwing away a
+   * half-finished multi-step setup. Past step 1 the mailhook card has been
+   * created and the user is mid-flow, so dismissal is refused.
+   */
+  const dismiss = useModalDismiss({
+    onClose,
+    isDirty: step > 1 && !validationSuccess,
+    dirtyMessage:
+      "Mailhook setup is in progress — use the X or Cancel to leave it.",
+  });
+
   if (!isOpen) return null;
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-fadeIn"
-      onClick={onClose}
+      className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn"
+      {...dismiss.backdropProps}
     >
       <div
         className="bg-white rounded-[12px] shadow-2xl w-full max-w-[540px] border border-slate-200 overflow-hidden flex flex-col relative transform animate-slideUp"
-        onClick={(e) => e.stopPropagation()}
+        {...dismiss.panelProps}
       >
         {/* Dark Theme Top Header Bar */}
         <div className="flex items-center justify-between bg-[#111110] text-white px-6 py-4 shrink-0">
@@ -319,8 +364,13 @@ const MailhookConnectionModal = ({
                 </button>
                 <button
                   type="button"
+                  disabled={creating}
                   onClick={async () => {
+                    if (creating) return;
+
                     try {
+                      setCreating(true);
+
                       const res = await axios.post(
                         "https://email-syncing-backend.vercel.app/mailhookcard/create",
                         {
@@ -329,19 +379,36 @@ const MailhookConnectionModal = ({
                         }
                       );
                       if (res.data.success) {
+                        setActiveCardId(res.data.data?._id || null);
+                        setMailhookAddress(
+                          res.data.mailhook ||
+                            res.data.data?.mailhook ||
+                            user?.mailhook ||
+                            ""
+                        );
+                        onMailhookUpdated?.();
                         toast.success("Mailhook connection initialized!");
                         setStep(2);
                       } else {
-                        toast.error("Failed to initialize mailhook connection");
+                        toast.error(
+                          res.data.message ||
+                            "Failed to initialize mailhook connection"
+                        );
                       }
                     } catch (err) {
                       console.error("Error creating mailhook:", err);
                       toast.error("Server error while creating mailhook connection");
+                    } finally {
+                      setCreating(false);
                     }
                   }}
-                  className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-[8px] text-xs font-bold text-white bg-[#111110] hover:bg-black shadow-xs transition cursor-pointer"
+                  className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-[8px] text-xs font-bold text-white shadow-xs transition ${
+                    creating
+                      ? "bg-slate-400 cursor-wait"
+                      : "bg-[#111110] hover:bg-black cursor-pointer"
+                  }`}
                 >
-                  <span>Next Step</span>
+                  <span>{creating ? "Setting up..." : "Next Step"}</span>
                   <FiArrowRight />
                 </button>
               </div>
@@ -372,13 +439,13 @@ const MailhookConnectionModal = ({
 
                 <div className="bg-slate-50 text-slate-900 px-3 py-2 rounded-[8px] flex justify-between items-center font-mono text-xs border border-slate-200">
                   <span className="truncate mr-2 font-medium">
-                    {user?.mailhook || "loading-mailhook@zenith-inbox.com"}
+                    {mailhookAddress || "Preparing your mailhook address..."}
                   </span>
                   <button
                     type="button"
                     onClick={() => {
-                      if (user?.mailhook) {
-                        navigator.clipboard.writeText(user.mailhook);
+                      if (mailhookAddress) {
+                        navigator.clipboard.writeText(mailhookAddress);
                         setAlert({ type: "success", message: "Mailhook copied successfully!" });
                       }
                     }}

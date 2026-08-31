@@ -20,6 +20,11 @@ import ConfirmDeleteModal from "../component/ConformationModel";
 import MailhookConnectionModal from "../component/MailhookConnectionModal";
 import { UserContext } from "../component/UserContext";
 import ConfirmMailhookDeleteModal from "../component/ConfirmMailhookDeleteModal";
+import {
+  consumeMicrosoftOAuthResult,
+  startMicrosoftOAuth,
+} from "../utils/microsoftOAuth";
+import { isOAuthConnection } from "../utils/connectionProviders";
 
 const ConnectionsPage = () => {
   const { user } = useContext(UserContext);
@@ -42,39 +47,58 @@ const ConnectionsPage = () => {
   const [selectedMailhookId, setSelectedMailhookId] = useState(null);
   const [startAtStep3, setStartAtStep3] = useState(false);
 
+  /*
+   * Was a sidebar link that set ?status=verified and was never read — the
+   * page showed everything regardless. Seeded from the query string so any
+   * existing link still lands on the right filter.
+   */
+  const [statusFilter, setStatusFilter] = useState(
+    new URLSearchParams(window.location.search).get("status") === "verified"
+      ? "verified"
+      : "all",
+  );
+
+  const isVerifiedHook = (hook) => hook.connectionVerified === true;
+  const isVerifiedConn = (conn) => conn.verified === true;
+
+  const visibleMailhooks =
+    statusFilter === "verified" ? mailhooks.filter(isVerifiedHook) : mailhooks;
+
+  const visibleConnections =
+    statusFilter === "verified"
+      ? connections.filter(isVerifiedConn)
+      : connections;
+
+  const verifiedCount =
+    mailhooks.filter(isVerifiedHook).length +
+    connections.filter(isVerifiedConn).length;
+
+  const totalCount = mailhooks.length + connections.length;
+
+  const STATUS_FILTERS = [
+    { id: "all", label: "All connections", count: totalCount },
+    { id: "verified", label: "Verified", count: verifiedCount },
+  ];
+
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
   const openOutlookModal = () => setIsOutlookModalOpen(true);
   const closeOutlookModal = () => setIsOutlookModalOpen(false);
-  const openMicrosoftModal = () => setIsMicrosoftModalOpen(true);
   const closeMicrosoftModal = () => setIsMicrosoftModalOpen(false);
   const openCreateModal = () => setIsCreateModalOpen(true);
   const closeCreateModal = () => setIsCreateModalOpen(false);
 
   /*
-   * Microsoft no longer uses the app-password modal: Exchange Online
-   * rejects basic auth outright, so this hands off to the MSAL OAuth
-   * flow on the backend. Same env-based base URL as the Setup page —
-   * never a hardcoded production host.
+   * Microsoft never uses the app-password modal: Exchange Online rejects
+   * basic auth outright, so this hands off to the MSAL OAuth flow on the
+   * backend. Shared with the scenario builders and the sidebar — see
+   * utils/microsoftOAuth.js.
    */
-  const startOutlookOAuth = () => {
-    const userId = user?._id || localStorage.getItem("userid");
-
-    if (!userId) {
-      toast.error("User not found. Please log in again.");
-      return;
-    }
-
-    const apiBase =
-      process.env.REACT_APP_API_BASE_URL ||
-      "https://email-syncing-backend.vercel.app";
-
-    const authURL = `${apiBase}/auth/outlook/connect?userId=${userId}&redirect=${encodeURIComponent(
-      "/connection"
-    )}`;
-
-    window.location.href = authURL;
-  };
+  const startOutlookOAuth = () =>
+    startMicrosoftOAuth({
+      userId: user?._id,
+      redirectPath: "/connection",
+    });
 
   const handleProviderSelect = (providerId) => {
     closeCreateModal();
@@ -89,55 +113,29 @@ const ConnectionsPage = () => {
       return;
     }
 
+    /*
+     * Mailhook reuses the same setup modal the sidebar and setup wizard
+     * open. Always start at step 1 with no card selected: picking it from
+     * here means creating a new connection, never editing an existing one.
+     */
+    if (providerId === "mailhook") {
+      setStartAtStep3(false);
+      setSelectedMailhookId(null);
+      setIsMailhookModalOpen(true);
+      return;
+    }
+
     /* "other" -> the existing generic custom-SMTP modal, unchanged. */
     openOutlookModal();
   };
 
   /*
    * The Microsoft OAuth callback returns here with the outcome in the
-   * query string. Report it, then strip the params so a refresh does
-   * not replay the same toast.
+   * query string. Reporting and cleanup are shared so every page that can
+   * start the flow handles the return the same way.
    */
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const outcome = params.get("outlook-auth-success");
-
-    if (!outcome) return;
-
-    if (outcome === "true") {
-      const email = params.get("email");
-      toast.success(
-        email
-          ? `Microsoft account connected: ${email}`
-          : "Microsoft account connected successfully."
-      );
-      fetchConnections();
-    } else {
-      const reason = params.get("reason");
-      const REASON_TEXT = {
-        missing_code: "Microsoft did not return an authorization code.",
-        token_exchange_failed:
-          "Could not exchange the Microsoft authorization code for tokens.",
-        access_denied: "Access was denied on the Microsoft consent screen.",
-      };
-
-      toast.error(
-        REASON_TEXT[reason] ||
-          `Microsoft connection failed${reason ? `: ${reason}` : "."}`,
-        { duration: 8000 }
-      );
-    }
-
-    params.delete("outlook-auth-success");
-    params.delete("reason");
-    params.delete("email");
-
-    const query = params.toString();
-    window.history.replaceState(
-      {},
-      "",
-      window.location.pathname + (query ? `?${query}` : "")
-    );
+    consumeMicrosoftOAuthResult({ onSuccess: () => fetchConnections() });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -160,6 +158,19 @@ const ConnectionsPage = () => {
   };
 
   const openEditModal = (conn) => {
+    /*
+     * An OAuth connection has no password to edit — re-authorising means
+     * sending the user back through Microsoft. Opening the app-password
+     * form for one would offer a field that cannot fix anything.
+     */
+    if (isOAuthConnection(conn)) {
+      startMicrosoftOAuth({
+        userId: user?._id,
+        redirectPath: "/connection",
+      });
+      return;
+    }
+
     setConnectionToEdit(conn);
     setEditProvider(conn.provider);
     if (conn.provider === "gmail") {
@@ -216,7 +227,12 @@ const ConnectionsPage = () => {
     const handleMailhookEvent = () => setIsMailhookModalOpen(true);
     const handleGmailEvent = () => openModal();
     const handleOutlookEvent = () => openOutlookModal();
-    const handleMicrosoftEvent = () => openMicrosoftModal();
+    /*
+     * Fired by the sidebar's "+ Microsoft" button. This is an ADD, so it
+     * takes the OAuth path; the app-password modal remains only for
+     * editing an existing connection.
+     */
+    const handleMicrosoftEvent = () => startOutlookOAuth();
 
     window.addEventListener("openMailhookModal", handleMailhookEvent);
     window.addEventListener("openGmailModal", handleGmailEvent);
@@ -260,12 +276,15 @@ const ConnectionsPage = () => {
       case "gmail":
         return <FaGoogle className="text-red-500 h-5 w-5" />;
       case "microsoft":
+      case "microsoft-oauth":
       case "outlook":
         return <FaMicrosoft className="text-blue-600 h-5 w-5" />;
       default:
         return <FaEnvelope className="text-slate-600 h-5 w-5" />;
     }
   };
+
+  const hasConnections = mailhooks.length > 0 || connections.length > 0;
 
   const Loader = () => (
     <div className="flex flex-col justify-center items-center py-24">
@@ -281,17 +300,50 @@ const ConnectionsPage = () => {
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-y-auto bg-[#F7F7FA]">
         {/* Top Title Subheader */}
         <header className="flex items-center justify-between gap-4 border-b border-[#EBE8E1] bg-white px-6 py-2">
-          <p className="text-xs text-slate-500  font-medium">
-            Connect and manage your Gmail, Outlook, SMTP, and Mailhook provider
-            accounts.
-          </p>
+          <div className="flex min-w-0 flex-wrap items-center gap-4">
+            <p className="text-xs text-slate-500 font-medium">
+              Connect and manage your Gmail, Outlook, SMTP, and Mailhook
+              provider accounts.
+            </p>
 
-          <button
-            onClick={openCreateModal}
-            className="shrink-0 rounded-full bg-[#111111] px-5 py-2 text-xs font-semibold text-white shadow-2xs transition hover:bg-slate-800"
-          >
-            Create Connection
-          </button>
+            {/* Moved here from the sidebar, next to the list they filter. */}
+            {totalCount > 0 && (
+              <div className="flex items-center gap-1 rounded-full border border-[#EBE8E1] bg-[#F7F7FA] p-0.5">
+                {STATUS_FILTERS.map((f) => (
+                  <button
+                    key={f.id}
+                    type="button"
+                    onClick={() => setStatusFilter(f.id)}
+                    className={`rounded-full px-3 py-1 text-[11px] font-semibold transition cursor-pointer ${
+                      statusFilter === f.id
+                        ? "bg-white text-slate-900 shadow-2xs"
+                        : "text-slate-500 hover:text-slate-900"
+                    }`}
+                  >
+                    {f.label}
+                    <span
+                      className={`ml-1.5 ${
+                        statusFilter === f.id
+                          ? "text-slate-400"
+                          : "text-slate-400"
+                      }`}
+                    >
+                      {f.count}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {hasConnections && (
+            <button
+              onClick={openCreateModal}
+              className="shrink-0 rounded-full bg-[#111111] px-5 py-2 text-xs font-semibold text-white shadow-2xs transition hover:bg-slate-800"
+            >
+              Create Connection
+            </button>
+          )}
         </header>
 
         {/* Main Canvas Body */}
@@ -299,7 +351,24 @@ const ConnectionsPage = () => {
           <div className="w-full">
             {loading ? (
               <Loader />
-            ) : mailhooks.length === 0 && connections.length === 0 ? (
+            ) : totalCount > 0 &&
+              visibleMailhooks.length === 0 &&
+              visibleConnections.length === 0 ? (
+              <div className="rounded-[20px] border border-[#EBE8E1] bg-white p-12 text-center max-w-md mx-auto shadow-2xs my-12">
+                <h3 className="text-base font-bold text-slate-900">
+                  No verified connections
+                </h3>
+                <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                  None of your connections have completed verification yet.
+                </p>
+                <button
+                  onClick={() => setStatusFilter("all")}
+                  className="mt-5 rounded-full border border-slate-300 bg-white px-5 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 cursor-pointer"
+                >
+                  Show all connections
+                </button>
+              </div>
+            ) : totalCount === 0 ? (
               <div className="rounded-[20px] border border-[#EBE8E1] bg-white p-12 text-center max-w-md mx-auto shadow-2xs my-12">
                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-600 mb-4">
                   <FaPlug size={22} />
@@ -313,17 +382,17 @@ const ConnectionsPage = () => {
                 </p>
                 <div className="mt-6 flex justify-center gap-2">
                   <button
-                    onClick={openModal}
+                    onClick={openCreateModal}
                     className="rounded-full bg-[#111111] px-5 py-2 text-xs font-semibold text-white shadow-2xs hover:bg-slate-800 transition"
                   >
-                    Connect Gmail
+                    Create Connection
                   </button>
                 </div>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {/* Mailhooks List */}
-                {mailhooks.map((hook) => (
+                {visibleMailhooks.map((hook) => (
                   <div
                     key={hook._id}
                     className="rounded-[20px] border border-[#EBE8E1] bg-white p-5 shadow-2xs hover:shadow-md transition flex flex-col justify-between space-y-4 relative"
@@ -336,7 +405,11 @@ const ConnectionsPage = () => {
                           </div>
                           <div>
                             <h3 className="font-bold text-slate-900 text-sm truncate max-w-[160px]">
-                              {hook.forwardingEmail}
+                              {/* A card is created before the forwarding
+                                  address is confirmed, so fall back to the
+                                  mailhook itself rather than showing a
+                                  nameless connection. */}
+                              {hook.forwardingEmail || hook.mailhook}
                             </h3>
                             <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">
                               Mailhook Connection
@@ -396,7 +469,7 @@ const ConnectionsPage = () => {
                 ))}
 
                 {/* Email Connections List (Gmail, Outlook, SMTP) */}
-                {connections.map((conn) => (
+                {visibleConnections.map((conn) => (
                   <div
                     key={conn._id}
                     className="rounded-[20px] border border-[#EBE8E1] bg-white p-5 shadow-2xs hover:shadow-md transition flex flex-col justify-between space-y-4 relative"

@@ -13,6 +13,7 @@ import {
   FaUser,
 } from "react-icons/fa";
 import { FiExternalLink, FiMail, FiShield } from "react-icons/fi";
+import useModalDismiss from "../hooks/useModalDismiss";
 
 /*
  * Defaults to the deployed backend, so production behaviour is unchanged.
@@ -57,6 +58,14 @@ const MicrosoftConnectionModal = ({
   const [showPassword, setShowPassword] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  const dismiss = useModalDismiss({
+    onClose,
+    isDirty:
+      Boolean(email) ||
+      Boolean(appPassword) ||
+      connectionName !== "My Microsoft Connection",
+  });
 
   useEffect(() => {
     if (!isOpen) return;
@@ -227,7 +236,10 @@ const MicrosoftConnectionModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/10 backdrop-blur-xs p-4">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4"
+      {...dismiss.backdropProps}
+    >
       <div className="flex max-h-[88vh] w-full max-w-[460px] flex-col overflow-hidden rounded-[8px] bg-white border  ">
         <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
           {/* Dark Theme Header */}

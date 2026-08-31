@@ -225,7 +225,7 @@ const MasterAdminUsers = () => {
 
         {/* CHANGE PLAN MODAL */}
         {showPlanModal && selectedUser && (
-          <div className="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-md p-6">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
                 <h2 className="text-sm font-bold text-slate-900">

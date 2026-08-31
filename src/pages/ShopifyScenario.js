@@ -17,6 +17,8 @@ import {
   RotateCcw,
   Clock3,
   RotateCw,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { CiLink } from "react-icons/ci";
 
@@ -54,6 +56,7 @@ import {
   FiUserX,
   FiTrash2,
   FiEdit,
+  FiChevronRight,
 } from "react-icons/fi";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
@@ -64,10 +67,61 @@ import { UserContext } from "../component/UserContext";
 import WebhookModal from "../component/WebhookModal";
 import ConnectionModal from "../component/ConnectionModal";
 import OutlookConnectionModal from "../component/OutlookConnectionModal";
-import MicrosoftConnectionModal from "../component/MicrosoftConnectionModal";
+import MailhookConnectionModal from "../component/MailhookConnectionModal";
+import {
+  consumeMicrosoftOAuthResult,
+  startMicrosoftOAuth,
+} from "../utils/microsoftOAuth";
+import {
+  appTypeForConnection,
+  matchesAppType,
+  providerLabel,
+} from "../utils/connectionProviders";
+import useDragScroll from "../hooks/useDragScroll";
+import useModalDismiss from "../hooks/useModalDismiss";
+import StatusDot from "../component/StatusDot";
+import { formatInTimeZone, timeZoneBadge } from "../utils/timezone";
+import FlowConnector from "../component/FlowConnector";
 import CreateConnectionTypeModal from "../component/CreateConnectionTypeModal";
 import SetupOtherSMTPModal from "../component/SetupOtherSMTPModal";
 import EmailInspector from "./EmailInspector";
+
+/*
+ * The starting shape of a Shopify scenario: one branch that sends the
+ * initial reply. Resetting a scenario and building an additional one both
+ * begin here, so the shape is defined once.
+ */
+const buildDefaultShopifyBranches = (connectionId = "") => {
+  const seed = Date.now();
+
+  return [
+    {
+      id: seed,
+      hasModule: true,
+      condition: null,
+      modules: [
+        {
+          id: seed + 1,
+          app: {
+            name: "Initial Email",
+            displayName: "Initial Email",
+            color: "bg-red-500",
+            icon: "Gmail",
+            defaultTemplate: "Initial Email",
+          },
+          type: "Send an Email",
+          description: "Send email via Gmail",
+          connectionId,
+          template: "Initial Email",
+          subject: "",
+          cc: [],
+          bcc: [],
+          emailType: "Gmail",
+        },
+      ],
+    },
+  ];
+};
 
 const ShopifyScenariosPage = () => {
   const quillRef = useRef(null);
@@ -110,7 +164,151 @@ const ShopifyScenariosPage = () => {
 
   const { id } = useParams();
   const navigate = useNavigate();
+
+  /*
+   * /scenarios/shopify/new is not a scenario id — it asks for an
+   * additional, blank Shopify scenario. Nothing may load or save over the
+   * one already stored while this is true, or building a second scenario
+   * would silently overwrite the first.
+   */
+  const isNewScenario = id === "new";
   const [showTemplateModal, setShowTemplateModal] = useState(false);
+
+  /*
+   * Leads that arrived while this scenario was switched Off.
+   *
+   * Turning a scenario off stops the replies, not the leads — they keep
+   * syncing in and keep sitting in the Lead Inbox unanswered. The backend
+   * records each one it would have replied to, so switching back on can
+   * ask what to do with the backlog instead of quietly ignoring it.
+   *
+   * null means "not checked yet", which is not the same as "empty" — the
+   * prompt only opens on a real count from the server.
+   */
+  const [pausedQueue, setPausedQueue] = useState(null);
+  const [queuePromptOpen, setQueuePromptOpen] = useState(false);
+  const [queueBusy, setQueueBusy] = useState(false);
+
+  /*
+   * Read at call time, never at render time: the scenarioId state is
+   * declared further down the component, so evaluating it up here would
+   * throw before the first paint.
+   */
+  const getScenarioKey = () =>
+    (isNewScenario ? null : id) ||
+    scenarioId ||
+    (isNewScenario ? null : localStorage.getItem("scenarioId"));
+
+  const fetchPausedQueue = async () => {
+    const activeScenarioKey = getScenarioKey();
+    if (!activeScenarioKey) return null;
+
+    try {
+      const token = localStorage.getItem("usertoken");
+      const res = await apiFetch(
+        `https://email-syncing-backend.vercel.app/scenario/${activeScenarioKey}/queue`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      const data = await res.json();
+
+      return res.ok && data?.success ? data : null;
+    } catch (err) {
+      console.error("Error reading the paused queue:", err);
+      /*
+       * A failed check is not evidence of an empty queue, but it must not
+       * block the user from switching the scenario on either. Returning
+       * null resumes without the prompt; the backlog stays queued and the
+       * prompt appears on the next attempt.
+       */
+      return null;
+    }
+  };
+
+  /*
+   * Switch the scenario on, then act on the backlog.
+   *
+   * Order matters: the backend refuses to send a queue into a scenario
+   * that is still paused, because replaying into a paused scenario would
+   * just queue everything again and report success.
+   */
+  const resumeWithQueue = async (action) => {
+    const activeScenarioKey = getScenarioKey();
+    setQueueBusy(true);
+
+    try {
+      const saved = await handleSaveScenario(null, true);
+
+      /* handleSaveScenario has already explained the failure. */
+      if (!saved) return;
+
+      const token = localStorage.getItem("usertoken");
+      let sent = 0;
+      let failed = 0;
+      let remaining = 0;
+
+      /*
+       * The server releases in capped batches so a large backlog cannot
+       * run into the request timeout, and reports what it left behind.
+       * Keep going until it reports nothing left — the guard is only
+       * there so a server that never drains cannot spin forever.
+       */
+      for (let pass = 0; pass < 40; pass += 1) {
+        const res = await apiFetch(
+          `https://email-syncing-backend.vercel.app/scenario/${activeScenarioKey}/queue`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ action }),
+          },
+        );
+        const data = await res.json();
+
+        if (!res.ok || !data?.success) {
+          toast.error(data?.message || "Could not process the queued leads.");
+          return;
+        }
+
+        if (action === "discard") {
+          toast.success(
+            `${data.discarded} queued lead${data.discarded === 1 ? "" : "s"} left unanswered.`,
+          );
+          return;
+        }
+
+        sent += data.sent || 0;
+        failed += data.failed || 0;
+        remaining = data.remaining || 0;
+
+        if (!remaining) break;
+
+        /*
+         * A pass that claimed nothing and still reports a backlog means
+         * every message in it failed and went back on the queue. Retrying
+         * would loop on the same failures.
+         */
+        if (!data.sent) break;
+      }
+
+      if (sent) {
+        toast.success(
+          `Sent ${sent} queued repl${sent === 1 ? "y" : "ies"}.`,
+        );
+      }
+
+      if (failed || remaining) {
+        toast.error(
+          `${remaining || failed} queued lead${(remaining || failed) === 1 ? "" : "s"} could not be sent and are still waiting.`,
+        );
+      }
+    } finally {
+      setQueueBusy(false);
+      setQueuePromptOpen(false);
+      setPausedQueue(null);
+    }
+  };
 
   const handleToggleShopifyAutomation = async () => {
     const nextVal = !automationOn;
@@ -131,16 +329,21 @@ const ShopifyScenariosPage = () => {
       if (targetUserId) {
         try {
           const token = localStorage.getItem("usertoken");
-          const res = await apiFetch(`https://email-syncing-backend.vercel.app/scenario/user/${targetUserId}`, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
+          const res = await apiFetch(
+            `https://email-syncing-backend.vercel.app/scenario/user/${targetUserId}`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            },
+          );
           const data = await res.json();
           const list = Array.isArray(data) ? data : data?.data || [];
-          const activeCount = list.filter((s) => s.scenarioActive && s._id !== id).length;
+          const activeCount = list.filter(
+            (s) => s.scenarioActive && s._id !== id,
+          ).length;
 
           if (activeCount >= limit) {
             toast.error(
-              `Active scenario limit reached for your ${userPlan} plan (max ${limit === 999 ? "unlimited" : limit} active). Please deactivate an existing active scenario or upgrade your plan.`
+              `Active scenario limit reached for your ${userPlan} plan (max ${limit === 999 ? "unlimited" : limit} active). Please deactivate an existing active scenario or upgrade your plan.`,
             );
             setUpgradeModalOpen(true);
             return;
@@ -148,6 +351,20 @@ const ShopifyScenariosPage = () => {
         } catch (err) {
           console.error("Error checking active scenario limit:", err);
         }
+      }
+
+      /*
+       * Anything that arrived while this was paused is still unanswered.
+       * Ask before resuming rather than either firing a silent burst of
+       * late replies at customers or dropping the backlog on the floor —
+       * both are decisions the user should be making, not us.
+       */
+      const queue = await fetchPausedQueue();
+
+      if (queue?.count > 0) {
+        setPausedQueue(queue);
+        setQueuePromptOpen(true);
+        return;
       }
     }
 
@@ -169,64 +386,26 @@ const ShopifyScenariosPage = () => {
             `https://email-syncing-backend.vercel.app/template/alltemplates?userId=${userId}&service=General`,
           );
           const data = await res.json();
-          if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+          if (
+            data.success &&
+            Array.isArray(data.data) &&
+            data.data.length > 0
+          ) {
             setTemplateList(data.data.slice(0, 3));
           } else {
-            setTemplateList([
-              {
-                _id: "tpl_gen_1",
-                service: "General",
-                name: "Initial Email Response",
-                subject: "Re: General Inquiry Response",
-                body: "Hi {{first_name}},\n\nThank you for reaching out! We received your message and look forward to assisting you.\n\nBest regards,\nThe Team",
-                active: true,
-              },
-              {
-                _id: "tpl_gen_2",
-                service: "General",
-                name: "First Follow-up",
-                subject: "Following up on your request",
-                body: "Hi {{first_name}},\n\nJust checking in to see if you had a chance to review our initial response.\n\nBest regards,\nThe Team",
-                active: true,
-              },
-              {
-                _id: "tpl_gen_3",
-                service: "General",
-                name: "Second Follow-up",
-                subject: "Final check-in regarding your inquiry",
-                body: "Hi {{first_name}},\n\nWanted to make sure all your questions were answered regarding your inquiry.\n\nBest regards,\nThe Team",
-                active: true,
-              },
-            ]);
+            /*
+             * An empty result means the account genuinely has no
+             * templates. This used to invent three with made-up ids
+             * (tpl_gen_1...), which looked real but could not be toggled:
+             * PATCHing a non-existent id fails, so the switch flipped back
+             * every time the dialog reopened.
+             */
+            setTemplateList([]);
           }
         } catch (err) {
           console.error("Error fetching templates for modal:", err);
-          setTemplateList([
-            {
-              _id: "tpl_gen_1",
-              service: "General",
-              name: "Initial Email Response",
-              subject: "Re: General Inquiry Response",
-              body: "Hi {{first_name}},\n\nThank you for reaching out! We received your message and look forward to assisting you.\n\nBest regards,\nThe Team",
-              active: true,
-            },
-            {
-              _id: "tpl_gen_2",
-              service: "General",
-              name: "First Follow-up",
-              subject: "Following up on your request",
-              body: "Hi {{first_name}},\n\nJust checking in to see if you had a chance to review our initial response.\n\nBest regards,\nThe Team",
-              active: true,
-            },
-            {
-              _id: "tpl_gen_3",
-              service: "General",
-              name: "Second Follow-up",
-              subject: "Final check-in regarding your inquiry",
-              body: "Hi {{first_name}},\n\nWanted to make sure all your questions were answered regarding your inquiry.\n\nBest regards,\nThe Team",
-              active: true,
-            },
-          ]);
+          /* A failed request is not evidence of templates — say nothing. */
+          setTemplateList([]);
         } finally {
           setLoadingTemplates(false);
         }
@@ -271,8 +450,236 @@ const ShopifyScenariosPage = () => {
   const [showIncomingLeadsModal, setShowIncomingLeadsModal] = useState(false);
   const [incomingLeadsAppType, setIncomingLeadsAppType] = useState("Gmail");
   const [incomingLeadsConnection, setIncomingLeadsConnection] = useState("");
-  const [incomingLeadsSubjectFilter, setIncomingLeadsSubjectFilter] = useState("");
-  const [showCreateConnectionModal, setShowCreateConnectionModal] = useState(false);
+  const [incomingLeadsMailhook, setIncomingLeadsMailhook] = useState("");
+  const [mailhooks, setMailhooks] = useState([]);
+  const [showMailhookModal, setShowMailhookModal] = useState(false);
+  const [incomingLeadsSubjectFilter, setIncomingLeadsSubjectFilter] =
+    useState("");
+
+  /*
+   * The trigger subject for built-in scenarios is set platform-wide by the
+   * SaaS owner (master admin -> Scenario Triggers). It used to be hardcoded
+   * here, so the field could show one subject while the backend matched on
+   * another. Empty until loaded; never fall back to a literal.
+   */
+  const [platformTriggerSubject, setPlatformTriggerSubject] = useState("");
+
+  /*
+   * The router's service condition, also platform-configured. The card
+   * used to name three services hardcoded ("Troubleshooting, Store Setup,
+   * or Bug Fixes") — two of which were not in the real routing list at
+   * all, so it described routing that never happened.
+   */
+  const [platformServices, setPlatformServices] = useState([]);
+
+  /*
+   * The flow row is wider than the viewport and its scrollbar is hidden,
+   * so it needs its own affordances: grab-and-drag, wheel-to-pan, and
+   * edge buttons. See hooks/useDragScroll.js.
+   */
+  const flowScroll = useDragScroll();
+
+  /*
+   * How the module being edited produces its reply, and which company
+   * profile it writes from when that is "ai".
+   */
+  /*
+   * The module's reply mode. There is no longer a control for it in the
+   * module dialog — it is chosen once for the whole scenario in the
+   * Template card. The state remains because handleSave writes these
+   * fields back: dropping them would silently clear the scenario's AI
+   * setting every time someone edited a module's connection.
+   */
+  const [replyMode, setReplyMode] = useState("manual");
+
+  const [companyProfileId, setCompanyProfileId] = useState("");
+  const [companyProfiles, setCompanyProfiles] = useState([]);
+
+  /*
+   * The same choice at scenario level, set from the Templates Overview
+   * dialog. Applying it writes replyMode / companyProfileId onto every
+   * email module, so one decision covers the whole reply sequence instead
+   * of being repeated per module.
+   */
+  const [scenarioReplyMode, setScenarioReplyMode] = useState("manual");
+  const [scenarioProfileId, setScenarioProfileId] = useState("");
+  const [applyingReplyMode, setApplyingReplyMode] = useState(false);
+
+  const selectedScenarioProfile = companyProfiles.find(
+    (p) => p._id === scenarioProfileId,
+  );
+
+  const applyScenarioReplyMode = async () => {
+    if (scenarioReplyMode === "ai") {
+      if (!scenarioProfileId) {
+        toast.error("Choose which company profile the AI should write from.");
+        return;
+      }
+
+      /*
+       * A profile without a company name and description gives the model
+       * nothing to work from — it would produce generic mail signed by
+       * nobody. Better to stop here than to send that to a real lead.
+       */
+      if (selectedScenarioProfile && !selectedScenarioProfile.isComplete) {
+        toast.error(
+          "That profile is incomplete. Add a company name and business description first.",
+        );
+        return;
+      }
+    }
+
+    setApplyingReplyMode(true);
+
+    try {
+      const updated = routerBranches.map((branch) => ({
+        ...branch,
+        modules: (branch.modules || []).map((mod) => {
+          const isDelay =
+            mod.type === "Delay" ||
+            mod.app?.name === "Delay" ||
+            Boolean(mod.delayValue);
+
+          /* A delay sends nothing, so a reply mode means nothing to it. */
+          if (isDelay) return mod;
+
+          return {
+            ...mod,
+            replyMode: scenarioReplyMode,
+            companyProfileId:
+              scenarioReplyMode === "ai" ? scenarioProfileId : null,
+          };
+        }),
+      }));
+
+      setRouterBranches(updated);
+      await handleSaveScenario(updated);
+
+      toast.success(
+        scenarioReplyMode === "ai"
+          ? `Replies will be written by AI from "${selectedScenarioProfile?.name || "the selected profile"}".`
+          : "Replies will use your templates as written.",
+      );
+    } catch (err) {
+      console.error("Could not apply the reply mode:", err);
+      toast.error("Could not save the reply mode.");
+    } finally {
+      setApplyingReplyMode(false);
+    }
+  };
+
+  const fetchCompanyProfiles = async () => {
+    try {
+      const userId = localStorage.getItem("userid");
+      if (!userId) return;
+
+      const res = await apiFetch(
+        `https://email-syncing-backend.vercel.app/api/company-profile/${userId}/list`,
+      );
+      const data = await res.json();
+
+      /*
+       * Paused profiles are excluded: offering one would let a scenario
+       * point at a profile the user has deliberately shelved.
+       */
+      setCompanyProfiles(
+        data?.success
+          ? (data.data || []).filter((p) => p.isActive !== false)
+          : [],
+      );
+    } catch (err) {
+      console.error("Error loading company profiles:", err);
+      setCompanyProfiles([]);
+    }
+  };
+
+  useEffect(() => {
+    fetchCompanyProfiles();
+  }, []);
+
+  /* Seed the dialog from whatever the scenario's modules already say. */
+  useEffect(() => {
+    const emailModules = routerBranches
+      .flatMap((b) => b.modules || [])
+      .filter(
+        (m) =>
+          !(
+            m.type === "Delay" ||
+            m.app?.name === "Delay" ||
+            Boolean(m.delayValue)
+          ),
+      );
+
+    if (emailModules.length === 0) return;
+
+    const aiModule = emailModules.find((m) => m.replyMode === "ai");
+
+    setScenarioReplyMode(aiModule ? "ai" : "manual");
+    setScenarioProfileId(aiModule?.companyProfileId || "");
+  }, [routerBranches]);
+
+  /* Real template state for the Template card — see the card for context. */
+  const activeTemplateCount = templateList.filter((t) => t.active).length;
+
+  const lastTemplateEdit = (() => {
+    const stamps = templateList
+      .map((t) => t.updatedAt || t.createdAt)
+      .filter(Boolean)
+      .map((d) => new Date(d).getTime())
+      .filter((n) => Number.isFinite(n));
+
+    if (!stamps.length) return null;
+
+    const days = Math.floor((Date.now() - Math.max(...stamps)) / 86400000);
+
+    if (days <= 0) return "today";
+    if (days === 1) return "yesterday";
+    return `${days} days ago`;
+  })();
+
+  /*
+   * Which app type a saved module belongs to.
+   *
+   * Three call sites used to hardcode "Gmail". A module saved against a
+   * Microsoft connection then opened with the app type forced to Gmail,
+   * and the Connection dropdown — which filters by app type — could not
+   * list it, so it showed "-- Select Connection --". The card meanwhile
+   * reported "Configured", because it checks the stored connectionId
+   * directly. Same module, two different answers.
+   *
+   * The connection's own provider is the authority; the stored emailType
+   * is only a fallback for a module with no connection yet.
+   */
+  const appTypeForModule = (mod) => {
+    const conn = (Array.isArray(connections) ? connections : []).find(
+      (c) => c._id === mod?.connectionId,
+    );
+
+    return appTypeForConnection(conn) || mod?.emailType || "Gmail";
+  };
+
+  /*
+   * Outside-click dismissal. The module dialog is refused while a module
+   * is being configured (a chosen app means fields are in play); the
+   * picker step itself holds nothing, so it closes freely.
+   */
+  const moduleDismiss = useModalDismiss({
+    onClose: () => resetForm(),
+    isDirty: Boolean(selectedApp),
+  });
+
+  const incomingLeadsDismiss = useModalDismiss({
+    onClose: () => setShowIncomingLeadsModal(false),
+  });
+
+  /*
+   * A finished checklist is noise — it collapses to a single strip and
+   * only opens again on request. While anything is outstanding it stays
+   * expanded, because that is the one time it has something to say.
+   */
+  const [checklistExpanded, setChecklistExpanded] = useState(false);
+  const [showCreateConnectionModal, setShowCreateConnectionModal] =
+    useState(false);
   const [showSMTPModal, setShowSMTPModal] = useState(false);
   const [scenarioId, setScenarioId] = useState(null);
   const [scenarioName, setScenarioName] = useState("");
@@ -280,10 +687,9 @@ const ShopifyScenariosPage = () => {
   const [scenarioDescription, setScenarioDescription] = useState("");
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
-  const { user } = useContext(UserContext);
+  const { user, timeZone: accountTimeZone } = useContext(UserContext);
   const [showOutlookModal, setShowOutlookModal] = useState(false);
   const [showGmailModal, setShowGmailModal] = useState(false);
-  const [showMicrosoftModal, setShowMicrosoftModal] = useState(false);
   const [showEditTemplateModal, setShowEditTemplateModal] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState(null);
   const [editContent, setEditContent] = useState("");
@@ -297,7 +703,9 @@ const ShopifyScenariosPage = () => {
   const [historyViewMode, setHistoryViewMode] = useState("builder");
   const [runHistoryFilter, setRunHistoryFilter] = useState("all");
   const [expandedRunId, setExpandedRunId] = useState(null);
-  const existingScenarioId = localStorage.getItem("scenarioId");
+  const existingScenarioId = isNewScenario
+    ? null
+    : localStorage.getItem("scenarioId");
   let initialEditingMode = "add";
 
   if (existingScenarioId) {
@@ -364,7 +772,7 @@ const ShopifyScenariosPage = () => {
       if (!userId) return;
       const res = await apiFetch(
         `https://email-syncing-backend.vercel.app/auth/getConnection/${userId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
       const data = await res.json();
       if (Array.isArray(data)) {
@@ -380,8 +788,78 @@ const ShopifyScenariosPage = () => {
     }
   };
 
+  /*
+   * The Incoming Leads trigger can listen on a mailhook instead of a
+   * mailbox connection, and mailhooks live in their own collection.
+   */
+  const fetchMailhooks = async () => {
+    try {
+      const userId = localStorage.getItem("userid");
+      if (!userId) return;
+
+      const res = await apiFetch(
+        `https://email-syncing-backend.vercel.app/mailhookcard/${userId}`,
+      );
+      const data = await res.json();
+      setMailhooks(data?.success && Array.isArray(data.data) ? data.data : []);
+    } catch (err) {
+      console.error("Error fetching mailhooks:", err);
+      setMailhooks([]);
+    }
+  };
+
+  /*
+   * Microsoft connects through OAuth, which navigates away from the
+   * builder. Persist the scenario first so unsaved edits survive the round
+   * trip, and come back to this exact scenario.
+   */
+  const connectMicrosoftAccount = async () => {
+    /*
+     * Captured BEFORE saving: saving can route away from the builder, and
+     * the return path has to be the scenario the user was editing, not
+     * wherever the save left them.
+     */
+    const returnTo = `${window.location.pathname}${window.location.search}`;
+
+    try {
+      await handleSaveScenario();
+    } catch (err) {
+      console.error("Could not save before Microsoft sign-in:", err);
+    }
+
+    startMicrosoftOAuth({ redirectPath: returnTo });
+  };
+
+  const fetchPlatformTrigger = async () => {
+    try {
+      const res = await apiFetch(
+        "https://email-syncing-backend.vercel.app/scenario/trigger-defaults",
+      );
+      const data = await res.json();
+
+      const shopifyTrigger = (data?.triggers || []).find(
+        (t) => t.scenarioType === "shopify" && t.enabled !== false,
+      );
+
+      setPlatformTriggerSubject(shopifyTrigger?.subjectFilter || "");
+      setPlatformServices(data?.services?.list || []);
+    } catch (err) {
+      console.error("Error loading platform trigger subject:", err);
+      setPlatformTriggerSubject("");
+      setPlatformServices([]);
+    }
+  };
+
   useEffect(() => {
     fetchConnections();
+    fetchMailhooks();
+    fetchPlatformTrigger();
+  }, []);
+
+  /* Returning from Microsoft: report the outcome, then reload connections. */
+  useEffect(() => {
+    consumeMicrosoftOAuthResult({ onSuccess: () => fetchConnections() });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchScenarioHistory = async () => {
@@ -419,7 +897,7 @@ const ShopifyScenariosPage = () => {
 
   useEffect(() => {
     function handleClickOutside(event) {
-      if (showOutlookModal || showGmailModal || showMicrosoftModal) return;
+      if (showOutlookModal || showGmailModal) return;
 
       if (modalRef.current && !modalRef.current.contains(event.target)) {
         setOpen(false);
@@ -433,9 +911,18 @@ const ShopifyScenariosPage = () => {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [showOutlookModal, showGmailModal, showMicrosoftModal]);
+  }, [showOutlookModal, showGmailModal]);
 
   useEffect(() => {
+    if (isNewScenario) {
+      console.log("🆕 Building an additional Shopify scenario — Add mode");
+      setScenarioId(null);
+      setEditingMode("add");
+      localStorage.removeItem("scenarioId");
+      localStorage.removeItem("scenarioActive");
+      return;
+    }
+
     const savedScenarioId = localStorage.getItem("scenarioId");
 
     if (savedScenarioId) {
@@ -446,18 +933,26 @@ const ShopifyScenariosPage = () => {
       console.log("🆕 No saved scenario — Add mode");
       setEditingMode("add");
     }
-  }, []);
+  }, [isNewScenario]);
 
-  const handleSaveScenario = async (customBranches = null, overrideScenarioActive = null) => {
+  const handleSaveScenario = async (
+    customBranches = null,
+    overrideScenarioActive = null,
+  ) => {
     const rawBranches = customBranches || routerBranches;
-    const activeConnectionId = incomingLeadsConnection || selectedConnection || "";
+    const activeConnectionId =
+      incomingLeadsConnection || selectedConnection || "";
+    const isMailhookTrigger = incomingLeadsAppType === "Mailhook";
     const branchesToSave = rawBranches;
-    const activeStatus = overrideScenarioActive !== null ? overrideScenarioActive : automationOn;
+    const activeStatus =
+      overrideScenarioActive !== null ? overrideScenarioActive : automationOn;
 
     const payload = {
       userId: localStorage.getItem("userid"),
       name: scenarioName || "Shopify Partner Directory Lead Automation",
-      description: scenarioDescription || "Automatically capture leads from Shopify Partner Directory and send follow-ups",
+      description:
+        scenarioDescription ||
+        "Automatically capture leads from Shopify Partner Directory and send follow-ups",
       type: "shopify",
       incomingLead: {
         app: {
@@ -465,10 +960,16 @@ const ShopifyScenariosPage = () => {
           color: "",
           icon: "",
         },
-        connectionId: activeConnectionId,
-        subjectFilter: incomingLeadsSubjectFilter || "Shopify Partner Directory: New service inquiry from",
+        connectionId: isMailhookTrigger ? null : activeConnectionId,
+        mailhookId: isMailhookTrigger ? incomingLeadsMailhook || null : null,
+        /* Empty means "follow the platform trigger", so a change by the
+           administrator reaches this scenario instead of being overridden
+           by a copy frozen at save time. */
+        subjectFilter: incomingLeadsSubjectFilter || "",
         pollInterval: 60,
-        enabled: Boolean(activeConnectionId),
+        enabled: Boolean(
+          isMailhookTrigger ? incomingLeadsMailhook : activeConnectionId,
+        ),
       },
       routerBranches: branchesToSave,
       scenarioActive: activeStatus,
@@ -491,7 +992,13 @@ const ShopifyScenariosPage = () => {
         }
       }
 
-      if (!activeScenarioId) {
+      /*
+       * Adopting the user's existing Shopify scenario when no id is in
+       * hand is right for the single-scenario route, but wrong here: an
+       * additional scenario has no saved record yet, and looking one up
+       * would turn "create" into "overwrite the first one".
+       */
+      if (!activeScenarioId && !isNewScenario) {
         const userId = localStorage.getItem("userid");
         const token = localStorage.getItem("usertoken");
         const checkRes = await apiFetch(
@@ -551,14 +1058,17 @@ const ShopifyScenariosPage = () => {
           throw new Error(data.message || "Failed to update scenario");
       } else {
         console.log("🆕 Creating a new scenario...");
-        res = await apiFetch(`https://email-syncing-backend.vercel.app/scenario`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+        res = await apiFetch(
+          `https://email-syncing-backend.vercel.app/scenario`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(payload),
           },
-          body: JSON.stringify(payload),
-        });
+        );
         data = await res.json();
 
         if (!res.ok)
@@ -567,25 +1077,48 @@ const ShopifyScenariosPage = () => {
         setScenarioId(data._id);
         localStorage.setItem("scenarioId", data._id);
         setEditingMode("update");
+
+        /*
+         * The scenario now exists, so the URL stops asking for a new one —
+         * otherwise a refresh would discard it and open another blank
+         * builder.
+         */
+        if (isNewScenario) {
+          navigate(`/scenarios/shopify/${data._id}`, { replace: true });
+        }
       }
 
       setScenarioName(data.name || scenarioName);
       setScenarioDescription(data.description || scenarioDescription);
-      if (data.routerBranches && data.routerBranches.some((b) => b.modules?.length > 0)) {
+      if (
+        data.routerBranches &&
+        data.routerBranches.some((b) => b.modules?.length > 0)
+      ) {
         setRouterBranches(data.routerBranches);
       } else {
         setRouterBranches(branchesToSave);
       }
 
       if (data.incomingLead) {
-        if (data.incomingLead.app?.name) setIncomingLeadsAppType(data.incomingLead.app.name);
+        if (data.incomingLead.app?.name)
+          setIncomingLeadsAppType(data.incomingLead.app.name);
+        if (data.incomingLead.mailhookId) {
+          const hookId =
+            typeof data.incomingLead.mailhookId === "object"
+              ? data.incomingLead.mailhookId._id || data.incomingLead.mailhookId
+              : data.incomingLead.mailhookId;
+          setIncomingLeadsMailhook(hookId);
+        }
         if (data.incomingLead.connectionId) {
-          const connId = typeof data.incomingLead.connectionId === "object"
-            ? data.incomingLead.connectionId._id || data.incomingLead.connectionId
-            : data.incomingLead.connectionId;
+          const connId =
+            typeof data.incomingLead.connectionId === "object"
+              ? data.incomingLead.connectionId._id ||
+                data.incomingLead.connectionId
+              : data.incomingLead.connectionId;
           setIncomingLeadsConnection(connId);
         }
-        if (data.incomingLead.subjectFilter) setIncomingLeadsSubjectFilter(data.incomingLead.subjectFilter);
+        if (data.incomingLead.subjectFilter)
+          setIncomingLeadsSubjectFilter(data.incomingLead.subjectFilter);
       }
 
       setAutomationOn(activeStatus);
@@ -610,20 +1143,35 @@ const ShopifyScenariosPage = () => {
 
       if (freshData) {
         setScenarioId(freshData._id);
-        if (freshData.routerBranches && freshData.routerBranches.some((b) => b.modules?.length > 0)) {
+        if (
+          freshData.routerBranches &&
+          freshData.routerBranches.some((b) => b.modules?.length > 0)
+        ) {
           setRouterBranches(freshData.routerBranches);
         } else {
           setRouterBranches(branchesToSave);
         }
         if (freshData.incomingLead) {
-          if (freshData.incomingLead.app?.name) setIncomingLeadsAppType(freshData.incomingLead.app.name);
+          if (freshData.incomingLead.app?.name)
+            setIncomingLeadsAppType(freshData.incomingLead.app.name);
+          if (freshData.incomingLead.mailhookId) {
+            const hookId =
+              typeof freshData.incomingLead.mailhookId === "object"
+                ? freshData.incomingLead.mailhookId._id ||
+                  freshData.incomingLead.mailhookId
+                : freshData.incomingLead.mailhookId;
+            setIncomingLeadsMailhook(hookId);
+          }
           if (freshData.incomingLead.connectionId) {
-            const connId = typeof freshData.incomingLead.connectionId === "object"
-              ? freshData.incomingLead.connectionId._id || freshData.incomingLead.connectionId
-              : freshData.incomingLead.connectionId;
+            const connId =
+              typeof freshData.incomingLead.connectionId === "object"
+                ? freshData.incomingLead.connectionId._id ||
+                  freshData.incomingLead.connectionId
+                : freshData.incomingLead.connectionId;
             setIncomingLeadsConnection(connId);
           }
-          if (freshData.incomingLead.subjectFilter) setIncomingLeadsSubjectFilter(freshData.incomingLead.subjectFilter);
+          if (freshData.incomingLead.subjectFilter)
+            setIncomingLeadsSubjectFilter(freshData.incomingLead.subjectFilter);
         }
         setScenarioName(freshData.name || scenarioName);
         setScenarioDescription(freshData.description || scenarioDescription);
@@ -632,13 +1180,32 @@ const ShopifyScenariosPage = () => {
       setShowValidation(false);
       setCompletedSteps([]);
       setIsScenarioUpdated(true);
-      toast.success(activeStatus ? "Scenario activated successfully!" : "Scenario deactivated.");
+      toast.success(
+        activeStatus
+          ? "Scenario activated successfully!"
+          : "Scenario deactivated.",
+      );
+
+      /*
+       * Whether the save stuck. resumeWithQueue() will not release a
+       * backlog into a scenario that failed to activate.
+       */
+      return true;
     } catch (err) {
       console.error("Error saving scenario:", err);
       toast.error("Failed to save scenario.");
+      return false;
     }
   };
 
+  /*
+   * Returns whether the change actually stuck.
+   *
+   * The caller flips the row optimistically, and the server rejects some
+   * changes outright — General templates cannot be deactivated. Without a
+   * result to act on, the row stayed switched while the server never
+   * changed, so reopening the dialog "turned it back on".
+   */
   const handleToggleTemplate = async (templateId, newStatus) => {
     try {
       const res = await apiFetch(
@@ -651,15 +1218,29 @@ const ShopifyScenariosPage = () => {
       );
 
       const data = await res.json();
+
       if (data.success) {
         toast.success(`Template ${newStatus ? "activated" : "deactivated"}!`);
-      } else {
-        toast.error(data.message || "Failed to update template status.");
+        return true;
       }
+
+      toast.error(data.message || "Failed to update template status.");
+      return false;
     } catch (err) {
       console.error("Error updating template:", err);
       toast.error("Error updating template status.");
+      return false;
     }
+  };
+
+  /*
+   * General is the fallback every unmatched lead routes to, so the backend
+   * refuses to deactivate it. Surfaced here so the switch is disabled up
+   * front rather than failing after the user flips it.
+   */
+  const isProtectedTemplate = (tpl) => {
+    const service = (tpl?.service || "").trim();
+    return service === "" || service === "General";
   };
 
   const handleToggleAllTemplates = async (newStatus) => {
@@ -729,6 +1310,23 @@ const ShopifyScenariosPage = () => {
       return;
     }
 
+    /*
+     * An additional scenario starts from the template's shape rather than
+     * from anything on the server — there is nothing saved to load yet,
+     * and loading the stored one would put the builder on top of a
+     * scenario the user did not ask to edit.
+     */
+    if (isNewScenario) {
+      setScenarioName("Shopify Partner Directory Scenario");
+      setScenarioDescription(
+        "Automate Shopify lead replies and follow-up emails",
+      );
+      setRouterBranches(buildDefaultShopifyBranches());
+      setAutomationOn(false);
+      setEditingMode("add");
+      return;
+    }
+
     const fetchScenario = async () => {
       try {
         const userId = localStorage.getItem("userid");
@@ -739,17 +1337,28 @@ const ShopifyScenariosPage = () => {
         console.log("🔄 Fetching existing Shopify scenario for user:", userId);
 
         const token = localStorage.getItem("usertoken");
-        const res = await apiFetch(
-          "https://email-syncing-backend.vercel.app/scenario/details",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({ userId }),
-          },
-        );
+
+        /*
+         * With more than one Shopify scenario allowed, the URL says which
+         * one to open. Only fall back to "the user's Shopify scenario"
+         * when the route carries no id at all.
+         */
+        const res = id
+          ? await apiFetch(
+              `https://email-syncing-backend.vercel.app/scenario/detail/${id}`,
+              { headers: { Authorization: `Bearer ${token}` } },
+            )
+          : await apiFetch(
+              "https://email-syncing-backend.vercel.app/scenario/details",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ userId }),
+              },
+            );
 
         const data = await res.json();
 
@@ -777,14 +1386,26 @@ const ShopifyScenariosPage = () => {
           );
 
           if (data.incomingLead) {
-            if (data.incomingLead.app?.name) setIncomingLeadsAppType(data.incomingLead.app.name);
+            if (data.incomingLead.app?.name)
+              setIncomingLeadsAppType(data.incomingLead.app.name);
+            if (data.incomingLead.mailhookId) {
+              const hookId =
+                typeof data.incomingLead.mailhookId === "object"
+                  ? data.incomingLead.mailhookId._id ||
+                    data.incomingLead.mailhookId
+                  : data.incomingLead.mailhookId;
+              setIncomingLeadsMailhook(hookId);
+            }
             if (data.incomingLead.connectionId) {
-              const connId = typeof data.incomingLead.connectionId === "object"
-                ? data.incomingLead.connectionId._id || data.incomingLead.connectionId
-                : data.incomingLead.connectionId;
+              const connId =
+                typeof data.incomingLead.connectionId === "object"
+                  ? data.incomingLead.connectionId._id ||
+                    data.incomingLead.connectionId
+                  : data.incomingLead.connectionId;
               setIncomingLeadsConnection(connId);
             }
-            if (data.incomingLead.subjectFilter) setIncomingLeadsSubjectFilter(data.incomingLead.subjectFilter);
+            if (data.incomingLead.subjectFilter)
+              setIncomingLeadsSubjectFilter(data.incomingLead.subjectFilter);
           }
 
           if (data.scenarioActive === true) {
@@ -810,76 +1431,72 @@ const ShopifyScenariosPage = () => {
     };
 
     fetchScenario();
-  }, []);
+  }, [id, isNewScenario]);
 
   const handleResetToNewScenario = async () => {
     const userId = localStorage.getItem("userid");
-    const activeConnId = incomingLeadsConnection || selectedConnection || (connections && connections[0]?._id) || "";
+    const activeConnId =
+      incomingLeadsConnection ||
+      selectedConnection ||
+      (connections && connections[0]?._id) ||
+      "";
 
-    const defaultBranches = [
-      {
-        id: Date.now(),
-        hasModule: true,
-        condition: null,
-        modules: [
-          {
-            id: Date.now() + 1,
-            app: {
-              name: "Initial Email",
-              displayName: "Initial Email",
-              color: "bg-red-500",
-              icon: "Gmail",
-              defaultTemplate: "Initial Email",
-            },
-            type: "Send an Email",
-            description: "Send email via Gmail",
-            connectionId: activeConnId,
-            template: "Initial Email",
-            subject: "",
-            cc: [],
-            bcc: [],
-            emailType: "Gmail",
-          },
-        ],
-      },
-    ];
+    const defaultBranches = buildDefaultShopifyBranches(activeConnId);
 
     setScenarioName("Shopify Partner Directory Scenario");
-    setScenarioDescription("Automate Shopify lead replies and follow-up emails");
+    setScenarioDescription(
+      "Automate Shopify lead replies and follow-up emails",
+    );
     setRouterBranches(defaultBranches);
     setAutomationOn(false);
 
     if (!userId) return;
 
     try {
-      toast.loading("Creating new Shopify scenario in DB...", { id: "createScenario" });
-      const token = localStorage.getItem("usertoken");
-      const res = await apiFetch("https://email-syncing-backend.vercel.app/scenario", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          userId,
-          name: "Shopify Partner Directory Scenario",
-          description: "Automate Shopify lead replies and follow-up emails",
-          type: "shopify",
-          scenarioActive: false,
-          incomingLead: {
-            app: {
-              name: incomingLeadsAppType || "Gmail",
-              color: "",
-              icon: "",
-            },
-            connectionId: incomingLeadsConnection || activeConnId,
-            subjectFilter: incomingLeadsSubjectFilter || "Shopify Partner Directory: New service inquiry from",
-            pollInterval: 60,
-            enabled: Boolean(activeConnId),
-          },
-          routerBranches: defaultBranches,
-        }),
+      toast.loading("Creating new Shopify scenario in DB...", {
+        id: "createScenario",
       });
+      const token = localStorage.getItem("usertoken");
+      const res = await apiFetch(
+        "https://email-syncing-backend.vercel.app/scenario",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            userId,
+            name: "Shopify Partner Directory Scenario",
+            description: "Automate Shopify lead replies and follow-up emails",
+            type: "shopify",
+            scenarioActive: false,
+            incomingLead: {
+              app: {
+                name: incomingLeadsAppType || "Gmail",
+                color: "",
+                icon: "",
+              },
+              connectionId:
+                incomingLeadsAppType === "Mailhook"
+                  ? null
+                  : incomingLeadsConnection || activeConnId,
+              mailhookId:
+                incomingLeadsAppType === "Mailhook"
+                  ? incomingLeadsMailhook || null
+                  : null,
+              subjectFilter: incomingLeadsSubjectFilter || "",
+              pollInterval: 60,
+              enabled: Boolean(
+                incomingLeadsAppType === "Mailhook"
+                  ? incomingLeadsMailhook
+                  : activeConnId,
+              ),
+            },
+            routerBranches: defaultBranches,
+          }),
+        },
+      );
 
       const data = await res.json();
       toast.dismiss("createScenario");
@@ -888,7 +1505,9 @@ const ShopifyScenariosPage = () => {
         setScenarioId(data._id);
         localStorage.setItem("scenarioId", data._id);
         setEditingMode("update");
-        toast.success("Shopify scenario created and saved to database successfully!");
+        toast.success(
+          "Shopify scenario created and saved to database successfully!",
+        );
       } else {
         setEditingMode("add");
         toast.success("New Shopify scenario builder initialized!");
@@ -907,7 +1526,9 @@ const ShopifyScenariosPage = () => {
       return;
     }
 
-    if (!window.confirm("Are you sure you want to delete this Shopify scenario?")) {
+    if (
+      !window.confirm("Are you sure you want to delete this Shopify scenario?")
+    ) {
       return;
     }
 
@@ -921,7 +1542,7 @@ const ShopifyScenariosPage = () => {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
       const data = await res.json();
       toast.dismiss("deleteScenario");
@@ -975,10 +1596,7 @@ const ShopifyScenariosPage = () => {
       } else {
         description = "Delay (no duration set)";
       }
-    } else if (
-      selectedApp?.name === "Email" ||
-      selectedApp?.name === "Gmail"
-    ) {
+    } else if (selectedApp?.name === "Email" || selectedApp?.name === "Gmail") {
       type = selectedApp.name === "Email" ? "Custom Email" : "Send an Email";
     }
 
@@ -1012,6 +1630,10 @@ const ShopifyScenariosPage = () => {
       cc: ccList,
       bcc: bccList,
       emailType: selectedAppType || selectedApp?.name || "Gmail",
+
+      /* Manual sends the template as written; AI writes from a profile. */
+      replyMode,
+      companyProfileId: replyMode === "ai" ? companyProfileId || null : null,
       ...(isDelay
         ? { delayValue: delayValue || "5", delayUnit: delayUnit || "seconds" }
         : {}),
@@ -1035,7 +1657,7 @@ const ShopifyScenariosPage = () => {
         (m) =>
           (editingModuleId && m.id === editingModuleId) ||
           m.template === "Initial Email" ||
-          m.app?.displayName === "Initial Email"
+          m.app?.displayName === "Initial Email",
       );
       if (existingIdx >= 0) {
         updatedBranches[targetBranchIdx].modules[existingIdx] = {
@@ -1070,7 +1692,10 @@ const ShopifyScenariosPage = () => {
 
     setRouterBranches(updatedBranches);
     try {
-      localStorage.setItem("routerBranchesState", JSON.stringify(updatedBranches));
+      localStorage.setItem(
+        "routerBranchesState",
+        JSON.stringify(updatedBranches),
+      );
     } catch (e) {}
 
     setEditingBranch(null);
@@ -1124,11 +1749,13 @@ const ShopifyScenariosPage = () => {
       setSelectedAppType("Delay");
     } else {
       const fixedTitle = getModuleTitle(module);
-      const fixedEmailType =
-        module.emailType ||
-        (module.app?.name === "Email" ? "Email" : "") ||
-        (module.app?.name === "Gmail" ? "Gmail" : "") ||
-        "Gmail";
+      /*
+       * The saved connection decides the app type. The old chain read
+       * app.name / emailType, which are set from the module's template
+       * label ("Initial Email" is Gmail-branded) and so disagreed with a
+       * module actually connected to Microsoft or SMTP.
+       */
+      const fixedEmailType = appTypeForModule(module);
 
       setSelectedApp({
         ...(module.app || {}),
@@ -1140,6 +1767,8 @@ const ShopifyScenariosPage = () => {
       });
 
       setSelectedAppType(fixedEmailType);
+      setReplyMode(module.replyMode === "ai" ? "ai" : "manual");
+      setCompanyProfileId(module.companyProfileId || "");
       setSelectedConnection(module.connectionId || "");
       setSelectedTemplate(module.template || fixedTitle);
       setSubject(module.subject || "");
@@ -1479,7 +2108,13 @@ const ShopifyScenariosPage = () => {
 
     const incomingLeadConn = (incomingLeadsConnection || "").toString().trim();
 
-    if (!incomingLeadConn || incomingLeadConn === "" || incomingLeadConn === "null" || incomingLeadConn === "undefined" || incomingLeadConn === "(empty)") {
+    if (
+      !incomingLeadConn ||
+      incomingLeadConn === "" ||
+      incomingLeadConn === "null" ||
+      incomingLeadConn === "undefined" ||
+      incomingLeadConn === "(empty)"
+    ) {
       missingModules.push({
         branch: 0,
         module: 0,
@@ -1489,7 +2124,12 @@ const ShopifyScenariosPage = () => {
 
     routerBranches.forEach((branch, i) => {
       branch.modules.forEach((m, j) => {
-        const rawName = m.app?.displayName || m.app?.name || m.emailType || m.stepType || `Module ${j + 1}`;
+        const rawName =
+          m.app?.displayName ||
+          m.app?.name ||
+          m.emailType ||
+          m.stepType ||
+          `Module ${j + 1}`;
         const appName = rawName.toLowerCase();
 
         const isEmailModule =
@@ -1521,7 +2161,9 @@ const ShopifyScenariosPage = () => {
     });
 
     if (missingModules.length > 0) {
-      const nodeNames = [...new Set(missingModules.map((m) => m.moduleName))].join(", ");
+      const nodeNames = [
+        ...new Set(missingModules.map((m) => m.moduleName)),
+      ].join(", ");
       toast.error(
         `First add a connection to '${nodeNames}' node before running send test.`,
         {
@@ -1541,7 +2183,10 @@ const ShopifyScenariosPage = () => {
     setShowRunTestModal(true);
   };
 
-  const handleRunTest = async (skipInactiveTemplateCheck = false, useGeneralTemplate = false) => {
+  const handleRunTest = async (
+    skipInactiveTemplateCheck = false,
+    useGeneralTemplate = false,
+  ) => {
     const { businessEmail, service, description } = formData;
 
     if (!businessEmail?.trim() || !service?.trim() || !description?.trim()) {
@@ -1612,7 +2257,13 @@ const ShopifyScenariosPage = () => {
 
     const incomingLeadConn = (incomingLeadsConnection || "").toString().trim();
 
-    if (!incomingLeadConn || incomingLeadConn === "" || incomingLeadConn === "null" || incomingLeadConn === "undefined" || incomingLeadConn === "(empty)") {
+    if (
+      !incomingLeadConn ||
+      incomingLeadConn === "" ||
+      incomingLeadConn === "null" ||
+      incomingLeadConn === "undefined" ||
+      incomingLeadConn === "(empty)"
+    ) {
       missingModules.push({
         branch: 0,
         module: 0,
@@ -1622,7 +2273,12 @@ const ShopifyScenariosPage = () => {
 
     routerBranches.forEach((branch, i) => {
       branch.modules.forEach((m, j) => {
-        const rawName = m.app?.displayName || m.app?.name || m.emailType || m.stepType || `Module ${j + 1}`;
+        const rawName =
+          m.app?.displayName ||
+          m.app?.name ||
+          m.emailType ||
+          m.stepType ||
+          `Module ${j + 1}`;
         const appName = rawName.toLowerCase();
 
         const isEmailModule =
@@ -1664,7 +2320,9 @@ const ShopifyScenariosPage = () => {
     });
 
     if (missingModules.length > 0) {
-      const nodeNames = [...new Set(missingModules.map((m) => m.moduleName))].join(", ");
+      const nodeNames = [
+        ...new Set(missingModules.map((m) => m.moduleName)),
+      ].join(", ");
       toast.error(
         `First add a connection to '${nodeNames}' node before running send test.`,
         {
@@ -1703,7 +2361,8 @@ const ShopifyScenariosPage = () => {
     toast.loading("Validating scenario...", { id: "test" });
 
     try {
-      const activeScenarioId = scenarioId || localStorage.getItem("scenarioId") || null;
+      const activeScenarioId =
+        scenarioId || localStorage.getItem("scenarioId") || null;
       const res = await apiFetch(
         "https://email-syncing-backend.vercel.app/mailhook/Run-test-mode",
         {
@@ -1887,7 +2546,7 @@ const ShopifyScenariosPage = () => {
           `https://email-syncing-backend.vercel.app/template/all?userId=${userId}`,
           {
             headers: token ? { Authorization: `Bearer ${token}` } : {},
-          }
+          },
         );
         const data = await res.json();
 
@@ -1962,7 +2621,7 @@ const ShopifyScenariosPage = () => {
             `https://email-syncing-backend.vercel.app/template/all?userId=${userId}`,
             {
               headers: token ? { Authorization: `Bearer ${token}` } : {},
-            }
+            },
           );
 
           const grouped = data.reduce((acc, item) => {
@@ -2114,7 +2773,11 @@ const ShopifyScenariosPage = () => {
     });
 
   const selectedConnections = emailModules
-    .map((m) => (Array.isArray(connections) ? connections : []).find((c) => c._id === m.connectionId))
+    .map((m) =>
+      (Array.isArray(connections) ? connections : []).find(
+        (c) => c._id === m.connectionId,
+      ),
+    )
     .filter(Boolean);
 
   const allSelectedConnectionsVerified =
@@ -2168,7 +2831,7 @@ const ShopifyScenariosPage = () => {
       completed: automationOn,
     },
   ];
-const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
+  const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
   const handleSetupStepClick = (stepKey) => {
     switch (stepKey) {
       case "webhook":
@@ -2374,7 +3037,7 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <h4 className="text-xs font-semibold text-gray-900">
-                        {new Date(log.createdAt).toLocaleString()}
+                        {formatInTimeZone(log.createdAt, accountTimeZone)}
                       </h4>
 
                       <div className="mt-1 inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-600">
@@ -2435,6 +3098,146 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
       </div>
     );
   };
+  /*
+   * Setup checklist state.
+   *
+   * Hoisted out of the JSX because the LAYOUT depends on it: when every
+   * step is done the left column is removed entirely so the flow cards
+   * get the full width, and that decision has to be made where the grid
+   * is defined, not inside the card.
+   */
+  /*
+   * The trigger inbox is either a mailbox connection or a
+   * verified mailhook — checking only connections left the
+   * checklist permanently red for mailhook scenarios.
+   */
+  const isInboxConnected =
+    incomingLeadsAppType === "Mailhook"
+      ? Boolean(
+          incomingLeadsMailhook &&
+          mailhooks.some(
+            (m) =>
+              m._id === incomingLeadsMailhook &&
+              m.connectionVerified,
+          ),
+        )
+      : Boolean(
+          incomingLeadsConnection &&
+          Array.isArray(connections) &&
+          connections.some(
+            (c) => c._id === incomingLeadsConnection,
+          ),
+        );
+  const isTriggerConfirmed = true;
+  const isTemplatesReviewed = Boolean(
+    selectedTemplate ||
+    (routerBranches &&
+      routerBranches.some((b) => b.modules?.length > 0)),
+  );
+
+  const allModules = routerBranches.flatMap(
+    (b) => b.modules || [],
+  );
+  const unconfiguredEmailModulesCount = allModules.filter(
+    (m) => {
+      const isDelay =
+        m.type === "Delay" ||
+        m.app?.name === "Delay" ||
+        m.app?.displayName === "Delay" ||
+        Boolean(m.delayValue);
+      const hasValidConnection = Boolean(
+        m.connectionId &&
+        Array.isArray(connections) &&
+        connections.some((c) => c._id === m.connectionId),
+      );
+      return !isDelay && !hasValidConnection;
+    },
+  ).length;
+
+  const isSenderConnected =
+    unconfiguredEmailModulesCount === 0 &&
+    allModules.length > 0;
+
+  const checklistSteps = [
+    {
+      label: "Connect inbox",
+      isComplete: isInboxConnected,
+      warning: !isInboxConnected
+        ? incomingLeadsAppType === "Mailhook"
+          ? "Mailhook not verified — confirm forwarding to finish setup"
+          : "Inbox connection missing — select Gmail account"
+        : null,
+    },
+    {
+      label: "Confirm trigger filter",
+      isComplete: isTriggerConfirmed,
+    },
+    {
+      label: "Review templates",
+      isComplete: isTemplatesReviewed,
+    },
+    {
+      label: "Connect sender",
+      isComplete: isSenderConnected,
+      warning: !isSenderConnected
+        ? unconfiguredEmailModulesCount > 0
+          ? `${unconfiguredEmailModulesCount} node${unconfiguredEmailModulesCount > 1 ? "s" : ""} unconfigured`
+          : "No sending account chosen for this step"
+        : null,
+    },
+  ];
+
+  const completedCount = checklistSteps.filter(
+    (s) => s.isComplete,
+  ).length;
+  const progressPercent = Math.round(
+    (completedCount / 4) * 100,
+  );
+
+  const handleChecklistStepClick = (label) => {
+    if (
+      label === "Connect inbox" ||
+      label === "Confirm trigger filter"
+    ) {
+      setShowIncomingLeadsModal(true);
+    } else if (label === "Review templates") {
+      setShowTemplateModal(true);
+    } else if (label === "Connect sender") {
+      const unconfiguredMod = allModules.find((m) => {
+        const isDelay =
+          m.type === "Delay" ||
+          m.app?.name === "Delay" ||
+          m.app?.displayName === "Delay" ||
+          Boolean(m.delayValue);
+        return !isDelay && !m.connectionId;
+      });
+
+      if (unconfiguredMod) {
+        setSelectedApp(
+          unconfiguredMod.app || {
+            name: "Gmail",
+            displayName: "Initial Email",
+          },
+        );
+        setSelectedAppType(
+          unconfiguredMod.emailType || "Gmail",
+        );
+        setEditingModuleId(unconfiguredMod.id);
+        setSelectedConnection("");
+        setOpen(true);
+      } else if (!incomingLeadsConnection) {
+        setShowIncomingLeadsModal(true);
+      } else {
+        setShowCreateConnectionModal(true);
+      }
+    }
+  };
+
+  const checklistComplete = completedCount === checklistSteps.length;
+
+  /* Collapsed unless something is outstanding, or the user opened it. */
+  const showChecklistPanel = !checklistComplete || checklistExpanded;
+
   return (
     <AppLayout>
       <div className="flex-1 flex flex-col h-full overflow-y-auto min-w-0 bg-[#FAF8F5] font-inter">
@@ -2456,6 +3259,15 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                   View all past executions and statuses
                 </p>
               </div>
+
+              {/*
+                Which clock these times are on. Without it a reader has to
+                assume, and the assumption is usually "my own", which is
+                exactly the thing that is not guaranteed.
+              */}
+              <span className="ml-auto shrink-0 rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-[11px] font-semibold text-gray-600">
+                Times in {timeZoneBadge(accountTimeZone)}
+              </span>
             </div>
 
             {/* Table Container */}
@@ -2489,7 +3301,14 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                           className="grid grid-cols-[1.5fr_1.5fr_1fr_1fr_1fr_1fr_auto] items-center text-sm text-gray-700 hover:bg-gray-50/50 transition-colors"
                         >
                           <div className="px-5 py-3 font-normal text-gray-700">
-                            {new Date(log.createdAt).toLocaleString(undefined, {
+                            {/*
+                              The account's timezone, not the browser's.
+                              A run log is a record of the business's
+                              automation — two colleagues in different
+                              countries must read the same clock time off
+                              the same row.
+                            */}
+                            {formatInTimeZone(log.createdAt, accountTimeZone, {
                               month: "short",
                               day: "numeric",
                               hour: "2-digit",
@@ -2650,9 +3469,11 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                       </h1>
                       <p className="text-xs text-gray-500 flex items-center gap-2 mt-0.5">
                         <Clock3 size={12} />{" "}
-                        {new Date(
+                        {formatInTimeZone(
                           selectedHistoryLog.createdAt,
-                        ).toLocaleString()}
+                          accountTimeZone,
+                          { second: "2-digit" },
+                        )}
                         <span className="text-gray-300">|</span>
                         <RefreshCw size={12} /> {duration} duration
                       </p>
@@ -2879,9 +3700,10 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                                         Scheduled At
                                       </p>
                                       <p className="text-gray-800 font-medium">
-                                        {new Date(
+                                        {formatInTimeZone(
                                           step.meta.scheduledAt,
-                                        ).toLocaleString()}
+                                          accountTimeZone,
+                                        )}
                                       </p>
                                     </div>
                                   )}
@@ -3008,7 +3830,9 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                         onChange={(e) => setScenarioName(e.target.value)}
                         onBlur={() => {
                           if (!scenarioName.trim()) {
-                            setScenarioName("Shopify Partner Directory — Lead Automation");
+                            setScenarioName(
+                              "Shopify Partner Directory — Lead Automation",
+                            );
                           }
                           handleSaveScenario();
                         }}
@@ -3031,19 +3855,35 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                     {(() => {
                       const isConn = Boolean(
                         selectedConnection ||
-                          incomingLeadsConnection ||
-                          (Array.isArray(connections) && connections.length > 0),
+                        incomingLeadsConnection ||
+                        (Array.isArray(connections) && connections.length > 0),
                       );
-                      const allCanvasModules = routerBranches.flatMap((b) => b.modules || []);
-                      const unconfiguredEmailModules = allCanvasModules.filter((m) => {
-                        const isDelay = m.type === "Delay" || m.app?.name === "Delay" || m.app?.displayName === "Delay" || Boolean(m.delayValue);
-                        return !isDelay && !m.connectionId;
-                      });
+                      const allCanvasModules = routerBranches.flatMap(
+                        (b) => b.modules || [],
+                      );
+                      const unconfiguredEmailModules = allCanvasModules.filter(
+                        (m) => {
+                          const isDelay =
+                            m.type === "Delay" ||
+                            m.app?.name === "Delay" ||
+                            m.app?.displayName === "Delay" ||
+                            Boolean(m.delayValue);
+                          return !isDelay && !m.connectionId;
+                        },
+                      );
                       const isInitialConfigured = Boolean(
-                        allCanvasModules.find((m) => (m.app?.displayName === "Initial Email" || m.template === "Initial Email") && m.connectionId) ||
-                        (selectedConnection && selectedTemplate === "Initial Email"),
+                        allCanvasModules.find(
+                          (m) =>
+                            (m.app?.displayName === "Initial Email" ||
+                              m.template === "Initial Email") &&
+                            m.connectionId,
+                        ) ||
+                        (selectedConnection &&
+                          selectedTemplate === "Initial Email"),
                       );
-                      const attentionModules = unconfiguredEmailModules.length + (!isInitialConfigured ? 1 : 0);
+                      const attentionModules =
+                        unconfiguredEmailModules.length +
+                        (!isInitialConfigured ? 1 : 0);
                       return (
                         <>
                           <span
@@ -3059,9 +3899,6 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                             {isConn ? "Inbox connected" : "Inbox disconnected"}
                           </span>
                           <span className="text-slate-300">|</span>
-                          <span>Filter matched 3 leads today</span>
-                          <span className="text-slate-300">|</span>
-                          <span>Last poll 42s ago</span>
                           <span className="text-slate-300">|</span>
                           <span
                             className={
@@ -3081,7 +3918,6 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                 </div>
 
                 <div className="flex items-center gap-3 shrink-0">
-
                   <button
                     onClick={() => {
                       setHistoryViewMode("table");
@@ -3099,8 +3935,6 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                     <Mail size={13} />
                     Send test lead
                   </button>
-
-
 
                   <div className="flex items-center gap-2 rounded-full border border-[#E0DDD5] bg-white px-3 py-1 shadow-2xs">
                     <span className="text-xs font-semibold text-slate-700">
@@ -3120,13 +3954,18 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                 </div>
               </div>
             </div>
-
             {/* Main Canvas Body */}
-            <div className="flex-1 overflow-y-auto bg-[#FAF8F5] p-6 relative">
+            <div className="flex-1 flex flex-col bg-[#FAF8F5] p-6 relative">
               <div className="absolute inset-0 bg-[radial-gradient(#D5D1C8_1px,transparent_1px)] [background-size:16px_16px] opacity-40 pointer-events-none"></div>
 
-              <div className="relative z-10 grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)] gap-8  mx-auto">
-                {/* LEFT SIDEBAR: Setup Checklist */}
+              <div
+                className={`relative z-10 grid gap-8 mx-auto ${
+                  showChecklistPanel
+                    ? "grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)]"
+                    : "grid-cols-1"
+                }`}
+              >
+                {showChecklistPanel && (
                 <div className="space-y-4">
                   <div className="rounded-[20px] bg-gradient-to-b from-slate-950 via-zinc-900 to-black text-white p-5 border border-slate-800 shadow-xl relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-2xl pointer-events-none"></div>
@@ -3219,9 +4058,28 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                                 <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
                                   SETUP CHECKLIST
                                 </span>
-                                <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
-                                  {completedCount} of 4 complete
-                                </span>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                                    {completedCount} of 4 complete
+                                  </span>
+                                  {/*
+                                    Only offered once the checklist is
+                                    finished — collapsing an unfinished one
+                                    would hide the work still to do.
+                                  */}
+                                  {checklistComplete && (
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setChecklistExpanded(false)
+                                      }
+                                      title="Hide the checklist"
+                                      className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-slate-700 text-slate-400 transition hover:bg-slate-800 hover:text-white"
+                                    >
+                                      <X size={11} />
+                                    </button>
+                                  )}
+                                </div>
                               </div>
 
                               <div className="mt-3 h-2 w-full rounded-full bg-slate-800/80 overflow-hidden p-0.5 border border-slate-700/50 relative z-10">
@@ -3281,30 +4139,61 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                     })()}
                   </div>
 
-                  <div className="rounded-2xl border border-[#EBE8E1] bg-[#F5F2EB] p-4 text-xs">
-                    <h4 className="font-bold text-slate-900">
-                      Test before you trust
-                    </h4>
-                    <p className="mt-1 text-[11px] text-slate-500 leading-relaxed">
-                      Send yourself a fake directory lead and watch the exact reply
-                      land in your own inbox.
-                    </p>
-                    <button
-                      onClick={handleOpenSendTestModal}
-                      className="mt-2.5 inline-block text-xs font-bold text-slate-900 underline hover:text-blue-600"
-                    >
-                      Send test lead →
-                    </button>
-                  </div>
                 </div>
+                )}
 
                 {/* RIGHT SECTION: Horizontal Flow Cards & Banner */}
                 <div className="space-y-6 min-w-0">
-                  <div className="flex items-start gap-4 overflow-x-auto pb-4 pt-1 no-scrollbar">
+                  <div className="relative">
+                    {/* Edge fades + buttons, shown only when there is more to reach. */}
+                    {flowScroll.overflow.scrollable &&
+                      !flowScroll.overflow.atStart && (
+                        <>
+                          <div className="pointer-events-none absolute left-0 top-0 bottom-4 w-20 z-10 bg-gradient-to-r from-[#FAF8F5] via-[#FAF8F5]/80 to-transparent" />
+                          <button
+                            type="button"
+                            aria-label="Scroll left"
+                            onClick={() => flowScroll.scrollBy(-1)}
+                            className="absolute left-2 top-1/2 -translate-y-1/2 z-20 flex h-11 w-11 items-center justify-center rounded-full bg-[#111111] text-white ring-4 ring-white shadow-xl transition hover:bg-black hover:scale-105 active:scale-95 cursor-pointer"
+                          >
+                            <ChevronLeft size={22} strokeWidth={2.5} />
+                          </button>
+                        </>
+                      )}
+
+                    {flowScroll.overflow.scrollable &&
+                      !flowScroll.overflow.atEnd && (
+                        <>
+                          <div className="pointer-events-none absolute right-0 top-0 bottom-4 w-20 z-10 bg-gradient-to-l from-[#FAF8F5] via-[#FAF8F5]/80 to-transparent" />
+                          <button
+                            type="button"
+                            aria-label="Scroll right"
+                            onClick={() => flowScroll.scrollBy(1)}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 z-20 flex h-11 w-11 items-center justify-center rounded-full bg-[#111111] text-white ring-4 ring-white shadow-xl transition hover:bg-black hover:scale-105 active:scale-95 cursor-pointer"
+                          >
+                            <ChevronRight size={22} strokeWidth={2.5} />
+                          </button>
+                        </>
+                      )}
+
+                  <div
+                    ref={flowScroll.ref}
+                    {...flowScroll.dragProps}
+                    className={`flex items-start gap-4 overflow-x-auto pb-4 pt-1 no-scrollbar select-none ${
+                      flowScroll.isDragging ? "cursor-grabbing" : ""
+                    }`}
+                  >
                     {/* CARD 1: Incoming Leads */}
                     {(() => {
                       const activeConn = (Array.isArray(connections) ? connections : []).find((c) => c._id === incomingLeadsConnection);
-                      const isIncConfigured = Boolean(incomingLeadsConnection && activeConn);
+                      const isMailhookTrigger =
+                        incomingLeadsAppType === "Mailhook";
+                      const activeHook = mailhooks.find(
+                        (m) => m._id === incomingLeadsMailhook,
+                      );
+                      const isIncConfigured = isMailhookTrigger
+                        ? Boolean(activeHook?.connectionVerified)
+                        : Boolean(incomingLeadsConnection && activeConn);
                       return (
                         <div
                           onClick={() => setShowIncomingLeadsModal(true)}
@@ -3321,27 +4210,53 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                                 Incoming Leads
                               </span>
                             </div>
-                            <span className={`h-2.5 w-2.5 rounded-full ${isIncConfigured ? "bg-[#34A853]" : "bg-amber-400"}`}></span>
+                            <StatusDot
+                              tone={isIncConfigured ? "active" : "pending"}
+                              title={
+                                isIncConfigured
+                                  ? "Trigger configured and listening"
+                                  : "Trigger not configured yet"
+                              }
+                            />
                           </div>
 
                           <div className="mt-4 space-y-1.5 text-xs text-slate-500">
                             <p className="truncate font-medium text-slate-800">
-                              {activeConn
-                                ? `${activeConn.provider.toUpperCase()} · ${activeConn.email}`
-                                : "Gmail · Connection missing"}
+                              {isMailhookTrigger
+                                ? activeHook
+                                  ? `Mailhook · ${activeHook.address || activeHook.name}`
+                                  : "Mailhook · not selected"
+                                : activeConn
+                                  ? `${providerLabel(activeConn.provider)} · ${activeConn.email}`
+                                  : "No mailbox selected"}
                             </p>
-                            <p className="flex items-center gap-1">
-                              Subject contains{" "}
-                              <span className="rounded bg-slate-100 px-1.5 py-0.5 font-medium text-slate-700">
-                                Shopify Partner
-                              </span>
+                            {/*
+                              The subject the backend actually matches on,
+                              which the administrator sets platform-wide.
+                              Never a literal — it would drift silently.
+                            */}
+                            {(incomingLeadsSubjectFilter ||
+                              platformTriggerSubject) && (
+                              <p className="flex items-center gap-1">
+                                Subject contains{" "}
+                                <span className="truncate rounded bg-slate-100 px-1.5 py-0.5 font-medium text-slate-700">
+                                  {incomingLeadsSubjectFilter ||
+                                    platformTriggerSubject}
+                                </span>
+                              </p>
+                            )}
+                            <p>
+                              {isMailhookTrigger
+                                ? "Delivered on forward"
+                                : "Checked on a schedule"}
                             </p>
-                            <p>Polls every 60s</p>
                           </div>
 
                           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center gap-1 text-xs font-semibold">
                             {isIncConfigured ? (
-                              <span className="text-[#137333]">✓ Matched 3 leads today</span>
+                              <span className="text-[#137333]">
+                                ✓ Listening for leads
+                              </span>
                             ) : (
                               <span className="text-amber-700 font-bold">⚠️ Unconfigured</span>
                             )}
@@ -3350,11 +4265,7 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                       );
                     })()}
 
-                    <div className="flex items-center self-center text-slate-300">
-                      <span className="text-xs tracking-tighter font-mono">
-                        ----&gt;
-                      </span>
-                    </div>
+                    <FlowConnector />
 
                     {/* CARD 2: Router */}
                     <div
@@ -3370,7 +4281,7 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                             Router
                           </span>
                         </div>
-                        <span className="h-2.5 w-2.5 rounded-full bg-[#34A853]"></span>
+                        <StatusDot title="Routing conditions are active" />
                       </div>
 
                       <div className="space-y-2.5 text-xs">
@@ -3381,56 +4292,57 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                               <span className="h-2 w-2 rounded-full bg-amber-500 mt-1 shrink-0"></span>
                               <div>
                                 <p className="font-semibold text-slate-800 leading-snug">
-                                If incoming leads subject contains:{" "}
+                                  If incoming leads subject contains:{" "}
                                   <span className="font-bold text-slate-900">
-                                    Shopify Partner Directory: New service inquiry from
+                                    {incomingLeadsSubjectFilter ||
+                                      platformTriggerSubject ||
+                                      "…"}
                                   </span>
                                 </p>
-                                {/* <p className="text-[11px] text-slate-500 mt-1 font-medium">
-                                  → Initial Email
-                                </p> */}
                               </div>
                             </div>
-                            <span className="font-medium text-slate-400 text-[11px] shrink-0">
-                              65%
-                            </span>
                           </div>
 
-                          <div className="mt-2.5 pt-2 border-t border-slate-200/60 text-[10px] text-amber-700 font-medium flex items-center gap-1">
-                            <span>⚠️ Don't add Re: or Fwd: at the start of subject</span>
-                          </div>
                         </div>
 
-                        {/* FILTER 2: Service / Body Filter */}
+                        {/*
+                        The two filters are ANDed — a lead has to match the
+                        subject AND name a service.
+                      */}
+                      <div className="flex items-center gap-2 px-1">
+                        <span className="h-px flex-1 bg-slate-200" />
+                        <span className="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                          And
+                        </span>
+                        <span className="h-px flex-1 bg-slate-200" />
+                      </div>
+
+                      {/* FILTER 2: Service / Body Filter */}
                         <div className="rounded-xl bg-slate-50 p-3 border border-slate-100 hover:bg-slate-100 transition">
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex items-start gap-2">
                               <span className="h-2 w-2 rounded-full bg-blue-500 mt-1 shrink-0"></span>
                               <div>
                                 <p className="font-semibold text-slate-800 leading-snug">
-                                 If incoming leads body contains service:{" "}
+                                  If incoming leads body contains service:{" "}
                                   <span className="font-bold text-slate-900">
-                                    Troubleshooting, Store Setup, or Bug Fixes
+                                    {platformServices.length
+                                      ? `${platformServices.slice(0, 3).join(", ")}${
+                                          platformServices.length > 3
+                                            ? ` +${platformServices.length - 3} more`
+                                            : ""
+                                        }`
+                                      : "…"}
                                   </span>
-                                </p>
-                                <p className="text-[11px] text-slate-500 mt-1 font-medium">
-                                  → Priority Service Reply
                                 </p>
                               </div>
                             </div>
-                            <span className="font-medium text-slate-400 text-[11px] shrink-0">
-                              35%
-                            </span>
                           </div>
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex items-center self-center text-slate-300">
-                      <span className="text-xs tracking-tighter font-mono">
-                        ----&gt;
-                      </span>
-                    </div>
+                    <FlowConnector muted={activeTemplateCount === 0} />
 
                     {/* CARD 3: Template */}
                     <div
@@ -3446,15 +4358,34 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                             Template
                           </span>
                         </div>
-                        <span className="h-2.5 w-2.5 rounded-full bg-[#34A853]"></span>
+                        <StatusDot
+                          tone={activeTemplateCount > 0 ? "active" : "pending"}
+                          title={
+                            activeTemplateCount > 0
+                              ? "Templates active"
+                              : "No template is switched on"
+                          }
+                        />
                       </div>
 
+                      {/*
+                        Counted from the loaded templates, and the edit
+                        stamp from their own updatedAt — the card used to
+                        state "3 templates active / Last edited 2 days ago"
+                        no matter what was actually saved.
+                      */}
                       <div className="mt-4 space-y-1.5 text-xs text-slate-500">
                         <p className="font-semibold text-slate-800">
-                          3 templates active
+                          {activeTemplateCount === 1
+                            ? "1 template active"
+                            : `${activeTemplateCount} templates active`}
                         </p>
-                        <p>Variables: first name, store, service</p>
-                        <p>Last edited 2 days ago</p>
+                        <p>
+                          {scenarioReplyMode === "ai"
+                            ? "Written by AI from your company profile"
+                            : "Fixed wording, sent as written"}
+                        </p>
+                        {lastTemplateEdit && <p>Last edited {lastTemplateEdit}</p>}
                       </div>
 
                       <div className="mt-5 pt-3 border-t border-slate-100 text-xs font-semibold text-slate-900 underline">
@@ -3462,11 +4393,7 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                       </div>
                     </div>
 
-                    <div className="flex items-center self-center text-slate-300">
-                      <span className="text-xs tracking-tighter font-mono">
-                        ----&gt;
-                      </span>
-                    </div>
+                    <FlowConnector />
 
                     {/* CARD 4: Initial Email */}
                     {(() => {
@@ -3486,14 +4413,15 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                       return (
                         <div
                           onClick={() => {
+                            const initialType = appTypeForModule(initialMod);
                             setSelectedApp({
-                              name: "Gmail",
+                              name: initialType,
                               displayName: "Initial Email",
                               color: "bg-red-500",
-                              icon: "Gmail",
+                              icon: initialType,
                               defaultTemplate: "Initial Email",
                             });
-                            setSelectedAppType("Gmail");
+                            setSelectedAppType(initialType);
                             setEditingBranch(0);
 
                             if (initialMod) {
@@ -3525,11 +4453,14 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                                 Initial Email
                               </span>
                             </div>
-                            <span
-                              className={`h-2.5 w-2.5 rounded-full ${
-                                isSaved ? "bg-[#34A853]" : "bg-amber-400"
-                              }`}
-                            ></span>
+                            <StatusDot
+                              tone={isSaved ? "active" : "pending"}
+                              title={
+                                isSaved
+                                  ? "Sending from a connected mailbox"
+                                  : "No sending mailbox chosen yet"
+                              }
+                            />
                           </div>
 
                           {isSaved ? (
@@ -3551,21 +4482,32 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                             </>
                           ) : (
                             <>
+                              {/*
+                                The real reason, and nothing invented. A
+                                module with no connectionId was never set
+                                up; one whose connection has since gone
+                                means the mailbox was removed or its
+                                sign-in lapsed. Neither is Gmail-specific.
+                              */}
                               <div className="rounded-xl bg-[#FEF3C7] p-3 text-xs text-[#92400E] leading-relaxed mb-4">
-                                Sender token expired 2h ago. Replies queue until reconnected.
+                                {initialMod?.connectionId
+                                  ? "The mailbox this step sent from is no longer available. Choose a connection to start sending again."
+                                  : "No sending mailbox chosen yet. Replies won't go out until you pick one."}
                               </div>
 
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
+                                  const initialType =
+                                    appTypeForModule(initialMod);
                                   setSelectedApp({
-                                    name: "Gmail",
+                                    name: initialType,
                                     displayName: "Initial Email",
                                     color: "bg-red-500",
-                                    icon: "Gmail",
+                                    icon: initialType,
                                     defaultTemplate: "Initial Email",
                                   });
-                                  setSelectedAppType("Gmail");
+                                  setSelectedAppType(initialType);
                                   setEditingBranch(0);
                                   if (initialMod) {
                                     setEditingModuleId(initialMod.id);
@@ -3583,7 +4525,9 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                                 }}
                                 className="w-full rounded-full bg-[#111111] py-2 text-xs font-semibold text-white transition hover:bg-slate-800 text-center"
                               >
-                                Reconnect Gmail
+                                {initialMod?.connectionId
+                                  ? "Choose another mailbox"
+                                  : "Choose a mailbox"}
                               </button>
                             </>
                           )}
@@ -3626,11 +4570,7 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
 
                         return (
                           <React.Fragment key={mod.id || `${bIdx}-${mIdx}`}>
-                            <div className="flex items-center self-center text-slate-300">
-                              <span className="text-xs tracking-tighter font-mono">
-                                ----&gt;
-                              </span>
-                            </div>
+                            <FlowConnector muted={!isModuleConfigured} />
                             <div
                               onClick={() => {
                                 setSelectedApp(mod.app || { name: mod.type });
@@ -3673,13 +4613,18 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                                   </span>
                                 </div>
                                 <div className="flex items-center gap-1.5">
-                                  <span
-                                    className={`h-2.5 w-2.5 rounded-full ${
+                                  <StatusDot
+                                    tone={
+                                      isModuleConfigured ? "active" : "pending"
+                                    }
+                                    title={
                                       isModuleConfigured
-                                        ? "bg-[#34A853]"
-                                        : "bg-amber-400"
-                                    }`}
-                                  ></span>
+                                        ? "This step is ready to run"
+                                        : isDelay
+                                          ? "No wait time set"
+                                          : "No sending mailbox chosen"
+                                    }
+                                  />
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
@@ -3711,311 +4656,535 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                       }),
                     )}
 
-                    <div className="flex items-center self-center text-slate-300">
-                      <span className="text-xs tracking-tighter font-mono">
-                        ----&gt;
-                      </span>
-                    </div>
+                    <FlowConnector muted />
 
-                    {/* CARD 5: Add Node / Module (First Follow-up, Second Follow-up, Delay) */}
-                    <div
-                      onClick={() => {
-                        setSelectedApp(null);
-                        setEditingBranch(0);
-                        setOpen(true);
-                      }}
-                      className="w-52 shrink-0 cursor-pointer rounded-[20px] border-2 border-dashed border-slate-300 bg-white/80 hover:bg-white p-5 shadow-2xs hover:shadow-md transition flex flex-col items-center justify-center text-center group"
-                    >
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-700 group-hover:bg-[#111111] group-hover:text-white transition-colors mb-2">
-                        <Plus size={20} />
+                      {/* CARD 5: Add Node / Module (First Follow-up, Second Follow-up, Delay) */}
+                      <div
+                        onClick={() => {
+                          setSelectedApp(null);
+                          setEditingBranch(0);
+                          setOpen(true);
+                        }}
+                        className="w-52 shrink-0 cursor-pointer rounded-[20px] border-2 border-dashed border-slate-300 bg-white/80 hover:bg-white p-5 shadow-2xs hover:shadow-md transition flex flex-col items-center justify-center text-center group"
+                      >
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-700 group-hover:bg-[#111111] group-hover:text-white transition-colors mb-2">
+                          <Plus size={20} />
+                        </div>
+                        <span className="font-bold text-slate-900 text-xs">
+                          + Add Node / Module
+                        </span>
+                        <span className="text-[11px] text-slate-500 mt-1">
+                          Follow-up or Delay
+                        </span>
                       </div>
-                      <span className="font-bold text-slate-900 text-xs">
-                        + Add Node / Module
-                      </span>
-                      <span className="text-[11px] text-slate-500 mt-1">
-                        Follow-up or Delay
-                      </span>
                     </div>
                   </div>
+                  </div>
 
-                  {/* Bottom Safe Test Banner */}
-                  <div className="w-full max-w-3xl rounded-2xl border border-[#EBE8E1] bg-white p-4 shadow-2xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+
+              </div>
+              {/*
+                Safe test — pinned to the bottom of the canvas by mt-auto,
+                starting at the page's left edge rather than indented to
+                where the flow begins.
+
+                The extra bottom margin only applies when the floating
+                "Setup complete" chip is on screen, so the two never overlap.
+              */}
+              <div
+                className={`w-full max-w-3xl rounded-2xl border border-[#EBE8E1] bg-white p-4 shadow-2xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-auto relative z-10 ${
+                  showChecklistPanel ? "" : "mb-12"
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#FEF3C7] text-[#D97706] font-bold">
+                    ✦
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-900">
+                      Safe test — nothing real at stake
+                    </h4>
+                    <p className="mt-0.5 text-xs text-slate-500 leading-relaxed">
+                      We deliver a fake directory inquiry to your inbox and
+                      reply to it, so you can read the exact email a lead
+                      would get.
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleOpenSendTestModal}
+                  className="rounded-full bg-[#111111] px-5 py-2.5 text-xs font-semibold text-white transition hover:bg-slate-800 shrink-0 text-center"
+                >
+                  Send myself a test lead
+                </button>
+              </div>
+
+            </div>
+            {/*
+              Setup-complete chip. Fixed, so it costs the grid no space at
+              all — the whole point of collapsing it was to give the flow
+              cards the full width. Click to reopen the checklist.
+
+              left-[88px] clears the 68px icon rail plus the collapsed
+              scenario nav, which is how this page renders by default.
+            */}
+            {checklistComplete && !checklistExpanded && (
+              <button
+                type="button"
+                onClick={() => setChecklistExpanded(true)}
+                title="Setup complete — click to review the checklist"
+                className="fixed bottom-5 left-[88px] z-30 flex items-center gap-2 rounded-full border border-emerald-200 bg-white/95 backdrop-blur px-3.5 py-2 shadow-lg transition hover:bg-emerald-50 cursor-pointer"
+              >
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-[11px] font-bold text-white">
+                  ✓
+                </span>
+                <span className="text-[11px] font-bold text-emerald-900">
+                  Setup complete
+                </span>
+              </button>
+            )}
+
+            {/*
+              Resume prompt.
+              
+              Only ever opened with a real count from the server, so it
+              never asks about an empty backlog. Cancelling leaves the
+              scenario off and the queue intact — the prompt returns on the
+              next attempt to switch it on.
+            */}
+            {queuePromptOpen && pausedQueue && (
+              <div
+                className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+                onClick={() => {
+                  if (!queueBusy) setQueuePromptOpen(false);
+                }}
+              >
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  className="flex max-h-[85vh] w-full max-w-[440px] flex-col overflow-hidden rounded-[16px] border border-[#EBE8E1] bg-white shadow-2xl"
+                >
+                  <div className="flex items-start justify-between gap-3 border-b border-[#EBE8E1] px-5 py-4">
                     <div className="flex items-start gap-3">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#FEF3C7] text-[#D97706] font-bold">
-                        ✦
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#FEF3C7] text-[#D97706]">
+                        <Clock size={16} />
                       </div>
                       <div>
-                        <h4 className="text-sm font-bold text-slate-900">
-                          Safe test — nothing real at stake
-                        </h4>
-                        <p className="mt-0.5 text-xs text-slate-500 leading-relaxed">
-                          We deliver a fake directory inquiry to your inbox and
-                          reply to it, so you can read the exact email a lead would
-                          get.
+                        <h3 className="text-sm font-bold text-zinc-900">
+                          {pausedQueue.count} lead
+                          {pausedQueue.count === 1 ? "" : "s"} waiting
+                        </h3>
+                        <p className="mt-0.5 text-xs text-zinc-500">
+                          {pausedQueue.count === 1 ? "It" : "They"} arrived
+                          while this scenario was switched off, so{" "}
+                          {pausedQueue.count === 1 ? "it" : "they"} never got
+                          a reply.
                         </p>
                       </div>
                     </div>
 
                     <button
-                      onClick={handleOpenSendTestModal}
-                      className="rounded-full bg-[#111111] px-5 py-2.5 text-xs font-semibold text-white transition hover:bg-slate-800 shrink-0 text-center"
+                      type="button"
+                      disabled={queueBusy}
+                      onClick={() => setQueuePromptOpen(false)}
+                      className="shrink-0 rounded-full p-1 text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-700 disabled:opacity-40"
                     >
-                      Send myself a test lead
+                      <X size={16} />
+                    </button>
+                  </div>
+
+                  <div className="min-h-0 flex-1 overflow-y-auto bg-[#FAF8F5] px-5 py-4">
+                    <p className="text-xs font-semibold text-zinc-700">
+                      What should happen to them?
+                    </p>
+
+                    <div className="mt-3 space-y-2">
+                      {pausedQueue.preview?.map((lead) => (
+                        <div
+                          key={lead._id}
+                          className="rounded-[10px] border border-[#EBE8E1] bg-white px-3 py-2"
+                        >
+                          <p className="truncate text-xs font-semibold text-zinc-800">
+                            {lead.subject}
+                          </p>
+                          <p className="mt-0.5 truncate text-[11px] text-zinc-500">
+                            {lead.name ? `${lead.name} · ` : ""}
+                            {lead.from}
+                          </p>
+                        </div>
+                      ))}
+
+                      {pausedQueue.previewTruncated && (
+                        <p className="pt-0.5 text-[11px] font-medium text-zinc-500">
+                          and {pausedQueue.count - (pausedQueue.preview?.length || 0)}{" "}
+                          more
+                        </p>
+                      )}
+                    </div>
+
+                    <p className="mt-4 text-[11px] leading-relaxed text-zinc-500">
+                      Discarding answers nothing and keeps the emails — they
+                      stay in your Lead Inbox to handle by hand. Either way
+                      the scenario switches on.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col gap-2 border-t border-[#EBE8E1] px-5 py-4 sm:flex-row sm:justify-end">
+                    <button
+                      type="button"
+                      disabled={queueBusy}
+                      onClick={() => resumeWithQueue("discard")}
+                      className="rounded-full border border-zinc-300 px-4 py-2 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-100 disabled:opacity-40"
+                    >
+                      Discard the queue
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={queueBusy}
+                      onClick={() => resumeWithQueue("send")}
+                      className="rounded-full bg-[#111111] px-4 py-2 text-xs font-semibold text-white transition hover:bg-slate-800 disabled:opacity-40"
+                    >
+                      {queueBusy
+                        ? "Sending…"
+                        : `Send ${pausedQueue.count} repl${pausedQueue.count === 1 ? "y" : "ies"}`}
                     </button>
                   </div>
                 </div>
               </div>
-            </div>
-                {open && (
-                  <div className="fixed inset-0 bg-black/10 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-                    <div
-                      ref={modalRef}
-                      className="bg-white rounded-[8px]  w-full max-w-[460px] max-h-[85vh] overflow-hidden border  flex flex-col"
-                    >
-                      {!selectedApp ? (
-                        <>
-                          <div className="px-5 py-3.5 bg-[#111111] text-white flex justify-between items-center shrink-0">
-                            <div>
-                              <h2 className="text-sm font-bold tracking-tight">
-                                Select Application
-                              </h2>
-                              <p className="text-[11px] text-zinc-400 mt-0.5">
-                                Choose an app to add to your workflow
+            )}
+
+            {open && (
+              <div
+                className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+                {...moduleDismiss.backdropProps}
+              >
+                <div
+                  ref={modalRef}
+                  className="flex max-h-[85vh] w-full max-w-[440px] flex-col overflow-hidden rounded-[16px] border border-[#EBE8E1] bg-white shadow-2xl"
+                  {...moduleDismiss.panelProps}
+                >
+                  {!selectedApp ? (
+                    <>
+                      {/*
+                        Header matches CreateConnectionModal / the Gmail and
+                        Microsoft modals: dark bar, tinted icon tile, title
+                        with a one-line explanation beneath it.
+                      */}
+                      <header className="flex shrink-0 items-center justify-between bg-[#111110] px-5 py-4 text-white">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10">
+                            <Zap className="h-4 w-4 text-emerald-400" />
+                          </div>
+                          <div>
+                            <h2 className="text-base font-bold text-white">
+                              Select Application
+                            </h2>
+                            <p className="mt-0.5 text-xs font-normal text-slate-300">
+                              Choose an app to add to your workflow
+                            </p>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={resetForm}
+                          aria-label="Close modal"
+                          className="cursor-pointer rounded-full p-1 text-slate-400 transition hover:text-white"
+                        >
+                          <X className="h-5 w-5" />
+                        </button>
+                      </header>
+                      <div className="min-h-0 flex-1 overflow-y-auto bg-[#FAF8F5]">
+                        <div className="space-y-5 p-5">
+                          {[
+                            {
+                              label: "Email sequence",
+                              items: [
+                                {
+                                  name: "Initial Email",
+                                  base: "Gmail",
+                                  color: "bg-[#111111]",
+                                  icon: "Gmail",
+                                  step: "1",
+                                  hint: "The first reply a new lead receives.",
+                                },
+                                {
+                                  name: "First Follow-up",
+                                  base: "Gmail",
+                                  color: "bg-[#111111]",
+                                  icon: "Gmail",
+                                  step: "2",
+                                  hint: "Sent when the lead has not replied yet.",
+                                },
+                                {
+                                  name: "Second Follow-up",
+                                  base: "Gmail",
+                                  color: "bg-[#111111]",
+                                  icon: "Gmail",
+                                  step: "3",
+                                  hint: "A final nudge before the thread goes quiet.",
+                                },
+                              ],
+                            },
+                            {
+                              label: "Timing",
+                              items: [
+                                {
+                                  name: "Delay",
+                                  base: "Delay",
+                                  color: "bg-amber-500",
+                                  icon: "Delay",
+                                  step: null,
+                                  hint: "Wait before running the next module.",
+                                },
+                              ],
+                            },
+                          ].map((group) => (
+                            <div key={group.label}>
+                              <p className="mb-2 px-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                {group.label}
+                              </p>
+
+                              <div className="space-y-2">
+                                {group.items.map((item, idx) => {
+                                  const Icon = iconMap[item.icon];
+
+                                  return (
+                                    <button
+                                      key={idx}
+                                      type="button"
+                                      onClick={() => {
+                                        let templateName = "";
+                                        if (item.name === "Initial Email")
+                                          templateName = "Initial Email";
+                                        else if (item.name === "First Follow-up")
+                                          templateName = "First Follow-up";
+                                        else if (
+                                          item.name === "Second Follow-up"
+                                        )
+                                          templateName = "Second Follow-up";
+                                        localStorage.setItem(
+                                          "activeShopifyModule",
+                                          templateName,
+                                        );
+
+                                        setSelectedApp({
+                                          name: item.base,
+                                          displayName: item.name,
+                                          color: item.color,
+                                          icon: item.icon,
+                                          defaultTemplate: templateName,
+                                        });
+
+                                        /*
+                                         * A new step inherits the
+                                         * scenario's reply mode, so adding
+                                         * a follow-up to an AI scenario
+                                         * does not silently create a
+                                         * manual one.
+                                         */
+                                        setReplyMode(scenarioReplyMode);
+                                        setCompanyProfileId(
+                                          scenarioReplyMode === "ai"
+                                            ? scenarioProfileId
+                                            : "",
+                                        );
+
+                                        setSelectedTemplate(templateName);
+                                      }}
+                                      className="group flex w-full cursor-pointer items-center gap-3.5 rounded-[14px] border border-[#EBE8E1] bg-white px-4 py-3.5 text-left shadow-2xs transition hover:border-slate-900 hover:shadow-md"
+                                    >
+                                      {/*
+                                        The three email steps used to carry
+                                        identical envelope tiles, so the
+                                        sequence was unreadable at a glance.
+                                        The step number sits on the tile.
+                                      */}
+                                      <span className="relative shrink-0">
+                                        <span
+                                          className={`flex h-10 w-10 items-center justify-center rounded-xl ${item.color} text-white`}
+                                        >
+                                          <Icon className="h-4 w-4" />
+                                        </span>
+
+                                        {item.step && (
+                                          <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-white text-[9px] font-bold text-slate-900 ring-1 ring-[#EBE8E1]">
+                                            {item.step}
+                                          </span>
+                                        )}
+                                      </span>
+
+                                      <span className="min-w-0 flex-1">
+                                        <span className="block text-[13px] font-bold text-slate-900">
+                                          {item.name}
+                                        </span>
+                                        <span className="mt-0.5 block text-[11px] font-normal leading-relaxed text-slate-500">
+                                          {item.hint}
+                                        </span>
+                                      </span>
+
+                                      <FiChevronRight className="h-4 w-4 shrink-0 text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-slate-900" />
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <footer className="flex shrink-0 items-center justify-between gap-3 border-t border-[#EBE8E1] bg-white px-5 py-3.5">
+                        <p className="text-[11px] font-medium text-slate-400">
+                          Added to the end of your flow
+                        </p>
+
+                        <button
+                          type="button"
+                          onClick={resetForm}
+                          className="cursor-pointer rounded-full border border-slate-300 bg-white px-4 py-1.5 text-xs font-bold text-slate-700 transition hover:bg-slate-100"
+                        >
+                          Cancel
+                        </button>
+                      </footer>
+                    </>
+                  ) : (
+                    <>
+                      <div className="px-5 py-3.5 bg-[#111111] text-white flex justify-between items-center shrink-0">
+                        <h3 className="font-bold text-xs">
+                          {selectedApp.displayName || selectedApp.name}
+                        </h3>
+
+                        <button
+                          onClick={resetForm}
+                          className="text-zinc-400 hover:text-white p-1 rounded-[8px] transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+                        {selectedApp?.name === "Delay" ||
+                        selectedApp?.type === "Delay" ? (
+                          <div>
+                            <label className="block text-xs font-semibold text-zinc-700 mb-1.5">
+                              Delay Duration{" "}
+                              <span className="text-red-500">*</span>
+                            </label>
+                            <div className="flex space-x-3">
+                              <input
+                                type="number"
+                                value={delayValue}
+                                onChange={(e) => setDelayValue(e.target.value)}
+                                className="flex-1 border border-zinc-300 rounded-[8px] px-3 py-2 text-xs text-zinc-800 bg-white outline-none focus:border-zinc-900 transition"
+                              />
+                              <select
+                                value={delayUnit}
+                                onChange={(e) => setDelayUnit(e.target.value)}
+                                className="border border-zinc-300 rounded-[8px] px-3 py-2 text-xs text-zinc-800 bg-white outline-none focus:border-zinc-900 transition"
+                              >
+                                <option value="seconds">Seconds</option>
+                                <option value="minutes">Minutes</option>
+                                <option value="hours">Hours</option>
+                              </select>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="relative">
+                              <label className="block text-xs font-semibold text-zinc-700 mb-1.5">
+                                Select Application{" "}
+                                <span className="text-red-500">*</span>
+                              </label>
+
+                              <div className="relative">
+                                <select
+                                  value={selectedAppType}
+                                  onChange={(e) => {
+                                    const value = e.target.value;
+                                    setSelectedAppType(value);
+                                    fetchConnections();
+                                  }}
+                                  className="w-full border border-zinc-300 rounded-[8px] px-3 py-2 pr-20 text-xs text-zinc-800 bg-white outline-none focus:border-zinc-900 appearance-none transition"
+                                >
+                                  <option value="">
+                                    -- Choose App Type --
+                                  </option>
+                                  <option value="Gmail">
+                                    Gmail / Google Workspace
+                                  </option>
+                                  <option value="Microsoft">
+                                    Outlook / Live / Microsoft 365
+                                  </option>
+                                  <option value="Email">Other Email</option>
+                                </select>
+
+                                {/* Add button INSIDE the select box (to the right) */}
+                                <button
+                                  disabled={!selectedAppType}
+                                  onClick={() => {
+                                    if (selectedAppType === "Email") {
+                                      setShowOutlookModal(true);
+                                    } else if (
+                                      selectedAppType === "Microsoft"
+                                    ) {
+                                      connectMicrosoftAccount();
+                                    } else if (selectedAppType === "Gmail") {
+                                      setShowGmailModal(true);
+                                    } else {
+                                      toast.error(
+                                        "Please select an application type first.",
+                                      );
+                                    }
+                                  }}
+                                  className={`absolute right-0 top-0 bottom-0 px-4 text-xs font-semibold rounded-r-[8px] border-l transition-all duration-200 ${
+                                    selectedAppType
+                                      ? "bg-[#111111] text-white border-l-zinc-300 hover:bg-zinc-800"
+                                      : "bg-zinc-200 text-zinc-400 border-l-zinc-300 cursor-not-allowed"
+                                  }`}
+                                >
+                                  Add
+                                </button>
+                              </div>
+
+                              <p className="text-xs text-gray-500 mt-2">
+                                Choose the application type and click <b>Add</b>{" "}
+                                to connect a new account.
                               </p>
                             </div>
-                            <button
-                              onClick={resetForm}
-                              className="text-zinc-400 hover:text-white p-1 rounded-[8px] transition-colors"
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
-                          </div>
-                          <div className="p-4 max-h-[400px] overflow-y-auto space-y-2.5 no-scrollbar">
-                            {[
-                              {
-                                name: "Initial Email",
-                                base: "Gmail",
-                                color: "bg-[#111111]",
-                                icon: "Gmail",
-                              },
-                              {
-                                name: "First Follow-up",
-                                base: "Gmail",
-                                color: "bg-[#111111]",
-                                icon: "Gmail",
-                              },
-                              {
-                                name: "Second Follow-up",
-                                base: "Gmail",
-                                color: "bg-[#111111]",
-                                icon: "Gmail",
-                              },
-                              {
-                                name: "Delay",
-                                base: "Delay",
-                                color: "bg-amber-500",
-                                icon: "Delay",
-                              },
-                            ].map((item, idx) => {
-                              const Icon = iconMap[item.icon];
-                              return (
-                                <div
-                                  key={idx}
-                                  onClick={() => {
-                                    let templateName = "";
-                                    if (item.name === "Initial Email")
-                                      templateName = "Initial Email";
-                                    else if (item.name === "First Follow-up")
-                                      templateName = "First Follow-up";
-                                    else if (item.name === "Second Follow-up")
-                                      templateName = "Second Follow-up";
-                                    localStorage.setItem(
-                                      "activeShopifyModule",
-                                      templateName,
-                                    );
 
-                                    setSelectedApp({
-                                      name: item.base,
-                                      displayName: item.name,
-                                      color: item.color,
-                                      icon: item.icon,
-                                      defaultTemplate: templateName,
-                                    });
-
-                                    setSelectedTemplate(templateName);
-                                  }}
-                                  className="flex items-center p-3 rounded-[8px] border border-zinc-200 hover:border-zinc-900 hover:bg-zinc-50 cursor-pointer transition-all group"
-                                >
-                                  <div
-                                    className={`w-9 h-9 ${item.color} rounded-[8px] flex items-center justify-center text-white shrink-0`}
-                                  >
-                                    <Icon className="w-4 h-4" />
-                                  </div>
-                                  <div className="ml-3">
-                                    <p className="font-semibold text-zinc-900 text-xs group-hover:text-black">
-                                      {item.name}
-                                    </p>
-                                    <p className="text-[11px] text-zinc-500">
-                                      {item.base}
-                                    </p>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <div className="px-5 py-3.5 bg-[#111111] text-white flex justify-between items-center shrink-0">
-                            <h3 className="font-bold text-sm">
-                              {selectedApp.displayName || selectedApp.name}
-                            </h3>
-
-                            <button
-                              onClick={resetForm}
-                              className="text-zinc-400 hover:text-white p-1 rounded-[8px] transition-colors"
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
-                          </div>
-
-                          <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
-                            {selectedApp?.name === "Delay" ||
-                            selectedApp?.type === "Delay" ? (
+                            {selectedAppType && (
                               <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                  Delay Duration{" "}
+                                <label className="block text-xs font-semibold text-zinc-700 mb-1.5">
+                                  Connection{" "}
                                   <span className="text-red-500">*</span>
                                 </label>
-                                <div className="flex space-x-3">
-                                  <input
-                                    type="number"
-                                    value={delayValue}
-                                    onChange={(e) =>
-                                      setDelayValue(e.target.value)
-                                    }
-                                    className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                                  />
+
+                                <div className="flex items-center border border-zinc-300 rounded-[8px] px-2 py-1.5 bg-white focus-within:border-zinc-900 transition">
                                   <select
-                                    value={delayUnit}
-                                    onChange={(e) =>
-                                      setDelayUnit(e.target.value)
-                                    }
-                                    className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                    value={selectedConnection}
+                                    onChange={(e) => {
+                                      setSelectedConnection(e.target.value);
+                                      setIsScenarioUpdated(false);
+                                    }}
+                                    className="flex-1 border-none outline-none text-xs bg-transparent"
                                   >
-                                    <option value="seconds">Seconds</option>
-                                    <option value="minutes">Minutes</option>
-                                    <option value="hours">Hours</option>
-                                  </select>
-                                </div>
-                              </div>
-                            ) : (
-                              <>
-                                <div className="relative">
-                                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Select Application{" "}
-                                    <span className="text-red-500">*</span>
-                                  </label>
-
-                                  <div className="relative">
-                                    <select
-                                      value={selectedAppType}
-                                      onChange={(e) => {
-                                        const value = e.target.value;
-                                        setSelectedAppType(value);
-                                        fetchConnections();
-                                      }}
-                                      className="w-full border border-gray-300 rounded-lg px-4 py-2 pr-20 focus:ring-2 focus:ring-purple-500 focus:border-transparent appearance-none"
-                                    >
-                                      <option value="">
-                                        -- Choose App Type --
-                                      </option>
-                                      <option value="Gmail">
-                                        Gmail / Google Workspace
-                                      </option>
-                                      <option value="Microsoft">
-                                        Outlook / Live / Microsoft 365
-                                      </option>
-                                      <option value="Email">Other Email</option>
-                                    </select>
-
-                                    {/* Add button INSIDE the select box (to the right) */}
-                                    <button
-                                      disabled={!selectedAppType}
-                                      onClick={() => {
-                                        if (selectedAppType === "Email") {
-                                          setShowOutlookModal(true);
-                                        } else if (
-                                          selectedAppType === "Microsoft"
-                                        ) {
-                                          setShowMicrosoftModal(true);
-                                        } else if (
-                                          selectedAppType === "Gmail"
-                                        ) {
-                                          setShowGmailModal(true);
-                                        } else {
-                                          toast.error(
-                                            "Please select an application type first.",
-                                          );
-                                        }
-                                      }}
-                                      className={`absolute right-0 top-0 bottom-0 px-4 text-xs font-semibold rounded-r-[8px] border-l transition-all duration-200 ${
-                                        selectedAppType
-                                          ? "bg-[#111111] text-white border-l-zinc-300 hover:bg-zinc-800"
-                                          : "bg-zinc-200 text-zinc-400 border-l-zinc-300 cursor-not-allowed"
-                                      }`}
-                                    >
-                                      Add
-                                    </button>
-                                  </div>
-
-                                  <p className="text-xs text-gray-500 mt-2">
-                                    Choose the application type and click{" "}
-                                    <b>Add</b> to connect a new account.
-                                  </p>
-                                </div>
-
-                                {selectedAppType && (
-                                  <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                      Connection{" "}
-                                      <span className="text-red-500">*</span>
-                                    </label>
-
-                                    <div className="flex items-center border border-gray-300 rounded-lg px-2 py-2 focus-within:ring-2 focus-within:ring-purple-500">
-                                      <select
-                                        value={selectedConnection}
-                                        onChange={(e) => {
-                                          setSelectedConnection(e.target.value);
-                                          setIsScenarioUpdated(false);
-                                        }}
-                                        className="flex-1 border-none outline-none text-sm bg-transparent"
-                                      >
-                                        <option value="">
-                                          -- Select Connection --
+                                    <option value="">
+                                      -- Select Connection --
+                                    </option>
+                                    {connections
+                                      .filter((c) =>
+                                        matchesAppType(c, selectedAppType),
+                                      )
+                                      .map((c) => (
+                                        <option key={c._id} value={c._id}>
+                                          {providerLabel(c.provider)} -{" "}
+                                          {c.email}
                                         </option>
-                                        {connections
-                                          .filter((c) => {
-                                            if (selectedAppType === "Email")
-                                              return (
-                                                c.provider === "smtp" ||
-                                                c.provider === "outlook"
-                                              );
-                                            if (selectedAppType === "Microsoft")
-                                              return c.provider === "microsoft";
-                                            if (selectedAppType === "Gmail")
-                                              return c.provider === "gmail";
-                                            return false;
-                                          })
-                                          .map((c) => (
-                                            <option key={c._id} value={c._id}>
-                                              {c.provider.toUpperCase()} -{" "}
-                                              {c.email}
-                                            </option>
-                                          ))}
-                                      </select>
+                                      ))}
+                                  </select>
 
-                                      {/* <button
+                                  {/* <button
                                 onClick={() => {
                                   if (selectedAppType === "Email") {
                                     setShowOutlookModal(true);
@@ -4023,224 +5192,223 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                                     setShowGmailModal(true);
                                   }
                                 }}
-                                className="ml-2 border border-purple-500 text-purple-600 hover:bg-purple-50 rounded-md px-3 py-1 text-sm font-medium"
+                                className="ml-2 border border-zinc-300 text-zinc-700 hover:bg-zinc-100 rounded-[6px] px-2.5 py-1 text-[11px] font-semibold transition"
                               >
                                 Add
                               </button> */}
-                                    </div>
-                                  </div>
-                                )}
-
-                                <div>
-                                  <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                      Template
-                                    </label>
-
-                                    <div className="relative">
-                                      {/* Read-only Input */}
-                                      <input
-                                        type="text"
-                                        value={
-                                          selectedApp?.defaultTemplate ||
-                                          selectedTemplate ||
-                                          "No template selected"
-                                        }
-                                        readOnly
-                                        className="w-full border border-gray-300 rounded-lg px-4 py-2 pr-20 bg-gray-100 text-gray-700 focus:outline-none cursor-not-allowed"
-                                      />
-
-                                      {/* View Button inside the input box */}
-                                      <button
-                                        onClick={() => {
-                                          const templateName =
-                                            selectedTemplate ||
-                                            selectedApp?.defaultTemplate;
-
-                                          if (templateName) {
-                                            const encodedName =
-                                              encodeURIComponent(templateName);
-                                            window.open(
-                                              `/templates?view=${encodedName}`,
-                                              "_blank",
-                                            );
-                                          } else {
-                                            toast.info(
-                                              "No template selected to view.",
-                                            );
-                                          }
-                                        }}
-                                        disabled={
-                                          !selectedTemplate &&
-                                          !selectedApp?.defaultTemplate
-                                        }
-                                        className={`absolute right-0 top-0 bottom-0 px-4 text-xs font-semibold rounded-r-[8px] border-l transition-all duration-200 ${
-                                          selectedTemplate ||
-                                          selectedApp?.defaultTemplate
-                                            ? "bg-[#111111] text-white border-l-zinc-300 hover:bg-zinc-800"
-                                            : "bg-zinc-200 text-zinc-400 border-l-zinc-300 cursor-not-allowed"
-                                        }`}
-                                      >
-                                        View
-                                      </button>
-                                    </div>
-
-                                    {/* Hint Text */}
-                                    <p className="text-xs text-gray-500 mt-2">
-                                      Click <b>View</b> to open and review the
-                                      full email template.
-                                    </p>
-                                  </div>
                                 </div>
+                              </div>
+                            )}
 
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    To
-                                  </label>
-                                  <div className="border border-gray-300 rounded-lg px-3 py-2 bg-gray-50">
-                                    <div className="flex flex-wrap gap-2">
-                                      <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm flex items-center">
-                                        Sender Email Address
-                                        <span className="ml-2 text-gray-400 text-xs">
-                                          (Sender)
-                                        </span>
-                                      </span>
-                                    </div>
-                                  </div>
-                                </div>
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Subject{" "}
-                                    <span className="text-xs text-gray-500">
-                                      (Optional)
-                                    </span>
-                                  </label>
+                            <div>
+                              <div>
+                                <label className="block text-xs font-semibold text-zinc-700 mb-1.5">
+                                  Template
+                                </label>
 
+                                <div className="relative">
+                                  {/* Read-only Input */}
                                   <input
                                     type="text"
-                                    value={subject}
-                                    onChange={(e) => {
-                                      setSubject(e.target.value);
-                                      setIsScenarioUpdated(false);
-                                    }}
-                                    placeholder="Enter custom subject"
-                                    className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                    value={
+                                      selectedApp?.defaultTemplate ||
+                                      selectedTemplate ||
+                                      "No template selected"
+                                    }
+                                    readOnly
+                                    className="w-full border border-zinc-200 rounded-[8px] px-3 py-2 pr-20 text-xs text-zinc-700 bg-zinc-100/80 outline-none cursor-not-allowed"
                                   />
 
-                                  <p className="text-xs text-gray-500 mt-2">
-                                    Add a subject only if you want to send the
-                                    email with a custom subject. Leave it empty
-                                    to use the same subject from the incoming
-                                    lead email.
-                                  </p>
+                                  {/* View Button inside the input box */}
+                                  <button
+                                    onClick={() => {
+                                      const templateName =
+                                        selectedTemplate ||
+                                        selectedApp?.defaultTemplate;
+
+                                      if (templateName) {
+                                        const encodedName =
+                                          encodeURIComponent(templateName);
+                                        window.open(
+                                          `/templates?view=${encodedName}`,
+                                          "_blank",
+                                        );
+                                      } else {
+                                        toast.info(
+                                          "No template selected to view.",
+                                        );
+                                      }
+                                    }}
+                                    disabled={
+                                      !selectedTemplate &&
+                                      !selectedApp?.defaultTemplate
+                                    }
+                                    className={`absolute right-0 top-0 bottom-0 px-4 text-xs font-semibold rounded-r-[8px] border-l transition-all duration-200 ${
+                                      selectedTemplate ||
+                                      selectedApp?.defaultTemplate
+                                        ? "bg-[#111111] text-white border-l-zinc-300 hover:bg-zinc-800"
+                                        : "bg-zinc-200 text-zinc-400 border-l-zinc-300 cursor-not-allowed"
+                                    }`}
+                                  >
+                                    View
+                                  </button>
                                 </div>
 
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    CC{" "}
-                                    <span className="text-xs text-gray-500">
-                                      (Optional)
+                                {/* Hint Text */}
+                                <p className="text-xs text-gray-500 mt-2">
+                                  Click <b>View</b> to open and review the full
+                                  email template.
+                                </p>
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="block text-xs font-semibold text-zinc-700 mb-1.5">
+                                To
+                              </label>
+                              <div className="border border-zinc-200 rounded-[8px] px-3 py-2 text-xs text-zinc-700 bg-zinc-100/80">
+                                <div className="flex flex-wrap gap-2">
+                                  <span className="bg-zinc-100 text-zinc-700 border border-zinc-200 px-2.5 py-0.5 rounded-full text-[11px] font-medium flex items-center">
+                                    Sender Email Address
+                                    <span className="ml-2 text-gray-400 text-xs">
+                                      (Sender)
                                     </span>
-                                  </label>
-                                  <div className="border border-gray-300 rounded-lg px-3 py-2 focus-within:ring-2 focus-within:ring-purple-500">
-                                    <div className="flex flex-wrap gap-2 mb-2">
-                                      {ccList.map((email, index) => (
-                                        <span
-                                          key={index}
-                                          className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm flex items-center"
-                                        >
-                                          {email}
-                                          <button
-                                            onClick={() =>
-                                              handleRemoveEmail("cc", index)
-                                            }
-                                            className="ml-2 text-red-500 hover:text-red-700"
-                                          >
-                                            <X className="w-3 h-3" />
-                                          </button>
-                                        </span>
-                                      ))}
-                                    </div>
-                                    <input
-                                      type="text"
-                                      value={ccInput}
-                                      onChange={(e) =>
-                                        setCcInput(e.target.value)
-                                      }
-                                      onKeyDown={(e) => handleAddEmail(e, "cc")}
-                                      placeholder="Type email and press Enter"
-                                      className="w-full outline-none text-sm"
-                                    />
-                                  </div>
+                                  </span>
                                 </div>
+                              </div>
+                            </div>
+                            <div>
+                              <label className="block text-xs font-semibold text-zinc-700 mb-1.5">
+                                Subject{" "}
+                                <span className="text-xs text-gray-500">
+                                  (Optional)
+                                </span>
+                              </label>
 
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    BCC{" "}
-                                    <span className="text-xs text-gray-500">
-                                      (Optional)
+                              <input
+                                type="text"
+                                value={subject}
+                                onChange={(e) => {
+                                  setSubject(e.target.value);
+                                  setIsScenarioUpdated(false);
+                                }}
+                                placeholder="Enter custom subject"
+                                className="w-full border border-zinc-300 rounded-[8px] px-3 py-2 text-xs text-zinc-800 bg-white outline-none focus:border-zinc-900 transition"
+                              />
+
+                              <p className="text-xs text-gray-500 mt-2">
+                                Add a subject only if you want to send the email
+                                with a custom subject. Leave it empty to use the
+                                same subject from the incoming lead email.
+                              </p>
+                            </div>
+
+                            <div>
+                              <label className="block text-xs font-semibold text-zinc-700 mb-1.5">
+                                CC{" "}
+                                <span className="text-xs text-gray-500">
+                                  (Optional)
+                                </span>
+                              </label>
+                              <div className="border border-zinc-300 rounded-[8px] px-3 py-2 bg-white focus-within:border-zinc-900 transition">
+                                <div className="flex flex-wrap gap-2 mb-2">
+                                  {ccList.map((email, index) => (
+                                    <span
+                                      key={index}
+                                      className="bg-zinc-100 text-zinc-700 border border-zinc-200 px-2.5 py-0.5 rounded-full text-[11px] font-medium flex items-center"
+                                    >
+                                      {email}
+                                      <button
+                                        onClick={() =>
+                                          handleRemoveEmail("cc", index)
+                                        }
+                                        className="ml-2 text-red-500 hover:text-red-700"
+                                      >
+                                        <X className="w-3 h-3" />
+                                      </button>
                                     </span>
-                                  </label>
-                                  <div className="border border-gray-300 rounded-lg px-3 py-2 focus-within:ring-2 focus-within:ring-purple-500">
-                                    <div className="flex flex-wrap gap-2 mb-2">
-                                      {bccList.map((email, index) => (
-                                        <span
-                                          key={index}
-                                          className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm flex items-center"
-                                        >
-                                          {email}
-                                          <button
-                                            onClick={() =>
-                                              handleRemoveEmail("bcc", index)
-                                            }
-                                            className="ml-2 text-red-500 hover:text-red-700"
-                                          >
-                                            <X className="w-3 h-3" />
-                                          </button>
-                                        </span>
-                                      ))}
-                                    </div>
-                                    <input
-                                      type="text"
-                                      value={bccInput}
-                                      onChange={(e) =>
-                                        setBccInput(e.target.value)
-                                      }
-                                      onKeyDown={(e) =>
-                                        handleAddEmail(e, "bcc")
-                                      }
-                                      placeholder="Type email and press Enter"
-                                      className="w-full outline-none text-sm"
-                                    />
-                                  </div>
+                                  ))}
                                 </div>
-                              </>
-                            )}
-                          </div>
+                                <input
+                                  type="text"
+                                  value={ccInput}
+                                  onChange={(e) => setCcInput(e.target.value)}
+                                  onKeyDown={(e) => handleAddEmail(e, "cc")}
+                                  placeholder="Type email and press Enter"
+                                  className="w-full outline-none text-xs bg-transparent"
+                                />
+                              </div>
+                            </div>
 
-                          <div className="px-5 py-3 border-t border-zinc-200 bg-zinc-50 flex justify-end space-x-2.5 shrink-0">
-                            <button
-                              onClick={resetForm}
-                              className="px-4 py-2 border border-zinc-300 text-zinc-700 rounded-[8px] hover:bg-zinc-100 text-xs font-semibold transition-colors"
-                            >
-                              Cancel
-                            </button>
-                            <button
-                              onClick={handleSave}
-                              className="px-5 py-2 bg-[#111111] text-white rounded-[8px] hover:bg-zinc-800 text-xs font-semibold transition-colors"
-                            >
-                              Save Module
-                            </button>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                )}
+                            <div>
+                              <label className="block text-xs font-semibold text-zinc-700 mb-1.5">
+                                BCC{" "}
+                                <span className="text-xs text-gray-500">
+                                  (Optional)
+                                </span>
+                              </label>
+                              <div className="border border-zinc-300 rounded-[8px] px-3 py-2 bg-white focus-within:border-zinc-900 transition">
+                                <div className="flex flex-wrap gap-2 mb-2">
+                                  {bccList.map((email, index) => (
+                                    <span
+                                      key={index}
+                                      className="bg-zinc-100 text-zinc-700 border border-zinc-200 px-2.5 py-0.5 rounded-full text-[11px] font-medium flex items-center"
+                                    >
+                                      {email}
+                                      <button
+                                        onClick={() =>
+                                          handleRemoveEmail("bcc", index)
+                                        }
+                                        className="ml-2 text-red-500 hover:text-red-700"
+                                      >
+                                        <X className="w-3 h-3" />
+                                      </button>
+                                    </span>
+                                  ))}
+                                </div>
+                                <input
+                                  type="text"
+                                  value={bccInput}
+                                  onChange={(e) => setBccInput(e.target.value)}
+                                  onKeyDown={(e) => handleAddEmail(e, "bcc")}
+                                  placeholder="Type email and press Enter"
+                                  className="w-full outline-none text-xs bg-transparent"
+                                />
+                              </div>
+                            </div>
+                          </>
+                        )}
+                      </div>
+
+                      <div className="px-5 py-3 border-t border-zinc-200 bg-zinc-50 flex justify-end space-x-2.5 shrink-0">
+                        <button
+                          onClick={resetForm}
+                          className="px-4 py-2 border border-zinc-300 text-zinc-700 rounded-[8px] hover:bg-zinc-100 text-xs font-semibold transition-colors"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={handleSave}
+                          className="px-5 py-2 bg-[#111111] text-white rounded-[8px] hover:bg-zinc-800 text-xs font-semibold transition-colors"
+                        >
+                          Save Module
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
 
             {showIncomingLeadsModal && (
-              <div className="fixed inset-0 bg-black/10 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-                <div className="bg-white rounded-[8px] w-full max-w-[460px] max-h-[85vh] overflow-hidden border flex flex-col">
+              <div
+                className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+                {...incomingLeadsDismiss.backdropProps}
+              >
+                <div
+                  className="bg-white rounded-[8px] w-full max-w-[460px] max-h-[85vh] overflow-hidden border flex flex-col"
+                  {...incomingLeadsDismiss.panelProps}
+                >
                   <div className="px-5 py-3.5 bg-[#111111] text-white flex justify-between items-center shrink-0">
                     <div>
                       <h3 className="font-bold text-sm">Incoming Leads</h3>
@@ -4259,7 +5427,8 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                   <div className="p-5 space-y-4 max-h-[60vh] overflow-y-auto no-scrollbar">
                     <div>
                       <label className="block text-xs font-semibold text-zinc-700 mb-1.5">
-                        Select Application <span className="text-red-500">*</span>
+                        Select Application{" "}
+                        <span className="text-red-500">*</span>
                       </label>
                       <div className="relative">
                         <select
@@ -4267,21 +5436,29 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                           onChange={(e) => {
                             setIncomingLeadsAppType(e.target.value);
                             fetchConnections();
+                            fetchMailhooks();
                           }}
                           className="w-full border border-zinc-300 rounded-[8px] px-3 py-2 pr-20 text-xs text-zinc-800 focus:ring-2 focus:ring-zinc-900 focus:border-transparent bg-white outline-none appearance-none"
                         >
-                          <option value="Gmail">Gmail / Google Workspace</option>
+                          <option value="Gmail">
+                            Gmail / Google Workspace
+                          </option>
                           <option value="Microsoft">
                             Outlook / Live / Microsoft 365
                           </option>
                           <option value="Email">Other Email</option>
+                          <option value="Mailhook">
+                            Mailhook (Forwarded Email)
+                          </option>
                         </select>
                         <button
                           onClick={() => {
                             if (incomingLeadsAppType === "Email") {
                               setShowOutlookModal(true);
                             } else if (incomingLeadsAppType === "Microsoft") {
-                              setShowMicrosoftModal(true);
+                              connectMicrosoftAccount();
+                            } else if (incomingLeadsAppType === "Mailhook") {
+                              setShowMailhookModal(true);
                             } else {
                               setShowGmailModal(true);
                             }
@@ -4292,7 +5469,8 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                         </button>
                       </div>
                       <p className="text-[11px] text-zinc-500 mt-1.5">
-                        Choose the application type and click <b>Add</b> to connect a new account.
+                        Choose the application type and click <b>Add</b> to
+                        connect a new account.
                       </p>
                     </div>
 
@@ -4300,29 +5478,54 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                       <label className="block text-xs font-semibold text-zinc-700 mb-1.5">
                         Connection <span className="text-red-500">*</span>
                       </label>
-                      <select
-                        value={incomingLeadsConnection || selectedConnection || ""}
-                        onChange={(e) => {
-                          setIncomingLeadsConnection(e.target.value);
-                          setSelectedConnection(e.target.value);
-                        }}
-                        className="w-full border border-zinc-300 rounded-[8px] px-3 py-2 text-xs text-zinc-800 focus:ring-2 focus:ring-zinc-900 focus:border-transparent bg-white outline-none"
-                      >
-                        <option value="">-- Select Connection --</option>
-                        {connections
-                          .filter((c) => {
-                            if (incomingLeadsAppType === "Email")
-                              return c.provider === "smtp" || c.provider === "outlook";
-                            if (incomingLeadsAppType === "Microsoft")
-                              return c.provider === "microsoft";
-                            return c.provider === "gmail";
-                          })
-                          .map((c) => (
-                            <option key={c._id} value={c._id}>
-                              {c.provider.toUpperCase()} - {c.email}
-                            </option>
-                          ))}
-                      </select>
+                      {incomingLeadsAppType === "Mailhook" ? (
+                        <>
+                          <select
+                            value={incomingLeadsMailhook}
+                            onChange={(e) =>
+                              setIncomingLeadsMailhook(e.target.value)
+                            }
+                            className="w-full border border-zinc-300 rounded-[8px] px-3 py-2 text-xs text-zinc-800 focus:ring-2 focus:ring-zinc-900 focus:border-transparent bg-white outline-none"
+                          >
+                            <option value="">-- Select Mailhook --</option>
+                            {mailhooks
+                              .filter((m) => m.connectionVerified)
+                              .map((m) => (
+                                <option key={m._id} value={m._id}>
+                                  MAILHOOK - {m.forwardingEmail || m.mailhook}
+                                </option>
+                              ))}
+                          </select>
+                          <p className="text-[11px] text-zinc-500 mt-1.5">
+                            {mailhooks.filter((m) => m.connectionVerified)
+                              .length === 0
+                              ? "No verified mailhook yet — click Add to set one up and confirm forwarding."
+                              : "Leads forwarded to this mailhook address will trigger the scenario."}
+                          </p>
+                        </>
+                      ) : (
+                        <select
+                          value={
+                            incomingLeadsConnection || selectedConnection || ""
+                          }
+                          onChange={(e) => {
+                            setIncomingLeadsConnection(e.target.value);
+                            setSelectedConnection(e.target.value);
+                          }}
+                          className="w-full border border-zinc-300 rounded-[8px] px-3 py-2 text-xs text-zinc-800 focus:ring-2 focus:ring-zinc-900 focus:border-transparent bg-white outline-none"
+                        >
+                          <option value="">-- Select Connection --</option>
+                          {connections
+                            .filter((c) =>
+                              matchesAppType(c, incomingLeadsAppType),
+                            )
+                            .map((c) => (
+                              <option key={c._id} value={c._id}>
+                                {providerLabel(c.provider)} - {c.email}
+                              </option>
+                            ))}
+                        </select>
+                      )}
                     </div>
 
                     <div>
@@ -4334,14 +5537,22 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                         readOnly
                         value={
                           incomingLeadsSubjectFilter ||
-                          "shopify partner directory: new service inquiry from"
+                          platformTriggerSubject ||
+                          "Loading trigger subject..."
                         }
                         className="w-full border border-zinc-200 rounded-[8px] px-3 py-2 bg-zinc-100 text-zinc-700 text-xs font-medium outline-none cursor-not-allowed"
                       />
+                      {!incomingLeadsSubjectFilter &&
+                        platformTriggerSubject && (
+                          <p className="text-[11px] text-zinc-500 mt-1.5">
+                            Set platform-wide by your administrator.
+                          </p>
+                        )}
                       <p className="text-[11px] text-amber-700 font-medium mt-1.5 flex items-center gap-1">
                         <span>💡</span>
                         <span>
-                          Do not add "Re:", "Fw:", or any prefix at the start of the subject.
+                          Do not add "Re:", "Fw:", or any prefix at the start of
+                          the subject.
                         </span>
                       </p>
                     </div>
@@ -4356,7 +5567,8 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                     </button>
                     <button
                       onClick={() => {
-                        const chosenConn = incomingLeadsConnection || selectedConnection;
+                        const chosenConn =
+                          incomingLeadsConnection || selectedConnection;
                         if (chosenConn) {
                           setIncomingLeadsConnection(chosenConn);
                           setSelectedConnection(chosenConn);
@@ -4381,17 +5593,17 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                 resetFormFields();
               }}
             />
-            <MicrosoftConnectionModal
-              isOpen={showMicrosoftModal}
-              onClose={() => setShowMicrosoftModal(false)}
-              onSuccess={async () => {
-                setShowMicrosoftModal(false);
-                await fetchConnections();
-                toast.success("Microsoft connection added successfully!");
-                if (selectedAppType === "Microsoft") {
-                  setSelectedConnection("");
-                }
+            <MailhookConnectionModal
+              isOpen={showMailhookModal}
+              onClose={() => {
+                setShowMailhookModal(false);
+                fetchMailhooks();
               }}
+              user={{
+                _id: localStorage.getItem("userid"),
+                mailhook: user?.mailhook,
+              }}
+              onMailhookUpdated={fetchMailhooks}
             />
             <WebhookModal
               showWebhookInfo={showWebhookInfo}
@@ -4438,7 +5650,7 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
 
       {showRunTestModal && (
         <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-fadeIn"
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn"
           onClick={() => setShowRunTestModal(false)}
         >
           <div
@@ -4629,192 +5841,416 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
         </div>
       )}
       {showTemplateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/10 backdrop-blur-xs p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
           <div className="bg-white rounded-[8px]  flex flex-col overflow-hidden border  max-w-3xl w-full max-h-[85vh]">
             <div className="flex justify-between items-center px-5 py-4 bg-[#111111] text-white">
-                      <div>
-                        <h2 className="text-sm font-bold">
-                          Templates Overview
-                        </h2>
-                        <p className="text-[11px] text-zinc-400 mt-0.5">
-                          Showing active templates for General
-                        </p>
-                      </div>
-
-                      <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2">
-                          <label className="relative inline-flex items-center cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={templateList.length > 0 && templateList.every((t) => t.active)}
-                              onChange={async (e) => {
-                                const newStatus = e.target.checked;
-                                const updates = templateList.map((t) =>
-                                  apiFetch(
-                                    `https://email-syncing-backend.vercel.app/template/status/${t._id}`,
-                                    {
-                                      method: "PATCH",
-                                      headers: {
-                                        "Content-Type": "application/json",
-                                      },
-                                      body: JSON.stringify({
-                                        active: newStatus,
-                                      }),
-                                    },
-                                  ),
-                                );
-
-                                await Promise.all(updates);
-                                setTemplateList((prev) =>
-                                  prev.map((tpl) => ({
-                                    ...tpl,
-                                    active: newStatus,
-                                  })),
-                                );
-                              }}
-                              className="sr-only peer"
-                            />
-                            <div className="w-9 h-5 bg-zinc-600 rounded-full peer peer-checked:bg-[#34A853] transition-colors"></div>
-                            <div className="absolute left-[2px] top-[2px] w-4 h-4 bg-white rounded-full shadow-md transition-transform peer-checked:translate-x-4"></div>
-                          </label>
-
-                          <span
-                            className={`text-xs font-semibold ${
-                              templateList.length > 0 && templateList.every((t) => t.active)
-                                ? "text-emerald-400"
-                                : "text-zinc-400"
-                            }`}
-                          >
-                            {templateList.length > 0 && templateList.every((t) => t.active) ? "ON" : "OFF"}
-                          </span>
-                        </div>
-
-                        {/* Close Button */}
-                        <button
-                          onClick={() => setShowTemplateModal(false)}
-                          className="text-zinc-400 hover:text-white p-1 rounded-[8px] transition"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Body */}
-                    <div className="p-5 overflow-y-auto flex-1 bg-zinc-50 min-h-[250px]">
-                      {loadingTemplates ? (
-                        <div className="flex flex-col items-center justify-center py-16 text-zinc-500">
-                          <div className="animate-spin rounded-full h-7 w-7 border-2 border-zinc-900 border-t-transparent mb-3"></div>
-                          <p className="text-xs font-medium">Loading templates...</p>
-                        </div>
-                      ) : templateList.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-16 text-zinc-500">
-                          <p className="text-xs font-medium text-zinc-600">No templates found for this service.</p>
-                        </div>
-                      ) : (
-                        <table className="w-full border-collapse text-xs bg-white rounded-[8px] border border-zinc-200 overflow-hidden shadow-2xs">
-                          <thead className="sticky top-0 bg-zinc-100 border-b border-zinc-200 z-10">
-                            <tr className="text-zinc-700 text-left">
-                              <th className="p-3 w-[25%] font-bold">Service</th>
-                              <th className="p-3 w-[45%] font-bold">Template</th>
-                              <th className="p-3 text-center w-[15%] font-bold">
-                                Status
-                              </th>
-                              <th className="p-3 text-center w-[15%] font-bold">
-                                Action
-                              </th>
-                            </tr>
-                          </thead>
-
-                          <tbody className="divide-y divide-zinc-100">
-                            {templateList.map((t, i) => (
-                              <React.Fragment key={t._id || i}>
-                                {i === 0 ||
-                                templateList[i - 1]?.service !== t.service ? (
-                                  <tr className="bg-zinc-100/70 border-t border-zinc-200">
-                                    <td
-                                      colSpan={4}
-                                      className="p-2.5 text-zinc-900 font-bold text-[11px] uppercase tracking-wider"
-                                    >
-                                      {t.service || "General Service"}
-                                    </td>
-                                  </tr>
-                                ) : null}
-
-                                <tr
-                                  className={`transition-colors ${
-                                    !t.active
-                                      ? "bg-red-50/50"
-                                      : "hover:bg-zinc-50"
-                                  }`}
-                                >
-                                  <td className="p-3 font-medium text-zinc-800">
-                                    {t.service || "General"}
-                                    {!t.active && (
-                                      <span className="ml-2 text-red-600 text-[10px] font-bold">
-                                        ✗ Inactive
-                                      </span>
-                                    )}
-                                  </td>
-
-                                  <td className="p-3 text-zinc-700 font-medium">
-                                    {t.name || "Template"}
-                                  </td>
-
-                                  <td className="p-3 text-center">
-                                    <label className="relative inline-flex items-center justify-center cursor-pointer">
-                                      <input
-                                        type="checkbox"
-                                        checked={Boolean(t.active)}
-                                        onChange={async () => {
-                                          const newStatus = !t.active;
-                                          setTemplateList((prev) =>
-                                            prev.map((tpl) =>
-                                              tpl._id === t._id ? { ...tpl, active: newStatus } : tpl,
-                                            ),
-                                          );
-                                          await handleToggleTemplate(t._id, newStatus);
-                                        }}
-                                        className="sr-only peer"
-                                      />
-                                      <div className="w-9 h-5 bg-zinc-300 rounded-full peer peer-checked:bg-[#34A853] transition-colors"></div>
-                                      <div className="absolute left-[2px] top-[2px] w-4 h-4 bg-white rounded-full shadow-md transition-transform peer-checked:translate-x-4"></div>
-                                    </label>
-                                  </td>
-
-                                  <td className="p-3 text-center">
-                                    <button
-                                      onClick={() => {
-                                        setEditingTemplate(t);
-                                        setEditContent(t.body || t.content || "");
-                                        setShowTemplateModal(false);
-                                        setShowEditTemplateModal(true);
-                                      }}
-                                      className="px-3 py-1 bg-[#111111] hover:bg-zinc-800 text-white text-[11px] rounded-[8px] font-semibold transition-colors"
-                                    >
-                                      Edit
-                                    </button>
-                                  </td>
-                                </tr>
-                        </React.Fragment>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
+              <div>
+                <h2 className="text-sm font-bold">Templates Overview</h2>
+                <p className="text-[11px] text-zinc-400 mt-0.5">
+                  Showing active templates for General
+                </p>
               </div>
-              <div className="border-t border-zinc-200 bg-white p-3 text-center">
+
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={
+                        templateList.length > 0 &&
+                        templateList.every((t) => t.active)
+                      }
+                      onChange={async (e) => {
+                        const newStatus = e.target.checked;
+                        const updates = templateList.map((t) =>
+                          apiFetch(
+                            `https://email-syncing-backend.vercel.app/template/status/${t._id}`,
+                            {
+                              method: "PATCH",
+                              headers: {
+                                "Content-Type": "application/json",
+                              },
+                              body: JSON.stringify({
+                                active: newStatus,
+                              }),
+                            },
+                          ),
+                        );
+
+                        /*
+                         * Only mark locally what the server accepted. This
+                         * used to set every row regardless, so protected
+                         * templates appeared to switch off and reverted on
+                         * the next open.
+                         */
+                        const results = await Promise.all(
+                          updates.map((req) =>
+                            req
+                              .then((r) => r.json())
+                              .catch(() => ({ success: false })),
+                          ),
+                        );
+
+                        const rejected = results.filter(
+                          (r) => !r?.success,
+                        ).length;
+
+                        setTemplateList((prev) =>
+                          prev.map((tpl) =>
+                            !newStatus && isProtectedTemplate(tpl)
+                              ? tpl
+                              : { ...tpl, active: newStatus },
+                          ),
+                        );
+
+                        if (rejected > 0) {
+                          toast(
+                            `${rejected} template${rejected > 1 ? "s" : ""} kept on — General templates are the fallback and cannot be switched off.`,
+                            { icon: "ℹ️", duration: 6000 },
+                          );
+                        }
+                      }}
+                      className="sr-only peer"
+                    />
+                    <div className="w-9 h-5 bg-zinc-600 rounded-full peer peer-checked:bg-[#34A853] transition-colors"></div>
+                    <div className="absolute left-[2px] top-[2px] w-4 h-4 bg-white rounded-full shadow-md transition-transform peer-checked:translate-x-4"></div>
+                  </label>
+
+                  <span
+                    className={`text-xs font-semibold ${
+                      templateList.length > 0 &&
+                      templateList.every((t) => t.active)
+                        ? "text-emerald-400"
+                        : "text-zinc-400"
+                    }`}
+                  >
+                    {templateList.length > 0 &&
+                    templateList.every((t) => t.active)
+                      ? "ON"
+                      : "OFF"}
+                  </span>
+                </div>
+
+                {/* Close Button */}
                 <button
-                  onClick={() => {
-                    const srv = selectedServiceForTemplates || "Shopify Partner Directory";
-                    window.open(
-                      `/templates?service=${encodeURIComponent(srv)}`,
-                      "_blank",
-                    );
-                  }}
-                  className="text-xs text-zinc-900 font-semibold underline hover:text-zinc-700 transition"
+                  onClick={() => setShowTemplateModal(false)}
+                  className="text-zinc-400 hover:text-white p-1 rounded-[8px] transition"
                 >
-                  View More Services Templates
+                  ✕
                 </button>
               </div>
+            </div>
+
+            {/* Body */}
+            <div className="p-5 overflow-y-auto flex-1 bg-zinc-50 min-h-[250px]">
+              {/*
+                How this scenario writes its replies. Sits above the list
+                because it decides whether the templates below are sent as
+                written or used as background for the AI.
+              */}
+              <div className="mb-4 rounded-[10px] border border-zinc-200 bg-white p-4">
+                <h3 className="text-xs font-bold text-zinc-900">
+                  How replies are written
+                </h3>
+
+                <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {[
+                    {
+                      id: "manual",
+                      label: "Normal templates",
+                      hint: "Sends the templates below exactly as written.",
+                    },
+                    {
+                      id: "ai",
+                      label: "AI templates",
+                      hint: "The AI writes each reply from a company profile.",
+                    },
+                  ].map((opt) => (
+                    <label
+                      key={opt.id}
+                      className={`cursor-pointer rounded-[8px] border p-3 transition ${
+                        scenarioReplyMode === opt.id
+                          ? "border-zinc-900 bg-zinc-50"
+                          : "border-zinc-200 bg-white hover:border-zinc-400"
+                      }`}
+                    >
+                      <span className="flex items-center gap-2">
+                        <input
+                          type="radio"
+                          name="scenarioReplyMode"
+                          checked={scenarioReplyMode === opt.id}
+                          onChange={() => setScenarioReplyMode(opt.id)}
+                          className="h-3.5 w-3.5 cursor-pointer"
+                        />
+                        <span className="text-xs font-bold text-zinc-800">
+                          {opt.label}
+                        </span>
+                      </span>
+                      <span className="mt-1 block text-[10px] leading-relaxed text-zinc-500">
+                        {opt.hint}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+
+                {scenarioReplyMode === "ai" && (
+                  <div className="mt-3">
+                    <label className="block text-[11px] font-bold text-zinc-700 mb-1.5">
+                      Company profile <span className="text-red-500">*</span>
+                    </label>
+
+                    <select
+                      value={scenarioProfileId}
+                      onChange={(e) => setScenarioProfileId(e.target.value)}
+                      className="w-full rounded-[8px] border border-zinc-300 bg-white px-3 py-2 text-xs text-zinc-800 outline-none focus:border-zinc-900 transition"
+                    >
+                      <option value="">-- Choose a profile --</option>
+                      {companyProfiles.map((profile) => (
+                        <option key={profile._id} value={profile._id}>
+                          {profile.name}
+                          {profile.isDefault ? " (default)" : ""}
+                          {profile.isComplete ? "" : " — incomplete"}
+                        </option>
+                      ))}
+                    </select>
+
+                    {companyProfiles.length === 0 && (
+                      <div className="mt-2 rounded-[8px] border border-amber-200 bg-amber-50 p-3">
+                        <p className="text-[11px] font-semibold text-amber-800">
+                          No company profiles yet
+                        </p>
+                        <p className="mt-0.5 text-[11px] text-amber-700">
+                          The AI needs one to know what your business does.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            window.open("/company-profile", "_blank")
+                          }
+                          className="mt-2 rounded-full bg-[#111111] px-3 py-1.5 text-[11px] font-bold text-white transition hover:bg-zinc-800"
+                        >
+                          Create a profile
+                        </button>
+                      </div>
+                    )}
+
+                    {/*
+                      An incomplete profile is the failure the user would
+                      otherwise discover from a lead receiving an empty,
+                      generic reply.
+                    */}
+                    {selectedScenarioProfile &&
+                      !selectedScenarioProfile.isComplete && (
+                        <div className="mt-2 rounded-[8px] border border-amber-200 bg-amber-50 p-3">
+                          <p className="text-[11px] font-semibold text-amber-800">
+                            "{selectedScenarioProfile.name}" is incomplete
+                          </p>
+                          <p className="mt-0.5 text-[11px] text-amber-700">
+                            It needs a company name and business description
+                            before the AI can write from it.
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              window.open(
+                                `/company-profile?profile=${selectedScenarioProfile._id}`,
+                                "_blank",
+                              )
+                            }
+                            className="mt-2 rounded-full bg-[#111111] px-3 py-1.5 text-[11px] font-bold text-white transition hover:bg-zinc-800"
+                          >
+                            Complete this profile
+                          </button>
+                        </div>
+                      )}
+
+                    {selectedScenarioProfile?.isComplete &&
+                      !selectedScenarioProfile.hasContext && (
+                        <p className="mt-2 text-[11px] text-zinc-500">
+                          Tip: adding services, FAQs or a knowledge base to
+                          this profile gives the AI more to work with.
+                        </p>
+                      )}
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={applyScenarioReplyMode}
+                  disabled={applyingReplyMode}
+                  className={`mt-3 w-full rounded-[8px] px-4 py-2 text-xs font-bold text-white transition ${
+                    applyingReplyMode
+                      ? "bg-zinc-400 cursor-wait"
+                      : "bg-[#111111] hover:bg-black"
+                  }`}
+                >
+                  {applyingReplyMode ? "Saving..." : "Apply to this scenario"}
+                </button>
+              </div>
+
+              {/*
+                The template list is only meaningful in Normal mode. Under
+                AI the reply is written from the company profile, so the
+                templates below would not be sent and showing them implies
+                otherwise.
+              */}
+              {scenarioReplyMode === "ai" ? null : loadingTemplates ? (
+                <div className="flex flex-col items-center justify-center py-16 text-zinc-500">
+                  <div className="animate-spin rounded-full h-7 w-7 border-2 border-zinc-900 border-t-transparent mb-3"></div>
+                  <p className="text-xs font-medium">Loading templates...</p>
+                </div>
+              ) : templateList.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 text-zinc-500">
+                  <p className="text-xs font-medium text-zinc-600">
+                    No templates found for this service.
+                  </p>
+                </div>
+              ) : (
+                <table className="w-full border-collapse text-xs bg-white rounded-[8px] border border-zinc-200 overflow-hidden shadow-2xs">
+                  <thead className="sticky top-0 bg-zinc-100 border-b border-zinc-200 z-10">
+                    <tr className="text-zinc-700 text-left">
+                      <th className="p-3 w-[25%] font-bold">Service</th>
+                      <th className="p-3 w-[45%] font-bold">Template</th>
+                      <th className="p-3 text-center w-[15%] font-bold">
+                        Status
+                      </th>
+                      <th className="p-3 text-center w-[15%] font-bold">
+                        Action
+                      </th>
+                    </tr>
+                  </thead>
+
+                  <tbody className="divide-y divide-zinc-100">
+                    {templateList.map((t, i) => (
+                      <React.Fragment key={t._id || i}>
+                        {i === 0 ||
+                        templateList[i - 1]?.service !== t.service ? (
+                          <tr className="bg-zinc-100/70 border-t border-zinc-200">
+                            <td
+                              colSpan={4}
+                              className="p-2.5 text-zinc-900 font-bold text-[11px] uppercase tracking-wider"
+                            >
+                              {t.service || "General Service"}
+                            </td>
+                          </tr>
+                        ) : null}
+
+                        <tr
+                          className={`transition-colors ${
+                            !t.active ? "bg-red-50/50" : "hover:bg-zinc-50"
+                          }`}
+                        >
+                          <td className="p-3 font-medium text-zinc-800">
+                            {t.service || "General"}
+                            {!t.active && (
+                              <span className="ml-2 text-red-600 text-[10px] font-bold">
+                                ✗ Inactive
+                              </span>
+                            )}
+                            {isProtectedTemplate(t) && t.active && (
+                              <span
+                                title="Every lead that matches no other service falls back to General, so it stays on."
+                                className="ml-2 rounded-full border border-zinc-200 bg-zinc-50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-zinc-500"
+                              >
+                                Required
+                              </span>
+                            )}
+                          </td>
+
+                          <td className="p-3 text-zinc-700 font-medium">
+                            {t.name || "Template"}
+                          </td>
+
+                          <td className="p-3 text-center">
+                            <label className="relative inline-flex items-center justify-center cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={Boolean(t.active)}
+                                disabled={isProtectedTemplate(t) && t.active}
+                                onChange={async () => {
+                                  const newStatus = !t.active;
+
+                                  setTemplateList((prev) =>
+                                    prev.map((tpl) =>
+                                      tpl._id === t._id
+                                        ? { ...tpl, active: newStatus }
+                                        : tpl,
+                                    ),
+                                  );
+
+                                  const ok = await handleToggleTemplate(
+                                    t._id,
+                                    newStatus,
+                                  );
+
+                                  /* Put the row back if the server said no. */
+                                  if (!ok) {
+                                    setTemplateList((prev) =>
+                                      prev.map((tpl) =>
+                                        tpl._id === t._id
+                                          ? { ...tpl, active: t.active }
+                                          : tpl,
+                                      ),
+                                    );
+                                  }
+                                }}
+                                className="sr-only peer disabled:cursor-not-allowed"
+                              />
+                              <div className="w-9 h-5 bg-zinc-300 rounded-full peer peer-checked:bg-[#34A853] peer-disabled:opacity-50 transition-colors"></div>
+                              <div className="absolute left-[2px] top-[2px] w-4 h-4 bg-white rounded-full shadow-md transition-transform peer-checked:translate-x-4"></div>
+                            </label>
+                          </td>
+
+                          <td className="p-3 text-center">
+                            <button
+                              onClick={() => {
+                                setEditingTemplate(t);
+                                setEditContent(t.body || t.content || "");
+                                setShowTemplateModal(false);
+                                setShowEditTemplateModal(true);
+                              }}
+                              className="px-3 py-1 bg-[#111111] hover:bg-zinc-800 text-white text-[11px] rounded-[8px] font-semibold transition-colors"
+                            >
+                              Edit
+                            </button>
+                          </td>
+                        </tr>
+                      </React.Fragment>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+            {scenarioReplyMode !== "ai" && (
+            <div className="border-t border-zinc-200 bg-white p-3 text-center">
+              <button
+                onClick={() => {
+                  /*
+                   * "Shopify Partner Directory" used to be the fallback
+                   * here, but that is a trigger subject, not a service —
+                   * no template carries it, so the templates page filtered
+                   * to nothing and reported no matches. And since
+                   * selectedServiceForTemplates is never set, the fallback
+                   * ran every time.
+                   *
+                   * "View more services" means widen, so with no specific
+                   * service in play the unfiltered page is the right target.
+                   */
+                  const srv = (selectedServiceForTemplates || "").trim();
+
+                  window.open(
+                    srv
+                      ? `/templates?service=${encodeURIComponent(srv)}`
+                      : "/templates",
+                    "_blank",
+                  );
+                }}
+                className="text-xs text-zinc-900 font-semibold underline hover:text-zinc-700 transition"
+              >
+                View More Services Templates
+              </button>
+            </div>
+            )}
           </div>
         </div>
       )}
@@ -4822,7 +6258,7 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
       {/* SINGLE CLEAN EDIT TEMPLATE MODAL */}
       {showEditTemplateModal && editingTemplate && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/10 backdrop-blur-xs p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4"
           onMouseDown={() => setShowInsertFields(false)}
         >
           <div
@@ -4832,7 +6268,8 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
             <div className="flex shrink-0 items-center justify-between bg-[#111111] px-5 py-3.5 text-white">
               <div>
                 <h2 className="text-sm font-bold">
-                  Edit Template — {editingTemplate?.name || "Initial Email Response"}
+                  Edit Template —{" "}
+                  {editingTemplate?.name || "Initial Email Response"}
                 </h2>
                 <p className="text-[11px] text-zinc-400 mt-0.5">
                   Customize your email template content and dynamic fields
@@ -4972,304 +6409,304 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
       )}
 
       {showServiceModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 px-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 px-4 backdrop-blur-sm">
           <div className="flex w-full max-w-6xl max-h-[90vh] gap-4 p-4">
-            <div className={`flex w-full max-w-[90rem] max-h-[90vh] p-6 transition-all duration-500`}>
-                <div
-                  className={`flex flex-col overflow-hidden rounded-2xl border border-[#E0E7FF] bg-white shadow-2xl transition-all duration-500 max-w-[70rem]`}
-                >
-                  <div className="flex items-center justify-between border-b border-[#E0E7FF] bg-[#F5F7FF] p-5">
-                    <div>
-                      <h2 className="text-lg font-bold text-slate-800">
-                        Services Overview
-                      </h2>
-                      <p className="text-xs text-slate-500">
-                        Showing 3 templates per service
-                      </p>
-                    </div>
+            <div
+              className={`flex w-full max-w-[90rem] max-h-[90vh] p-6 transition-all duration-500`}
+            >
+              <div
+                className={`flex flex-col overflow-hidden rounded-2xl border border-[#E0E7FF] bg-white shadow-2xl transition-all duration-500 max-w-[70rem]`}
+              >
+                <div className="flex items-center justify-between border-b border-[#E0E7FF] bg-[#F5F7FF] p-5">
+                  <div>
+                    <h2 className="text-lg font-bold text-slate-800">
+                      Services Overview
+                    </h2>
+                    <p className="text-xs text-slate-500">
+                      Showing 3 templates per service
+                    </p>
+                  </div>
 
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2">
-                        <label className="relative inline-flex cursor-pointer items-center">
-                          <input
-                            type="checkbox"
-                            checked={allTemplatesActive}
-                            onChange={async (e) => {
-                              const userId = localStorage.getItem("userid");
-                              const newStatus = e.target.checked;
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <label className="relative inline-flex cursor-pointer items-center">
+                        <input
+                          type="checkbox"
+                          checked={allTemplatesActive}
+                          onChange={async (e) => {
+                            const userId = localStorage.getItem("userid");
+                            const newStatus = e.target.checked;
 
-                              const toastId = toast.loading(
-                                newStatus
-                                  ? "Please wait, templates are being activated..."
-                                  : "Please wait, templates are being deactivated...",
+                            const toastId = toast.loading(
+                              newStatus
+                                ? "Please wait, templates are being activated..."
+                                : "Please wait, templates are being deactivated...",
+                            );
+
+                            try {
+                              const res = await apiFetch(
+                                `https://email-syncing-backend.vercel.app/template/templatestatus/all`,
+                                {
+                                  method: "PATCH",
+                                  headers: {
+                                    "Content-Type": "application/json",
+                                  },
+                                  body: JSON.stringify({ userId }),
+                                },
                               );
 
-                              try {
-                                const res = await apiFetch(
-                                  `https://email-syncing-backend.vercel.app/template/templatestatus/all`,
-                                  {
-                                    method: "PATCH",
-                                    headers: {
-                                      "Content-Type": "application/json",
-                                    },
-                                    body: JSON.stringify({ userId }),
-                                  },
+                              const data = await res.json();
+
+                              if (data.success) {
+                                setServiceGroups((prev) =>
+                                  prev.map((grp) => ({
+                                    ...grp,
+                                    templates: grp.templates.map((tpl) =>
+                                      tpl.service.toLowerCase() === "general"
+                                        ? { ...tpl, active: true }
+                                        : { ...tpl, active: data.toggledTo },
+                                    ),
+                                  })),
                                 );
 
-                                const data = await res.json();
+                                setAllTemplatesActive(data.toggledTo);
 
-                                if (data.success) {
-                                  setServiceGroups((prev) =>
-                                    prev.map((grp) => ({
-                                      ...grp,
-                                      templates: grp.templates.map((tpl) =>
-                                        tpl.service.toLowerCase() === "general"
-                                          ? { ...tpl, active: true }
-                                          : { ...tpl, active: data.toggledTo },
-                                      ),
-                                    })),
-                                  );
-
-                                  setAllTemplatesActive(data.toggledTo);
-
-                                  toast.success(
-                                    data.toggledTo
-                                      ? "All templates have been activated successfully!"
-                                      : "All templates have been deactivated successfully!",
-                                    { id: toastId },
-                                  );
-                                } else {
-                                  toast.error(
-                                    data.message ||
-                                      "Failed to update templates.",
-                                    { id: toastId },
-                                  );
-                                }
-                              } catch (err) {
-                                console.error("Error toggling templates:", err);
+                                toast.success(
+                                  data.toggledTo
+                                    ? "All templates have been activated successfully!"
+                                    : "All templates have been deactivated successfully!",
+                                  { id: toastId },
+                                );
+                              } else {
                                 toast.error(
-                                  "Something went wrong while updating templates.",
+                                  data.message || "Failed to update templates.",
                                   { id: toastId },
                                 );
                               }
-                            }}
-                            className="sr-only peer"
-                          />
+                            } catch (err) {
+                              console.error("Error toggling templates:", err);
+                              toast.error(
+                                "Something went wrong while updating templates.",
+                                { id: toastId },
+                              );
+                            }
+                          }}
+                          className="sr-only peer"
+                        />
 
-                          <div className="h-6 w-11 rounded-full bg-[#E0E7FF] transition-colors peer-checked:bg-[#8A8CF4]" />
-                          <div className="absolute left-[2px] top-[2px] h-5 w-5 rounded-full bg-white shadow-md transition-transform peer-checked:translate-x-5" />
-                        </label>
+                        <div className="h-6 w-11 rounded-full bg-[#E0E7FF] transition-colors peer-checked:bg-[#8A8CF4]" />
+                        <div className="absolute left-[2px] top-[2px] h-5 w-5 rounded-full bg-white shadow-md transition-transform peer-checked:translate-x-5" />
+                      </label>
 
-                        <span
-                          className={`text-xs font-semibold ${
-                            serviceGroups.every((grp) =>
-                              grp.templates.every((t) => t.active),
-                            )
-                              ? "text-[#5B5FD6]"
-                              : "text-slate-400"
-                          }`}
-                        >
-                          {serviceGroups.every((grp) =>
+                      <span
+                        className={`text-xs font-semibold ${
+                          serviceGroups.every((grp) =>
                             grp.templates.every((t) => t.active),
                           )
-                            ? "ON"
-                            : "OFF"}
-                        </span>
-                      </div>
-
-                      <button
-                        onClick={() => {
-                          setShowServiceModal(false);
-                          setShowEditTemplateModal(false);
-                          setEditingTemplate(null);
-                        }}
-                        className="rounded-full p-1 text-slate-500 transition hover:bg-[#E0E7FF] hover:text-[#5B5FD6]"
+                            ? "text-[#5B5FD6]"
+                            : "text-slate-400"
+                        }`}
                       >
-                        ✕
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="flex-1 overflow-y-auto bg-[#FAFBFF] p-6">
-                    {loadingServices ? (
-                      <div className="flex h-full flex-col items-center justify-center text-slate-500">
-                        <div className="mb-3 h-8 w-8 animate-spin rounded-full border-2 border-[#E0E7FF] border-t-[#8A8CF4]" />
-                        <p>Loading templates...</p>
-                      </div>
-                    ) : (
-                      serviceGroups
-                        .filter(
-                          (group) => group.service.toLowerCase() === "general",
+                        {serviceGroups.every((grp) =>
+                          grp.templates.every((t) => t.active),
                         )
-                        .map((group, i) => {
-                          const shownTemplates = group.templates.slice(0, 3);
+                          ? "ON"
+                          : "OFF"}
+                      </span>
+                    </div>
 
-                          return (
-                            <div
-                              key={i}
-                              className="mb-6 overflow-hidden rounded-xl border border-[#E0E7FF] bg-white shadow-sm"
-                            >
-                              <div className="flex items-center justify-between border-b border-[#E0E7FF] bg-[#F5F7FF] p-4">
-                                <h3 className="text-lg font-bold text-slate-800">
-                                  {group.service} Templates
-                                </h3>
-                                <p className="text-sm text-slate-500">
-                                  Showing {shownTemplates.length} templates
-                                </p>
-                              </div>
-
-                              {!allTemplatesActive && (
-                                <div className="border-b border-[#E0E7FF] bg-[#FFFDF5] p-4 text-sm leading-relaxed text-slate-700">
-                                  <b className="text-slate-900">Note:</b>{" "}
-                                  Activate your service-specific templates to
-                                  send personalized emails. Otherwise, the
-                                  system will use{" "}
-                                  <b className="text-[#5B5FD6]">
-                                    General templates
-                                  </b>
-                                  .
-                                  <br />
-                                  <a
-                                    href="/templates"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="mt-2 inline-block font-semibold text-[#5B5FD6] hover:underline"
-                                  >
-                                    Click here to view all your services
-                                    templates
-                                  </a>
-                                </div>
-                              )}
-
-                              <table className="w-full border-collapse text-sm">
-                                <thead className="bg-[#F8FAFF] text-xs uppercase text-slate-500">
-                                  <tr>
-                                    <th className="p-3 text-left w-[40%]">
-                                      Template
-                                    </th>
-                                    <th className="p-3 text-center w-[20%]">
-                                      Status
-                                    </th>
-                                    <th className="p-3 text-center w-[25%]">
-                                      Updated At
-                                    </th>
-                                    <th className="p-3 text-center w-[15%]">
-                                      Action
-                                    </th>
-                                  </tr>
-                                </thead>
-
-                                <tbody>
-                                  {shownTemplates.map((t) => (
-                                    <tr
-                                      key={t._id}
-                                      className={`border-t border-[#EEF2FF] transition-colors ${
-                                        t.active
-                                          ? "hover:bg-[#F8FAFF]"
-                                          : "bg-[#FFF7F7]"
-                                      }`}
-                                    >
-                                      <td className="p-3 font-medium text-slate-700">
-                                        {t.name.includes("Initial")
-                                          ? "Initial Email"
-                                          : t.name.includes("First")
-                                            ? "First Follow-up"
-                                            : "Second Follow-up"}
-                                      </td>
-
-                                      <td className="p-3 text-center">
-                                        <label className="relative inline-flex cursor-pointer items-center">
-                                          <input
-                                            type="checkbox"
-                                            checked={t.active}
-                                            onChange={async () => {
-                                              const newStatus = !t.active;
-
-                                              setServiceGroups((prev) =>
-                                                prev.map((grp) => ({
-                                                  ...grp,
-                                                  templates: grp.templates.map(
-                                                    (tpl) =>
-                                                      tpl._id === t._id
-                                                        ? {
-                                                            ...tpl,
-                                                            active: newStatus,
-                                                          }
-                                                        : tpl,
-                                                  ),
-                                                })),
-                                              );
-
-                                              await apiFetch(
-                                                `https://email-syncing-backend.vercel.app/template/status/${t._id}`,
-                                                {
-                                                  method: "PATCH",
-                                                  headers: {
-                                                    "Content-Type":
-                                                      "application/json",
-                                                  },
-                                                  body: JSON.stringify({
-                                                    active: newStatus,
-                                                  }),
-                                                },
-                                              );
-                                            }}
-                                            className="sr-only peer"
-                                          />
-                                          <div className="h-6 w-11 rounded-full bg-[#E0E7FF] transition-colors peer-checked:bg-[#8A8CF4]" />
-                                          <div className="absolute left-[2px] top-[2px] h-5 w-5 rounded-full bg-white shadow-md transition-transform peer-checked:translate-x-5" />
-                                        </label>
-                                      </td>
-
-                                      <td className="p-3 text-center text-slate-500">
-                                        {new Date(t.updatedAt).toLocaleString(
-                                          "en-US",
-                                          {
-                                            year: "numeric",
-                                            month: "short",
-                                            day: "2-digit",
-                                            hour: "2-digit",
-                                            minute: "2-digit",
-                                            hour12: true,
-                                          },
-                                        )}
-                                      </td>
-
-                                      <td className="p-3 text-center">
-                                        <button
-                                          onClick={() => {
-                                            setEditingTemplate(t);
-                                            setEditContent(t.content || "");
-                                            setShowServiceModal(false);
-                                            setShowEditTemplateModal(true);
-                                          }}
-                                          className="rounded-md bg-[#7375E8] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#5B5FD6]"
-                                        >
-                                          Edit
-                                        </button>
-                                      </td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          );
-                        })
-                    )}
-                  </div>
-
-                  <div className="border-t border-[#E0E7FF] bg-[#FAFBFF] p-3 text-center">
                     <button
                       onClick={() => {
-                        window.open(`/templates`, "_blank");
+                        setShowServiceModal(false);
+                        setShowEditTemplateModal(false);
+                        setEditingTemplate(null);
                       }}
-                      className="text-sm font-semibold text-[#5B5FD6] transition hover:underline"
+                      className="rounded-full p-1 text-slate-500 transition hover:bg-[#E0E7FF] hover:text-[#5B5FD6]"
                     >
-                      View More Services Templates
+                      ✕
                     </button>
                   </div>
                 </div>
+
+                <div className="flex-1 overflow-y-auto bg-[#FAFBFF] p-6">
+                  {loadingServices ? (
+                    <div className="flex h-full flex-col items-center justify-center text-slate-500">
+                      <div className="mb-3 h-8 w-8 animate-spin rounded-full border-2 border-[#E0E7FF] border-t-[#8A8CF4]" />
+                      <p>Loading templates...</p>
+                    </div>
+                  ) : (
+                    serviceGroups
+                      .filter(
+                        (group) => group.service.toLowerCase() === "general",
+                      )
+                      .map((group, i) => {
+                        const shownTemplates = group.templates.slice(0, 3);
+
+                        return (
+                          <div
+                            key={i}
+                            className="mb-6 overflow-hidden rounded-xl border border-[#E0E7FF] bg-white shadow-sm"
+                          >
+                            <div className="flex items-center justify-between border-b border-[#E0E7FF] bg-[#F5F7FF] p-4">
+                              <h3 className="text-lg font-bold text-slate-800">
+                                {group.service} Templates
+                              </h3>
+                              <p className="text-sm text-slate-500">
+                                Showing {shownTemplates.length} templates
+                              </p>
+                            </div>
+
+                            {!allTemplatesActive && (
+                              <div className="border-b border-[#E0E7FF] bg-[#FFFDF5] p-4 text-sm leading-relaxed text-slate-700">
+                                <b className="text-slate-900">Note:</b> Activate
+                                your service-specific templates to send
+                                personalized emails. Otherwise, the system will
+                                use{" "}
+                                <b className="text-[#5B5FD6]">
+                                  General templates
+                                </b>
+                                .
+                                <br />
+                                <a
+                                  href="/templates"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="mt-2 inline-block font-semibold text-[#5B5FD6] hover:underline"
+                                >
+                                  Click here to view all your services templates
+                                </a>
+                              </div>
+                            )}
+
+                            <table className="w-full border-collapse text-sm">
+                              <thead className="bg-[#F8FAFF] text-xs uppercase text-slate-500">
+                                <tr>
+                                  <th className="p-3 text-left w-[40%]">
+                                    Template
+                                  </th>
+                                  <th className="p-3 text-center w-[20%]">
+                                    Status
+                                  </th>
+                                  <th className="p-3 text-center w-[25%]">
+                                    Updated At
+                                  </th>
+                                  <th className="p-3 text-center w-[15%]">
+                                    Action
+                                  </th>
+                                </tr>
+                              </thead>
+
+                              <tbody>
+                                {shownTemplates.map((t) => (
+                                  <tr
+                                    key={t._id}
+                                    className={`border-t border-[#EEF2FF] transition-colors ${
+                                      t.active
+                                        ? "hover:bg-[#F8FAFF]"
+                                        : "bg-[#FFF7F7]"
+                                    }`}
+                                  >
+                                    <td className="p-3 font-medium text-slate-700">
+                                      {t.name.includes("Initial")
+                                        ? "Initial Email"
+                                        : t.name.includes("First")
+                                          ? "First Follow-up"
+                                          : "Second Follow-up"}
+                                    </td>
+
+                                    <td className="p-3 text-center">
+                                      <label className="relative inline-flex cursor-pointer items-center">
+                                        <input
+                                          type="checkbox"
+                                          checked={t.active}
+                                          onChange={async () => {
+                                            const newStatus = !t.active;
+
+                                            setServiceGroups((prev) =>
+                                              prev.map((grp) => ({
+                                                ...grp,
+                                                templates: grp.templates.map(
+                                                  (tpl) =>
+                                                    tpl._id === t._id
+                                                      ? {
+                                                          ...tpl,
+                                                          active: newStatus,
+                                                        }
+                                                      : tpl,
+                                                ),
+                                              })),
+                                            );
+
+                                            await apiFetch(
+                                              `https://email-syncing-backend.vercel.app/template/status/${t._id}`,
+                                              {
+                                                method: "PATCH",
+                                                headers: {
+                                                  "Content-Type":
+                                                    "application/json",
+                                                },
+                                                body: JSON.stringify({
+                                                  active: newStatus,
+                                                }),
+                                              },
+                                            );
+                                          }}
+                                          className="sr-only peer"
+                                        />
+                                        <div className="h-6 w-11 rounded-full bg-[#E0E7FF] transition-colors peer-checked:bg-[#8A8CF4]" />
+                                        <div className="absolute left-[2px] top-[2px] h-5 w-5 rounded-full bg-white shadow-md transition-transform peer-checked:translate-x-5" />
+                                      </label>
+                                    </td>
+
+                                    <td className="p-3 text-center text-slate-500">
+                                      {new Date(t.updatedAt).toLocaleString(
+                                        "en-US",
+                                        {
+                                          year: "numeric",
+                                          month: "short",
+                                          day: "2-digit",
+                                          hour: "2-digit",
+                                          minute: "2-digit",
+                                          hour12: true,
+                                        },
+                                      )}
+                                    </td>
+
+                                    <td className="p-3 text-center">
+                                      <button
+                                        onClick={() => {
+                                          setEditingTemplate(t);
+                                          setEditContent(t.content || "");
+                                          setShowServiceModal(false);
+                                          setShowEditTemplateModal(true);
+                                        }}
+                                        className="rounded-md bg-[#7375E8] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#5B5FD6]"
+                                      >
+                                        Edit
+                                      </button>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        );
+                      })
+                  )}
+                </div>
+
+                <div className="border-t border-[#E0E7FF] bg-[#FAFBFF] p-3 text-center">
+                  <button
+                    onClick={() => {
+                      window.open(`/templates`, "_blank");
+                    }}
+                    className="text-sm font-semibold text-[#5B5FD6] transition hover:underline"
+                  >
+                    View More Services Templates
+                  </button>
+                </div>
               </div>
+            </div>
           </div>
         </div>
       )}
@@ -5440,7 +6877,7 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
       {showInactiveTemplateConfirm && (
         <div
           onClick={() => setShowInactiveTemplateConfirm(false)}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 px-4 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 px-4 backdrop-blur-sm"
         >
           <div
             onClick={(e) => e.stopPropagation()}
@@ -5515,7 +6952,7 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
       )}
       {/* Upgrade Active Scenario Modal */}
       {upgradeModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 backdrop-blur-xs">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 px-4 backdrop-blur-sm">
           <div className="relative w-full max-w-md rounded-[12px] border border-slate-200 bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-150">
             <button
               type="button"
@@ -5534,7 +6971,22 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
             </h2>
 
             <p className="mt-2 text-xs leading-relaxed text-slate-600">
-              Your account is currently on the <strong className="text-slate-900">{user?.subscription?.plan || "Explore"}</strong> plan, which allows up to <strong className="text-slate-900">{((user?.subscription?.plan || "Explore").toLowerCase() === "elevate" ? 5 : (user?.subscription?.plan || "Explore").toLowerCase() === "unite" ? 15 : 1)} active scenario</strong> at a time.
+              Your account is currently on the{" "}
+              <strong className="text-slate-900">
+                {user?.subscription?.plan || "Explore"}
+              </strong>{" "}
+              plan, which allows up to{" "}
+              <strong className="text-slate-900">
+                {(user?.subscription?.plan || "Explore").toLowerCase() ===
+                "elevate"
+                  ? 5
+                  : (user?.subscription?.plan || "Explore").toLowerCase() ===
+                      "unite"
+                    ? 15
+                    : 1}{" "}
+                active scenario
+              </strong>{" "}
+              at a time.
             </p>
 
             <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50/60 p-4">
@@ -5543,7 +6995,8 @@ const allSetupStepsCompleted = setupSteps.every((step) => step.completed);
                 Why activation is blocked
               </div>
               <p className="mt-1 text-xs leading-relaxed text-amber-900">
-                To activate this scenario, please deactivate an existing active scenario or upgrade your plan.
+                To activate this scenario, please deactivate an existing active
+                scenario or upgrade your plan.
               </p>
             </div>
 

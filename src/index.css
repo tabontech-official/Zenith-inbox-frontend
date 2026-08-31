@@ -218,3 +218,58 @@
   text-decoration: none;
 }
 
+/*
+|--------------------------------------------------------------------------
+| Template editors
+|--------------------------------------------------------------------------
+|
+| Quill's default editor is about 42px tall — roughly one line, which is
+| far too small to compose an email reply in. Scoped to .template-editor
+| so the other Quill instances in the app (landing page, product content)
+| keep their own sizing.
+*/
+.template-editor .ql-editor {
+  min-height: 280px;
+  max-height: 45vh;
+  overflow-y: auto;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.template-editor .ql-container {
+  border: none;
+}
+
+.template-editor .ql-toolbar {
+  border: none;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Scenario flow connector
+|--------------------------------------------------------------------------
+|
+| Dashes travel along the edge between two cards, so the link reads as a
+| pipeline with a direction rather than a divider. See
+| component/FlowConnector.js.
+|
+| Stopped entirely under prefers-reduced-motion: this loops forever, which
+| is exactly the kind of motion that setting exists to switch off. The
+| dashes stay drawn, so the edge is unchanged apart from the movement.
+*/
+@keyframes flow-connector-travel {
+  to {
+    stroke-dashoffset: -10;
+  }
+}
+
+.flow-connector-dash {
+  animation: flow-connector-travel 1.1s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flow-connector-dash {
+    animation: none;
+  }
+}

@@ -197,7 +197,7 @@ const TeamsPage = () => {
 
       {/* MODAL 1: EDIT TEAM NAME MODAL */}
       {showEditTeamModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-[12px] max-w-[440px] w-full overflow-hidden shadow-2xl border border-slate-200 animate-in fade-in zoom-in duration-150">
             <div className="px-5 py-3.5 border-b border-slate-200 flex items-center justify-between">
               <h3 className="text-sm font-bold text-slate-900">
@@ -257,7 +257,7 @@ const TeamsPage = () => {
 
       {/* MODAL 2: ADD TEAM (LIMIT REACHED NOTICE) */}
       {showAddTeamModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-[12px] max-w-[440px] w-full overflow-hidden shadow-2xl border border-slate-200 animate-in fade-in zoom-in duration-150">
             <div className="px-5 py-3.5 border-b border-slate-200 flex items-center justify-between">
               <h3 className="text-sm font-bold text-slate-900">

@@ -58,7 +58,7 @@ export default function Template() {
     if (nextStatus) {
       const isComplete = await verifyCompanyProfile(targetUserId);
       if (!isComplete) {
-        toast.error("Please complete your Company Profile (Business Name & Description) first before activating Auto Reply.", { duration: 4000 });
+        toast.error("Please complete your Company Profile (Business Name & Description) first before turning on AI replies.", { duration: 4000 });
         navigate("/company-profile");
         return;
       }
@@ -78,11 +78,11 @@ export default function Template() {
         aiResponse: nextStatus,
       });
       if (res.data?.user && setContextUser) setContextUser(res.data.user);
-      toast.success(nextStatus ? "Auto Reply activated on all templates!" : "Auto Reply paused on all templates.");
+      toast.success(nextStatus ? "AI replies turned on for all templates." : "AI replies turned off — templates send as written.");
     } catch (err) {
       setAiActive(!nextStatus);
       fetchTemplates();
-      toast.error("Failed to update Auto Reply status.");
+      toast.error("Could not update the reply mode.");
     } finally {
       setTogglingAi(false);
     }
@@ -132,6 +132,26 @@ export default function Template() {
 
       setTemplates(normalized);
       setFilteredTemplates(normalized);
+
+      /*
+       * A ?service= value that matches no template filters the page down to
+       * nothing, which reads as "you have no templates" rather than "that
+       * filter is wrong". Fall back to All and say so — a link that arrived
+       * with a stale or invalid service should not look like data loss.
+       */
+      if (selectedServiceFilter !== "All") {
+        const known = normalized.some(
+          (t) =>
+            t.service?.toLowerCase() === selectedServiceFilter.toLowerCase(),
+        );
+
+        if (!known) {
+          toast(`No templates for "${selectedServiceFilter}" — showing all.`, {
+            icon: "ℹ️",
+          });
+          setSelectedServiceFilter("All");
+        }
+      }
       const nonGeneral = normalized.filter(
         (t) => t.service?.toLowerCase() !== "general",
       );
@@ -146,6 +166,42 @@ export default function Template() {
     }
   };
 
+  const [restoring, setRestoring] = useState(false);
+
+  /*
+   * Default templates are created once, at signup. An account that
+   * predates that, or whose signup partially failed, ends up with an
+   * empty page and no way to recover — this rebuilds the missing ones.
+   * The endpoint is idempotent, so it never duplicates or overwrites
+   * anything already there.
+   */
+  const handleRestoreDefaults = async () => {
+    setRestoring(true);
+
+    try {
+      const userId = localStorage.getItem("userid") || user?._id;
+
+      const res = await axios.post(
+        "https://email-syncing-backend.vercel.app/template/restore-defaults",
+        { userId },
+      );
+
+      if (!res.data?.success) throw new Error(res.data?.message);
+
+      toast.success(res.data.message);
+      await fetchTemplates();
+    } catch (err) {
+      console.error("Error restoring default templates:", err);
+      toast.error(
+        err?.response?.data?.message ||
+          err.message ||
+          "Could not restore default templates.",
+      );
+    } finally {
+      setRestoring(false);
+    }
+  };
+
   const handleToggleTemplateAi = async (templateId, currentStatus) => {
     const nextStatus = !currentStatus;
     const targetUserId = localStorage.getItem("userid") || user?._id;
@@ -153,7 +209,7 @@ export default function Template() {
     if (nextStatus) {
       const isComplete = await verifyCompanyProfile(targetUserId);
       if (!isComplete) {
-        toast.error("Please complete your Company Profile (Business Name & Description) first before activating Auto Reply.", { duration: 4000 });
+        toast.error("Please complete your Company Profile (Business Name & Description) first before turning on AI replies.", { duration: 4000 });
         navigate("/company-profile");
         return;
       }
@@ -166,12 +222,12 @@ export default function Template() {
       await axios.patch(`https://email-syncing-backend.vercel.app/template/ai-toggle/${templateId}`, {
         aiResponse: nextStatus,
       });
-      toast.success(nextStatus ? "Auto Reply enabled for template!" : "Switched to Fixed Template.");
+      toast.success(nextStatus ? "This template will now be written by AI." : "This template will now send as written.");
     } catch (err) {
       setTemplates((prev) =>
         prev.map((t) => (t._id === templateId ? { ...t, aiResponse: currentStatus } : t))
       );
-      toast.error("Failed to update template Auto Reply status.");
+      toast.error("Could not update the reply mode for this template.");
     }
   };
 
@@ -182,7 +238,7 @@ export default function Template() {
     if (enableAll) {
       const isComplete = await verifyCompanyProfile(userId);
       if (!isComplete) {
-        toast.error("Please complete your Company Profile (Business Name & Description) first before activating Auto Reply.", { duration: 4000 });
+        toast.error("Please complete your Company Profile (Business Name & Description) first before turning on AI replies.", { duration: 4000 });
         navigate("/company-profile");
         return;
       }
@@ -195,10 +251,10 @@ export default function Template() {
         platform: "shopify",
         aiResponse: enableAll,
       });
-      toast.success(enableAll ? "Auto Reply enabled on ALL Shopify templates!" : "Disabled Auto Reply on all templates.");
+      toast.success(enableAll ? "AI replies turned on for all Shopify templates." : "AI replies turned off for all templates.");
     } catch (err) {
       fetchTemplates();
-      toast.error("Failed to bulk update templates Auto Reply status.");
+      toast.error("Could not update the reply mode for these templates.");
     }
   };
 
@@ -651,10 +707,10 @@ export default function Template() {
                                       ? "bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100"
                                       : "bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200"
                                   }`}
-                                  title="Click to toggle AI response for this specific template"
+                                  title="Switch this template between AI-written and sent as written"
                                 >
                                   <BoltIcon className={`w-3.5 h-3.5 ${t.aiResponse !== false ? "text-emerald-600 fill-emerald-100" : "text-slate-400"}`} />
-                                  <span>{t.aiResponse !== false ? "Auto Reply" : "Fixed Template"}</span>
+                                  <span>{t.aiResponse !== false ? "AI Reply" : "Manual Template"}</span>
                                 </button>
 
                                 <label
@@ -728,11 +784,40 @@ export default function Template() {
                     ))
                   ) : (
                     <tr>
-                      <td
-                        colSpan="5"
-                        className="p-8 text-center text-slate-500 text-xs font-medium"
-                      >
-                        No templates found
+                      <td colSpan="5" className="p-8 text-center">
+                        <div className="flex flex-col items-center gap-3 py-4">
+                          <p className="text-slate-500 text-xs font-medium">
+                            {templates.length === 0
+                              ? "No templates found for this account."
+                              : "No templates match these filters."}
+                          </p>
+
+                          {/* Only offer a rebuild when the account genuinely
+                              has none — with filters applied, the templates
+                              exist and the filter is simply narrow. */}
+                          {templates.length === 0 && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={handleRestoreDefaults}
+                                disabled={restoring}
+                                className={`rounded-[8px] px-5 py-2 text-xs font-bold text-white transition ${
+                                  restoring
+                                    ? "bg-slate-400 cursor-wait"
+                                    : "bg-[#111110] hover:bg-black cursor-pointer"
+                                }`}
+                              >
+                                {restoring
+                                  ? "Restoring..."
+                                  : "Restore default templates"}
+                              </button>
+                              <p className="text-[11px] text-slate-400 max-w-sm">
+                                Creates the standard set for every service.
+                                Existing templates are left untouched.
+                              </p>
+                            </>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   )}
@@ -801,8 +886,40 @@ export default function Template() {
                   </div>
                 ))
               ) : (
-                <div className="p-8 text-center text-slate-500 text-xs font-medium">
-                  No templates found
+                <div className="p-8 text-center">
+                  <div className="flex flex-col items-center gap-3 py-4">
+                    <p className="text-slate-500 text-xs font-medium">
+                      {templates.length === 0
+                        ? "No templates found for this account."
+                        : "No templates match these filters."}
+                    </p>
+
+                    {/* Only offer a rebuild when the account genuinely
+                        has none — with filters applied, the templates
+                        exist and the filter is simply narrow. */}
+                    {templates.length === 0 && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={handleRestoreDefaults}
+                          disabled={restoring}
+                          className={`rounded-[8px] px-5 py-2 text-xs font-bold text-white transition ${
+                            restoring
+                              ? "bg-slate-400 cursor-wait"
+                              : "bg-[#111110] hover:bg-black cursor-pointer"
+                          }`}
+                        >
+                          {restoring
+                            ? "Restoring..."
+                            : "Restore default templates"}
+                        </button>
+                        <p className="text-[11px] text-slate-400 max-w-sm">
+                          Creates the standard set for every service.
+                          Existing templates are left untouched.
+                        </p>
+                      </>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
@@ -872,7 +989,7 @@ export default function Template() {
                   Template Response Body
                 </label>
 
-                <div className="border border-slate-300 rounded-[8px] overflow-hidden shadow-2xs">
+                <div className="template-editor border border-slate-300 rounded-[8px] overflow-hidden shadow-2xs">
                   <ReactQuill
                     ref={quillRef}
                     theme="snow"
@@ -888,6 +1005,15 @@ export default function Template() {
                   </h3>
                   <div className="flex flex-wrap gap-2">
                     {[
+                      /*
+                        Greeting first: it is the one most templates want.
+                        It resolves to "Hi Chris" when the lead gave a
+                        name and "Dear Sir/Madam" when they pasted an
+                        email address instead, so an opening line built on
+                        it reads correctly either way.
+                      */
+                      { label: "Greeting", placeholder: "{{Greeting}}" },
+                      { label: "First name", placeholder: "{{FirstName}}" },
                       { label: "Full name", placeholder: "{{FullName}}" },
                       {
                         label: "Business email",
@@ -939,7 +1065,7 @@ export default function Template() {
 
       {/* Upgrade Modal */}
       {showUpgradeModal && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
           <div className="relative bg-white rounded-[12px] shadow-2xl border border-slate-200 max-w-md w-full overflow-hidden">
             <div className="flex justify-between items-center px-6 py-4 bg-[#111110] text-white">
               <div className="flex items-center gap-2">

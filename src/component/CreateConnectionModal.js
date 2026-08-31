@@ -1,7 +1,8 @@
 import React from "react";
 import { FaEnvelope, FaMicrosoft, FaTimes } from "react-icons/fa";
 import { SiGmail } from "react-icons/si";
-import { FiChevronRight } from "react-icons/fi";
+import { FiChevronRight, FiInbox } from "react-icons/fi";
+import useModalDismiss from "../hooks/useModalDismiss";
 
 /*
  * Provider picker for the /connection page.
@@ -36,14 +37,30 @@ export const CONNECTION_PROVIDER_OPTIONS = [
     Icon: FaEnvelope,
     iconClass: "text-slate-500",
   },
+  {
+    id: "mailhook",
+    label: "Mailhook",
+    description: "Forward mail to your private mailhook address.",
+    Icon: FiInbox,
+    iconClass: "text-emerald-600",
+  },
 ];
 
 const CreateConnectionModal = ({ isOpen, onClose, onSelect }) => {
+  /* A picker holds no input, so it always closes on an outside click. */
+  const dismiss = useModalDismiss({ onClose });
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/10 backdrop-blur-xs p-4">
-      <div className="flex max-h-[88vh] w-full max-w-[460px] flex-col overflow-hidden rounded-[8px] border bg-white">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4"
+      {...dismiss.backdropProps}
+    >
+      <div
+        className="flex max-h-[88vh] w-full max-w-[460px] flex-col overflow-hidden rounded-[8px] border bg-white"
+        {...dismiss.panelProps}
+      >
         {/* Dark Theme Header — matches the Gmail / Microsoft modals */}
         <header className="flex shrink-0 items-center justify-between bg-[#111110] px-6 py-4 text-white">
           <div className="flex items-center gap-3">

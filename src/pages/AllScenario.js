@@ -418,6 +418,7 @@ import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import AppLayout from "../component/AppLayout";
 import { UserContext } from "../component/UserContext";
+import StatusDot from "../component/StatusDot";
 
 const getScenarioName = (scenario) => {
   if (scenario.name?.trim()) {
@@ -901,6 +902,27 @@ const AllScenariosPage = () => {
                       >
                         <td className="px-5 py-4">
                           <div className="flex items-center gap-3">
+                            {/*
+                              Live/paused at the very start of the row, so
+                              the state of every scenario is scannable down
+                              one column instead of read per row from the
+                              Status cell further right.
+
+                              Colour is not the only signal — the title
+                              spells it out, and the Status badge still
+                              carries the word.
+                            */}
+                            <StatusDot
+                              tone={
+                                scenario.scenarioActive ? "active" : "paused"
+                              }
+                              title={
+                                scenario.scenarioActive
+                                  ? "Active — this scenario is running"
+                                  : "Paused — this scenario will not reply"
+                              }
+                            />
+
                             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[8px] border border-zinc-200 bg-zinc-50 group-hover:border-zinc-400 group-hover:bg-zinc-100">
                               {getScenarioIcon(scenario)}
                             </div>
@@ -1025,6 +1047,17 @@ const AllScenariosPage = () => {
                     className="w-full p-4 text-left transition hover:bg-zinc-50 active:bg-zinc-100"
                   >
                     <div className="flex items-start gap-3">
+                      {/* Same live/paused light as the table view. */}
+                      <StatusDot
+                        tone={scenario.scenarioActive ? "active" : "paused"}
+                        title={
+                          scenario.scenarioActive
+                            ? "Active — this scenario is running"
+                            : "Paused — this scenario will not reply"
+                        }
+                        className="mt-3.5"
+                      />
+
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[8px] border border-zinc-200 bg-zinc-50">
                         {getScenarioIcon(scenario)}
                       </div>
@@ -1100,7 +1133,7 @@ const AllScenariosPage = () => {
 
       {/* Delete Confirmation Modal */}
       {deleteModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 backdrop-blur-xs">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 px-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-[8px] border border-zinc-200 bg-white p-6 shadow-xl">
             <div className="flex items-start justify-between">
               <div className="flex h-10 w-10 items-center justify-center rounded-[8px] bg-zinc-100 text-zinc-900">
@@ -1156,7 +1189,7 @@ const AllScenariosPage = () => {
 
       {/* Upgrade Modal */}
       {upgradeModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 backdrop-blur-xs">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 px-4 backdrop-blur-sm">
           <div className="relative w-full max-w-md rounded-[12px] border border-zinc-200 bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-150">
             <button
               type="button"

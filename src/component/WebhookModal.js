@@ -113,7 +113,7 @@ const WebhookModal = ({
     <>
       {!hideWebhookModal && (
         <div
-          className="fixed inset-0 bg-black/10 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-fadeIn"
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn"
           onClick={closeWebhookModal}
         >
           <div
@@ -272,7 +272,7 @@ const WebhookModal = ({
       {/* Inbox Modal */}
       {showInboxModal && (
         <div
-          className="fixed inset-0 z-[999] flex items-center justify-center bg-black/50 backdrop-blur-xs p-4"
+          className="fixed inset-0 z-[999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4"
           onClick={closeInboxModal}
         >
           <div

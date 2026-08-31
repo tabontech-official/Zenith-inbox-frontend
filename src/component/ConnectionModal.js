@@ -13,6 +13,7 @@ import {
 } from "react-icons/fa";
 import { FiExternalLink, FiMail, FiShield } from "react-icons/fi";
 import { SiGmail } from "react-icons/si";
+import useModalDismiss from "../hooks/useModalDismiss";
 
 const API_BASE_URL = "https://email-syncing-backend.vercel.app";
 
@@ -41,6 +42,18 @@ const ConnectionModal = ({
   const [showPassword, setShowPassword] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  /*
+   * Anything typed counts as unsaved. The name field is pre-filled, so it
+   * only counts once it differs from the default it arrived with.
+   */
+  const dismiss = useModalDismiss({
+    onClose,
+    isDirty:
+      Boolean(email) ||
+      Boolean(appPassword) ||
+      connectionName !== "My Gmail Connection",
+  });
 
   useEffect(() => {
     if (!isOpen) return;
@@ -204,8 +217,14 @@ const ConnectionModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/10 backdrop-blur-xs p-4">
-      <div className="flex max-h-[88vh] w-full max-w-[460px] flex-col overflow-hidden rounded-[8px] bg-white border  ">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4"
+      {...dismiss.backdropProps}
+    >
+      <div
+        className="flex max-h-[88vh] w-full max-w-[460px] flex-col overflow-hidden rounded-[8px] bg-white border  "
+        {...dismiss.panelProps}
+      >
         <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
           {/* Dark Theme Header */}
           <header className="flex items-center justify-between bg-[#111110] text-white px-6 py-4 shrink-0">

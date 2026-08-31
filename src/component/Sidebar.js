@@ -1586,7 +1586,7 @@ const Sidebar = ({
 
       {/* Scenario Limit Reached Modal */}
       {isLimitModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm">
           <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl transition-all">
             {/* Close Button */}
             <button
@@ -1638,7 +1638,7 @@ const Sidebar = ({
 
       {/* Scenario Type Selection Modal */}
       {showScenarioSelectionModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/10 backdrop-blur-xs p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
           <div className="bg-white rounded-[8PX]  flex flex-col overflow-hidden border  max-w-xl w-full">
             {/* Header */}
             <div className="flex justify-between items-center px-6 py-4 bg-[#111111] text-white">
@@ -1742,7 +1742,7 @@ const Sidebar = ({
 
       {/* Plan Upgradation Modal */}
       {showUpgradeModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
           <div className="bg-white rounded-[16px] shadow-2xl flex flex-col overflow-hidden border border-amber-200 max-w-md w-full text-center p-6 relative">
             <button
               onClick={() => setShowUpgradeModal(false)}

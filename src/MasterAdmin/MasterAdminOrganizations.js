@@ -424,7 +424,7 @@ const MasterAdminOrganizations = () => {
 
         {/* ── CHANGE PLAN & LIMITS MODAL ───────────────────────────────────── */}
         {planModalOpen && selectedOrg && (
-          <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
                 <div className="flex items-center gap-2.5">
@@ -577,7 +577,7 @@ const MasterAdminOrganizations = () => {
 
         {/* ── DELETE ORGANIZATION MODAL ────────────────────────────────────── */}
         {deleteModalOpen && orgToDelete && (
-          <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-md p-6">
               <div className="flex items-center gap-3 mb-4">
                 <div className="h-10 w-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center shrink-0">

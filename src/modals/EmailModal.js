@@ -1,14 +1,21 @@
 import React, { useEffect, useState } from "react";
 import { X } from "lucide-react";
+import {
+  appTypeForConnection,
+  connectionsForAppType,
+  providerLabel,
+} from "../utils/connectionProviders";
 
 const EmailModal = ({
   node,
   connections = [],
+  mailhooks = [],
   onSave,
   onClose,
   openGmailModal,
   openOutlookModal,
   openMicrosoftModal,
+  openMailhookModal,
 }) => {
   const config = node?.data?.config || {};
 
@@ -17,7 +24,16 @@ const EmailModal = ({
   );
 
   const [connectionId, setConnectionId] = useState(config.connectionId ?? "");
+  const [mailhookId, setMailhookId] = useState(config.mailhookId ?? "");
   const [subject, setSubject] = useState(config.subject || "");
+
+  /*
+   * A mailhook trigger has no Connection behind it — leads arrive by
+   * forwarding to the mailhook address — so it selects from the user's
+   * verified mailhooks instead, and saves under its own field.
+   */
+  const isMailhook = appType === "Mailhook";
+  const verifiedMailhooks = mailhooks.filter((m) => m.connectionVerified);
 
   useEffect(() => {
     if (config.connectionId && connections.length > 0) {
@@ -29,31 +45,26 @@ const EmailModal = ({
   }, [connections, config.connectionId]);
 
   useEffect(() => {
+    if (config.appType === "Mailhook") return;
     if (!config.connectionId || connections.length === 0) return;
 
     const conn = connections.find((c) => c._id === config.connectionId);
     if (!conn) return;
 
-    if (conn.provider === "gmail") {
-      setAppType("Gmail");
-    } else {
-      setAppType("Email");
-    }
-  }, [connections, config.connectionId]);
+    /*
+     * Derived from the stored provider. The old two-way branch put every
+     * non-Gmail connection under "Other Email", so reopening a Microsoft
+     * module showed the wrong app type and an empty connection list.
+     */
+    const derived = appTypeForConnection(conn);
+    if (derived) setAppType(derived);
+  }, [connections, config.connectionId, config.appType]);
 
-  const filteredConnections = connections.filter((c) => {
-    if (appType === "Gmail") {
-      return c.provider === "gmail";
-    }
-    if (appType === "Email") {
-      return (
-        c.provider === "outlook" ||
-        c.provider === "smtp" ||
-        c.provider === "other"
-      );
-    }
-    return true;
-  });
+  /*
+   * Was `return true` for anything that was not Gmail or Other Email, so
+   * picking Microsoft listed every connection the user had, Gmail included.
+   */
+  const filteredConnections = connectionsForAppType(connections, appType);
 
   return (
     <div className="fixed inset-0  flex items-center justify-center z-50 p-4">
@@ -90,6 +101,7 @@ const EmailModal = ({
                 <option value="Gmail">Gmail / Google Workspace</option>
                 <option value="Microsoft">Outlook / Live / Microsoft 365</option>
                 <option value="Email">Other Email</option>
+                <option value="Mailhook">Mailhook (Forwarded Email)</option>
               </select>
 
               <button
@@ -99,6 +111,8 @@ const EmailModal = ({
                     ? openGmailModal()
                     : appType === "Microsoft"
                     ? openMicrosoftModal?.()
+                    : appType === "Mailhook"
+                    ? openMailhookModal?.()
                     : openOutlookModal()
                 }
                 className="px-5 py-2 bg-[#111110] hover:bg-black text-white text-xs font-bold rounded-[8px] transition cursor-pointer"
@@ -116,18 +130,40 @@ const EmailModal = ({
             <label className="block text-xs font-bold text-slate-800 mb-1.5">
               Connection <span className="text-red-500">*</span>
             </label>
-            <select
-              value={connectionId}
-              onChange={(e) => setConnectionId(e.target.value)}
-              className="w-full border border-slate-300 rounded-[8px] px-3.5 py-2 text-xs font-medium text-slate-900 bg-white outline-none focus:border-slate-800 transition"
-            >
-              <option value="">Select Connection</option>
-              {filteredConnections.map((c) => (
-                <option key={c._id} value={c._id}>
-                  {c.provider.toUpperCase()} - {c.email}
-                </option>
-              ))}
-            </select>
+            {isMailhook ? (
+              <>
+                <select
+                  value={mailhookId}
+                  onChange={(e) => setMailhookId(e.target.value)}
+                  className="w-full border border-slate-300 rounded-[8px] px-3.5 py-2 text-xs font-medium text-slate-900 bg-white outline-none focus:border-slate-800 transition"
+                >
+                  <option value="">Select Mailhook</option>
+                  {verifiedMailhooks.map((m) => (
+                    <option key={m._id} value={m._id}>
+                      MAILHOOK - {m.forwardingEmail || m.mailhook}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[11px] text-slate-500 mt-1.5 font-normal">
+                  {verifiedMailhooks.length === 0
+                    ? "No verified mailhook yet — click Add to set one up and confirm forwarding."
+                    : "Leads forwarded to this mailhook address will trigger the scenario."}
+                </p>
+              </>
+            ) : (
+              <select
+                value={connectionId}
+                onChange={(e) => setConnectionId(e.target.value)}
+                className="w-full border border-slate-300 rounded-[8px] px-3.5 py-2 text-xs font-medium text-slate-900 bg-white outline-none focus:border-slate-800 transition"
+              >
+                <option value="">Select Connection</option>
+                {filteredConnections.map((c) => (
+                  <option key={c._id} value={c._id}>
+                    {providerLabel(c.provider)} - {c.email}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
 
           {/* Field 3: Subject Filter */}
@@ -160,11 +196,18 @@ const EmailModal = ({
           <button
             type="button"
             onClick={() => {
-              const selectedConn = connections.find(c => c._id === connectionId);
+              const selectedConn = connections.find((c) => c._id === connectionId);
+              const selectedHook = mailhooks.find((m) => m._id === mailhookId);
+
               onSave({
                 appType,
-                connectionId,
-                connectionEmail: selectedConn?.email || "",
+                /* Only one of these is meaningful, and the other is cleared
+                   so switching trigger type never leaves a stale id behind. */
+                connectionId: isMailhook ? "" : connectionId,
+                mailhookId: isMailhook ? mailhookId : "",
+                connectionEmail: isMailhook
+                  ? selectedHook?.forwardingEmail || selectedHook?.mailhook || ""
+                  : selectedConn?.email || "",
                 subject,
                 emailType: appType,
               });

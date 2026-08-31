@@ -1,12 +1,22 @@
 import React, { useState } from "react";
 import { X, Play, Mail, CheckCircle2, Zap, HelpCircle, ArrowRight } from "lucide-react";
+import useModalDismiss from "../hooks/useModalDismiss";
 
 const TestInstructionsModal = ({ onClose, onRunCanvasTest }) => {
   const [activeTab, setActiveTab] = useState("canvas"); // "canvas" | "live"
 
+  /* Instructions only — nothing to lose, so it always closes. */
+  const dismiss = useModalDismiss({ onClose });
+
   return (
-    <div className="fixed inset-0 bg-black/20 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-      <div className="bg-white w-[580px] rounded-[8px] border  overflow-hidden flex flex-col">
+    <div
+      className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      {...dismiss.backdropProps}
+    >
+      <div
+        className="bg-white w-[580px] rounded-[8px] border  overflow-hidden flex flex-col"
+        {...dismiss.panelProps}
+      >
         {/* Header */}
         <div className="flex items-center justify-between bg-[#111110] text-white px-6 py-4 shrink-0">
           <div className="flex items-center gap-3">
