@@ -62,6 +62,7 @@ import UsersPage from "./pages/Users";
 import UtilitiesPage from "./pages/UtilitiesPage";
 import AiRepliesUsagePage from "./pages/AiRepliesUsagePage";
 import PaymentsPage from "./pages/PaymentsPage";
+import DocumentationPage from "./pages/DocumentationPage";
 
 function App() {
   return (
@@ -328,6 +329,22 @@ function App() {
             element={
               <ProtectedRoute>
                 <CompanyProfile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/docs"
+            element={
+              <ProtectedRoute>
+                <DocumentationPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/documentation"
+            element={
+              <ProtectedRoute>
+                <DocumentationPage />
               </ProtectedRoute>
             }
           />

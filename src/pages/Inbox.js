@@ -8,6 +8,8 @@ import {
   emailMatchesConnection,
 } from "../utils/leadFilters";
 import { splitQuotedBody } from "../utils/quotedBody";
+import { getCached, setCached, getCacheKey, invalidateCache } from "../utils/appCache";
+import { TableSkeleton } from "../component/Skeletons";
 import {
   FiArrowLeft,
   FiSearch,
@@ -58,6 +60,16 @@ const API_BASE_URL = "https://email-syncing-backend.vercel.app/mailhook";
  * rest of the time.
  */
 /*
+ * Tips rotated while the inbox is loading for the first time.
+ */
+const LOADING_TIPS = [
+  "Turning a scenario back on asks whether to send the queued replies.",
+  "Templates are matched by service first, then fall back to General.",
+  "A lead that pasted an email instead of a name is greeted “Dear Sir/Madam”.",
+  "Run history times follow the timezone in your organisation settings.",
+];
+
+/*
  * A real HTML tag, not merely a "<" somewhere.
  *
  * The old test was /<\/?[a-z][\s\S]*>/ — any "<", a letter, and a
@@ -73,18 +85,11 @@ const looksLikeMarkup = (value) =>
   Boolean(value) &&
   /<\/?(?:div|p|br|span|a|table|tbody|thead|tfoot|tr|td|th|ul|ol|li|h[1-6]|blockquote|strong|b|em|i|u|s|img|pre|code|hr|font|center|section|article)(?:\s[^>]*)?\/?>/i.test(value);
 
-const LOADING_TIPS = [
-  "Right-click any lead for reply, archive, secured and delete.",
-  "Leads shown here are only the ones your scenarios matched.",
-  "Switch a scenario off and its leads queue up instead of being answered.",
-  "Turning a scenario back on asks whether to send the queued replies.",
-  "Templates are matched by service first, then fall back to General.",
-  "A lead that pasted an email instead of a name is greeted “Dear Sir/Madam”.",
-  "Run history times follow the timezone in your organisation settings.",
-];
-
 const Inbox = () => {
-  const [emails, setEmails] = useState([]);
+  const currentUserId = localStorage.getItem("userid");
+  const cachedThreads = getCached(getCacheKey("inbox_threads", currentUserId));
+
+  const [emails, setEmails] = useState(cachedThreads || []);
   const [selectedEmail, setSelectedEmail] = useState(null);
   /*
    * Starts true. The list mounts with nothing and immediately fetches,
@@ -93,7 +98,7 @@ const Inbox = () => {
    * An empty inbox and an inbox that has not arrived yet are different
    * things and must not look the same.
    */
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!cachedThreads);
   const [loadingMore, setLoadingMore] = useState(false);
 
   /*
@@ -104,7 +109,7 @@ const Inbox = () => {
    * landed we have not got any, and saying it anyway is how the inbox
    * came to report "No leads here yet" beside a sidebar count of 7.
    */
-  const [hasLoaded, setHasLoaded] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(Boolean(cachedThreads));
 
   const [tipIndex, setTipIndex] = useState(0);
   const [hasMore, setHasMore] = useState(false);
@@ -830,6 +835,9 @@ const Inbox = () => {
       }
 
       setEmails(data);
+      if (isFirstPage) {
+        setCached(getCacheKey("inbox_threads", userId), data);
+      }
       pageRef.current = page;
 
       const initialStatuses = {};
@@ -2218,64 +2226,13 @@ const Inbox = () => {
 
             {/* Lead Rows */}
             <div ref={listScrollRef} className="flex-1 overflow-y-auto bg-white">
-              {/*
-                Skeleton rows rather than a spinner in an empty box.
-
-                They occupy the shape the real rows will, so nothing
-                jumps when the data lands, and the page reads as "this is
-                filling in" rather than "this is empty".
-              */}
-              {/*
-                What a pending inbox looks like.
-
-                Centred, because that is where the eye already is, and it
-                names what is being fetched rather than showing a bare
-                spinner. The tip rotates so a slow first load has
-                something to read — several of these are features people
-                would not otherwise find.
-              */}
-              {(loading || !hasLoaded) && (
-                <div
-                  aria-busy="true"
-                  aria-live="polite"
-                  className="flex h-full min-h-[320px] flex-col items-center justify-center px-6 text-center"
-                >
-                  <div className="relative mb-5 flex h-14 w-14 items-center justify-center">
-                    <span className="absolute inline-flex h-full w-full rounded-full bg-slate-200 opacity-60 animate-ping motion-reduce:hidden" />
-                    <span className="relative flex h-14 w-14 items-center justify-center rounded-full border border-slate-200 bg-white">
-                      <FiRefreshCw className="animate-spin text-slate-500" size={20} />
-                    </span>
-                  </div>
-
-                  <p className="text-sm font-semibold text-slate-800">
-                    {narrowedRef.current
-                      ? "Loading these leads…"
-                      : inboxView === "all"
-                        ? "Please wait — loading all of your leads"
-                        : "Loading your new leads…"}
-                  </p>
-
-                  <p className="mt-1 text-xs text-slate-400">
-                    {inboxView === "all" && !narrowedRef.current
-                      ? "The full history can take a moment the first time."
-                      : "This usually takes a second."}
-                  </p>
-
-                  <div className="mt-7 max-w-sm rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                      Did you know
-                    </p>
-                    <p
-                      key={tipIndex}
-                      className="mt-1 text-xs leading-relaxed text-slate-600 animate-in fade-in duration-500"
-                    >
-                      {LOADING_TIPS[tipIndex]}
-                    </p>
-                  </div>
+              {loading && emails.length === 0 && (
+                <div className="p-4">
+                  <TableSkeleton rows={7} cols={3} />
                 </div>
               )}
 
-              {!loading && hasLoaded && filteredEmails.length === 0 && (
+              {(!loading || emails.length > 0) && hasLoaded && filteredEmails.length === 0 && (
                 <div className="flex h-60 flex-col items-center justify-center text-center px-6">
                   <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
                     <FiInbox size={22} />

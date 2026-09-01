@@ -57,6 +57,7 @@ import {
   FiTrash2,
   FiEdit,
   FiChevronRight,
+  FiCheck,
 } from "react-icons/fi";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
@@ -72,6 +73,8 @@ import {
   consumeMicrosoftOAuthResult,
   startMicrosoftOAuth,
 } from "../utils/microsoftOAuth";
+import { getCached, setCached, getCacheKey, invalidateCache } from "../utils/appCache";
+import { ScenarioCanvasSkeleton } from "../component/Skeletons";
 import {
   appTypeForConnection,
   matchesAppType,
@@ -353,6 +356,14 @@ const ShopifyScenariosPage = () => {
         }
       }
 
+      if (!isInboxConnected || !isSenderConnected) {
+        toast.error(
+          "Please complete your scenario configuration first (connect inbox and senders) before activating.",
+          { duration: 4500 }
+        );
+        return;
+      }
+
       /*
        * Anything that arrived while this was paused is still unanswered.
        * Ask before resuming rather than either firing a silent burst of
@@ -371,48 +382,49 @@ const ShopifyScenariosPage = () => {
     // Save full scenario with updated active status so no scenario data is wiped
     await handleSaveScenario(null, nextVal);
   };
+  const [isAutoSaving, setIsAutoSaving] = useState(false);
+  const [lastSavedTime, setLastSavedTime] = useState(null);
   const [templateList, setTemplateList] = useState([]);
   const [loadingTemplates, setLoadingTemplates] = useState(false);
   const [selectedServiceForTemplates, setSelectedServiceForTemplates] =
     useState("");
 
+  const fetchTemplates = async () => {
+    setLoadingTemplates(true);
+    try {
+      const userId = localStorage.getItem("userid");
+      if (!userId) return;
+      const srv = selectedServiceForTemplates || "General";
+      const res = await apiFetch(
+        `https://email-syncing-backend.vercel.app/template/alltemplates?userId=${userId}&service=${encodeURIComponent(srv)}`,
+      );
+      const data = await res.json();
+      if (
+        data.success &&
+        Array.isArray(data.data) &&
+        data.data.length > 0
+      ) {
+        setTemplateList(data.data.slice(0, 3));
+      } else {
+        setTemplateList([]);
+      }
+    } catch (err) {
+      console.error("Error fetching templates:", err);
+      setTemplateList([]);
+    } finally {
+      setLoadingTemplates(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTemplates();
+  }, [selectedServiceForTemplates]);
+
   useEffect(() => {
     if (showTemplateModal) {
-      const fetchTemplatesForModal = async () => {
-        setLoadingTemplates(true);
-        try {
-          const userId = localStorage.getItem("userid");
-          const res = await apiFetch(
-            `https://email-syncing-backend.vercel.app/template/alltemplates?userId=${userId}&service=General`,
-          );
-          const data = await res.json();
-          if (
-            data.success &&
-            Array.isArray(data.data) &&
-            data.data.length > 0
-          ) {
-            setTemplateList(data.data.slice(0, 3));
-          } else {
-            /*
-             * An empty result means the account genuinely has no
-             * templates. This used to invent three with made-up ids
-             * (tpl_gen_1...), which looked real but could not be toggled:
-             * PATCHing a non-existent id fails, so the switch flipped back
-             * every time the dialog reopened.
-             */
-            setTemplateList([]);
-          }
-        } catch (err) {
-          console.error("Error fetching templates for modal:", err);
-          /* A failed request is not evidence of templates — say nothing. */
-          setTemplateList([]);
-        } finally {
-          setLoadingTemplates(false);
-        }
-      };
-      fetchTemplatesForModal();
+      fetchTemplates();
     }
-  }, [showTemplateModal, selectedServiceForTemplates]);
+  }, [showTemplateModal]);
   const [open, setOpen] = useState(false);
   const [selectedApp, setSelectedApp] = useState(null);
   const [selectedModule, setSelectedModule] = useState(null);
@@ -560,6 +572,8 @@ const ShopifyScenariosPage = () => {
           ? `Replies will be written by AI from "${selectedScenarioProfile?.name || "the selected profile"}".`
           : "Replies will use your templates as written.",
       );
+      setShowTemplateModal(false);
+      fetchTemplates();
     } catch (err) {
       console.error("Could not apply the reply mode:", err);
       toast.error("Could not save the reply mode.");
@@ -939,6 +953,7 @@ const ShopifyScenariosPage = () => {
     customBranches = null,
     overrideScenarioActive = null,
   ) => {
+    setIsAutoSaving(true);
     const rawBranches = customBranches || routerBranches;
     const activeConnectionId =
       incomingLeadsConnection || selectedConnection || "";
@@ -1180,6 +1195,16 @@ const ShopifyScenariosPage = () => {
       setShowValidation(false);
       setCompletedSteps([]);
       setIsScenarioUpdated(true);
+
+      const toCache = freshData || data;
+      if (toCache && (toCache._id || activeScenarioId)) {
+        const sid = toCache._id || activeScenarioId;
+        setCached(getCacheKey("shopify_scenario", sid), toCache);
+        setCached(getCacheKey("shopify_scenario", "default"), toCache);
+      }
+      invalidateCache("scenarios");
+      invalidateCache("dashboard");
+
       toast.success(
         activeStatus
           ? "Scenario activated successfully!"
@@ -1195,6 +1220,9 @@ const ShopifyScenariosPage = () => {
       console.error("Error saving scenario:", err);
       toast.error("Failed to save scenario.");
       return false;
+    } finally {
+      setIsAutoSaving(false);
+      setLastSavedTime(new Date());
     }
   };
 
@@ -1310,39 +1338,72 @@ const ShopifyScenariosPage = () => {
       return;
     }
 
-    /*
-     * An additional scenario starts from the template's shape rather than
-     * from anything on the server — there is nothing saved to load yet,
-     * and loading the stored one would put the builder on top of a
-     * scenario the user did not ask to edit.
-     */
-    if (isNewScenario) {
-      setScenarioName("Shopify Partner Directory Scenario");
-      setScenarioDescription(
-        "Automate Shopify lead replies and follow-up emails",
-      );
-      setRouterBranches(buildDefaultShopifyBranches());
-      setAutomationOn(false);
-      setEditingMode("add");
-      return;
-    }
+    const autoCreateShopifyScenarioInDb = async (userId, token) => {
+      try {
+        const defaultBranches = buildDefaultShopifyBranches();
+        const payload = {
+          userId,
+          name: "Shopify Partner Directory Scenario",
+          description: "Capture directory inquiry leads automatically and trigger personalized email response flows.",
+          type: "shopify",
+          scenarioActive: false,
+          incomingLead: {
+            app: {
+              name: incomingLeadsAppType || "Gmail",
+              color: "",
+              icon: "",
+            },
+            connectionId: null,
+            mailhookId: null,
+            subjectFilter: "",
+            pollInterval: 60,
+            enabled: false,
+          },
+          routerBranches: defaultBranches,
+        };
+
+        const createRes = await apiFetch(
+          "https://email-syncing-backend.vercel.app/scenario",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(payload),
+          },
+        );
+        const createdData = await createRes.json();
+        if (createdData && createdData._id) {
+          localStorage.setItem("scenarioId", createdData._id);
+          setScenarioId(createdData._id);
+          setEditingMode("update");
+          setScenarioName(createdData.name);
+          setScenarioDescription(createdData.description);
+          setRouterBranches(createdData.routerBranches || defaultBranches);
+          navigate(`/scenarios/shopify/${createdData._id}`, { replace: true });
+          return createdData;
+        }
+      } catch (err) {
+        console.error("Error auto-creating shopify scenario in DB:", err);
+      }
+    };
 
     const fetchScenario = async () => {
       try {
         const userId = localStorage.getItem("userid");
+        const token = localStorage.getItem("usertoken");
         if (!userId) {
+          return;
+        }
+
+        if (isNewScenario) {
+          await autoCreateShopifyScenarioInDb(userId, token);
           return;
         }
 
         console.log("🔄 Fetching existing Shopify scenario for user:", userId);
 
-        const token = localStorage.getItem("usertoken");
-
-        /*
-         * With more than one Shopify scenario allowed, the URL says which
-         * one to open. Only fall back to "the user's Shopify scenario"
-         * when the route carries no id at all.
-         */
         const res = id
           ? await apiFetch(
               `https://email-syncing-backend.vercel.app/scenario/detail/${id}`,
@@ -1368,22 +1429,24 @@ const ShopifyScenariosPage = () => {
           localStorage.setItem("scenarioId", data._id);
           console.log("💾 Scenario ID saved to localStorage:", data._id);
 
+          setCached(getCacheKey("shopify_scenario", data._id), data);
+          setCached(getCacheKey("shopify_scenario", "default"), data);
+
           setScenarioId(data._id);
           setEditingMode("update");
-          setScenarioName(data.name || "");
-          setScenarioDescription(data.description || "");
+          setScenarioName(data.name || "Shopify Partner Directory Scenario");
+          setScenarioDescription(
+            data.description || "Capture directory inquiry leads automatically and trigger personalized email response flows.",
+          );
           setRouterBranches(
             Array.isArray(data.routerBranches) && data.routerBranches.length > 0
               ? data.routerBranches
-              : [
-                  {
-                    id: Date.now(),
-                    hasModule: false,
-                    condition: null,
-                    modules: [],
-                  },
-                ],
+              : buildDefaultShopifyBranches(),
           );
+
+          if (!id) {
+            navigate(`/scenarios/shopify/${data._id}`, { replace: true });
+          }
 
           if (data.incomingLead) {
             if (data.incomingLead.app?.name)
@@ -1420,14 +1483,13 @@ const ShopifyScenariosPage = () => {
           console.log("Loaded scenario from backend:", data.routerBranches);
         } else {
           console.log(
-            "ℹ️ No existing scenario found for this user — Add mode.",
+            "ℹ️ No existing scenario found for this user — Auto-creating in DB...",
           );
-          setEditingMode("add");
-          setAutomationOn(false);
-          localStorage.removeItem("scenarioId");
-          localStorage.removeItem("scenarioActive");
+          await autoCreateShopifyScenarioInDb(userId, token);
         }
-      } catch (err) {}
+      } catch (err) {
+        console.error("Error fetching/creating scenario:", err);
+      }
     };
 
     fetchScenario();
@@ -1549,7 +1611,7 @@ const ShopifyScenariosPage = () => {
 
       if (data.success || res.ok) {
         toast.success("Shopify Scenario deleted successfully!");
-        handleResetToNewScenario();
+        navigate("/scenarios");
       } else {
         toast.error(data.message || "Failed to delete scenario.");
       }
@@ -3845,10 +3907,6 @@ const ShopifyScenariosPage = () => {
                         title="Click to edit scenario name"
                       />
                     </div>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-[#E6F4EA] px-2.5 py-0.5 text-[11px] font-semibold text-[#137333]">
-                      <span className="h-1.5 w-1.5 rounded-full bg-[#34A853]"></span>
-                      Live
-                    </span>
                   </div>
 
                   <div className="mt-1.5 flex flex-wrap items-center gap-3 text-xs text-slate-500 font-medium">
@@ -3899,7 +3957,6 @@ const ShopifyScenariosPage = () => {
                             {isConn ? "Inbox connected" : "Inbox disconnected"}
                           </span>
                           <span className="text-slate-300">|</span>
-                          <span className="text-slate-300">|</span>
                           <span
                             className={
                               attentionModules > 0
@@ -3911,6 +3968,40 @@ const ShopifyScenariosPage = () => {
                               ? `${attentionModules} module${attentionModules > 1 ? "s" : ""} need${attentionModules === 1 ? "s" : ""} attention`
                               : "✓ All modules active"}
                           </span>
+                          <span className="text-slate-300">|</span>
+                          <span
+                            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+                              automationOn
+                                ? "bg-[#E6F4EA] text-[#137333]"
+                                : "bg-amber-50 text-amber-700 border border-amber-200"
+                            }`}
+                          >
+                            <span
+                              className={`h-1.5 w-1.5 rounded-full ${
+                                automationOn ? "bg-[#34A853]" : "bg-amber-500"
+                              }`}
+                            ></span>
+                            {automationOn ? "Live" : "Paused"}
+                          </span>
+
+                          {/* Auto-saving indicator badge below with Live badge */}
+                          {isAutoSaving ? (
+                            <>
+                              <span className="text-slate-300">|</span>
+                              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-800 animate-pulse shadow-2xs">
+                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping"></span>
+                                Saving changes...
+                              </span>
+                            </>
+                          ) : lastSavedTime ? (
+                            <>
+                              <span className="text-slate-300">|</span>
+                              <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 border border-slate-200 px-2 py-0.5 text-[10.5px] font-medium text-slate-600">
+                                <FiCheck size={11} className="text-emerald-600" />
+                                Auto-saved
+                              </span>
+                            </>
+                          ) : null}
                         </>
                       );
                     })()}
@@ -4342,7 +4433,13 @@ const ShopifyScenariosPage = () => {
                       </div>
                     </div>
 
-                    <FlowConnector muted={activeTemplateCount === 0} />
+                    <FlowConnector
+                      muted={
+                        scenarioReplyMode === "ai"
+                          ? !selectedScenarioProfile?.isComplete
+                          : activeTemplateCount === 0
+                      }
+                    />
 
                     {/* CARD 3: Template */}
                     <div
@@ -4359,30 +4456,40 @@ const ShopifyScenariosPage = () => {
                           </span>
                         </div>
                         <StatusDot
-                          tone={activeTemplateCount > 0 ? "active" : "pending"}
+                          tone={
+                            scenarioReplyMode === "ai"
+                              ? selectedScenarioProfile?.isComplete
+                                ? "active"
+                                : "pending"
+                              : activeTemplateCount > 0
+                              ? "active"
+                              : "pending"
+                          }
                           title={
-                            activeTemplateCount > 0
-                              ? "Templates active"
-                              : "No template is switched on"
+                            scenarioReplyMode === "ai"
+                              ? selectedScenarioProfile?.isComplete
+                                ? "AI templates active and configured"
+                                : "AI profile incomplete — select a complete company profile"
+                              : activeTemplateCount > 0
+                              ? `${activeTemplateCount} template${activeTemplateCount > 1 ? "s" : ""} active`
+                              : "No templates active"
                           }
                         />
                       </div>
 
-                      {/*
-                        Counted from the loaded templates, and the edit
-                        stamp from their own updatedAt — the card used to
-                        state "3 templates active / Last edited 2 days ago"
-                        no matter what was actually saved.
-                      */}
                       <div className="mt-4 space-y-1.5 text-xs text-slate-500">
                         <p className="font-semibold text-slate-800">
-                          {activeTemplateCount === 1
+                          {scenarioReplyMode === "ai"
+                            ? "AI templates active"
+                            : activeTemplateCount === 1
                             ? "1 template active"
                             : `${activeTemplateCount} templates active`}
                         </p>
                         <p>
                           {scenarioReplyMode === "ai"
-                            ? "Written by AI from your company profile"
+                            ? selectedScenarioProfile?.name
+                              ? `Written by AI from "${selectedScenarioProfile.name}"`
+                              : "Written by AI from your company profile"
                             : "Fixed wording, sent as written"}
                         </p>
                         {lastTemplateEdit && <p>Last edited {lastTemplateEdit}</p>}

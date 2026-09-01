@@ -1,14 +1,18 @@
-import React from "react";
+import React, { useContext } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiX, FiShoppingBag, FiSettings, FiArrowRight } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
+import { UserContext } from "./UserContext";
 
 const ScenarioSelectModal = ({ open, onClose }) => {
   const navigate = useNavigate();
+  const { user } = useContext(UserContext);
+  const plan = (user?.subscription?.plan || "Explore").toLowerCase();
+  const isPaidPlan = plan !== "explore";
 
   const handleSelect = (type) => {
     if (type === "shopify") {
-      navigate("/scenarios/shopify");
+      navigate(isPaidPlan ? "/scenarios/shopify/new" : "/scenarios/shopify");
     } else if (type === "custom") {
       navigate("/scenarios/others");
     }

@@ -10,27 +10,43 @@ import {
 } from "react-icons/fi";
 import axios from "axios";
 import { UserContext } from "../component/UserContext";
-import { getDashboardSummaryCached } from "../utils/dashboardCache";
+import { getCached, setCached, getCacheKey } from "../utils/appCache";
+import { DashboardSkeleton } from "../component/Skeletons";
 import AppLayout from "../component/AppLayout";
 
 const Organization = () => {
   const navigate = useNavigate();
   const { user: contextUser } = useContext(UserContext);
-
-  const [user, setUser] = useState(contextUser || null);
-  const [emails, setEmails] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({
-    total: 0,
-    processed: 0,
-    partial: 0,
-    failed: 0,
-    pending: 0,
-  });
-  const [recentScenarios, setRecentScenarios] = useState([]);
-  const [scenariosLoading, setScenariosLoading] = useState(true);
-
   const userId = localStorage.getItem("userid") || contextUser?._id;
+
+  const cachedDashboard = getCached(getCacheKey("dashboard_summary", userId));
+  const cachedScenarios = getCached(getCacheKey("scenarios_list", userId)) || getCached(getCacheKey("dashboard_scenarios", userId));
+  const cachedEmails = getCached(getCacheKey("inbox_threads", userId)) || getCached(getCacheKey("dashboard_emails", userId));
+  const cachedStats = getCached(getCacheKey("dashboard_stats", userId));
+
+  const [user, setUser] = useState(cachedDashboard?.user || contextUser || null);
+  const [emails, setEmails] = useState(cachedDashboard?.recentEmails || cachedEmails || []);
+  const [stats, setStats] = useState(
+    cachedDashboard?.stats || cachedStats || {
+      total: 0,
+      processed: 0,
+      partial: 0,
+      failed: 0,
+      pending: 0,
+    }
+  );
+  const [recentScenarios, setRecentScenarios] = useState(
+    cachedScenarios || cachedDashboard?.recentScenarios || []
+  );
+
+  const hasInitialCache = Boolean(
+    (cachedScenarios && cachedScenarios.length > 0) ||
+    (cachedEmails && cachedEmails.length > 0) ||
+    cachedDashboard
+  );
+
+  const [loading, setLoading] = useState(!hasInitialCache);
+  const [scenariosLoading, setScenariosLoading] = useState(!hasInitialCache);
 
   useEffect(() => {
     if (contextUser) {
@@ -39,48 +55,34 @@ const Organization = () => {
   }, [contextUser]);
 
   useEffect(() => {
+    const handleStatusChange = (e) => {
+      const { scenarioId, scenarioActive } = e.detail || {};
+      if (scenarioId) {
+        setRecentScenarios((prev) =>
+          prev.map((s) => (s._id === scenarioId ? { ...s, scenarioActive } : s))
+        );
+      }
+    };
+    window.addEventListener("scenarioStatusChanged", handleStatusChange);
+    return () => window.removeEventListener("scenarioStatusChanged", handleStatusChange);
+  }, []);
+
+  useEffect(() => {
     if (!userId) return;
     loadDashboardData();
   }, [userId]);
 
   const loadDashboardData = async () => {
     try {
-      setLoading(true);
-      setScenariosLoading(true);
+      if (!hasInitialCache && recentScenarios.length === 0) {
+        setLoading(true);
+        setScenariosLoading(true);
+      }
       
-      let summary = null;
-      try {
-        summary = await getDashboardSummaryCached(userId);
-      } catch (e) {
-        console.warn("Dashboard summary endpoint unavailable on remote backend, using standard fallback:", e);
-      }
-
-      if (summary && summary.success) {
-        if (summary.user) setUser(summary.user);
-        if (summary.stats) {
-          setStats({
-            total: summary.stats.total || 0,
-            processed: summary.stats.secured || 0,
-            partial: summary.stats.replied || 0,
-            failed: 0,
-            pending: summary.stats.pending || 0,
-          });
-        }
-        if (summary.recentScenarios) {
-          setRecentScenarios(summary.recentScenarios);
-        }
-        if (summary.recentEmails && summary.recentEmails.length > 0) {
-          setEmails(summary.recentEmails);
-        } else {
-          await fetchEmailsFallback();
-        }
-      } else {
-        // 🔄 Graceful fallback for non-deployed backend environments
-        await Promise.all([
-          fetchEmailsFallback(),
-          fetchScenariosFallback(),
-        ]);
-      }
+      await Promise.all([
+        fetchEmailsFallback(),
+        fetchScenariosFallback(),
+      ]);
     } catch (err) {
       console.error("Error loading dashboard data:", err);
     } finally {
@@ -108,6 +110,7 @@ const Organization = () => {
         discussion: t.discussion || [],
       }));
       setEmails(normalized);
+      setCached(getCacheKey("dashboard_emails", userId), normalized);
 
       const secured = normalized.filter((e) => e.leadStatus === "secured").length;
       const replied = normalized.filter((e) => {
@@ -116,13 +119,15 @@ const Organization = () => {
         if (e.leadStatus === "replied" || e.leadStatus === "customer_replied") return true;
         return last.direction === "incoming";
       }).length;
-      setStats({
+      const computedStats = {
         total: normalized.length,
         processed: secured,
         partial: replied,
         failed: 0,
         pending: normalized.length - secured - replied,
-      });
+      };
+      setStats(computedStats);
+      setCached(getCacheKey("dashboard_stats", userId), computedStats);
     } catch (err) {
       console.error("Error fetching emails fallback:", err);
     }
@@ -150,6 +155,7 @@ const Organization = () => {
         Array.isArray(res.data?.data) ? res.data.data :
         res.data?.data?.scenarios || [];
       setRecentScenarios(data);
+      setCached(getCacheKey("dashboard_scenarios", userId), data);
     } catch (err) {
       console.error("Error fetching scenarios fallback:", err);
     }
@@ -161,7 +167,10 @@ const Organization = () => {
 
   return (
     <AppLayout>
-      <div className="flex flex-col gap-6">
+      {loading && recentScenarios.length === 0 && !stats.total ? (
+        <DashboardSkeleton />
+      ) : (
+        <div className="flex flex-col gap-6 animate-in fade-in duration-150">
         {/* Breadcrumb & Main Header */}
         <div className="mb-2">
           <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
@@ -388,7 +397,7 @@ const Organization = () => {
                           <div className="w-1 bg-slate-200 rounded-full h-3 group-hover:bg-slate-400 transition" />
                         </div>
 
-                        {sc.scenarioActive !== false ? (
+                        {sc.scenarioActive === true ? (
                           <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200/80 px-3 py-1 text-xs font-semibold text-emerald-700">
                             <span className="relative flex h-2 w-2">
                               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
@@ -399,7 +408,7 @@ const Organization = () => {
                         ) : (
                           <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-500">
                             <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
-                            Inactive
+                            Paused
                           </span>
                         )}
                       </div>
@@ -490,12 +499,12 @@ const Organization = () => {
 
                     <span
                       className={`px-2.5 py-0.5 text-[10px] rounded-full font-semibold ${
-                        sc.scenarioActive
+                        sc.scenarioActive === true
                           ? "bg-green-100 text-green-700"
                           : "bg-slate-100 text-slate-600"
                       }`}
                     >
-                      {sc.scenarioActive ? "Active" : "Inactive"}
+                      {sc.scenarioActive === true ? "Active" : "Paused"}
                     </span>
                   </div>
                 ))}
@@ -565,6 +574,7 @@ const Organization = () => {
           </div>
         </div>
       </div>
+      )}
     </AppLayout>
   );
 };

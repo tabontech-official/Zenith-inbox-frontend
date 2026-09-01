@@ -18,23 +18,30 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import ConfirmDeleteModal from "../component/ConformationModel";
 import MailhookConnectionModal from "../component/MailhookConnectionModal";
-import { UserContext } from "../component/UserContext";
 import ConfirmMailhookDeleteModal from "../component/ConfirmMailhookDeleteModal";
+import { UserContext } from "../component/UserContext";
 import {
   consumeMicrosoftOAuthResult,
   startMicrosoftOAuth,
 } from "../utils/microsoftOAuth";
 import { isOAuthConnection } from "../utils/connectionProviders";
+import { getCached, setCached, getCacheKey, invalidateCache } from "../utils/appCache";
+import { TableSkeleton } from "../component/Skeletons";
 
 const ConnectionsPage = () => {
   const { user } = useContext(UserContext);
+  const userId = localStorage.getItem("userid") || user?._id;
+
+  const cachedConns = getCached(getCacheKey("connections_list", userId));
+  const cachedHooks = getCached(getCacheKey("mailhooks_list", userId));
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isOutlookModalOpen, setIsOutlookModalOpen] = useState(false);
   const [isMicrosoftModalOpen, setIsMicrosoftModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [connections, setConnections] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [mailhooks, setMailhooks] = useState([]);
+  const [connections, setConnections] = useState(cachedConns || []);
+  const [loading, setLoading] = useState(!cachedConns && !cachedHooks);
+  const [mailhooks, setMailhooks] = useState(cachedHooks || []);
   const [isMailhookModalOpen, setIsMailhookModalOpen] = useState(false);
 
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -151,6 +158,7 @@ const ConnectionsPage = () => {
       );
       if (res.data.success) {
         setMailhooks(res.data.data);
+        setCached(getCacheKey("mailhooks_list", userId), res.data.data);
       }
     } catch (err) {
       console.error("Error fetching mailhooks:", err);
@@ -188,7 +196,9 @@ const ConnectionsPage = () => {
       const token = localStorage.getItem("usertoken");
       if (!userId) return setLoading(false);
 
-      setLoading(true);
+      if (connections.length === 0 && mailhooks.length === 0) {
+        setLoading(true);
+      }
 
       const res = await axios.get(
         `https://email-syncing-backend.vercel.app/auth/getConnection/${userId}`,
@@ -197,6 +207,7 @@ const ConnectionsPage = () => {
 
       const connList = res.data || [];
       setConnections(connList);
+      setCached(getCacheKey("connections_list", userId), connList);
 
       if (connList.length > 0) {
         try {

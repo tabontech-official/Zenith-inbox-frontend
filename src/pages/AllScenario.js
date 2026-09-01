@@ -419,6 +419,9 @@ import { useNavigate } from "react-router-dom";
 import AppLayout from "../component/AppLayout";
 import { UserContext } from "../component/UserContext";
 import StatusDot from "../component/StatusDot";
+import ScenarioSelectModal from "../component/ScenarioSelectModal";
+import { getCached, setCached, getCacheKey, invalidateCache } from "../utils/appCache";
+import { TableSkeleton } from "../component/Skeletons";
 
 const getScenarioName = (scenario) => {
   if (scenario.name?.trim()) {
@@ -497,15 +500,58 @@ const formatDate = (date) => {
   });
 };
 
+const isScenarioConfigured = (scenario) => {
+  if (!scenario) return false;
+
+  // 1. Check incoming lead trigger connection / mailhook
+  const incoming = scenario.incomingLead;
+  const isMailhook = (incoming?.app?.name || "").toLowerCase() === "mailhook";
+  const hasTrigger = isMailhook
+    ? Boolean(incoming?.mailhookId)
+    : Boolean(incoming?.connectionId);
+
+  if (!hasTrigger) return false;
+
+  // 2. Check router branch modules
+  const branches = scenario.routerBranches || [];
+  if (!Array.isArray(branches) || branches.length === 0) return false;
+
+  const modules = branches.flatMap((b) => b.modules || []);
+  if (modules.length === 0) return false;
+
+  // Check that all email modules have a connectionId
+  const emailModules = modules.filter((m) => {
+    const isDelay =
+      m.type === "Delay" ||
+      m.app?.name?.toLowerCase() === "delay" ||
+      Boolean(m.delayValue);
+    return !isDelay;
+  });
+
+  if (emailModules.length === 0) return false;
+
+  const allEmailModulesConfigured = emailModules.every(
+    (m) =>
+      Boolean(m.connectionId) ||
+      (m.replyMode === "ai" && Boolean(m.companyProfileId))
+  );
+
+  return allEmailModulesConfigured;
+};
+
 const AllScenariosPage = () => {
   const navigate = useNavigate();
 
-  const [scenarios, setScenarios] = useState([]);
+  const userId = localStorage.getItem("userid");
+  const cachedScenarios = getCached(getCacheKey("scenarios_list", userId));
+
+  const [scenarios, setScenarios] = useState(cachedScenarios || []);
   const [selectedScenario, setSelectedScenario] = useState(null);
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(!cachedScenarios);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
+  const [showSelectModal, setShowSelectModal] = useState(false);
 
   // New Split Dropdown State & Ref
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -525,20 +571,21 @@ const AllScenariosPage = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const fetchScenarios = async () => {
-    const userId = localStorage.getItem("userid");
+  const fetchScenarios = async (isBackground = false) => {
+    const currentUserId = localStorage.getItem("userid") || userId;
 
-    if (!userId) {
-      console.error("No userId found in localStorage");
+    if (!currentUserId) {
       return;
     }
 
     try {
-      setLoading(true);
+      if (!isBackground && scenarios.length === 0) {
+        setLoading(true);
+      }
       const token = localStorage.getItem("usertoken");
 
       const response = await apiFetch(
-        `https://email-syncing-backend.vercel.app/scenario/user/${userId}`,
+        `https://email-syncing-backend.vercel.app/scenario/user/${currentUserId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -548,7 +595,13 @@ const AllScenariosPage = () => {
 
       const data = await response.json();
 
-      setScenarios(Array.isArray(data) ? data : data?.data || []);
+      if (response.ok) {
+        const list = Array.isArray(data) ? data : data.data || [];
+        setScenarios(list);
+        setCached(getCacheKey("scenarios_list", currentUserId), list);
+      } else {
+        console.error("Failed to fetch scenarios:", data.message);
+      }
     } catch (error) {
       console.error("Error fetching scenarios:", error);
     } finally {
@@ -557,24 +610,16 @@ const AllScenariosPage = () => {
   };
 
   useEffect(() => {
-    fetchScenarios();
+    fetchScenarios(Boolean(cachedScenarios));
   }, []);
 
-  const shopifyCount = scenarios.filter(
-    (scenario) => scenario.type === "shopify",
-  ).length;
+  const { user } = useContext(UserContext);
+  const userPlan = user?.subscription?.plan || "Explore";
 
-  const customCount = scenarios.filter(
-    (scenario) => scenario.type !== "shopify",
-  ).length;
-
-  const activeCount = scenarios.filter(
-    (scenario) => scenario.scenarioActive,
-  ).length;
-
-  const pausedCount = scenarios.filter(
-    (scenario) => !scenario.scenarioActive,
-  ).length;
+  const activeCount = scenarios.filter((s) => s.scenarioActive).length;
+  const pausedCount = scenarios.filter((s) => !s.scenarioActive).length;
+  const shopifyCount = scenarios.filter((s) => s.type === "shopify").length;
+  const customCount = scenarios.filter((s) => s.type !== "shopify").length;
 
   const filteredScenarios = scenarios.filter((scenario) => {
     const name = getScenarioName(scenario).toLowerCase();
@@ -602,11 +647,8 @@ const AllScenariosPage = () => {
     );
   };
 
-  const { user: contextUser } = useContext(UserContext);
-  const userPlan = contextUser?.subscription?.plan || "Explore";
-
   const getPlanActiveLimit = (plan) => {
-    const p = (plan || "Explore").toLowerCase();
+    const p = (plan || "").toLowerCase();
     if (p === "elevate") return 5;
     if (p === "unite") return 15;
     if (p === "enterprise") return 999;
@@ -619,15 +661,30 @@ const AllScenariosPage = () => {
     event.stopPropagation();
     const willBeActive = !scenario.scenarioActive;
 
-    if (willBeActive && activeCount >= planActiveLimit) {
-      setSelectedScenario(scenario);
-      setUpgradeModalOpen(true);
-      return;
+    if (willBeActive) {
+      if (activeCount >= planActiveLimit) {
+        setSelectedScenario(scenario);
+        setUpgradeModalOpen(true);
+        return;
+      }
+
+      if (!isScenarioConfigured(scenario)) {
+        toast.error(
+          "Please complete your scenario configuration first before activating.",
+          { duration: 4500 }
+        );
+        if (scenario.type === "shopify") {
+          navigate(`/scenarios/shopify/${scenario._id}`);
+        } else {
+          navigate(`/scenarios/others/${scenario._id}`);
+        }
+        return;
+      }
     }
 
     try {
       const token = localStorage.getItem("usertoken");
-      await apiFetch(
+      const res = await apiFetch(
         `https://email-syncing-backend.vercel.app/scenario/detail/${scenario._id}`,
         {
           method: "PUT",
@@ -635,22 +692,64 @@ const AllScenariosPage = () => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ scenarioActive: willBeActive }),
+          body: JSON.stringify({
+            ...scenario,
+            scenarioActive: willBeActive,
+          }),
         }
       );
-      fetchScenarios();
+      const data = await res.json();
+
+      if (willBeActive && data.scenarioActive === false) {
+        toast.error(
+          "Please complete your scenario configuration first before activating.",
+          { duration: 4500 }
+        );
+        if (scenario.type === "shopify") {
+          navigate(`/scenarios/shopify/${scenario._id}`);
+        } else {
+          navigate(`/scenarios/others/${scenario._id}`);
+        }
+        return;
+      }
+
+      const updatedList = scenarios.map((s) =>
+        s._id === scenario._id ? { ...s, scenarioActive: willBeActive } : s
+      );
+      setScenarios(updatedList);
+      setCached(getCacheKey("scenarios_list", userId), updatedList);
+      setCached(getCacheKey("dashboard_scenarios", userId), updatedList);
+      window.dispatchEvent(
+        new CustomEvent("scenarioStatusChanged", {
+          detail: { scenarioId: scenario._id, scenarioActive: willBeActive },
+        })
+      );
+
+      toast.success(
+        willBeActive
+          ? `Scenario "${getScenarioName(scenario)}" activated!`
+          : `Scenario "${getScenarioName(scenario)}" paused.`
+      );
+      invalidateCache("scenarios");
+      invalidateCache("dashboard");
+      fetchScenarios(true);
     } catch (err) {
       console.error("Error toggling scenario active status:", err);
+      toast.error("Failed to update scenario status.");
     }
   };
 
   const handleCreateScenario = (type) => {
     setDropdownOpen(false);
-    navigate(
-      type === "shopify"
-        ? "/scenarios/shopify"
-        : "/scenarios/others",
-    );
+    if (type === "shopify") {
+      if (userPlan.toLowerCase() === "explore" && shopifyCount >= 1) {
+        setUpgradeModalOpen(true);
+        return;
+      }
+      navigate(userPlan.toLowerCase() !== "explore" ? "/scenarios/shopify/new" : "/scenarios/shopify");
+    } else {
+      navigate("/scenarios/others");
+    }
   };
 
   const handleDelete = async () => {
@@ -671,7 +770,9 @@ const AllScenariosPage = () => {
       setDeleteModalOpen(false);
       setSelectedScenario(null);
 
-      fetchScenarios();
+      invalidateCache("scenarios");
+      invalidateCache("dashboard");
+      fetchScenarios(true);
     } catch (error) {
       console.error("Error deleting scenario:", error);
     }
@@ -680,8 +781,8 @@ const AllScenariosPage = () => {
   const openDeleteModal = (event, scenario) => {
     event.stopPropagation();
 
-    if (scenario?.type === "shopify") {
-      toast.error("Shopify prebuilt system scenarios cannot be deleted.");
+    if (scenario?.type === "shopify" && shopifyCount <= 1) {
+      toast.error("The primary Shopify prebuilt scenario cannot be deleted.");
       return;
     }
 
@@ -741,14 +842,14 @@ const AllScenariosPage = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-[11px] font-semibold uppercase  text-zinc-500">
-                    Shopify Prebuilt
+                    Shopify Scenarios
                   </p>
                   <div className="mt-2 flex items-baseline gap-1">
                     <span className="text-2xl font-bold text-zinc-900">
                       {shopifyCount}
                     </span>
                     <span className="text-xs font-medium text-zinc-400">
-                      template
+                      {userPlan.toLowerCase() === "explore" ? "/ 1 (Free)" : "total"}
                     </span>
                   </div>
                 </div>
@@ -882,15 +983,10 @@ const AllScenariosPage = () => {
                 </thead>
 
                 <tbody className="divide-y divide-zinc-100">
-                  {loading ? (
+                  {loading && scenarios.length === 0 ? (
                     <tr>
-                      <td colSpan={6}>
-                        <div className="flex min-h-[200px] flex-col items-center justify-center py-8">
-                          <span className="h-7 w-7 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900" />
-                          <p className="mt-3 text-xs font-medium text-zinc-500">
-                            Loading scenarios...
-                          </p>
-                        </div>
+                      <td colSpan={6} className="p-0">
+                        <TableSkeleton rows={5} cols={6} />
                       </td>
                     </tr>
                   ) : filteredScenarios.length > 0 ? (
@@ -976,10 +1072,10 @@ const AllScenariosPage = () => {
 
                         <td className="px-5 py-4">
                           <div className="flex items-center justify-end gap-1">
-                            {scenario.type === "shopify" ? (
+                            {scenario.type === "shopify" && shopifyCount <= 1 ? (
                               <div
                                 className="flex h-8 w-8 items-center justify-center rounded-[8px] text-zinc-400 bg-zinc-100/70 cursor-not-allowed"
-                                title="Prebuilt System Scenario (Non-deletable)"
+                                title="Primary Prebuilt System Scenario (Non-deletable)"
                               >
                                 <Lock className="h-3.5 w-3.5 text-zinc-500" />
                               </div>
@@ -1015,8 +1111,8 @@ const AllScenariosPage = () => {
                           </p>
                           <button
                             type="button"
-                            onClick={() => setDropdownOpen(true)}
-                            className="mt-4 inline-flex h-8 items-center gap-1.5 rounded-[8px] bg-zinc-900 px-3 text-xs font-medium text-white transition hover:bg-zinc-800"
+                            onClick={() => setShowSelectModal(true)}
+                            className="mt-4 inline-flex h-8 items-center gap-1.5 rounded-[8px] bg-zinc-900 px-3 text-xs font-medium text-white transition hover:bg-zinc-800 cursor-pointer"
                           >
                             <Plus className="h-3.5 w-3.5" />
                             Create New Scenario
@@ -1243,6 +1339,12 @@ const AllScenariosPage = () => {
           </div>
         </div>
       )}
+
+      {/* Scenario Select Modal */}
+      <ScenarioSelectModal
+        open={showSelectModal}
+        onClose={() => setShowSelectModal(false)}
+      />
       </div>
     </AppLayout>
   );

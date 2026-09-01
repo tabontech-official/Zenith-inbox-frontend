@@ -27,6 +27,7 @@ import {
   FiLayers,
   FiChevronLeft,
   FiChevronRight,
+  FiBookOpen,
 } from "react-icons/fi";
 import axios from "axios";
 import { providerLabel } from "../utils/connectionProviders";
@@ -42,10 +43,12 @@ import {
 import { UserContext } from "./UserContext";
 import useModalDismiss from "../hooks/useModalDismiss";
 import StatusDot from "./StatusDot";
+import { getCached, setCached, getCacheKey } from "../utils/appCache";
 
 const AppLayout = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
+
   const {
     user: contextUser,
     setUser: setContextUser,
@@ -53,9 +56,13 @@ const AppLayout = ({ children }) => {
     setEmails: setContextEmails,
   } = useContext(UserContext);
 
+  const userId = localStorage.getItem("userid") || contextUser?._id;
+  const cachedEmails = getCached(getCacheKey("inbox_threads", userId)) || getCached(getCacheKey("dashboard_emails", userId));
+
   const [user, setUser] = useState(contextUser || null);
-  const [emails, setEmails] = useState(contextEmails || []);
+  const [emails, setEmails] = useState(contextEmails || cachedEmails || []);
   const [showCreateScenarioModal, setShowCreateScenarioModal] = useState(false);
+  const [showShopifyUpgradeModal, setShowShopifyUpgradeModal] = useState(false);
   const [showOrgSettingsModal, setShowOrgSettingsModal] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [showNotificationsDropdown, setShowNotificationsDropdown] =
@@ -91,8 +98,6 @@ const AppLayout = ({ children }) => {
     country: contextUser?.country || "Canada",
     partnerLink: contextUser?.PartnerLink || contextUser?.partnerLink || "",
   });
-
-  const userId = localStorage.getItem("userid") || contextUser?._id;
 
   // Sync with contextUser whenever context updates
   useEffect(() => {
@@ -273,6 +278,7 @@ const AppLayout = ({ children }) => {
       }));
       setEmails(normalized);
       if (setContextEmails) setContextEmails(normalized);
+      setCached(getCacheKey("inbox_threads", userId), normalized);
     } catch (err) {
       console.error("Error fetching recent emails in Layout:", err);
     } finally {
@@ -346,11 +352,15 @@ const AppLayout = ({ children }) => {
     };
   }, [userId]);
 
-  const [userScenarios, setUserScenarios] = useState([]);
-  const [userConnections, setUserConnections] = useState([]);
+  const cachedScenarios = getCached(getCacheKey("scenarios_list", userId));
+  const cachedConnections = getCached(getCacheKey("connections_list", userId));
+  const cachedProfiles = getCached(getCacheKey("company_profiles_list", userId));
+
+  const [userScenarios, setUserScenarios] = useState(cachedScenarios || []);
+  const [userConnections, setUserConnections] = useState(cachedConnections || []);
 
   /* Company profiles, listed individually under AI Replies. */
-  const [companyProfiles, setCompanyProfiles] = useState([]);
+  const [companyProfiles, setCompanyProfiles] = useState(cachedProfiles || []);
 
   useEffect(() => {
     if (!userId) return;
@@ -366,23 +376,31 @@ const AppLayout = ({ children }) => {
             .catch(() => null),
         ]);
 
-        setCompanyProfiles(
-          Array.isArray(profRes?.data?.data) ? profRes.data.data : [],
-        );
+        if (profRes?.data?.data) {
+          const profList = Array.isArray(profRes.data.data) ? profRes.data.data : [];
+          setCompanyProfiles(profList);
+          setCached(getCacheKey("company_profiles_list", userId), profList);
+        }
 
         let scens = Array.isArray(scenRes?.data)
           ? scenRes.data
           : Array.isArray(scenRes?.data?.data)
           ? scenRes.data.data
-          : [];
-        setUserScenarios(scens);
+          : null;
+        if (scens) {
+          setUserScenarios(scens);
+          setCached(getCacheKey("scenarios_list", userId), scens);
+        }
 
         let conns = Array.isArray(connRes?.data)
           ? connRes.data
           : Array.isArray(connRes?.data?.data)
           ? connRes.data.data
-          : [];
-        setUserConnections(conns);
+          : null;
+        if (conns) {
+          setUserConnections(conns);
+          setCached(getCacheKey("connections_list", userId), conns);
+        }
       } catch (err) {
         console.error("Error fetching scenarios/connections for sidebar:", err);
       }
@@ -600,6 +618,12 @@ const AppLayout = ({ children }) => {
       label: "Templates",
       icon: FiFileText,
       path: "/templates",
+    },
+    {
+      id: "docs",
+      label: "Docs",
+      icon: FiBookOpen,
+      path: "/docs",
     },
   ];
   const organizationRoutes = [
@@ -873,7 +897,9 @@ const AppLayout = ({ children }) => {
                 (item.id === "connection" &&
                   location.pathname.startsWith("/connection")) ||
                 (item.id === "templates" &&
-                  location.pathname.startsWith("/templates"));
+                  location.pathname.startsWith("/templates")) ||
+                (item.id === "docs" &&
+                  (location.pathname.startsWith("/docs") || location.pathname.startsWith("/documentation")));
               return (
                 <button
                   key={item.id}
@@ -1538,14 +1564,17 @@ const AppLayout = ({ children }) => {
             </div>
 
             <div className="p-6 flex flex-col gap-4 bg-slate-50">
+              {/* Shopify Scenario Option */}
               <div
                 onClick={() => {
                   setShowCreateScenarioModal(false);
-                  navigate(
-                    canBuildExtraShopifyScenarios
-                      ? "/scenarios/shopify/new"
-                      : "/scenarios/shopify",
-                  );
+                  if (!canBuildExtraShopifyScenarios && shopifyScenariosList.length >= 1) {
+                    setShowShopifyUpgradeModal(true);
+                  } else if (canBuildExtraShopifyScenarios) {
+                    navigate("/scenarios/shopify/new");
+                  } else {
+                    navigate("/scenarios/shopify");
+                  }
                 }}
                 className="p-5 rounded-[8px] bg-white border border-slate-200 hover:border-black transition cursor-pointer shadow-2xs group flex flex-col gap-2"
               >
@@ -1558,19 +1587,47 @@ const AppLayout = ({ children }) => {
                       Shopify Partner Directory Scenario
                     </span>
                   </div>
-                  <span className="px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-[10px] font-bold text-amber-800 shrink-0">
-                    Prebuilt Template
-                  </span>
+                  {canBuildExtraShopifyScenarios ? (
+                    <span className="px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-[10px] font-bold text-emerald-800 shrink-0">
+                      Multi-Scenario Enabled
+                    </span>
+                  ) : shopifyScenariosList.length >= 1 ? (
+                    <span className="px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-[10px] font-bold text-amber-800 shrink-0">
+                      1 of 1 Used (Free Plan)
+                    </span>
+                  ) : (
+                    <span className="px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-[10px] font-bold text-amber-800 shrink-0">
+                      Prebuilt Template
+                    </span>
+                  )}
                 </div>
                 <p className="text-xs text-slate-500 leading-relaxed pl-13">
                   Capture directory inquiry leads automatically and trigger
                   personalized email response flows.
                 </p>
                 <div className="text-[11px] text-slate-400 font-medium pl-13">
-                  Template Type:{" "}
-                  <span className="font-bold text-slate-700">
-                    Prebuilt Lead Capture Flow
-                  </span>
+                  {canBuildExtraShopifyScenarios ? (
+                    <>
+                      Creation Limit:{" "}
+                      <span className="font-bold text-slate-700">
+                        Multi-Scenario Enabled ({subscriptionPlan} Plan)
+                      </span>
+                    </>
+                  ) : shopifyScenariosList.length >= 1 ? (
+                    <>
+                      Free Limit:{" "}
+                      <span className="font-bold text-amber-700">
+                        1 Scenario (Upgrade to Elevate or Unite to build more)
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      Template Type:{" "}
+                      <span className="font-bold text-slate-700">
+                        Prebuilt Lead Capture Flow (1 included on Free)
+                      </span>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -1605,6 +1662,62 @@ const AppLayout = ({ children }) => {
                   </span>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ------------------------------------------------------------- */}
+      {/* MODAL 1B: SHOPIFY SCENARIO UPGRADE PROMPT MODAL */}
+      {/* ------------------------------------------------------------- */}
+      {showShopifyUpgradeModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-[12px] max-w-md w-full p-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in duration-150 relative">
+            <button
+              type="button"
+              onClick={() => setShowShopifyUpgradeModal(false)}
+              className="absolute right-4 top-4 text-slate-400 hover:text-slate-700 transition p-1"
+            >
+              <FiX size={18} />
+            </button>
+
+            <div className="w-11 h-11 rounded-xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center mb-4">
+              <FiZap size={22} />
+            </div>
+
+            <h3 className="text-lg font-bold text-slate-900">
+              Upgrade to Build More Shopify Scenarios
+            </h3>
+
+            <p className="text-xs text-slate-600 mt-2 leading-relaxed">
+              On the <strong className="text-slate-900">Explore (Free)</strong> plan, you have access to <strong className="text-slate-900">1 prebuilt Shopify scenario</strong>, which is already configured in your workspace.
+            </p>
+
+            <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50/60 p-3.5 text-xs text-amber-900 leading-relaxed">
+              Upgrade to <strong className="text-amber-950 font-bold">Elevate ($9.99/mo)</strong> or <strong className="text-amber-950 font-bold">Unite ($14.99/mo)</strong> to unlock <strong>Shopify & Custom Scenarios</strong>, allowing you to build multiple specialized Shopify automation workflows.
+            </div>
+
+            <div className="mt-6 flex items-center justify-end gap-2.5 border-t border-slate-100 pt-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowShopifyUpgradeModal(false);
+                  navigate("/scenarios/shopify");
+                }}
+                className="h-9 rounded-lg border border-slate-300 bg-white px-4 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+              >
+                Open Existing Scenario
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowShopifyUpgradeModal(false);
+                  navigate("/pricing");
+                }}
+                className="h-9 rounded-lg bg-black px-4 text-xs font-bold text-white transition hover:bg-slate-800 shadow-xs cursor-pointer"
+              >
+                Upgrade to Elevate / Unite
+              </button>
             </div>
           </div>
         </div>

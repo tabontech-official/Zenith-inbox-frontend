@@ -8,16 +8,22 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { UserContext } from "../component/UserContext";
 import { BoltIcon, CheckCircle2, Layout, Sparkles, X, Zap } from "lucide-react";
 import { FiZap } from "react-icons/fi";
+import { getCached, setCached, getCacheKey, invalidateCache } from "../utils/appCache";
+import { TableSkeleton } from "../component/Skeletons";
 
 export default function Template() {
   const location = useLocation();
   const { user, setUser: setContextUser } = useContext(UserContext);
+  const targetUserId = localStorage.getItem("userid") || user?._id;
+  const cachedTemplates = getCached(getCacheKey("templates_list", targetUserId));
+
   const plan = user?.subscription?.plan || "free";
   const isPro = plan === "pro";
   const [aiLoadingId, setAiLoadingId] = useState(null);
   const [aiEnabled, setAiEnabled] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const [templates, setTemplates] = useState([]);
+  const [templates, setTemplates] = useState(cachedTemplates || []);
+  const [loading, setLoading] = useState(!cachedTemplates);
   const urlParams = new URLSearchParams(location.search);
 
   // AI Replies toggle — with company profile guard (default OFF)
@@ -91,7 +97,6 @@ export default function Template() {
   const viewType = urlParams.get("view");
   const [filteredTemplates, setFilteredTemplates] = useState([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
 
   const [editingId, setEditingId] = useState(null);
   const [platform, setPlatform] = useState("");
@@ -112,7 +117,9 @@ export default function Template() {
 
   const fetchTemplates = async () => {
     try {
-      setLoading(true);
+      if (templates.length === 0) {
+        setLoading(true);
+      }
       const userId = localStorage.getItem("userid") || user?._id;
       const token = localStorage.getItem("usertoken");
       const res = await axios.get("https://email-syncing-backend.vercel.app/template/all", {
@@ -132,6 +139,7 @@ export default function Template() {
 
       setTemplates(normalized);
       setFilteredTemplates(normalized);
+      setCached(getCacheKey("templates_list", userId), normalized);
 
       /*
        * A ?service= value that matches no template filters the page down to

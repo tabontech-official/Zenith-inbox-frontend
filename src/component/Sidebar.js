@@ -744,9 +744,19 @@ const Sidebar = ({
     }
   };
 
+  const userPlan = user?.subscription?.plan || "Explore";
+  const isPaidPlan = userPlan.toLowerCase() !== "explore";
+
   const handleSelectShopifyScenario = () => {
     setShowScenarioSelectionModal(false);
-    navigate("/scenarios/shopify");
+    if (!isPaidPlan && shopifyScenarioCount >= 1) {
+      setUpgradeReason("shopify");
+      setShowUpgradeModal(true);
+    } else if (isPaidPlan) {
+      navigate("/scenarios/shopify/new");
+    } else {
+      navigate("/scenarios/shopify");
+    }
   };
 
   const handleSelectCustomScenario = () => {
@@ -1684,19 +1694,25 @@ const Sidebar = ({
                         </h3>
                         <span
                           className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
-                            shopifyScenarioCount >= 1
+                            isPaidPlan
+                              ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                              : shopifyScenarioCount >= 1
                               ? "bg-amber-100 text-amber-800 border border-amber-200"
                               : "bg-emerald-100 text-emerald-800 border border-emerald-200"
                           }`}
                         >
-                          {shopifyScenarioCount >= 1 ? "1 of 1 Used (Limit)" : "0 of 1 Used"}
+                          {isPaidPlan
+                            ? "Multi-Scenario"
+                            : shopifyScenarioCount >= 1
+                            ? "1 of 1 Used (Limit)"
+                            : "0 of 1 Used"}
                         </span>
                       </div>
                       <p className="text-xs text-zinc-500 mt-1 leading-relaxed">
                         Capture directory inquiry leads automatically and trigger personalized email response flows.
                       </p>
                       <p className="text-[11px] font-semibold text-zinc-400 mt-2">
-                        Plan Limit: <span className="text-zinc-700">Max 1 scenario</span>
+                        Plan Limit: <span className="text-zinc-700">{isPaidPlan ? `${userPlan} Plan (Multi-Scenario Enabled)` : "1 Prebuilt Scenario (Free Plan)"}</span>
                       </p>
                     </div>
                   </div>
