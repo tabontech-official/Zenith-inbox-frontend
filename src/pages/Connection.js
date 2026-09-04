@@ -1,4 +1,5 @@
 import { apiFetch } from "../utils/apiClient";
+import { connectionBadge, isConnectionUsable } from "../utils/connectionHealth";
 import React, { useState, useEffect, useContext } from "react";
 import AppLayout from "../component/AppLayout";
 import ConnectionModal from "../component/ConnectionModal";
@@ -66,7 +67,13 @@ const ConnectionsPage = () => {
   );
 
   const isVerifiedHook = (hook) => hook.connectionVerified === true;
-  const isVerifiedConn = (conn) => conn.verified === true;
+  /*
+   * A connection that has lost its grant does not belong under
+   * "Verified" — that tab is where someone looks to confirm their
+   * mailboxes are good, which is exactly when a stale badge misleads.
+   */
+  const isVerifiedConn = (conn) =>
+    conn.verified === true && isConnectionUsable(conn);
 
   const visibleMailhooks =
     statusFilter === "verified" ? mailhooks.filter(isVerifiedHook) : mailhooks;
@@ -501,25 +508,51 @@ const ConnectionsPage = () => {
                           </div>
                         </div>
 
-                        {conn.verifying ? (
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-0.5 text-[11px] font-semibold text-blue-700">
-                            <FaSpinner
-                              className="animate-spin text-blue-600"
-                              size={10}
-                            />
-                            Verifying
-                          </span>
-                        ) : conn.verified ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-[#E6F4EA] px-2.5 py-0.5 text-[11px] font-semibold text-[#137333]">
-                            <span className="h-1.5 w-1.5 rounded-full bg-[#34A853]"></span>
-                            Verified
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-semibold text-amber-700">
-                            <span className="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
-                            Unverified
-                          </span>
-                        )}
+                        {/*
+                          `verified` only records that this account
+                          connected once — it is never cleared when the
+                          grant is later revoked. Badging on it alone left
+                          a dead mailbox showing a green "Verified" while
+                          the server refused to run scenarios on it.
+                        */}
+                        {(() => {
+                          const badge = connectionBadge(conn);
+
+                          if (badge.tone === "busy") {
+                            return (
+                              <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-0.5 text-[11px] font-semibold text-blue-700">
+                                <FaSpinner
+                                  className="animate-spin text-blue-600"
+                                  size={10}
+                                />
+                                {badge.label}
+                              </span>
+                            );
+                          }
+
+                          const tones = {
+                            ok: "bg-[#E6F4EA] text-[#137333]",
+                            error: "bg-red-50 text-red-700",
+                            warn: "bg-amber-50 text-amber-700",
+                          };
+                          const dots = {
+                            ok: "bg-[#34A853]",
+                            error: "bg-red-500",
+                            warn: "bg-amber-500",
+                          };
+
+                          return (
+                            <span
+                              title={badge.detail || badge.label}
+                              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${tones[badge.tone]}`}
+                            >
+                              <span
+                                className={`h-1.5 w-1.5 rounded-full ${dots[badge.tone]}`}
+                              ></span>
+                              {badge.label}
+                            </span>
+                          );
+                        })()}
                       </div>
                     </div>
 

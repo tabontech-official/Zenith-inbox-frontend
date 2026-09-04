@@ -1008,7 +1008,7 @@ const OthersScenariosPage = () => {
       : `https://email-syncing-backend.vercel.app/scenario`;
 
     const token = localStorage.getItem("usertoken");
-    await apiFetch(url, {
+    const res = await apiFetch(url, {
       method: id ? "PUT" : "POST",
       headers: {
         "Content-Type": "application/json",
@@ -1016,6 +1016,24 @@ const OthersScenariosPage = () => {
       },
       body: JSON.stringify(payload),
     });
+
+    /*
+     * The server can save the scenario and still refuse to run it — an
+     * expired mailbox sign-in being the usual reason. Reporting "saved"
+     * without checking left the switch reading On over a scenario stored
+     * as Off, which only showed up on the next visit.
+     */
+    const data = await res.json().catch(() => null);
+
+    if (isActive && data?.scenarioActive === false) {
+      setIsActive(false);
+      toast.error(
+        data?.blockers?.[0]?.message ||
+          "Saved, but the scenario could not be activated. Check its inbox and sending accounts.",
+        { duration: 6000 },
+      );
+      return;
+    }
 
     toast.success("Scenario saved!");
     navigate("/scenarios/all");

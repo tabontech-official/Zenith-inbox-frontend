@@ -1,4 +1,5 @@
 import { apiFetch } from "../utils/apiClient";
+import { scenarioBlockReason } from "../utils/connectionHealth";
 // import React, { useEffect, useState } from "react";
 // import { Mail, Clock, Server, Layers, Trash2, X, Workflow } from "lucide-react";
 // import { useNavigate } from "react-router-dom";
@@ -613,6 +614,42 @@ const AllScenariosPage = () => {
     fetchScenarios(Boolean(cachedScenarios));
   }, []);
 
+  /*
+   * The mailboxes behind these scenarios.
+   *
+   * A paused row said "Paused" and nothing else, so a scenario switched
+   * off deliberately and one the server refuses to run looked identical.
+   * The difference is entirely in the connections, so they are loaded here
+   * to name the reason on the row.
+   */
+  const [connections, setConnections] = useState([]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadConnections = async () => {
+      const currentUserId = localStorage.getItem("userid") || userId;
+      if (!currentUserId) return;
+
+      try {
+        const res = await apiFetch(`/auth/getConnection/${currentUserId}`);
+        const data = await res.json();
+        const list = Array.isArray(data) ? data : data?.data || [];
+
+        if (!cancelled) setConnections(list);
+      } catch (error) {
+        /* The list still renders; rows just cannot explain themselves. */
+        console.error("Error fetching connections:", error);
+      }
+    };
+
+    loadConnections();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+
   const { user } = useContext(UserContext);
   const userPlan = user?.subscription?.plan || "Explore";
 
@@ -701,9 +738,16 @@ const AllScenariosPage = () => {
       const data = await res.json();
 
       if (willBeActive && data.scenarioActive === false) {
+        /*
+         * The server now says WHICH step it objected to. An expired
+         * mailbox sign-in is the usual answer, and "complete your
+         * configuration" sent people looking for a setting that was
+         * already filled in.
+         */
         toast.error(
-          "Please complete your scenario configuration first before activating.",
-          { duration: 4500 }
+          data?.blockers?.[0]?.message ||
+            "Please complete your scenario configuration first before activating.",
+          { duration: 6000 }
         );
         if (scenario.type === "shopify") {
           navigate(`/scenarios/shopify/${scenario._id}`);
@@ -1010,12 +1054,18 @@ const AllScenariosPage = () => {
                             */}
                             <StatusDot
                               tone={
-                                scenario.scenarioActive ? "active" : "paused"
+                                scenario.scenarioActive
+                                  ? "active"
+                                  : scenarioBlockReason(scenario, connections)
+                                    ? "paused"
+                                    : "idle"
                               }
                               title={
                                 scenario.scenarioActive
                                   ? "Active — this scenario is running"
-                                  : "Paused — this scenario will not reply"
+                                  : scenarioBlockReason(scenario, connections)
+                                    ? `Cannot activate — ${scenarioBlockReason(scenario, connections)}`
+                                    : "Paused — this scenario will not reply"
                               }
                             />
 
@@ -1046,24 +1096,58 @@ const AllScenariosPage = () => {
                         </td>
 
                         <td className="px-5 py-4">
-                          <button
-                            type="button"
-                            onClick={(event) => handleToggleScenarioStatus(event, scenario)}
-                            className="cursor-pointer transition hover:scale-105 active:scale-95"
-                            title={scenario.scenarioActive ? "Click to deactivate scenario" : "Click to activate scenario"}
-                          >
-                            {scenario.scenarioActive ? (
-                              <span className="inline-flex items-center gap-1.5 rounded-[8px] border border-zinc-300 bg-zinc-900 px-2.5 py-1 text-[10px] font-medium text-white hover:bg-black">
-                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                                Active
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1.5 rounded-[8px] border border-zinc-200 bg-zinc-100 px-2.5 py-1 text-[10px] font-medium text-zinc-600 hover:bg-zinc-200">
-                                <span className="h-1.5 w-1.5 rounded-full bg-zinc-400" />
-                                Paused
-                              </span>
-                            )}
-                          </button>
+                          {(() => {
+                            /*
+                             * Only asked of a paused scenario. A running
+                             * one has nothing to explain, and a scenario
+                             * the user switched off on purpose has no
+                             * fault to report either — blockReason is
+                             * null for both.
+                             */
+                            const blockReason = scenario.scenarioActive
+                              ? null
+                              : scenarioBlockReason(scenario, connections);
+
+                            return (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={(event) => handleToggleScenarioStatus(event, scenario)}
+                                  className="cursor-pointer transition hover:scale-105 active:scale-95"
+                                  title={
+                                    blockReason
+                                      ? `Cannot activate — ${blockReason}`
+                                      : scenario.scenarioActive
+                                        ? "Click to deactivate scenario"
+                                        : "Click to activate scenario"
+                                  }
+                                >
+                                  {scenario.scenarioActive ? (
+                                    <span className="inline-flex items-center gap-1.5 rounded-[8px] border border-zinc-300 bg-zinc-900 px-2.5 py-1 text-[10px] font-medium text-white hover:bg-black">
+                                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                                      Active
+                                    </span>
+                                  ) : blockReason ? (
+                                    <span className="inline-flex items-center gap-1.5 rounded-[8px] border border-red-200 bg-red-50 px-2.5 py-1 text-[10px] font-medium text-red-700 hover:bg-red-100">
+                                      <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
+                                      Needs attention
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1.5 rounded-[8px] border border-zinc-200 bg-zinc-100 px-2.5 py-1 text-[10px] font-medium text-zinc-600 hover:bg-zinc-200">
+                                      <span className="h-1.5 w-1.5 rounded-full bg-zinc-400" />
+                                      Paused
+                                    </span>
+                                  )}
+                                </button>
+
+                                {blockReason && (
+                                  <p className="mt-1 max-w-[220px] text-[10px] leading-snug text-red-600">
+                                    {blockReason}
+                                  </p>
+                                )}
+                              </>
+                            );
+                          })()}
                         </td>
 
                         <td className="whitespace-nowrap px-5 py-4 text-xs text-zinc-500">
@@ -1145,11 +1229,19 @@ const AllScenariosPage = () => {
                     <div className="flex items-start gap-3">
                       {/* Same live/paused light as the table view. */}
                       <StatusDot
-                        tone={scenario.scenarioActive ? "active" : "paused"}
+                        tone={
+                          scenario.scenarioActive
+                            ? "active"
+                            : scenarioBlockReason(scenario, connections)
+                              ? "paused"
+                              : "idle"
+                        }
                         title={
                           scenario.scenarioActive
                             ? "Active — this scenario is running"
-                            : "Paused — this scenario will not reply"
+                            : scenarioBlockReason(scenario, connections)
+                              ? `Cannot activate — ${scenarioBlockReason(scenario, connections)}`
+                              : "Paused — this scenario will not reply"
                         }
                         className="mt-3.5"
                       />
@@ -1197,6 +1289,11 @@ const AllScenariosPage = () => {
                               <PlayCircle className="h-3 w-3 text-zinc-300" />
                               Active
                             </span>
+                          ) : scenarioBlockReason(scenario, connections) ? (
+                            <span className="inline-flex items-center gap-1 rounded-[8px] border border-red-200 bg-red-50 px-2 py-0.5 text-[10px] font-medium text-red-700">
+                              <PauseCircle className="h-3 w-3 text-red-500" />
+                              Needs attention
+                            </span>
                           ) : (
                             <span className="inline-flex items-center gap-1 rounded-[8px] border border-zinc-200 bg-zinc-100 px-2 py-0.5 text-[10px] font-medium text-zinc-600">
                               <PauseCircle className="h-3 w-3 text-zinc-400" />
@@ -1208,6 +1305,13 @@ const AllScenariosPage = () => {
                             {formatDate(scenario.createdAt)}
                           </span>
                         </div>
+
+                        {!scenario.scenarioActive &&
+                          scenarioBlockReason(scenario, connections) && (
+                            <p className="mt-1.5 text-[10px] leading-snug text-red-600">
+                              {scenarioBlockReason(scenario, connections)}
+                            </p>
+                          )}
                       </div>
                     </div>
                   </button>

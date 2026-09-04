@@ -1,4 +1,11 @@
 import { apiFetch } from "../utils/apiClient";
+import {
+  isConnectionUsable,
+  isConnectionUsableById,
+  findConnection,
+  connectionProblem,
+  connectionLabel,
+} from "../utils/connectionHealth";
 import React, { useContext, useEffect, useRef, useState } from "react";
 import {
   Plus,
@@ -19,6 +26,7 @@ import {
   RotateCw,
   ChevronLeft,
   ChevronRight,
+  AlertTriangle,
 } from "lucide-react";
 import { CiLink } from "react-icons/ci";
 
@@ -356,6 +364,34 @@ const ShopifyScenariosPage = () => {
         }
       }
 
+      /*
+       * A revoked mailbox is the one failure the user can act on but
+       * could not see: the account is still listed, so the old check
+       * passed it through and the server silently refused. Name it here
+       * instead of sending a request that is certain to be rejected.
+       */
+      if (brokenConnections.length > 0) {
+        setActivationBlockers(
+          brokenConnections.map(({ id, connection }) => ({
+            code:
+              connection?.status === "reauth_required"
+                ? "reauth_required"
+                : "connection_disconnected",
+            connectionId: id,
+            email: connection?.email || "",
+            provider: connection?.provider || "",
+            status: connection?.status || "missing",
+            message: `${connectionLabel(connection)} cannot be used — ${connectionProblem(connection)}.`,
+          })),
+        );
+
+        toast.error(
+          `${connectionLabel(brokenConnections[0].connection)} cannot be used — ${connectionProblem(brokenConnections[0].connection)}.`,
+          { duration: 6000 },
+        );
+        return;
+      }
+
       if (!isInboxConnected || !isSenderConnected) {
         toast.error(
           "Please complete your scenario configuration first (connect inbox and senders) before activating.",
@@ -467,6 +503,16 @@ const ShopifyScenariosPage = () => {
   const [showMailhookModal, setShowMailhookModal] = useState(false);
   const [incomingLeadsSubjectFilter, setIncomingLeadsSubjectFilter] =
     useState("");
+
+  /*
+   * Why the server refused to activate, surfaced as a banner.
+   *
+   * The server is the authority on whether a scenario may run, and it
+   * rejects connections this page cannot see the state of. Holding its
+   * answer here is what stops the switch from showing On over a scenario
+   * that was actually stored as Off.
+   */
+  const [activationBlockers, setActivationBlockers] = useState([]);
 
   /*
    * The trigger subject for built-in scenarios is set platform-wide by the
@@ -1136,8 +1182,27 @@ const ShopifyScenariosPage = () => {
           setIncomingLeadsSubjectFilter(data.incomingLead.subjectFilter);
       }
 
-      setAutomationOn(activeStatus);
-      if (activeStatus) {
+      /*
+       * The SERVER decides whether this scenario runs, not this page.
+       *
+       * It refuses to activate a scenario whose mailboxes it cannot use —
+       * an expired OAuth grant being the usual reason — and writes false.
+       * Reflecting the requested value here instead of the stored one is
+       * what produced a switch reading On over a scenario that was saved
+       * Off, right up until the next reload put it back.
+       */
+      const serverActive =
+        typeof data?.scenarioActive === "boolean"
+          ? data.scenarioActive
+          : activeStatus;
+
+      const blockers = Array.isArray(data?.blockers) ? data.blockers : [];
+      const wasBlocked = activeStatus && !serverActive;
+
+      setActivationBlockers(wasBlocked ? blockers : []);
+
+      setAutomationOn(serverActive);
+      if (serverActive) {
         localStorage.setItem("scenarioActive", "true");
       } else {
         localStorage.removeItem("scenarioActive");
@@ -1205,8 +1270,23 @@ const ShopifyScenariosPage = () => {
       invalidateCache("scenarios");
       invalidateCache("dashboard");
 
+      if (wasBlocked) {
+        toast.error(
+          blockers[0]?.message ||
+            data?.message ||
+            "Saved, but the scenario could not be activated.",
+          { duration: 6000 },
+        );
+
+        /*
+         * Saved, but NOT activated. resumeWithQueue() reads this to
+         * decide whether releasing a backlog is safe.
+         */
+        return false;
+      }
+
       toast.success(
-        activeStatus
+        serverActive
           ? "Scenario activated successfully!"
           : "Scenario deactivated.",
       );
@@ -2844,7 +2924,9 @@ const ShopifyScenariosPage = () => {
 
   const allSelectedConnectionsVerified =
     selectedConnections.length > 0 &&
-    selectedConnections.every((c) => c.verified === true);
+    selectedConnections.every(
+      (c) => c.verified === true && isConnectionUsable(c),
+    );
 
   const hasTestEmail =
     Boolean(emailFields && Object.keys(emailFields).length > 0) ||
@@ -2924,7 +3006,11 @@ const ShopifyScenariosPage = () => {
       }
 
       case "connections": {
-        const unverified = selectedConnections.filter((c) => !c.verified);
+        /* A revoked grant needs the same attention as a never-verified
+           account — both stop this scenario from running. */
+        const unverified = selectedConnections.filter(
+          (c) => !c.verified || !isConnectionUsable(c),
+        );
 
         if (unverified.length > 0) {
           setUnverifiedConnections(unverified);
@@ -3185,11 +3271,49 @@ const ShopifyScenariosPage = () => {
         )
       : Boolean(
           incomingLeadsConnection &&
-          Array.isArray(connections) &&
-          connections.some(
-            (c) => c._id === incomingLeadsConnection,
-          ),
+          isConnectionUsableById(connections, incomingLeadsConnection),
         );
+
+  /*
+   * The mailboxes this scenario depends on that the server will reject.
+   * Derived rather than stored so it tracks a reconnect immediately.
+   */
+  const brokenConnections = (() => {
+    const ids = new Set();
+
+    if (incomingLeadsAppType !== "Mailhook" && incomingLeadsConnection) {
+      ids.add(incomingLeadsConnection);
+    }
+
+    routerBranches.forEach((branch) =>
+      (branch.modules || []).forEach((m) => {
+        const isDelay =
+          m.type === "Delay" ||
+          m.app?.name === "Delay" ||
+          m.app?.displayName === "Delay" ||
+          Boolean(m.delayValue);
+        if (!isDelay && m.connectionId) ids.add(m.connectionId);
+      }),
+    );
+
+    /* Nothing loaded yet is not the same as nothing healthy. */
+    if (!Array.isArray(connections) || connections.length === 0) return [];
+
+    return [...ids]
+      .map((id) => ({ id, connection: findConnection(connections, id) }))
+      .filter(({ connection }) => !isConnectionUsable(connection));
+  })();
+
+  /*
+   * Derived rather than cleared by an effect: once the account is signed
+   * in again the refreshed connection list makes the warning disappear on
+   * its own, with no stale banner left to dismiss by hand.
+   */
+  const visibleActivationBlockers = activationBlockers.filter((blocker) => {
+    if (!blocker?.connectionId) return true;
+    return !isConnectionUsableById(connections, blocker.connectionId);
+  });
+
   const isTriggerConfirmed = true;
   const isTemplatesReviewed = Boolean(
     selectedTemplate ||
@@ -3209,8 +3333,7 @@ const ShopifyScenariosPage = () => {
         Boolean(m.delayValue);
       const hasValidConnection = Boolean(
         m.connectionId &&
-        Array.isArray(connections) &&
-        connections.some((c) => c._id === m.connectionId),
+        isConnectionUsableById(connections, m.connectionId),
       );
       return !isDelay && !hasValidConnection;
     },
@@ -3227,7 +3350,15 @@ const ShopifyScenariosPage = () => {
       warning: !isInboxConnected
         ? incomingLeadsAppType === "Mailhook"
           ? "Mailhook not verified — confirm forwarding to finish setup"
-          : "Inbox connection missing — select Gmail account"
+          : incomingLeadsConnection
+            ? /* Chosen but unusable — say which, and why. */
+              `${connectionLabel(
+                findConnection(connections, incomingLeadsConnection),
+                "The selected inbox",
+              )} cannot be used — ${connectionProblem(
+                findConnection(connections, incomingLeadsConnection),
+              )}`
+            : "Inbox connection missing — select an account"
         : null,
     },
     {
@@ -3242,9 +3373,16 @@ const ShopifyScenariosPage = () => {
       label: "Connect sender",
       isComplete: isSenderConnected,
       warning: !isSenderConnected
-        ? unconfiguredEmailModulesCount > 0
-          ? `${unconfiguredEmailModulesCount} node${unconfiguredEmailModulesCount > 1 ? "s" : ""} unconfigured`
-          : "No sending account chosen for this step"
+        ? brokenConnections.length > 0
+          ? `${connectionLabel(
+              brokenConnections[0].connection,
+              "The sending account",
+            )} cannot be used — ${connectionProblem(
+              brokenConnections[0].connection,
+            )}`
+          : unconfiguredEmailModulesCount > 0
+            ? `${unconfiguredEmailModulesCount} node${unconfiguredEmailModulesCount > 1 ? "s" : ""} unconfigured`
+            : "No sending account chosen for this step"
         : null,
     },
   ];
@@ -4045,6 +4183,80 @@ const ShopifyScenariosPage = () => {
                 </div>
               </div>
             </div>
+            {/*
+              Why the scenario is not running.
+              Above the canvas, not inside the checklist, because it is the
+              answer to "I switched it on and it went back off" — the one
+              question the page previously had no way to answer.
+            */}
+            {visibleActivationBlockers.length > 0 && (
+              <div
+                role="alert"
+                className="relative z-20 mx-6 mt-4 rounded-xl border border-red-200 bg-red-50 p-4 shadow-2xs"
+              >
+                <div className="flex items-start gap-3">
+                  <AlertTriangle
+                    size={18}
+                    className="mt-0.5 shrink-0 text-red-600"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-red-900">
+                      This scenario could not be activated
+                    </p>
+
+                    <ul className="mt-1.5 space-y-1">
+                      {visibleActivationBlockers.map((blocker, idx) => (
+                        <li
+                          key={`${blocker.code || "blocker"}-${blocker.connectionId || idx}`}
+                          className="text-sm text-red-800"
+                        >
+                          {blocker.message}
+                          {blocker.role ? (
+                            <span className="text-red-700/70">
+                              {" "}
+                              (used by {blocker.role})
+                            </span>
+                          ) : null}
+                        </li>
+                      ))}
+                    </ul>
+
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      {/*
+                        An expired grant cannot be refreshed — the account
+                        has to be signed in again, so offer that directly.
+                      */}
+                      {visibleActivationBlockers.some(
+                        (b) => b.code === "reauth_required",
+                      ) && (
+                        <button
+                          onClick={() => setShowCreateConnectionModal(true)}
+                          className="inline-flex items-center gap-1.5 rounded-full bg-red-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-red-700 transition"
+                        >
+                          Reconnect account
+                        </button>
+                      )}
+
+                      <button
+                        onClick={() => setShowIncomingLeadsModal(true)}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-red-300 bg-white px-3.5 py-1.5 text-xs font-semibold text-red-800 hover:bg-red-50 transition"
+                      >
+                        Review configuration
+                      </button>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => setActivationBlockers([])}
+                    aria-label="Dismiss"
+                    className="shrink-0 rounded-full p-1 text-red-500 hover:bg-red-100 transition"
+                  >
+                    <X size={15} />
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Main Canvas Body */}
             <div className="flex-1 flex flex-col bg-[#FAF8F5] p-6 relative">
               <div className="absolute inset-0 bg-[radial-gradient(#D5D1C8_1px,transparent_1px)] [background-size:16px_16px] opacity-40 pointer-events-none"></div>
@@ -4061,88 +4273,14 @@ const ShopifyScenariosPage = () => {
                   <div className="rounded-[20px] bg-gradient-to-b from-slate-950 via-zinc-900 to-black text-white p-5 border border-slate-800 shadow-xl relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-2xl pointer-events-none"></div>
                     {(() => {
-                      const isInboxConnected = Boolean(
-                        incomingLeadsConnection &&
-                          Array.isArray(connections) &&
-                          connections.some((c) => c._id === incomingLeadsConnection),
-                      );
-                      const isTriggerConfirmed = true;
-                      const isTemplatesReviewed = Boolean(
-                        selectedTemplate ||
-                          (routerBranches &&
-                            routerBranches.some((b) => b.modules?.length > 0)),
-                      );
-
-                      const allModules = routerBranches.flatMap((b) => b.modules || []);
-                      const unconfiguredEmailModulesCount = allModules.filter((m) => {
-                        const isDelay = m.type === "Delay" || m.app?.name === "Delay" || m.app?.displayName === "Delay" || Boolean(m.delayValue);
-                        const hasValidConnection = Boolean(
-                          m.connectionId &&
-                            Array.isArray(connections) &&
-                            connections.some((c) => c._id === m.connectionId),
-                        );
-                        return !isDelay && !hasValidConnection;
-                      }).length;
-
-                      const isSenderConnected = unconfiguredEmailModulesCount === 0 && allModules.length > 0;
-
-                      const checklistSteps = [
-                        {
-                          label: "Connect inbox",
-                          isComplete: isInboxConnected,
-                          warning: !isInboxConnected ? "Inbox connection missing — select Gmail account" : null,
-                        },
-                        {
-                          label: "Confirm trigger filter",
-                          isComplete: isTriggerConfirmed,
-                        },
-                        {
-                          label: "Review templates",
-                          isComplete: isTemplatesReviewed,
-                        },
-                        {
-                          label: "Connect sender",
-                          isComplete: isSenderConnected,
-                          warning: !isSenderConnected
-                            ? unconfiguredEmailModulesCount > 0
-                              ? `${unconfiguredEmailModulesCount} node${unconfiguredEmailModulesCount > 1 ? "s" : ""} unconfigured`
-                              : "Sender connection missing — connect Gmail"
-                            : null,
-                        },
-                      ];
-
-                      const completedCount = checklistSteps.filter(
-                        (s) => s.isComplete,
-                      ).length;
-                      const progressPercent = Math.round(
-                        (completedCount / 4) * 100,
-                      );
-
-                          const handleChecklistStepClick = (label) => {
-                            if (label === "Connect inbox" || label === "Confirm trigger filter") {
-                              setShowIncomingLeadsModal(true);
-                            } else if (label === "Review templates") {
-                              setShowTemplateModal(true);
-                            } else if (label === "Connect sender") {
-                              const unconfiguredMod = allModules.find((m) => {
-                                const isDelay = m.type === "Delay" || m.app?.name === "Delay" || m.app?.displayName === "Delay" || Boolean(m.delayValue);
-                                return !isDelay && !m.connectionId;
-                              });
-
-                              if (unconfiguredMod) {
-                                setSelectedApp(unconfiguredMod.app || { name: "Gmail", displayName: "Initial Email" });
-                                setSelectedAppType(unconfiguredMod.emailType || "Gmail");
-                                setEditingModuleId(unconfiguredMod.id);
-                                setSelectedConnection("");
-                                setOpen(true);
-                              } else if (!incomingLeadsConnection) {
-                                setShowIncomingLeadsModal(true);
-                              } else {
-                                setShowCreateConnectionModal(true);
-                              }
-                            }
-                          };
-
+                          /*
+                           * Reads the checklist computed once at the top of
+                           * this component. It used to recompute its own
+                           * copy here, which shadowed the outer one and
+                           * quietly drifted from it — the panel kept
+                           * showing a connection as fine after the shared
+                           * check learned to reject expired sign-ins.
+                           */
                           return (
                             <>
                               <div className="flex items-center justify-between relative z-10">
@@ -4282,14 +4420,34 @@ const ShopifyScenariosPage = () => {
                       const activeHook = mailhooks.find(
                         (m) => m._id === incomingLeadsMailhook,
                       );
-                      const isIncConfigured = isMailhookTrigger
+                      /*
+                       * "A mailbox is selected" and "that mailbox still
+                       * works" are different questions, and this card used
+                       * to ask only the first — so a revoked Microsoft
+                       * grant kept a green dot and "Listening for leads"
+                       * over a trigger the server would not run.
+                       */
+                      const isIncSelected = isMailhookTrigger
                         ? Boolean(activeHook?.connectionVerified)
                         : Boolean(incomingLeadsConnection && activeConn);
+
+                      const isIncBroken =
+                        !isMailhookTrigger &&
+                        Boolean(incomingLeadsConnection) &&
+                        Array.isArray(connections) &&
+                        connections.length > 0 &&
+                        !isConnectionUsable(activeConn);
+
+                      const isIncConfigured = isIncSelected && !isIncBroken;
                       return (
                         <div
                           onClick={() => setShowIncomingLeadsModal(true)}
                           className={`w-64 shrink-0 cursor-pointer rounded-[20px] border ${
-                            isIncConfigured ? "border-[#EBE8E1] bg-white" : "border-[#FDE68A] bg-white"
+                            isIncBroken
+                              ? "border-red-300 bg-white"
+                              : isIncConfigured
+                                ? "border-[#EBE8E1] bg-white"
+                                : "border-[#FDE68A] bg-white"
                           } p-5 shadow-2xs hover:shadow-md transition relative`}
                         >
                           <div className="flex items-center justify-between">
@@ -4302,11 +4460,19 @@ const ShopifyScenariosPage = () => {
                               </span>
                             </div>
                             <StatusDot
-                              tone={isIncConfigured ? "active" : "pending"}
+                              tone={
+                                isIncBroken
+                                  ? "paused"
+                                  : isIncConfigured
+                                    ? "active"
+                                    : "pending"
+                              }
                               title={
-                                isIncConfigured
-                                  ? "Trigger configured and listening"
-                                  : "Trigger not configured yet"
+                                isIncBroken
+                                  ? `${connectionLabel(activeConn)} cannot be used — ${connectionProblem(activeConn)}`
+                                  : isIncConfigured
+                                    ? "Trigger configured and listening"
+                                    : "Trigger not configured yet"
                               }
                             />
                           </div>
@@ -4344,7 +4510,13 @@ const ShopifyScenariosPage = () => {
                           </div>
 
                           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center gap-1 text-xs font-semibold">
-                            {isIncConfigured ? (
+                            {isIncBroken ? (
+                              <span className="text-red-700 font-bold">
+                                {activeConn?.status === "reauth_required"
+                                  ? "⚠️ Sign-in expired — reconnect"
+                                  : "⚠️ Mailbox disconnected"}
+                              </span>
+                            ) : isIncConfigured ? (
                               <span className="text-[#137333]">
                                 ✓ Listening for leads
                               </span>
@@ -6866,6 +7038,16 @@ const ShopifyScenariosPage = () => {
                             <span className="animate-spin h-4 w-4 border-t-2 border-blue-600 rounded-full"></span>
                             Verifying...
                           </div>
+                        ) : !isConnectionUsable(conn) ? (
+                          /* Connected once, but the grant is gone now. */
+                          <span
+                            title={connectionProblem(conn)}
+                            className="text-red-600 text-sm font-semibold flex items-center gap-1"
+                          >
+                            {conn.status === "reauth_required"
+                              ? "Sign-in expired"
+                              : "Disconnected"}
+                          </span>
                         ) : conn.verified ? (
                           <span className="text-green-600 text-sm font-semibold flex items-center gap-1">
                             Verified

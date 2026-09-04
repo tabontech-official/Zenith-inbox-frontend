@@ -9,6 +9,7 @@ import {
   FiMail,
 } from "react-icons/fi";
 import axios from "axios";
+import ConnectionHealthBanner from "../component/ConnectionHealthBanner";
 import { UserContext } from "../component/UserContext";
 import { getCached, setCached, getCacheKey } from "../utils/appCache";
 import { DashboardSkeleton } from "../component/Skeletons";
@@ -177,6 +178,14 @@ const Organization = () => {
             {user?.organizationName || user?.companyName || "My Organization"}
           </h1>
         </div>
+
+        {/*
+          Above the stat cards on purpose. A mailbox that has lost its
+          sign-in stops every scenario using it, and the numbers below —
+          "0 lead inquiries", "0 active scenarios" — are the symptom. This
+          is the explanation, so it has to be read first.
+        */}
+        <ConnectionHealthBanner />
 
         {/* ----------------------------------------------------------- */}
         {/* 4 STAT METRIC CARDS ROW */}
