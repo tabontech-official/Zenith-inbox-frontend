@@ -24,6 +24,8 @@ import CompanyProfile from "./pages/CompanyProfile";
 import AdminAIConfig from "./Admin/AdminAIConfig";
 import AdminScenarioTriggers from "./Admin/AdminScenarioTriggers";
 import AdminPlatformEmail from "./Admin/AdminPlatformEmail";
+import AdminMcpTokens from "./Admin/AdminMcpTokens";
+import McpAuthorize from "./Admin/McpAuthorize";
 import ResetPassword from "./Auth/ResetPassword";
 import ForgotPassword from "./Auth/ForgotPassword";
 import LoginVerify from "./Auth/LoginVerify";
@@ -552,6 +554,22 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/admin/mcp-connector"
+            element={
+              <ProtectedRoute adminOnly={true}>
+                <AdminMcpTokens />
+              </ProtectedRoute>
+            }
+          />
+          {/*
+            Deliberately NOT behind ProtectedRoute. Claude sends the browser
+            here mid-OAuth; the guard would bounce a signed-out visitor to
+            /login with no memory of the pending request and strand the
+            flow. The page checks the session itself and returns here after
+            sign-in, and the server enforces admin on approval regardless.
+          */}
+          <Route path="/admin/mcp-connector/authorize" element={<McpAuthorize />} />
         </Routes>
 
         {/*

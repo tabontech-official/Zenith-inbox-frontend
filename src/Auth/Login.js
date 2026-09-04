@@ -33,7 +33,25 @@ const LoginPage = () => {
     const setupCompleted = data?.setup?.setupCompleted === true;
     const steps = data?.setup?.steps || [];
 
+    /*
+     * A pending MCP connector authorization takes precedence over the
+     * usual landing page. Claude has sent the user here mid-flow and is
+     * waiting on a callback; dropping them at the dashboard would strand
+     * that request with no way back to it.
+     */
+    let pending = null;
+    try {
+      pending = sessionStorage.getItem("mcpOAuthReturn");
+      if (pending) sessionStorage.removeItem("mcpOAuthReturn");
+    } catch {
+      /* private mode — fall through to the normal redirect */
+    }
+
     setTimeout(() => {
+      if (pending && userRole === "admin") {
+        navigate(pending, { replace: true });
+        return;
+      }
       if (userRole === "admin") {
         navigate("/admin/dashboard", { replace: true });
         return;

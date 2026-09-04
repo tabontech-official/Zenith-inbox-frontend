@@ -22,6 +22,7 @@ import {
   FiUserCheck,
   FiArchive,
   FiFilter,
+  FiKey,
 } from "react-icons/fi";
 import { UserContext } from "../component/UserContext";
 
@@ -48,6 +49,7 @@ const NAV_SAAS = [
   { label: "Plans & Pricing", path: "/admin/plans", icon: FiLayers },
   { label: "Stripe Vault", path: "/admin/stripe", icon: FiCreditCard },
   { label: "Platform Email", path: "/admin/platform-email", icon: FiMail },
+  { label: "MCP Connector", path: "/admin/mcp-connector", icon: FiKey },
   { label: "Audit Logs", path: "/admin/audit-logs", icon: FiList },
 ];
 

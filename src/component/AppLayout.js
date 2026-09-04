@@ -1464,6 +1464,29 @@ const AppLayout = ({ children }) => {
               )}
             </div>
 
+            {/*
+              Master admin shortcut.
+
+              The admin panel has always had "Return to User App"; this is
+              the missing other half. Without it the only way into the
+              platform admin from here was to type /admin/dashboard by hand.
+
+              It sits in the header rather than inside the avatar menu so it
+              is genuinely one click, and it is rendered only for admins —
+              for everyone else the route would just bounce them back.
+            */}
+            {user?.role === "admin" && (
+              <button
+                type="button"
+                onClick={() => navigate("/admin/dashboard")}
+                title="Go to the master admin panel"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition"
+              >
+                <FiShield size={11} />
+                <span className="hidden sm:inline">Master Admin</span>
+              </button>
+            )}
+
             {/* User Profile Avatar Dropdown */}
             <div className="relative">
               <div
