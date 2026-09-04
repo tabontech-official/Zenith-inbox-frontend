@@ -37,7 +37,30 @@ import toast from "react-hot-toast";
 */
 
 const TOKENS_URL = "/mcp/tokens";
-const MCP_ENDPOINT = `${API_BASE_URL}/mcp`;
+
+/*
+|--------------------------------------------------------------------------
+| The URL a connector is given
+|--------------------------------------------------------------------------
+|
+| NOT the raw backend host. Claude derives the connector's identity, and
+| the OAuth issuer it will trust, from the origin it was handed — so the
+| address shown here has to be the public one, replexengine.com, not
+| email-syncing-backend.vercel.app.
+|
+| Both /mcp and the OAuth discovery documents are proxied onto this origin
+| by the rewrites in vercel.json, so the app's own origin IS the connector
+| address in production. Deriving it from window.location rather than from
+| API_BASE_URL keeps the two in step automatically if the domain changes.
+|
+| REACT_APP_MCP_URL overrides it for local development, where localhost has
+| no such proxy in front of it.
+*/
+const MCP_ENDPOINT =
+  process.env.REACT_APP_MCP_URL ||
+  (typeof window !== "undefined"
+    ? `${window.location.origin}/mcp`
+    : `${API_BASE_URL}/mcp`);
 
 /*
  * Deep link that opens Claude with the "add custom connector" dialog

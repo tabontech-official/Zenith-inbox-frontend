@@ -1,0 +1,30 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    { "source": "/mcp", "destination": "https://email-syncing-backend.vercel.app/mcp" },
+    { "source": "/mcp/:path*", "destination": "https://email-syncing-backend.vercel.app/mcp/:path*" },
+
+    {
+      "source": "/.well-known/oauth-protected-resource",
+      "destination": "https://email-syncing-backend.vercel.app/.well-known/oauth-protected-resource"
+    },
+    {
+      "source": "/.well-known/oauth-protected-resource/:path*",
+      "destination": "https://email-syncing-backend.vercel.app/.well-known/oauth-protected-resource/:path*"
+    },
+    {
+      "source": "/.well-known/oauth-authorization-server",
+      "destination": "https://email-syncing-backend.vercel.app/.well-known/oauth-authorization-server"
+    },
+    {
+      "source": "/.well-known/oauth-authorization-server/:path*",
+      "destination": "https://email-syncing-backend.vercel.app/.well-known/oauth-authorization-server/:path*"
+    },
+    {
+      "source": "/.well-known/openid-configuration",
+      "destination": "https://email-syncing-backend.vercel.app/.well-known/openid-configuration"
+    },
+
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
