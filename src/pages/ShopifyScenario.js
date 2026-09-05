@@ -3673,9 +3673,36 @@ const ShopifyScenariosPage = () => {
                             {log.scenarioName || "Shopify Scenario"}
                           </div>
                           <div className="px-5 py-3">
-                            <span className="flex w-fit items-center gap-1.5 rounded-md border border-[#C7D2FE] bg-[#EEF2FF] px-2 py-1 text-xs font-medium text-[#5B5FD6]">
-                              <Zap size={10} className="text-[#5B5FD6]" />
-                              Instant
+                            {/*
+                             * TEST vs LIVE, because one Send Test Lead
+                             * writes BOTH and they say different things.
+                             *
+                             * RunTestMode writes a `test` row — validation
+                             * and bookkeeping, including a template lookup
+                             * of its own. executeScenarios writes a `live`
+                             * row, and that is the one that chose the
+                             * template and sent the reply.
+                             *
+                             * Unlabelled, the test row's "Template Check:
+                             * Site performance and speed" reads as proof
+                             * the right template went out, while the live
+                             * row beside it recorded General. Both rows
+                             * were honest; the screen was not.
+                             */}
+                            <span
+                              className={`flex w-fit items-center gap-1.5 rounded-md border px-2 py-1 text-xs font-medium ${
+                                log.runType === "live"
+                                  ? "border-[#C7D2FE] bg-[#EEF2FF] text-[#5B5FD6]"
+                                  : "border-slate-200 bg-slate-50 text-slate-600"
+                              }`}
+                              title={
+                                log.runType === "live"
+                                  ? "The run that chose the template and sent the reply."
+                                  : "Send Test validation and bookkeeping. This run does not send the reply — the LIVE row does."
+                              }
+                            >
+                              <Zap size={10} />
+                              {log.runType === "live" ? "Live — sent" : "Test — checks only"}
                             </span>
                           </div>
                           <div className="px-5 py-3">
