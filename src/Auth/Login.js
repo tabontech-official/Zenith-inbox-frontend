@@ -8,6 +8,25 @@ import { UserContext } from "../component/UserContext";
 import { AnimatePresence, motion } from "framer-motion";
 import { GoogleLogin } from "@react-oauth/google";
 
+/*
+ * The reason the server actually gave.
+ *
+ * This screen read only `data.error`, but not every failure uses that
+ * key: the database-readiness guard answers 503 with `{ success, message }`.
+ * With no `error` field the UI fell through to "Login failed. Please try
+ * again." — which reads as "your password is wrong" for what is really
+ * "the server could not reach its database for a moment". Users retried,
+ * it worked the second time, and the message had told them nothing.
+ *
+ * A missing response at all (network, CORS, abort) still gets the
+ * caller's generic fallback, because there is nothing better to say.
+ */
+const authErrorMessage = (err, fallback) => {
+  const data = err?.response?.data;
+  if (!data) return fallback;
+  return data.error || data.message || fallback;
+};
+
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
@@ -87,7 +106,7 @@ const LoginPage = () => {
       }
     } catch (err) {
       setLoading(false);
-      setError(err.response?.data?.error || "Google authentication failed.");
+      setError(authErrorMessage(err, "Google authentication failed."));
     }
   };
 
@@ -144,7 +163,7 @@ const LoginPage = () => {
       }
     } catch (err) {
       setLoading(false);
-      setError(err.response?.data?.error || "Login failed. Please try again.");
+      setError(authErrorMessage(err, "Login failed. Please try again."));
     }
   };
 
