@@ -439,7 +439,11 @@ const ShopifyScenariosPage = () => {
   const [isAutoSaving, setIsAutoSaving] = useState(false);
   const [lastSavedTime, setLastSavedTime] = useState(null);
   const [templateList, setTemplateList] = useState([]);
-  const [loadingTemplates, setLoadingTemplates] = useState(false);
+  /*
+   * True from the start: a fetch is kicked off on mount, so the very
+   * first paint is already "loading", not "none found".
+   */
+  const [loadingTemplates, setLoadingTemplates] = useState(true);
   const [selectedServiceForTemplates, setSelectedServiceForTemplates] =
     useState("");
 
@@ -720,13 +724,20 @@ const ShopifyScenariosPage = () => {
   const templateScopeLabel = selectedServiceForTemplates || "General";
 
   const templateSummary =
-    templateSetSize === 0
-      ? "No templates found"
-      : activeTemplateCount === 0
-        ? `No ${templateScopeLabel} templates active`
-        : activeTemplateCount === templateSetSize
-          ? `All ${templateScopeLabel} templates active (${activeTemplateCount} of ${templateSetSize})`
-          : `${activeTemplateCount} of ${templateSetSize} ${templateScopeLabel} templates active`;
+    /*
+     * loadingTemplates matters here: templateList starts empty, so an
+     * account with three active templates read "No templates found"
+     * until the fetch returned.
+     */
+    loadingTemplates && templateSetSize === 0
+      ? "Loading templates…"
+      : templateSetSize === 0
+        ? "No templates found"
+        : activeTemplateCount === 0
+          ? `No ${templateScopeLabel} templates active`
+          : activeTemplateCount === templateSetSize
+            ? `All ${templateScopeLabel} templates active (${activeTemplateCount} of ${templateSetSize})`
+            : `${activeTemplateCount} of ${templateSetSize} ${templateScopeLabel} templates active`;
 
   const lastTemplateEdit = (() => {
     const stamps = templateList
@@ -793,6 +804,28 @@ const ShopifyScenariosPage = () => {
   const [isEditingName, setIsEditingName] = useState(false);
   const [scenarioDescription, setScenarioDescription] = useState("");
   const [loading, setLoading] = useState(true);
+
+  /*
+   |--------------------------------------------------------------------
+   | Do not judge the scenario before its data has arrived
+   |--------------------------------------------------------------------
+   |
+   | Every card decides whether it is configured by looking at state that
+   | starts EMPTY: connections [], mailhooks [], templates [], and a
+   | scenario that has not been fetched. So on first paint the page
+   | confidently reported "No mailbox selected", "No templates found",
+   | "The mailbox this step uses is no longer available", and a setup
+   | checklist reading 2 of 4 — about an account that is fully configured.
+   | A second later the fetches landed and it all corrected itself.
+   |
+   | That is not a slow page; it is a page answering a question it cannot
+   | answer yet. Nothing renders a verdict until the data behind it is in.
+   */
+  const [connectionsLoaded, setConnectionsLoaded] = useState(false);
+  const [mailhooksLoaded, setMailhooksLoaded] = useState(false);
+  const [scenarioLoaded, setScenarioLoaded] = useState(false);
+
+  const canvasReady = connectionsLoaded && mailhooksLoaded && scenarioLoaded;
   const [copied, setCopied] = useState(false);
   const { user, timeZone: accountTimeZone } = useContext(UserContext);
   const [showOutlookModal, setShowOutlookModal] = useState(false);
@@ -907,7 +940,11 @@ const ShopifyScenariosPage = () => {
     try {
       const token = localStorage.getItem("usertoken");
       const userId = localStorage.getItem("userid");
-      if (!userId) return;
+      if (!userId) {
+        /* No user to load for — the answer is in, and it is "none". */
+        setConnectionsLoaded(true);
+        return;
+      }
       const res = await apiFetch(
         `https://email-syncing-backend.vercel.app/auth/getConnection/${userId}`,
         { headers: { Authorization: `Bearer ${token}` } },
@@ -923,6 +960,13 @@ const ShopifyScenariosPage = () => {
     } catch (err) {
       console.error("Error fetching connections:", err);
       setConnections([]);
+    } finally {
+      /*
+       * Loaded means "we asked and the answer is in", including when the
+       * answer was an error. Otherwise a failed fetch would leave the
+       * canvas in a permanent skeleton.
+       */
+      setConnectionsLoaded(true);
     }
   };
 
@@ -933,7 +977,10 @@ const ShopifyScenariosPage = () => {
   const fetchMailhooks = async () => {
     try {
       const userId = localStorage.getItem("userid");
-      if (!userId) return;
+      if (!userId) {
+        setMailhooksLoaded(true);
+        return;
+      }
 
       const res = await apiFetch(
         `https://email-syncing-backend.vercel.app/mailhookcard/${userId}`,
@@ -943,6 +990,8 @@ const ShopifyScenariosPage = () => {
     } catch (err) {
       console.error("Error fetching mailhooks:", err);
       setMailhooks([]);
+    } finally {
+      setMailhooksLoaded(true);
     }
   };
 
@@ -1647,6 +1696,8 @@ const ShopifyScenariosPage = () => {
         }
       } catch (err) {
         console.error("Error fetching/creating scenario:", err);
+      } finally {
+        setScenarioLoaded(true);
       }
     };
 
@@ -3589,7 +3640,14 @@ const ShopifyScenariosPage = () => {
   const checklistComplete = completedCount === checklistSteps.length;
 
   /* Collapsed unless something is outstanding, or the user opened it. */
-  const showChecklistPanel = !checklistComplete || checklistExpanded;
+  /*
+   * The checklist accuses the user of missing setup, so it must not
+   * appear until the data proving that has actually loaded. It used to
+   * flash "2 of 4 complete — Connect inbox" at accounts with a working
+   * inbox, purely because the connections fetch had not returned.
+   */
+  const showChecklistPanel =
+    canvasReady && (!checklistComplete || checklistExpanded);
 
   return (
     <AppLayout>
@@ -4218,8 +4276,18 @@ const ShopifyScenariosPage = () => {
         ) : (
           <>
             {/* Top Header Bar */}
-            <div className="sticky top-0 z-30 border-b border-[#EBE8E1] bg-[#FAF8F5] px-6 py-3.5">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            {/*
+             * shrink-0 so the header keeps its height.
+             *
+             * The page root is a flex column that scrolls. A flex item
+             * defaults to min-height:auto but will still be compressed by
+             * a taller sibling, which is how the action buttons ended up
+             * sliced off along their top edge. shrink-0 holds the row at
+             * its natural height; flex-wrap lets the buttons drop to a
+             * second line on a narrow window rather than overflow.
+             */}
+            <div className="sticky top-0 z-30 shrink-0 border-b border-[#EBE8E1] bg-[#FAF8F5] px-6 py-3.5">
+              <div className="flex flex-col flex-wrap gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-semibold text-slate-400">
@@ -4349,7 +4417,7 @@ const ShopifyScenariosPage = () => {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 shrink-0">
+                <div className="flex flex-wrap items-center gap-3 shrink-0">
                   <button
                     onClick={() => {
                       setHistoryViewMode("table");
@@ -4630,11 +4698,20 @@ const ShopifyScenariosPage = () => {
                        * grant kept a green dot and "Listening for leads"
                        * over a trigger the server would not run.
                        */
-                      const isIncSelected = isMailhookTrigger
-                        ? Boolean(activeHook?.connectionVerified)
-                        : Boolean(incomingLeadsConnection && activeConn);
+                      /*
+                       * Both verdicts are computed from lists that start
+                       * empty, so before the fetches land they say "not
+                       * selected" and "broken" about a working mailbox.
+                       * Until the data is in, the card reports neither.
+                       */
+                      const isIncSelected =
+                        canvasReady &&
+                        (isMailhookTrigger
+                          ? Boolean(activeHook?.connectionVerified)
+                          : Boolean(incomingLeadsConnection && activeConn));
 
                       const isIncBroken =
+                        canvasReady &&
                         !isMailhookTrigger &&
                         Boolean(incomingLeadsConnection) &&
                         Array.isArray(connections) &&
@@ -4648,7 +4725,7 @@ const ShopifyScenariosPage = () => {
                           className={`w-64 shrink-0 cursor-pointer rounded-[20px] border ${
                             isIncBroken
                               ? "border-red-300 bg-white"
-                              : isIncConfigured
+                              : !canvasReady || isIncConfigured
                                 ? "border-[#EBE8E1] bg-white"
                                 : "border-[#FDE68A] bg-white"
                           } p-5 shadow-2xs hover:shadow-md transition relative`}
@@ -4692,13 +4769,15 @@ const ShopifyScenariosPage = () => {
 
                           <div className="mt-4 space-y-1.5 text-xs text-slate-500">
                             <p className="truncate font-medium text-slate-800">
-                              {isMailhookTrigger
-                                ? activeHook
-                                  ? `Mailhook · ${activeHook.address || activeHook.name}`
-                                  : "Mailhook · not selected"
-                                : activeConn
-                                  ? `${providerLabel(activeConn.provider)} · ${activeConn.email}`
-                                  : "No mailbox selected"}
+                              {!canvasReady
+                                ? "Loading mailbox…"
+                                : isMailhookTrigger
+                                  ? activeHook
+                                    ? `Mailhook · ${activeHook.address || activeHook.name}`
+                                    : "Mailhook · not selected"
+                                  : activeConn
+                                    ? `${providerLabel(activeConn.provider)} · ${activeConn.email}`
+                                    : "No mailbox selected"}
                             </p>
                             {/*
                               The subject the backend actually matches on,
@@ -4723,7 +4802,9 @@ const ShopifyScenariosPage = () => {
                           </div>
 
                           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center gap-1 text-xs font-semibold">
-                            {isIncBroken ? (
+                            {!canvasReady ? (
+                              <span className="text-slate-400">Checking…</span>
+                            ) : isIncBroken ? (
                               <span className="text-red-700 font-bold">
                                 {activeConn?.status === "reauth_required"
                                   ? "⚠️ Sign-in expired — reconnect"
@@ -4939,7 +5020,8 @@ const ShopifyScenariosPage = () => {
                             setOpen(true);
                           }}
                           className={`w-64 shrink-0 cursor-pointer rounded-[20px] border ${
-                            isSaved
+                            /* Neutral, not amber, until we know. */
+                            !canvasReady || isSaved
                               ? "border-[#EBE8E1] bg-white"
                               : "border-[#FDE68A] bg-white"
                           } p-5 shadow-2xs hover:shadow-md transition relative`}
@@ -4954,16 +5036,34 @@ const ShopifyScenariosPage = () => {
                               </span>
                             </div>
                             <StatusDot
-                              tone={isSaved ? "active" : "pending"}
+                              tone={
+                                !canvasReady
+                                  ? "idle"
+                                  : isSaved
+                                    ? "active"
+                                    : "pending"
+                              }
                               title={
-                                isSaved
-                                  ? "Sending from a connected mailbox"
-                                  : "No sending mailbox chosen yet"
+                                !canvasReady
+                                  ? "Loading"
+                                  : isSaved
+                                    ? "Sending from a connected mailbox"
+                                    : "No sending mailbox chosen yet"
                               }
                             />
                           </div>
 
-                          {isSaved ? (
+                          {!canvasReady ? (
+                            /*
+                             * isSaved needs both the scenario's modules and
+                             * the connections list. Before either arrives it
+                             * is false, and the card accused a working setup
+                             * of having lost its mailbox.
+                             */
+                            <div className="mt-4 text-xs text-slate-400">
+                              Loading sender…
+                            </div>
+                          ) : isSaved ? (
                             <>
                               <div className="mt-4 space-y-1 text-xs text-slate-500">
                                 <p className="font-semibold text-slate-800">
