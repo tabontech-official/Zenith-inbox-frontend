@@ -785,6 +785,13 @@ const ShopifyScenariosPage = () => {
   const [showInactiveTemplateConfirm, setShowInactiveTemplateConfirm] =
     useState(false);
   const [inactiveTemplateService, setInactiveTemplateService] = useState("");
+
+  /*
+   * True when General has no active Initial Email either, so continuing
+   * sends nothing at all. That is a different situation from falling back
+   * to General, and the modal used to describe both as the same thing.
+   */
+  const [nothingWillBeSent, setNothingWillBeSent] = useState(false);
   const savedShopifyState = localStorage.getItem("shopifyScenarioState");
   const [scenarioHistory, setScenarioHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -2374,61 +2381,64 @@ const ShopifyScenariosPage = () => {
 
     try {
       const userId = localStorage.getItem("userid");
+
+      /*
+       * Ask the server, do not decide here.
+       *
+       * This used to fetch every template for the service and apply its
+       * own predicate — `allTemplates.some((t) => !t.active)`. The engine
+       * asks a different question (this service's template for THIS step,
+       * active), so the two drifted: activating a service's Initial Email
+       * left the warning on screen, and the warning promised a fallback
+       * to General that was not going to happen.
+       *
+       * /template/resolution runs the engine's own resolver
+       * (utils/templateSelection.js), which is the same call the send path
+       * makes. The modal and the reply cannot disagree any more, because
+       * there is only one answer.
+       *
+       * Send Test sends the initial email and nothing else, so that is the
+       * step asked about; the follow-ups do not affect this run.
+       */
       const res = await apiFetch(
-        `https://email-syncing-backend.vercel.app/template/alltemplates/query?userId=${userId}&service=${encodeURIComponent(
+        `https://email-syncing-backend.vercel.app/template/resolution?userId=${userId}&service=${encodeURIComponent(
           service,
-        )}`,
+        )}&stepType=initial`,
       );
       const data = await res.json();
 
       if (!data.success) {
-        toast.error("Failed to fetch templates for this service.");
+        toast.error("Failed to check template status for this service.");
         return;
       }
 
-      const allTemplates = data.data || [];
-
       /*
-       * Ask the question the server will actually ask.
-       *
-       * "Send Test Lead" sends the INITIAL email and nothing else — every
-       * template lookup in RunTestMode matches /initial/i, and the
-       * follow-ups are not part of a test run. So the only template that
-       * can be used here is this service's Initial Email, and it is the
-       * only one whose active flag can decide whether General is
-       * substituted.
-       *
-       * This used to be `allTemplates.some((t) => !t.active)`, which
-       * warned when ANY of the service's three templates was inactive.
-       * Activating the Initial Email alone therefore never cleared the
-       * warning — the untouched First and Second kept it on screen, and
-       * the only way to silence it was to activate all three, for every
-       * service. The message was wrong twice over: the reply was not
-       * going to fall back to General at all.
-       *
-       * Matching on the name mirrors the server's own selection
-       * (service + /initial/i + active: true), so the two cannot disagree.
+       * Two distinct outcomes, and they are not the same warning:
+       *   fallbackToGeneral - the service has nothing active, General answers
+       *   !willUseTemplate  - General is inactive too, so NOTHING is sent
        */
-      const initialTemplate = allTemplates.find((t) =>
-        /initial/i.test(t.name || ""),
-      );
-
-      const willFallBackToGeneral = !initialTemplate || !initialTemplate.active;
+      const willFallBackToGeneral =
+        data.fallbackToGeneral || !data.willUseTemplate;
 
       if (willFallBackToGeneral && !skipInactiveTemplateCheck) {
-        setTemplateList(allTemplates);
         setSelectedServiceForTemplates(service);
         setInactiveTemplateService(service);
+        setNothingWillBeSent(!data.willUseTemplate);
         setShowInactiveTemplateConfirm(true);
 
-        toast.error(`${service} — Initial Email template is not active.`, {
-          duration: 5000,
-          style: {
-            background: "#fff0f0",
-            color: "#b91c1c",
-            border: "1px solid #fca5a5",
+        toast.error(
+          data.willUseTemplate
+            ? `${service} — Initial Email template is not active.`
+            : `No active Initial Email template for ${service} or General.`,
+          {
+            duration: 5000,
+            style: {
+              background: "#fff0f0",
+              color: "#b91c1c",
+              border: "1px solid #fca5a5",
+            },
           },
-        });
+        );
 
         return;
       }
@@ -7233,11 +7243,14 @@ const ShopifyScenariosPage = () => {
 
                 <div>
                   <h2 className="text-lg font-bold text-slate-800">
-                    Initial Email template is inactive
+                    {nothingWillBeSent
+                      ? "No active Initial Email template"
+                      : "Initial Email template is inactive"}
                   </h2>
                   <p className="mt-1 text-sm text-slate-500">
-                    This test sends the Initial Email, and this service does
-                    not have an active one.
+                    {nothingWillBeSent
+                      ? "This test sends the Initial Email, and neither this service nor General has an active one."
+                      : "This test sends the Initial Email, and this service does not have an active one."}
                   </p>
                 </div>
               </div>
@@ -7245,21 +7258,36 @@ const ShopifyScenariosPage = () => {
 
             <div className="space-y-4 px-6 py-5">
               <div className="rounded-xl border border-[#E0E7FF] bg-[#F8FAFF] p-4">
-                <p className="text-sm leading-relaxed text-slate-700">
-                  The{" "}
-                  <b className="font-semibold text-slate-900">
-                    Initial Email
-                  </b>{" "}
-                  template for{" "}
-                  <b className="font-semibold text-slate-900">
-                    {inactiveTemplateService}
-                  </b>{" "}
-                  is inactive, so this test will use your{" "}
-                  <b className="font-semibold text-[#7375E8]">
-                    General Initial Email
-                  </b>{" "}
-                  instead.
-                </p>
+                {nothingWillBeSent ? (
+                  <p className="text-sm leading-relaxed text-slate-700">
+                    Neither{" "}
+                    <b className="font-semibold text-slate-900">
+                      {inactiveTemplateService}
+                    </b>{" "}
+                    nor{" "}
+                    <b className="font-semibold text-[#7375E8]">General</b> has
+                    an active{" "}
+                    <b className="font-semibold text-slate-900">Initial Email</b>{" "}
+                    template, so continuing sends{" "}
+                    <b className="font-semibold text-slate-900">no reply at all</b>.
+                  </p>
+                ) : (
+                  <p className="text-sm leading-relaxed text-slate-700">
+                    The{" "}
+                    <b className="font-semibold text-slate-900">
+                      Initial Email
+                    </b>{" "}
+                    template for{" "}
+                    <b className="font-semibold text-slate-900">
+                      {inactiveTemplateService}
+                    </b>{" "}
+                    is inactive, so this test will use your{" "}
+                    <b className="font-semibold text-[#7375E8]">
+                      General Initial Email
+                    </b>{" "}
+                    instead.
+                  </p>
+                )}
               </div>
 
               <p className="text-xs leading-relaxed text-slate-500">
@@ -7306,7 +7334,9 @@ const ShopifyScenariosPage = () => {
                 }}
                 className="rounded-lg bg-[#7375E8] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#5B5FD6]"
               >
-                Continue with General Templates
+                {nothingWillBeSent
+                  ? "Continue anyway"
+                  : "Continue with General Templates"}
               </button>
             </div>
           </div>
