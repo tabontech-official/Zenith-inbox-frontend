@@ -7287,7 +7287,22 @@ const ShopifyScenariosPage = () => {
               <button
                 onClick={() => {
                   setShowInactiveTemplateConfirm(false);
-                  handleRunTest(true);
+                  /*
+                   * Both flags, not just the first.
+                   *
+                   * handleRunTest(skipInactiveTemplateCheck, useGeneralTemplate)
+                   * — this called handleRunTest(true), which only silenced the
+                   * warning it had just been shown and left useGeneralTemplate
+                   * false. The run then went back to normal service resolution,
+                   * so the button did not do what it says: with the service's
+                   * Initial Email inactive the engine fell through to General
+                   * anyway and it looked right, but with it ACTIVE the button
+                   * sent the service template.
+                   *
+                   * handleRunTestWithGeneralTemplates has passed both since it
+                   * was written; it was simply never wired to anything.
+                   */
+                  handleRunTestWithGeneralTemplates();
                 }}
                 className="rounded-lg bg-[#7375E8] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#5B5FD6]"
               >
