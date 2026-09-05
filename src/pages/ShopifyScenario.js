@@ -681,6 +681,35 @@ const ShopifyScenariosPage = () => {
   /* Real template state for the Template card — see the card for context. */
   const activeTemplateCount = templateList.filter((t) => t.active).length;
 
+  /*
+   |--------------------------------------------------------------------
+   | What the Template card is actually reporting
+   |--------------------------------------------------------------------
+   |
+   | templateList holds ONE service's templates — the service selected on
+   | this node, or "General" — and fetchTemplates caps it at three,
+   | because a service has exactly three: Initial, First and Second.
+   |
+   | So "3 templates active" never meant "3 of your 92 templates". It
+   | meant "all three email types for this one service". Read as a global
+   | count it is alarming and wrong, which is exactly how it reads.
+   |
+   | The denominator makes it honest: "3 of 3", and "All templates
+   | active" when the set is complete.
+   */
+  const templateSetSize = templateList.length;
+
+  const templateScopeLabel = selectedServiceForTemplates || "General";
+
+  const templateSummary =
+    templateSetSize === 0
+      ? "No templates found"
+      : activeTemplateCount === 0
+        ? `No ${templateScopeLabel} templates active`
+        : activeTemplateCount === templateSetSize
+          ? `All ${templateScopeLabel} templates active (${activeTemplateCount} of ${templateSetSize})`
+          : `${activeTemplateCount} of ${templateSetSize} ${templateScopeLabel} templates active`;
+
   const lastTemplateEdit = (() => {
     const stamps = templateList
       .map((t) => t.updatedAt || t.createdAt)
@@ -2358,15 +2387,41 @@ const ShopifyScenariosPage = () => {
       }
 
       const allTemplates = data.data || [];
-      const hasInactiveTemplates = allTemplates.some((t) => !t.active);
 
-      if (hasInactiveTemplates && !skipInactiveTemplateCheck) {
+      /*
+       * Ask the question the server will actually ask.
+       *
+       * "Send Test Lead" sends the INITIAL email and nothing else — every
+       * template lookup in RunTestMode matches /initial/i, and the
+       * follow-ups are not part of a test run. So the only template that
+       * can be used here is this service's Initial Email, and it is the
+       * only one whose active flag can decide whether General is
+       * substituted.
+       *
+       * This used to be `allTemplates.some((t) => !t.active)`, which
+       * warned when ANY of the service's three templates was inactive.
+       * Activating the Initial Email alone therefore never cleared the
+       * warning — the untouched First and Second kept it on screen, and
+       * the only way to silence it was to activate all three, for every
+       * service. The message was wrong twice over: the reply was not
+       * going to fall back to General at all.
+       *
+       * Matching on the name mirrors the server's own selection
+       * (service + /initial/i + active: true), so the two cannot disagree.
+       */
+      const initialTemplate = allTemplates.find((t) =>
+        /initial/i.test(t.name || ""),
+      );
+
+      const willFallBackToGeneral = !initialTemplate || !initialTemplate.active;
+
+      if (willFallBackToGeneral && !skipInactiveTemplateCheck) {
         setTemplateList(allTemplates);
         setSelectedServiceForTemplates(service);
         setInactiveTemplateService(service);
         setShowInactiveTemplateConfirm(true);
 
-        toast.error(`${service} templates are not active.`, {
+        toast.error(`${service} — Initial Email template is not active.`, {
           duration: 5000,
           style: {
             background: "#fff0f0",
@@ -4643,8 +4698,8 @@ const ShopifyScenariosPage = () => {
                                 ? "AI templates active and configured"
                                 : "AI profile incomplete — select a complete company profile"
                               : activeTemplateCount > 0
-                              ? `${activeTemplateCount} template${activeTemplateCount > 1 ? "s" : ""} active`
-                              : "No templates active"
+                              ? templateSummary
+                              : `No ${templateScopeLabel} templates active`
                           }
                         />
                       </div>
@@ -4653,16 +4708,14 @@ const ShopifyScenariosPage = () => {
                         <p className="font-semibold text-slate-800">
                           {scenarioReplyMode === "ai"
                             ? "AI templates active"
-                            : activeTemplateCount === 1
-                            ? "1 template active"
-                            : `${activeTemplateCount} templates active`}
+                            : templateSummary}
                         </p>
                         <p>
                           {scenarioReplyMode === "ai"
                             ? selectedScenarioProfile?.name
                               ? `Written by AI from "${selectedScenarioProfile.name}"`
                               : "Written by AI from your company profile"
-                            : "Fixed wording, sent as written"}
+                            : "Manual templates — fixed wording, sent as written"}
                         </p>
                         {lastTemplateEdit && <p>Last edited {lastTemplateEdit}</p>}
                       </div>
@@ -7180,11 +7233,11 @@ const ShopifyScenariosPage = () => {
 
                 <div>
                   <h2 className="text-lg font-bold text-slate-800">
-                    Service templates are inactive
+                    Initial Email template is inactive
                   </h2>
                   <p className="mt-1 text-sm text-slate-500">
-                    Replies for this service cannot use its specific templates
-                    right now.
+                    This test sends the Initial Email, and this service does
+                    not have an active one.
                   </p>
                 </div>
               </div>
@@ -7193,22 +7246,27 @@ const ShopifyScenariosPage = () => {
             <div className="space-y-4 px-6 py-5">
               <div className="rounded-xl border border-[#E0E7FF] bg-[#F8FAFF] p-4">
                 <p className="text-sm leading-relaxed text-slate-700">
+                  The{" "}
+                  <b className="font-semibold text-slate-900">
+                    Initial Email
+                  </b>{" "}
+                  template for{" "}
                   <b className="font-semibold text-slate-900">
                     {inactiveTemplateService}
                   </b>{" "}
-                  templates are currently inactive. If you continue, the reply
-                  email will be sent using your{" "}
+                  is inactive, so this test will use your{" "}
                   <b className="font-semibold text-[#7375E8]">
-                    General templates
+                    General Initial Email
                   </b>{" "}
                   instead.
                 </p>
               </div>
 
               <p className="text-xs leading-relaxed text-slate-500">
-                Activate the service-specific templates if you want replies
-                customized for this service. Otherwise, General templates will
-                be used as the fallback.
+                Activate this service&apos;s Initial Email template if you want
+                the test customised for it. Each email type is activated
+                separately — the follow-up templates do not affect this test,
+                which only sends the initial reply.
               </p>
             </div>
 
