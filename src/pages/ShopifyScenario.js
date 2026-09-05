@@ -32,6 +32,12 @@ import { CiLink } from "react-icons/ci";
 
 import AppLayout from "../component/AppLayout";
 import {
+  NodeRunBadge,
+  NodeRunModal,
+  OperationBlock,
+  groupStepsByNode,
+} from "../component/NodeRunInspector";
+import {
   FiAlertCircle,
   FiCode,
   FiHome,
@@ -806,6 +812,30 @@ const ShopifyScenariosPage = () => {
   const [nothingWillBeSent, setNothingWillBeSent] = useState(false);
   const savedShopifyState = localStorage.getItem("shopifyScenarioState");
   const [scenarioHistory, setScenarioHistory] = useState([]);
+
+  /*
+   |--------------------------------------------------------------------
+   | Per-card run inspection
+   |--------------------------------------------------------------------
+   |
+   | The canvas shows the run the operator is looking at: whichever log
+   | they opened in History, or the most recent one otherwise — which is
+   | the run they just triggered with Send Test Lead, so the badges are
+   | already about the thing they just did.
+   |
+   | Steps are grouped by the card that produced them (see the backend's
+   | nodeId), so each card can show its own operation count and open its
+   | own detail without the canvas knowing what any step means.
+   */
+  const [inspectedNode, setInspectedNode] = useState(null);
+  const [pinnedRunId, setPinnedRunId] = useState(null);
+
+  const inspectedRun =
+    (pinnedRunId && scenarioHistory.find((l) => l._id === pinnedRunId)) ||
+    scenarioHistory[0] ||
+    null;
+
+  const runStepsByNode = groupStepsByNode(inspectedRun?.steps || []);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [selectedHistoryLog, setSelectedHistoryLog] = useState(null);
   const [historyViewMode, setHistoryViewMode] = useState("builder");
@@ -2105,6 +2135,22 @@ const ShopifyScenariosPage = () => {
             : "border-[#E0E7FF]"
         }`}
       >
+        {/*
+         * What this module did on the run being inspected. Keyed by the
+         * module's own id, which is what the engine stamps on each step
+         * as nodeId. Sits top-right; the validation tick is top-left.
+         */}
+        <NodeRunBadge
+          steps={runStepsByNode[module?.id || module?._id] || []}
+          onClick={() =>
+            setInspectedNode({
+              nodeId: module?.id || module?._id,
+              title: title || "Module",
+              subtitle: subtitle || "",
+            })
+          }
+        />
+
         {showValidation && completed !== null && (
           <div
             className={`absolute -top-3 -left-3 w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md transition-all duration-300 ${
@@ -3659,6 +3705,8 @@ const ShopifyScenariosPage = () => {
                             <button
                               onClick={() => {
                                 setSelectedHistoryLog(log);
+                                /* Point the canvas badges at this run too. */
+                                setPinnedRunId(log._id);
                                 setHistoryViewMode("details");
                               }}
                               className="px-3 py-1.5 bg-white border border-gray-200 rounded-md text-sm text-gray-600 hover:bg-gray-50 transition-colors"
@@ -3943,6 +3991,27 @@ const ShopifyScenariosPage = () => {
                                     </p>
                                   )}
                                 </div>
+
+                                {/*
+                                 * The values the step actually decided on.
+                                 *
+                                 * The summary boxes below say WHAT was
+                                 * chosen; this says what it was chosen
+                                 * FROM. When a lead lands on the wrong
+                                 * template the answer is almost always a
+                                 * value here — the text the router
+                                 * searched, or the query the template
+                                 * lookup ran.
+                                 */}
+                                {(step.input || step.output) && (
+                                  <div className="mt-4">
+                                    <OperationBlock
+                                      step={step}
+                                      index={index}
+                                      defaultOpen={step.status === "failed"}
+                                    />
+                                  </div>
+                                )}
 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4 text-xs">
                                   {step.meta?.templateName && (
@@ -4557,6 +4626,16 @@ const ShopifyScenariosPage = () => {
                                 : "border-[#FDE68A] bg-white"
                           } p-5 shadow-2xs hover:shadow-md transition relative`}
                         >
+                          <NodeRunBadge
+                            steps={runStepsByNode["incoming-leads"] || []}
+                            onClick={() =>
+                              setInspectedNode({
+                                nodeId: "incoming-leads",
+                                title: "Incoming Leads",
+                                subtitle: "Trigger match",
+                              })
+                            }
+                          />
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2.5">
                               <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#E6F4EA] text-[#137333]">
@@ -4642,6 +4721,16 @@ const ShopifyScenariosPage = () => {
                       onClick={() => setShowRouterBranches(true)}
                       className="w-80 shrink-0 cursor-pointer rounded-[20px] border border-[#EBE8E1] bg-white p-5 shadow-2xs hover:shadow-md transition relative"
                     >
+                      <NodeRunBadge
+                        steps={runStepsByNode["router"] || []}
+                        onClick={() =>
+                          setInspectedNode({
+                            nodeId: "router",
+                            title: "Router",
+                            subtitle: "Branch conditions and service resolution",
+                          })
+                        }
+                      />
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2.5">
                           <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
@@ -7268,6 +7357,26 @@ const ShopifyScenariosPage = () => {
           </div>
         </div>
       )}
+      {/*
+       * The card inspector. Rendered once at page level so any card can
+       * open it, and so it sits above the canvas rather than inside a
+       * scrolling node.
+       */}
+      {inspectedNode && (
+        <NodeRunModal
+          title={inspectedNode.title}
+          subtitle={
+            inspectedRun
+              ? `${inspectedNode.subtitle ? inspectedNode.subtitle + " · " : ""}run ${new Date(
+                  inspectedRun.createdAt,
+                ).toLocaleString()}`
+              : inspectedNode.subtitle
+          }
+          steps={runStepsByNode[inspectedNode.nodeId] || []}
+          onClose={() => setInspectedNode(null)}
+        />
+      )}
+
       {showInactiveTemplateConfirm && (
         <div
           onClick={() => setShowInactiveTemplateConfirm(false)}
