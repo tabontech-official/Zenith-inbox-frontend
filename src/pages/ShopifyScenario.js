@@ -134,6 +134,18 @@ const buildDefaultShopifyBranches = (connectionId = "") => {
   ];
 };
 
+/*
+ * Shown when the pre-run template check could not be completed.
+ *
+ * The check is a courtesy: it previews which template the reply will use.
+ * The run does not depend on it — the server picks the template either
+ * way — so the wording says the test is going ahead, rather than
+ * reporting a failure the user cannot act on and that did not stop
+ * anything.
+ */
+const warnCheckSkipped = (service) =>
+  `Couldn't check ${service} template status — running the test anyway.`;
+
 const ShopifyScenariosPage = () => {
   const quillRef = useRef(null);
   const [guideStep, setGuideStep] = useState(0);
@@ -2405,11 +2417,35 @@ const ShopifyScenariosPage = () => {
           service,
         )}&stepType=initial`,
       );
-      const data = await res.json();
 
-      if (!data.success) {
-        toast.error("Failed to check template status for this service.");
-        return;
+      /*
+       * A check that cannot be performed is not a failed check.
+       *
+       * This is a courtesy warning shown before the run; the run itself
+       * does not depend on it, and the server decides which template to
+       * use either way. So when the endpoint is unreachable — an older
+       * backend that predates it and answers 404 with an HTML page, a
+       * cold start returning 503, a dropped connection — the test still
+       * goes ahead and the user is told plainly that the preview was
+       * skipped.
+       *
+       * Previously any of those threw on res.json() and produced a red
+       * "Error checking template status", immediately followed by the
+       * test running and succeeding. Two contradictory messages for one
+       * healthy run.
+       */
+      const data = res.ok ? await res.json().catch(() => null) : null;
+
+      if (!data || !data.success) {
+        console.warn(
+          "[template check] skipped — /template/resolution unavailable",
+          { status: res.status },
+        );
+
+        toast(warnCheckSkipped(service), {
+          duration: 4000,
+          icon: "⚠️",
+        });
       }
 
       /*
@@ -2418,7 +2454,9 @@ const ShopifyScenariosPage = () => {
        *   !willUseTemplate  - General is inactive too, so NOTHING is sent
        */
       const willFallBackToGeneral =
-        data.fallbackToGeneral || !data.willUseTemplate;
+        Boolean(data) &&
+        data.success &&
+        (data.fallbackToGeneral || !data.willUseTemplate);
 
       if (willFallBackToGeneral && !skipInactiveTemplateCheck) {
         setSelectedServiceForTemplates(service);
@@ -2443,8 +2481,12 @@ const ShopifyScenariosPage = () => {
         return;
       }
     } catch (err) {
-      console.error("Error checking template status:", err);
-      toast.error("Error checking template status.");
+      console.warn("[template check] skipped —", err);
+
+      toast(warnCheckSkipped(service), {
+        duration: 4000,
+        icon: "⚠️",
+      });
     }
 
     if (!isScenarioUpdated) {
