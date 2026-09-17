@@ -46,7 +46,7 @@ const TOKENS_URL = "/mcp/tokens";
 | NOT the raw backend host. Claude derives the connector's identity, and
 | the OAuth issuer it will trust, from the origin it was handed — so the
 | address shown here has to be the public one, replexengine.com, not
-| email-syncing-backend.vercel.app.
+| email-syncing-backend.onrender.com.
 |
 | Both /mcp and the OAuth discovery documents are proxied onto this origin
 | by the rewrites in vercel.json, so the app's own origin IS the connector
