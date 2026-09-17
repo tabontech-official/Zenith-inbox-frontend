@@ -144,7 +144,7 @@ const AppLayout = ({ children }) => {
 
     try {
       setTogglingAi(true);
-      const res = await axios.post(`https://email-syncing-backend.onrender.com//auth/toggle-ai-replies/${targetUserId}`, {
+      const res = await axios.post(`https://email-syncing-backend.onrender.com/auth/toggle-ai-replies/${targetUserId}`, {
         enabled: nextStatus,
         userId: targetUserId,
       });
@@ -155,7 +155,7 @@ const AppLayout = ({ children }) => {
     } catch (err) {
       console.error("Error toggling AI replies:", err);
       try {
-        await axios.patch(`https://email-syncing-backend.onrender.com//auth/user/ai`, {
+        await axios.patch(`https://email-syncing-backend.onrender.com/auth/user/ai`, {
           userId: targetUserId,
           enabled: nextStatus,
         });
@@ -186,7 +186,7 @@ const AppLayout = ({ children }) => {
       const token = localStorage.getItem("usertoken");
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
       const res = await axios.get(
-        `https://email-syncing-backend.onrender.com//auth/getUsers/${userId}`,
+        `https://email-syncing-backend.onrender.com/auth/getUsers/${userId}`,
         { headers }
       );
       const fetchedUser = res.data?.data || contextUser || null;
@@ -232,7 +232,7 @@ const AppLayout = ({ children }) => {
 
     try {
       const res = await axios.get(
-        `https://email-syncing-backend.onrender.com//auth/organization/get/${userId}`,
+        `https://email-syncing-backend.onrender.com/auth/organization/get/${userId}`,
         { headers: authHeaders() }
       );
       const orgData = res.data?.data;
@@ -266,7 +266,7 @@ const AppLayout = ({ children }) => {
        * re-downloading the entire inbox to do it.
        */
       const emailsRes = await axios.get(
-        `https://email-syncing-backend.onrender.com//mailhook/getAllEmailsData/${userId}`,
+        `https://email-syncing-backend.onrender.com/mailhook/getAllEmailsData/${userId}`,
         { headers: authHeaders(), params: { stubs: 1 } }
       );
       const threads = emailsRes.data?.data?.threads || [];
@@ -367,11 +367,11 @@ const AppLayout = ({ children }) => {
     const fetchSidebarData = async () => {
       try {
         const [scenRes, connRes, profRes] = await Promise.all([
-          axios.get(`https://email-syncing-backend.onrender.com//scenario/user/${userId}`).catch(() => null),
-          axios.get(`https://email-syncing-backend.onrender.com//auth/getConnection/${userId}`).catch(() => null),
+          axios.get(`https://email-syncing-backend.onrender.com/scenario/user/${userId}`).catch(() => null),
+          axios.get(`https://email-syncing-backend.onrender.com/auth/getConnection/${userId}`).catch(() => null),
           axios
             .get(
-              `https://email-syncing-backend.onrender.com//api/company-profile/${userId}/list`,
+              `https://email-syncing-backend.onrender.com/api/company-profile/${userId}/list`,
             )
             .catch(() => null),
         ]);
@@ -537,7 +537,7 @@ const AppLayout = ({ children }) => {
       const currentUserId = userId || user?._id;
       if (currentUserId) {
         await axios.put(
-          `https://email-syncing-backend.onrender.com//auth/updateUserAndOrganization/${currentUserId}`,
+          `https://email-syncing-backend.onrender.com/auth/updateUserAndOrganization/${currentUserId}`,
           {
             organizationName: orgForm.organizationName,
             Region: orgForm.region,
@@ -579,7 +579,7 @@ const AppLayout = ({ children }) => {
       const currentUserId = localStorage.getItem("userid") || user?._id;
       if (currentUserId) {
         await apiFetch(
-          `https://email-syncing-backend.onrender.com//auth/logout/${currentUserId}`,
+          `https://email-syncing-backend.onrender.com/auth/logout/${currentUserId}`,
           {
             method: "POST",
           },

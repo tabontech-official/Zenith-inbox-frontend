@@ -45,7 +45,7 @@ const MasterAdminPlans = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("usertoken");
-      const res = await apiFetch("https://email-syncing-backend.onrender.com//admin/plans", {
+      const res = await apiFetch("https://email-syncing-backend.onrender.com/admin/plans", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -127,8 +127,8 @@ const MasterAdminPlans = () => {
       };
 
       const url = editingPlan
-        ? `https://email-syncing-backend.onrender.com//admin/plans/${editingPlan._id}`
-        : "https://email-syncing-backend.onrender.com//admin/plans";
+        ? `https://email-syncing-backend.onrender.com/admin/plans/${editingPlan._id}`
+        : "https://email-syncing-backend.onrender.com/admin/plans";
       const method = editingPlan ? "PUT" : "POST";
 
       const res = await apiFetch(url, {
@@ -157,7 +157,7 @@ const MasterAdminPlans = () => {
     if (!window.confirm("Are you sure you want to delete this plan?")) return;
     try {
       const token = localStorage.getItem("usertoken");
-      const res = await apiFetch(`https://email-syncing-backend.onrender.com//admin/plans/${id}`, {
+      const res = await apiFetch(`https://email-syncing-backend.onrender.com/admin/plans/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });

@@ -26,7 +26,7 @@ import { apiFetch } from "../utils/apiClient";
 //     const fetchContent = async () => {
 //       try {
 //         const res = await apiFetch(
-//           "https://email-syncing-backend.onrender.com//api/landing-page",
+//           "https://email-syncing-backend.onrender.com/api/landing-page",
 //         );
 //         if (res.ok) {
 //           const data = await res.json();
@@ -48,7 +48,7 @@ import { apiFetch } from "../utils/apiClient";
 //     try {
 //       const token = localStorage.getItem("usertoken");
 //       const res = await apiFetch(
-//         "https://email-syncing-backend.onrender.com//api/landing-page",
+//         "https://email-syncing-backend.onrender.com/api/landing-page",
 //         {
 //           method: "PUT",
 //           headers: {
@@ -378,7 +378,7 @@ import {
   FiStar,
 } from "react-icons/fi";
 
-const API_URL = "https://email-syncing-backend.onrender.com//api/landing-page";
+const API_URL = "https://email-syncing-backend.onrender.com/api/landing-page";
 
 const AdminLandingPage = () => {
   const [content, setContent] = useState(null);

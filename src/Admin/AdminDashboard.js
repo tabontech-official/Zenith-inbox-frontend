@@ -54,7 +54,7 @@ const AdminDashboard = () => {
 
     await Promise.allSettled([
       // Operational summary
-      apiFetch("https://email-syncing-backend.onrender.com//auth/summary", {
+      apiFetch("https://email-syncing-backend.onrender.com/auth/summary", {
         headers: { Authorization: `Bearer ${token}` },
       })
         .then((r) => r.json())
@@ -72,7 +72,7 @@ const AdminDashboard = () => {
         .catch(() => {}),
 
       // Platform metrics
-      apiFetch("https://email-syncing-backend.onrender.com//admin/dashboard", {
+      apiFetch("https://email-syncing-backend.onrender.com/admin/dashboard", {
         headers: { Authorization: `Bearer ${token}` },
       })
         .then((r) => r.json())

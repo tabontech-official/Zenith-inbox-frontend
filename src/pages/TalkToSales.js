@@ -50,7 +50,7 @@ const TalkToSales = () => {
     try{
 
       const res = await apiFetch(
-        "https://email-syncing-backend.onrender.com//talk/talk-to-sales",
+        "https://email-syncing-backend.onrender.com/talk/talk-to-sales",
         {
           method:"POST",
           headers:{

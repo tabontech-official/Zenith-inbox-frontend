@@ -204,7 +204,7 @@ const EmailDetailPage = () => {
       try {
         setLoading(true);
         const res = await axios.get(
-          `https://email-syncing-backend.onrender.com//mailhook/getAllEmailsData/${emailId}`
+          `https://email-syncing-backend.onrender.com/mailhook/getAllEmailsData/${emailId}`
         );
         setThread(res.data?.data || null);
       } catch (err) {

@@ -159,7 +159,7 @@ const MailhookConnectionModal = ({
 
     try {
       const res = await apiFetch(
-        `https://email-syncing-backend.onrender.com//mailhook/verification/${user._id}`
+        `https://email-syncing-backend.onrender.com/mailhook/verification/${user._id}`
       );
       const data = await res.json();
 
@@ -218,7 +218,7 @@ const MailhookConnectionModal = ({
       setValidationFailed(false);
 
       const res = await axios.post(
-        "https://email-syncing-backend.onrender.com//mailhookcard/validate",
+        "https://email-syncing-backend.onrender.com/mailhookcard/validate",
         {
           userId: user._id,
           forwardingEmail,
@@ -372,7 +372,7 @@ const MailhookConnectionModal = ({
                       setCreating(true);
 
                       const res = await axios.post(
-                        "https://email-syncing-backend.onrender.com//mailhookcard/create",
+                        "https://email-syncing-backend.onrender.com/mailhookcard/create",
                         {
                           userId: user._id,
                           forwardingEmail: "",

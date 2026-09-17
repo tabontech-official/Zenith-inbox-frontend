@@ -77,7 +77,7 @@ const AdminLeadsReport = ({ defaultStatus }) => {
     try {
       setLoading(true);
       const token = localStorage.getItem("usertoken");
-      const url = `https://email-syncing-backend.onrender.com//admin/leads?status=${activeStatus}`;
+      const url = `https://email-syncing-backend.onrender.com/admin/leads?status=${activeStatus}`;
 
       const res = await apiFetch(url, {
         headers: { Authorization: `Bearer ${token}` },
@@ -101,7 +101,7 @@ const AdminLeadsReport = ({ defaultStatus }) => {
 
     try {
       const token = localStorage.getItem("usertoken");
-      const res = await apiFetch(`https://email-syncing-backend.onrender.com//admin/leads/thread/${lead._id}`, {
+      const res = await apiFetch(`https://email-syncing-backend.onrender.com/admin/leads/thread/${lead._id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();

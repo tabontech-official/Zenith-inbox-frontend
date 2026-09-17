@@ -13,7 +13,7 @@ import toast from "react-hot-toast";
 import { UserContext } from "../component/UserContext";
 import AppLayout from "../component/AppLayout";
 
-const API_BASE = "https://email-syncing-backend.onrender.com/";
+const API_BASE = "https://email-syncing-backend.onrender.com";
 
 const Security = () => {
   const { user, updateUser, loading } = useContext(UserContext);

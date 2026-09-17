@@ -39,7 +39,7 @@ import { apiFetch } from "../utils/apiClient";
 //     const fetchContent = async () => {
 //       try {
 //         const res = await apiFetch(
-//           "https://email-syncing-backend.onrender.com//api/landing-page",
+//           "https://email-syncing-backend.onrender.com/api/landing-page",
 //         );
 //         if (res.ok) setContent(await res.json());
 //         else console.error("Failed to fetch landing page content");
@@ -1007,7 +1007,7 @@ const LandingPage = () => {
     const fetchContent = async () => {
       try {
         const res = await apiFetch(
-          "https://email-syncing-backend.onrender.com//api/landing-page",
+          "https://email-syncing-backend.onrender.com/api/landing-page",
         );
         if (res.ok) setContent(await res.json());
       } catch (err) {

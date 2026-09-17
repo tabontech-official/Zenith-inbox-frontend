@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import axios from "axios";
 
-const API_URL = "https://email-syncing-backend.onrender.com//admin/scripts";
+const API_URL = "https://email-syncing-backend.onrender.com/admin/scripts";
 
 const injectScripts = (scriptText, target) => {
   if (!scriptText) return;

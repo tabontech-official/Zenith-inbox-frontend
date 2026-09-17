@@ -34,7 +34,7 @@ const AdminTemplateUsage = () => {
   useEffect(() => {
     const fetchUsage = async () => {
       try {
-        const res = await apiFetch("https://email-syncing-backend.onrender.com//auth/template-usage");
+        const res = await apiFetch("https://email-syncing-backend.onrender.com/auth/template-usage");
         const data = await res.json();
         setUsageData(data.data || []);
         setGlobalStats(data.globalStats || null);

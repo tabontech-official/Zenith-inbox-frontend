@@ -589,7 +589,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import Header from "../component/Header";
 
-const API_URL = "https://email-syncing-backend.onrender.com//api/product-page/product-page";
+const API_URL = "https://email-syncing-backend.onrender.com/api/product-page/product-page";
 
 const iconMap = {
   FiMail: <FiMail />,

@@ -36,10 +36,10 @@ export default function CustomTemplate() {
   const verifyCompanyProfile = async (targetUserId) => {
     if (!targetUserId) return false;
     const urls = [
-      `https://email-syncing-backend.onrender.com//api/company-profile/${targetUserId}`,
-      `https://email-syncing-backend.onrender.com//api/company-profile/${targetUserId}`,
-      `https://email-syncing-backend.onrender.com//auth/user-profile/${targetUserId}`,
-      `https://email-syncing-backend.onrender.com//auth/user-profile/${targetUserId}`,
+      `https://email-syncing-backend.onrender.com/api/company-profile/${targetUserId}`,
+      `https://email-syncing-backend.onrender.com/api/company-profile/${targetUserId}`,
+      `https://email-syncing-backend.onrender.com/auth/user-profile/${targetUserId}`,
+      `https://email-syncing-backend.onrender.com/auth/user-profile/${targetUserId}`,
     ];
     for (const url of urls) {
       try {
@@ -77,10 +77,10 @@ export default function CustomTemplate() {
     try {
       setTogglingAi(true);
       const res = await axios.post(
-        `https://email-syncing-backend.onrender.com//auth/toggle-ai-replies/${targetUserId}`,
+        `https://email-syncing-backend.onrender.com/auth/toggle-ai-replies/${targetUserId}`,
         { enabled: nextStatus, userId: targetUserId }
       );
-      await axios.patch("https://email-syncing-backend.onrender.com//template/ai-toggle-all", {
+      await axios.patch("https://email-syncing-backend.onrender.com/template/ai-toggle-all", {
         userId: targetUserId,
         platform: "other",
         aiResponse: nextStatus,
@@ -130,7 +130,7 @@ export default function CustomTemplate() {
       const userId = localStorage.getItem("userid") || user?._id;
       const token = localStorage.getItem("usertoken");
       const res = await axios.get(
-        "https://email-syncing-backend.onrender.com//template/all/custom",
+        "https://email-syncing-backend.onrender.com/template/all/custom",
         {
           params: { userId },
           headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -176,7 +176,7 @@ export default function CustomTemplate() {
       prev.map((t) => (t._id === templateId ? { ...t, aiResponse: nextStatus } : t))
     );
     try {
-      await axios.patch(`https://email-syncing-backend.onrender.com//template/ai-toggle/${templateId}`, {
+      await axios.patch(`https://email-syncing-backend.onrender.com/template/ai-toggle/${templateId}`, {
         aiResponse: nextStatus,
       });
       toast.success(nextStatus ? "This template will now be written by AI." : "This template will now send as written.");
@@ -203,7 +203,7 @@ export default function CustomTemplate() {
 
     setTemplates((prev) => prev.map((t) => ({ ...t, aiResponse: enableAll })));
     try {
-      await axios.patch("https://email-syncing-backend.onrender.com//template/ai-toggle-all", {
+      await axios.patch("https://email-syncing-backend.onrender.com/template/ai-toggle-all", {
         userId,
         platform: "other",
         aiResponse: enableAll,
@@ -301,13 +301,13 @@ export default function CustomTemplate() {
 
       if (editingId) {
         await axios.put(
-          `https://email-syncing-backend.onrender.com//template/update/${editingId}`,
+          `https://email-syncing-backend.onrender.com/template/update/${editingId}`,
           payload,
         );
         toast.success("Template updated successfully!");
       } else {
         await axios.post(
-          "https://email-syncing-backend.onrender.com//template/create",
+          "https://email-syncing-backend.onrender.com/template/create",
           payload,
         );
         toast.success("Template created successfully!");
@@ -335,7 +335,7 @@ export default function CustomTemplate() {
 
     try {
       await axios.put(
-        `https://email-syncing-backend.onrender.com//template/update/${id}`,
+        `https://email-syncing-backend.onrender.com/template/update/${id}`,
         {
           active: !currentStatus,
         },
@@ -365,7 +365,7 @@ export default function CustomTemplate() {
   const handleDeleteTemplate = async () => {
     try {
       await axios.delete(
-        `https://email-syncing-backend.onrender.com//template/delete/${deleteId}`,
+        `https://email-syncing-backend.onrender.com/template/delete/${deleteId}`,
       );
 
       toast.success("Template deleted!");
@@ -383,7 +383,7 @@ export default function CustomTemplate() {
     try {
       const userId = localStorage.getItem("userid");
       const res = await axios.patch(
-        "https://email-syncing-backend.onrender.com//template/templatestatus/all/other",
+        "https://email-syncing-backend.onrender.com/template/templatestatus/all/other",
         { userId },
       );
       if (res.data.success) {

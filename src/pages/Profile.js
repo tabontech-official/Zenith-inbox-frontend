@@ -179,7 +179,7 @@ const handleChange = (e) => {
       if (profileImageFile) fd.append("image", profileImageFile);
 
       const res = await apiFetch(
-        `https://email-syncing-backend.onrender.com//auth/updateUserAndOrganization/${user._id}`,
+        `https://email-syncing-backend.onrender.com/auth/updateUserAndOrganization/${user._id}`,
         {
           method: "PUT",
           body: fd,

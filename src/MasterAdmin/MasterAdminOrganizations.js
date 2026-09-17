@@ -47,10 +47,10 @@ const MasterAdminOrganizations = () => {
       const token = localStorage.getItem("usertoken");
 
       const [orgsRes, plansRes] = await Promise.allSettled([
-        apiFetch("https://email-syncing-backend.onrender.com//admin/organizations", {
+        apiFetch("https://email-syncing-backend.onrender.com/admin/organizations", {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        apiFetch("https://email-syncing-backend.onrender.com//admin/plans", {
+        apiFetch("https://email-syncing-backend.onrender.com/admin/plans", {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ]);
@@ -123,7 +123,7 @@ const MasterAdminOrganizations = () => {
       setUpdatingPlan(true);
       const token = localStorage.getItem("usertoken");
 
-      const res = await apiFetch("https://email-syncing-backend.onrender.com//admin/organizations/plan", {
+      const res = await apiFetch("https://email-syncing-backend.onrender.com/admin/organizations/plan", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -190,7 +190,7 @@ const MasterAdminOrganizations = () => {
       setDeleting(true);
       const token = localStorage.getItem("usertoken");
 
-      const res = await apiFetch("https://email-syncing-backend.onrender.com//admin/organizations", {
+      const res = await apiFetch("https://email-syncing-backend.onrender.com/admin/organizations", {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",

@@ -71,7 +71,7 @@ const WebhookModal = ({
       setLoadingMailhookEmails(true);
 
       const res = await apiFetch(
-        `https://email-syncing-backend.onrender.com//mailhook/verification/${user._id}`
+        `https://email-syncing-backend.onrender.com/mailhook/verification/${user._id}`
       );
 
       const data = await res.json();

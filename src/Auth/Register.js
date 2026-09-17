@@ -49,7 +49,7 @@
 //     setLoading(true);
 //     try {
 //       const response = await axios.post(
-//         "https://email-syncing-backend.onrender.com//auth/google-login",
+//         "https://email-syncing-backend.onrender.com/auth/google-login",
 //         { credential: credentialResponse.credential }
 //       );
 
@@ -95,7 +95,7 @@
 
 //     setLoading(true);
 //     try {
-//       const response = await axios.post("https://email-syncing-backend.onrender.com//auth/signUp", {
+//       const response = await axios.post("https://email-syncing-backend.onrender.com/auth/signUp", {
 //         fullName,
 //         email,
 //         password,
@@ -391,7 +391,7 @@
 //     setLoading(true);
 //     try {
 //       const response = await axios.post(
-//         "https://email-syncing-backend.onrender.com//auth/google-login",
+//         "https://email-syncing-backend.onrender.com/auth/google-login",
 //         { credential: credentialResponse.credential }
 //       );
 
@@ -437,7 +437,7 @@
 
 //     setLoading(true);
 //     try {
-//       const response = await axios.post("https://email-syncing-backend.onrender.com//auth/signUp", {
+//       const response = await axios.post("https://email-syncing-backend.onrender.com/auth/signUp", {
 //         fullName,
 //         email,
 //         password,
@@ -779,7 +779,7 @@ const RegisterPage = () => {
 
     try {
       const response = await axios.post(
-        "https://email-syncing-backend.onrender.com//auth/google-login",
+        "https://email-syncing-backend.onrender.com/auth/google-login",
         { credential: credentialResponse.credential },
       );
 
@@ -831,7 +831,7 @@ const RegisterPage = () => {
 
     try {
       const response = await axios.post(
-        "https://email-syncing-backend.onrender.com//auth/signUp",
+        "https://email-syncing-backend.onrender.com/auth/signUp",
         {
           fullName,
           email,

@@ -18,7 +18,7 @@ const ResetPassword = () => {
 
     setLoading(true);
     try {
-      const res = await apiFetch("https://email-syncing-backend.onrender.com//auth/set-password", {
+      const res = await apiFetch("https://email-syncing-backend.onrender.com/auth/set-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, password }),

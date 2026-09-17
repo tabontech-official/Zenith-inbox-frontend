@@ -20,7 +20,7 @@ import { apiFetch } from "../utils/apiClient";
 
 //       try {
 //         const res = await apiFetch(
-//           `https://email-syncing-backend.onrender.com//auth/getUsers/${userId}`
+//           `https://email-syncing-backend.onrender.com/auth/getUsers/${userId}`
 //         );
 //         const data = await res.json();
 
@@ -32,7 +32,7 @@ import { apiFetch } from "../utils/apiClient";
 //         } else {
 //           // if not nested, fetch organization manually
 //           const orgRes = await apiFetch(
-//             `https://email-syncing-backend.onrender.com//organization/${userId}`
+//             `https://email-syncing-backend.onrender.com/organization/${userId}`
 //           );
 //           const orgData = await orgRes.json();
 //           setOrganization(orgData.data);
@@ -113,7 +113,7 @@ export const UserProvider = ({ children }) => {
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
       const res = await apiFetch(
-        `https://email-syncing-backend.onrender.com//auth/getUsers/${userId}`,
+        `https://email-syncing-backend.onrender.com/auth/getUsers/${userId}`,
         { headers }
       );
       const data = await res.json();
@@ -129,7 +129,7 @@ export const UserProvider = ({ children }) => {
       } else {
         try {
           const orgRes = await apiFetch(
-            `https://email-syncing-backend.onrender.com//auth/organization/get/${userId}`,
+            `https://email-syncing-backend.onrender.com/auth/organization/get/${userId}`,
             { headers }
           );
           const orgData = await orgRes.json();
@@ -192,7 +192,7 @@ const updateOrganization = (updatedOrg) => {
       const token = localStorage.getItem("usertoken");
 
       await apiFetch(
-        `https://email-syncing-backend.onrender.com//auth/updateUserAndOrganization/${userId}`,
+        `https://email-syncing-backend.onrender.com/auth/updateUserAndOrganization/${userId}`,
         {
           method: "PUT",
           headers: {

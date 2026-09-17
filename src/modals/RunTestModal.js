@@ -35,7 +35,7 @@ const RunTestModal = ({
       const userId = localStorage.getItem("userid");
 
       await apiFetch(
-        "https://email-syncing-backend.onrender.com//mailhook/test/custom",
+        "https://email-syncing-backend.onrender.com/mailhook/test/custom",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

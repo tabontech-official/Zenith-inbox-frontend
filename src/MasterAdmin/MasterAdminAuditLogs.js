@@ -15,7 +15,7 @@ const MasterAdminAuditLogs = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("usertoken");
-      const res = await apiFetch("https://email-syncing-backend.onrender.com//admin/audit-logs", {
+      const res = await apiFetch("https://email-syncing-backend.onrender.com/admin/audit-logs", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();

@@ -36,7 +36,7 @@ import FillWithAiModal from "../modals/FillWithAiModal";
 import ImportJsonModal from "../modals/ImportJsonModal";
 import { sanitizeCompanyObject, sanitizeUrl, sanitizeEmail } from "../utils/companyProfileSchema";
 
-const API_BASE_URL = "https://email-syncing-backend.onrender.com//api/company-profile";
+const API_BASE_URL = "https://email-syncing-backend.onrender.com/api/company-profile";
 
 const CompanyProfile = () => {
   const { user } = useContext(UserContext);

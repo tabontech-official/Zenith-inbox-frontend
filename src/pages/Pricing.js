@@ -23,7 +23,7 @@ import AppLayout from "../component/AppLayout";
 import Header from "../component/Header";
 import { UserContext } from "../component/UserContext";
 
-const API_BASE_URL = "https://email-syncing-backend.onrender.com/";
+const API_BASE_URL = "https://email-syncing-backend.onrender.com";
 
 const Pricing = () => {
   const navigate = useNavigate();

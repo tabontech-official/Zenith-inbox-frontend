@@ -160,7 +160,7 @@ const ConnectionsPage = () => {
       if (!userId) return;
 
       const res = await axios.get(
-        `https://email-syncing-backend.onrender.com//mailhookcard/${userId}`,
+        `https://email-syncing-backend.onrender.com/mailhookcard/${userId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (res.data.success) {
@@ -208,7 +208,7 @@ const ConnectionsPage = () => {
       }
 
       const res = await axios.get(
-        `https://email-syncing-backend.onrender.com//auth/getConnection/${userId}`,
+        `https://email-syncing-backend.onrender.com/auth/getConnection/${userId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -219,7 +219,7 @@ const ConnectionsPage = () => {
       if (connList.length > 0) {
         try {
           await axios.put(
-            `https://email-syncing-backend.onrender.com//auth/setup/${userId}`,
+            `https://email-syncing-backend.onrender.com/auth/setup/${userId}`,
             {
               stepCompleted: 4,
               setupCompleted: true,
@@ -275,7 +275,7 @@ const ConnectionsPage = () => {
       if (!userId) return;
 
       await axios.put(
-        `https://email-syncing-backend.onrender.com//auth/setup/${userId}`,
+        `https://email-syncing-backend.onrender.com/auth/setup/${userId}`,
         {
           stepCompleted: 4,
           setupCompleted: false,
@@ -580,7 +580,7 @@ const ConnectionsPage = () => {
                                   ),
                                 );
                                 const res = await apiFetch(
-                                  `https://email-syncing-backend.onrender.com//mailhook/verify`,
+                                  `https://email-syncing-backend.onrender.com/mailhook/verify`,
                                   {
                                     method: "POST",
                                     headers: {

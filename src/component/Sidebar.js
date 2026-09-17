@@ -90,7 +90,7 @@ import { apiFetch } from "../utils/apiClient";
 
 //       try {
 //         const response = await apiFetch(
-//           `https://email-syncing-backend.onrender.com//auth/guide/${userId}`,
+//           `https://email-syncing-backend.onrender.com/auth/guide/${userId}`,
 //           {
 //             headers: {
 //               Authorization: `Bearer ${token}`,
@@ -163,7 +163,7 @@ import { apiFetch } from "../utils/apiClient";
 //     try {
 //       if (userId) {
 //         await apiFetch(
-//           `https://email-syncing-backend.onrender.com//auth/logout/${userId}`,
+//           `https://email-syncing-backend.onrender.com/auth/logout/${userId}`,
 //           {
 //             method: "POST",
 //           },
@@ -183,7 +183,7 @@ import { apiFetch } from "../utils/apiClient";
 
 //     try {
 //       await apiFetch(
-//         `https://email-syncing-backend.onrender.com//auth/guide/${userId}`,
+//         `https://email-syncing-backend.onrender.com/auth/guide/${userId}`,
 //         {
 //           method: "POST",
 //           headers: {
@@ -710,7 +710,7 @@ const Sidebar = ({
     try {
       // 1. Fetch Shopify Scenario details
       const resShopify = await apiFetch(
-        "https://email-syncing-backend.onrender.com//scenario/details",
+        "https://email-syncing-backend.onrender.com/scenario/details",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -723,7 +723,7 @@ const Sidebar = ({
 
       // 2. Fetch Custom Scenarios
       const resCustom = await apiFetch(
-        `https://email-syncing-backend.onrender.com//scenario/all?userId=${uid}`,
+        `https://email-syncing-backend.onrender.com/scenario/all?userId=${uid}`,
       );
       const dataCustom = await resCustom.json();
       let countCustom = 0;
@@ -801,7 +801,7 @@ const Sidebar = ({
 
       try {
         const res = await apiFetch(
-          `https://email-syncing-backend.onrender.com//mailhook/getAllEmailsData/${storedUserId}`
+          `https://email-syncing-backend.onrender.com/mailhook/getAllEmailsData/${storedUserId}`
         );
         const data = await res.json();
         const threads = data?.data?.threads || [];
@@ -865,7 +865,7 @@ const Sidebar = ({
 
       try {
         const res = await apiFetch(
-          "https://email-syncing-backend.onrender.com//scenario/details",
+          "https://email-syncing-backend.onrender.com/scenario/details",
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -911,7 +911,7 @@ const Sidebar = ({
 
       try {
         const response = await apiFetch(
-          `https://email-syncing-backend.onrender.com//auth/guide/${userId}`,
+          `https://email-syncing-backend.onrender.com/auth/guide/${userId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -994,7 +994,7 @@ const Sidebar = ({
     try {
       if (userId) {
         await apiFetch(
-          `https://email-syncing-backend.onrender.com//auth/logout/${userId}`,
+          `https://email-syncing-backend.onrender.com/auth/logout/${userId}`,
           {
             method: "POST",
           },
@@ -1014,7 +1014,7 @@ const Sidebar = ({
 
     try {
       await apiFetch(
-        `https://email-syncing-backend.onrender.com//auth/guide/${userId}`,
+        `https://email-syncing-backend.onrender.com/auth/guide/${userId}`,
         {
           method: "POST",
           headers: {

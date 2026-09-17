@@ -15,7 +15,7 @@ import {
   FiType,
 } from "react-icons/fi";
 
-const API_URL = "https://email-syncing-backend.onrender.com//api/product-page/product-page";
+const API_URL = "https://email-syncing-backend.onrender.com/api/product-page/product-page";
 
 const iconOptions = ["FiMail", "FiZap", "FiSend", "FiRepeat", "FiBarChart2"];
 

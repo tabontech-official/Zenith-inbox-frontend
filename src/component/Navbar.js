@@ -9,7 +9,7 @@ import { UserContext } from "./UserContext";
 import axios from "axios";
 import { MdSecurity } from "react-icons/md";
 
-const API = "https://email-syncing-backend.onrender.com//auth/guide";
+const API = "https://email-syncing-backend.onrender.com/auth/guide";
 
 const Navbar = () => {
   const [open, setOpen] = useState(false);
@@ -123,7 +123,7 @@ const Navbar = () => {
   const handleLogout = async () => {
     try {
       if (userId) {
-        await apiFetch(`https://email-syncing-backend.onrender.com//auth/logout/${userId}`, {
+        await apiFetch(`https://email-syncing-backend.onrender.com/auth/logout/${userId}`, {
           method: "POST",
         }).catch(() => {});
       }

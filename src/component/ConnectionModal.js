@@ -15,7 +15,7 @@ import { FiExternalLink, FiMail, FiShield } from "react-icons/fi";
 import { SiGmail } from "react-icons/si";
 import useModalDismiss from "../hooks/useModalDismiss";
 
-const API_BASE_URL = "https://email-syncing-backend.onrender.com/";
+const API_BASE_URL = "https://email-syncing-backend.onrender.com";
 
 const Field = ({ label, hint, children }) => (
   <div>

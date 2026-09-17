@@ -235,7 +235,7 @@ const ShopifyScenariosPage = () => {
     try {
       const token = localStorage.getItem("usertoken");
       const res = await apiFetch(
-        `https://email-syncing-backend.onrender.com//scenario/${activeScenarioKey}/queue`,
+        `https://email-syncing-backend.onrender.com/scenario/${activeScenarioKey}/queue`,
         { headers: { Authorization: `Bearer ${token}` } },
       );
       const data = await res.json();
@@ -283,7 +283,7 @@ const ShopifyScenariosPage = () => {
        */
       for (let pass = 0; pass < 40; pass += 1) {
         const res = await apiFetch(
-          `https://email-syncing-backend.onrender.com//scenario/${activeScenarioKey}/queue`,
+          `https://email-syncing-backend.onrender.com/scenario/${activeScenarioKey}/queue`,
           {
             method: "POST",
             headers: {
@@ -359,7 +359,7 @@ const ShopifyScenariosPage = () => {
         try {
           const token = localStorage.getItem("usertoken");
           const res = await apiFetch(
-            `https://email-syncing-backend.onrender.com//scenario/user/${targetUserId}`,
+            `https://email-syncing-backend.onrender.com/scenario/user/${targetUserId}`,
             {
               headers: { Authorization: `Bearer ${token}` },
             },
@@ -454,7 +454,7 @@ const ShopifyScenariosPage = () => {
       if (!userId) return;
       const srv = selectedServiceForTemplates || "General";
       const res = await apiFetch(
-        `https://email-syncing-backend.onrender.com//template/alltemplates?userId=${userId}&service=${encodeURIComponent(srv)}`,
+        `https://email-syncing-backend.onrender.com/template/alltemplates?userId=${userId}&service=${encodeURIComponent(srv)}`,
       );
       const data = await res.json();
       if (
@@ -656,7 +656,7 @@ const ShopifyScenariosPage = () => {
       if (!userId) return;
 
       const res = await apiFetch(
-        `https://email-syncing-backend.onrender.com//api/company-profile/${userId}/list`,
+        `https://email-syncing-backend.onrender.com/api/company-profile/${userId}/list`,
       );
       const data = await res.json();
 
@@ -946,7 +946,7 @@ const ShopifyScenariosPage = () => {
         return;
       }
       const res = await apiFetch(
-        `https://email-syncing-backend.onrender.com//auth/getConnection/${userId}`,
+        `https://email-syncing-backend.onrender.com/auth/getConnection/${userId}`,
         { headers: { Authorization: `Bearer ${token}` } },
       );
       const data = await res.json();
@@ -983,7 +983,7 @@ const ShopifyScenariosPage = () => {
       }
 
       const res = await apiFetch(
-        `https://email-syncing-backend.onrender.com//mailhookcard/${userId}`,
+        `https://email-syncing-backend.onrender.com/mailhookcard/${userId}`,
       );
       const data = await res.json();
       setMailhooks(data?.success && Array.isArray(data.data) ? data.data : []);
@@ -1020,7 +1020,7 @@ const ShopifyScenariosPage = () => {
   const fetchPlatformTrigger = async () => {
     try {
       const res = await apiFetch(
-        "https://email-syncing-backend.onrender.com//scenario/trigger-defaults",
+        "https://email-syncing-backend.onrender.com/scenario/trigger-defaults",
       );
       const data = await res.json();
 
@@ -1058,7 +1058,7 @@ const ShopifyScenariosPage = () => {
       setHistoryLoading(true);
 
       const res = await apiFetch(
-        `https://email-syncing-backend.onrender.com//scenario-run-log/history/${activeScenarioId}`,
+        `https://email-syncing-backend.onrender.com/scenario-run-log/history/${activeScenarioId}`,
       );
 
       const data = await res.json();
@@ -1190,7 +1190,7 @@ const ShopifyScenariosPage = () => {
         const userId = localStorage.getItem("userid");
         const token = localStorage.getItem("usertoken");
         const checkRes = await apiFetch(
-          "https://email-syncing-backend.onrender.com//scenario/details",
+          "https://email-syncing-backend.onrender.com/scenario/details",
           {
             method: "POST",
             headers: {
@@ -1230,7 +1230,7 @@ const ShopifyScenariosPage = () => {
       if (activeScenarioId) {
         console.log("✏️ Updating existing scenario:", activeScenarioId);
         res = await apiFetch(
-          `https://email-syncing-backend.onrender.com//scenario/detail/${activeScenarioId}`,
+          `https://email-syncing-backend.onrender.com/scenario/detail/${activeScenarioId}`,
           {
             method: "PUT",
             headers: {
@@ -1247,7 +1247,7 @@ const ShopifyScenariosPage = () => {
       } else {
         console.log("🆕 Creating a new scenario...");
         res = await apiFetch(
-          `https://email-syncing-backend.onrender.com//scenario`,
+          `https://email-syncing-backend.onrender.com/scenario`,
           {
             method: "POST",
             headers: {
@@ -1336,7 +1336,7 @@ const ShopifyScenariosPage = () => {
       }
 
       const refresh = await apiFetch(
-        "https://email-syncing-backend.onrender.com//scenario/details",
+        "https://email-syncing-backend.onrender.com/scenario/details",
         {
           method: "POST",
           headers: {
@@ -1444,7 +1444,7 @@ const ShopifyScenariosPage = () => {
   const handleToggleTemplate = async (templateId, newStatus) => {
     try {
       const res = await apiFetch(
-        `https://email-syncing-backend.onrender.com//template/status/${templateId}`,
+        `https://email-syncing-backend.onrender.com/template/status/${templateId}`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -1481,7 +1481,7 @@ const ShopifyScenariosPage = () => {
   const handleToggleAllTemplates = async (newStatus) => {
     try {
       const res = await apiFetch(
-        `https://email-syncing-backend.onrender.com//template/templatestatus/all`,
+        `https://email-syncing-backend.onrender.com/template/templatestatus/all`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -1570,7 +1570,7 @@ const ShopifyScenariosPage = () => {
         };
 
         const createRes = await apiFetch(
-          "https://email-syncing-backend.onrender.com//scenario",
+          "https://email-syncing-backend.onrender.com/scenario",
           {
             method: "POST",
             headers: {
@@ -1613,11 +1613,11 @@ const ShopifyScenariosPage = () => {
 
         const res = id
           ? await apiFetch(
-              `https://email-syncing-backend.onrender.com//scenario/detail/${id}`,
+              `https://email-syncing-backend.onrender.com/scenario/detail/${id}`,
               { headers: { Authorization: `Bearer ${token}` } },
             )
           : await apiFetch(
-              "https://email-syncing-backend.onrender.com//scenario/details",
+              "https://email-syncing-backend.onrender.com/scenario/details",
               {
                 method: "POST",
                 headers: {
@@ -1729,7 +1729,7 @@ const ShopifyScenariosPage = () => {
       });
       const token = localStorage.getItem("usertoken");
       const res = await apiFetch(
-        "https://email-syncing-backend.onrender.com//scenario",
+        "https://email-syncing-backend.onrender.com/scenario",
         {
           method: "POST",
           headers: {
@@ -1807,7 +1807,7 @@ const ShopifyScenariosPage = () => {
       toast.loading("Deleting Shopify Scenario...", { id: "deleteScenario" });
       const token = localStorage.getItem("usertoken");
       const res = await apiFetch(
-        `https://email-syncing-backend.onrender.com//scenario/detail/${activeScenarioId}`,
+        `https://email-syncing-backend.onrender.com/scenario/detail/${activeScenarioId}`,
         {
           method: "DELETE",
           headers: {
@@ -2346,7 +2346,7 @@ const ShopifyScenariosPage = () => {
         if (!userId || !showRunTestModal) return;
 
         const res = await apiFetch(
-          `https://email-syncing-backend.onrender.com//mailhook/get-test-data/${userId}`,
+          `https://email-syncing-backend.onrender.com/mailhook/get-test-data/${userId}`,
         );
         const data = await res.json();
 
@@ -2510,7 +2510,7 @@ const ShopifyScenariosPage = () => {
        * step asked about; the follow-ups do not affect this run.
        */
       const res = await apiFetch(
-        `https://email-syncing-backend.onrender.com//template/resolution?userId=${userId}&service=${encodeURIComponent(
+        `https://email-syncing-backend.onrender.com/template/resolution?userId=${userId}&service=${encodeURIComponent(
           service,
         )}&stepType=initial`,
       );
@@ -2710,7 +2710,7 @@ const ShopifyScenariosPage = () => {
       const activeScenarioId =
         scenarioId || localStorage.getItem("scenarioId") || null;
       const res = await apiFetch(
-        "https://email-syncing-backend.onrender.com//mailhook/Run-test-mode",
+        "https://email-syncing-backend.onrender.com/mailhook/Run-test-mode",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -2742,7 +2742,7 @@ const ShopifyScenariosPage = () => {
 
         const userId = localStorage.getItem("userid");
         const res = await apiFetch(
-          `https://email-syncing-backend.onrender.com//template/alltemplates?userId=${userId}&service=${encodeURIComponent(
+          `https://email-syncing-backend.onrender.com/template/alltemplates?userId=${userId}&service=${encodeURIComponent(
             formData.service,
           )}`,
         );
@@ -2851,7 +2851,7 @@ const ShopifyScenariosPage = () => {
       toast.loading("Fetching test email...", { id: "email" });
 
       const res = await apiFetch(
-        `https://email-syncing-backend.onrender.com//mailhook/get-test-email/${userId}`,
+        `https://email-syncing-backend.onrender.com/mailhook/get-test-email/${userId}`,
       );
       const data = await res.json();
 
@@ -2889,7 +2889,7 @@ const ShopifyScenariosPage = () => {
       const token = localStorage.getItem("usertoken");
       try {
         const res = await apiFetch(
-          `https://email-syncing-backend.onrender.com//template/all?userId=${userId}`,
+          `https://email-syncing-backend.onrender.com/template/all?userId=${userId}`,
           {
             headers: token ? { Authorization: `Bearer ${token}` } : {},
           },
@@ -2930,7 +2930,7 @@ const ShopifyScenariosPage = () => {
   //       const userId = localStorage.getItem("userid");
   //       try {
   //         const { data } = await axios.get(
-  //           `https://email-syncing-backend.onrender.com//template/all?userId=${userId}`
+  //           `https://email-syncing-backend.onrender.com/template/all?userId=${userId}`
   //         );
 
   //         const grouped = data.reduce((acc, item) => {
@@ -2964,7 +2964,7 @@ const ShopifyScenariosPage = () => {
         const token = localStorage.getItem("usertoken");
         try {
           const { data } = await axios.get(
-            `https://email-syncing-backend.onrender.com//template/all?userId=${userId}`,
+            `https://email-syncing-backend.onrender.com/template/all?userId=${userId}`,
             {
               headers: token ? { Authorization: `Bearer ${token}` } : {},
             },
@@ -6464,7 +6464,7 @@ const ShopifyScenariosPage = () => {
                         const newStatus = e.target.checked;
                         const updates = templateList.map((t) =>
                           apiFetch(
-                            `https://email-syncing-backend.onrender.com//template/status/${t._id}`,
+                            `https://email-syncing-backend.onrender.com/template/status/${t._id}`,
                             {
                               method: "PATCH",
                               headers: {
@@ -6973,7 +6973,7 @@ const ShopifyScenariosPage = () => {
                     );
 
                     await apiFetch(
-                      `https://email-syncing-backend.onrender.com//template/update/${editingTemplate._id}`,
+                      `https://email-syncing-backend.onrender.com/template/update/${editingTemplate._id}`,
                       {
                         method: "PUT",
                         headers: { "Content-Type": "application/json" },
@@ -7045,7 +7045,7 @@ const ShopifyScenariosPage = () => {
 
                             try {
                               const res = await apiFetch(
-                                `https://email-syncing-backend.onrender.com//template/templatestatus/all`,
+                                `https://email-syncing-backend.onrender.com/template/templatestatus/all`,
                                 {
                                   method: "PATCH",
                                   headers: {
@@ -7238,7 +7238,7 @@ const ShopifyScenariosPage = () => {
                                             );
 
                                             await apiFetch(
-                                              `https://email-syncing-backend.onrender.com//template/status/${t._id}`,
+                                              `https://email-syncing-backend.onrender.com/template/status/${t._id}`,
                                               {
                                                 method: "PATCH",
                                                 headers: {
@@ -7386,7 +7386,7 @@ const ShopifyScenariosPage = () => {
 
                               try {
                                 const res = await apiFetch(
-                                  `https://email-syncing-backend.onrender.com//mailhook/verify`,
+                                  `https://email-syncing-backend.onrender.com/mailhook/verify`,
                                   {
                                     method: "POST",
                                     headers: {

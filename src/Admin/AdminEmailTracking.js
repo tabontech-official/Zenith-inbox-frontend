@@ -30,7 +30,7 @@ import { apiFetch } from "../utils/apiClient";
 //   useEffect(() => {
 //     const fetchData = async () => {
 //       try {
-//         const res = await apiFetch("https://email-syncing-backend.onrender.com//auth/email-tracking");
+//         const res = await apiFetch("https://email-syncing-backend.onrender.com/auth/email-tracking");
 //         const data = await res.json();
 //         setSummary(data.data || []);
 //       } catch (err) {
@@ -387,7 +387,7 @@ const AdminEmailTracking = () => {
     const fetchData = async () => {
       try {
         const res = await apiFetch(
-          "https://email-syncing-backend.onrender.com//auth/email-tracking"
+          "https://email-syncing-backend.onrender.com/auth/email-tracking"
         );
         const data = await res.json();
         setSummary(data.data || []);

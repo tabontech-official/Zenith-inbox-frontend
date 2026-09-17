@@ -27,7 +27,7 @@ import axios from 'axios';
 
 /* Default preserves current production behaviour; override for local dev. */
 export const API_BASE_URL = (
-  process.env.REACT_APP_API_BASE_URL || 'https://email-syncing-backend.onrender.com/'
+  process.env.REACT_APP_API_BASE_URL || 'https://email-syncing-backend.onrender.com'
 ).replace(/\/$/, '');
 
 /*
@@ -35,7 +35,7 @@ export const API_BASE_URL = (
  * rewritten to API_BASE_URL so the env override works everywhere without
  * editing every URL string.
  */
-const LEGACY_HOST = 'https://email-syncing-backend.onrender.com/';
+const LEGACY_HOST = 'https://email-syncing-backend.onrender.com';
 
 export const TOKEN_KEY = 'usertoken';
 
