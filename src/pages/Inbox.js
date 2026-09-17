@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import AppLayout from "../component/AppLayout";
 import { useLocation } from "react-router-dom";
 import axios from "axios";
@@ -10,6 +10,7 @@ import {
 import { splitQuotedBody } from "../utils/quotedBody";
 import { getCached, setCached, getCacheKey, invalidateCache } from "../utils/appCache";
 import { TableSkeleton } from "../component/Skeletons";
+import PendingLeadsModal from "../modals/PendingLeadsModal";
 import {
   FiArrowLeft,
   FiSearch,
@@ -148,6 +149,28 @@ const Inbox = () => {
   const [replySending, setReplySending] = useState(false);
   const [isMobileView, setIsMobileView] = useState(false);
   const [selectedLeadIds, setSelectedLeadIds] = useState(new Set());
+  const [isPendingModalOpen, setIsPendingModalOpen] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
+
+  const fetchPendingCount = useCallback(async () => {
+    if (!currentUserId) return;
+    try {
+      const token = localStorage.getItem("usertoken");
+      const res = await axios.get(
+        `${API_BASE_URL}/pending-leads/${currentUserId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (res.data?.success) {
+        setPendingCount(res.data.count || (res.data.data ? res.data.data.length : 0));
+      }
+    } catch (err) {
+      // ignore
+    }
+  }, [currentUserId]);
   /*
    * Right-click menu for a lead row.
    *
@@ -870,6 +893,8 @@ const Inbox = () => {
           markEmailAsRead(updated._id);
         }
       }
+
+      fetchPendingCount();
     } catch (err) {
       console.error("Error fetching inbox:", err);
       if (err.response && err.response.status === 404) {
@@ -897,6 +922,7 @@ const Inbox = () => {
   };
 
   useEffect(() => {
+    fetchPendingCount();
     if ("Notification" in window && Notification.permission === "default") {
       Notification.requestPermission();
     }
@@ -2190,6 +2216,22 @@ const Inbox = () => {
               >
                 <FiRefreshCw size={14} className={loading ? "animate-spin" : ""} />
               </button>
+
+              {/* Pending / Unprocessed Leads Button */}
+              <button
+                type="button"
+                onClick={() => setIsPendingModalOpen(true)}
+                title="View & process pending/unanswered emails"
+                className="flex h-9 items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 text-xs font-semibold text-amber-900 transition hover:bg-amber-100 shrink-0 cursor-pointer shadow-xs"
+              >
+                <FiClock className="text-amber-600 shrink-0" size={14} />
+                <span className="hidden sm:inline">Pending Leads</span>
+                {pendingCount > 0 && (
+                  <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-amber-500 px-1.5 text-[10px] font-bold text-white shadow-xs">
+                    {pendingCount}
+                  </span>
+                )}
+              </button>
               {/*
                 Says how many are loaded out of how many exist, so a
                 partially loaded list never looks like the whole thing.
@@ -3185,6 +3227,19 @@ const Inbox = () => {
 
       </main>
     </div>
+
+    {/* Pending & Unprocessed Leads Modal */}
+    <PendingLeadsModal
+      isOpen={isPendingModalOpen}
+      onClose={() => {
+        setIsPendingModalOpen(false);
+        fetchPendingCount();
+      }}
+      onRepliesProcessed={() => {
+        fetchEmails();
+        fetchPendingCount();
+      }}
+    />
     </AppLayout>
   );
 };
