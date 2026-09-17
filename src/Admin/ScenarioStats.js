@@ -21,7 +21,7 @@ const AdminScenarioStats = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await apiFetch("https://email-syncing-backend.vercel.app/scenario/scenario-stats");
+        const res = await apiFetch("https://email-syncing-backend.onrender.com//scenario/scenario-stats");
         const data = await res.json();
         setStats(data.data || []);
       } catch (err) {

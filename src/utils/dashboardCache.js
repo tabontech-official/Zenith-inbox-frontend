@@ -1,5 +1,5 @@
 import { apiFetch } from "./apiClient";
-const BACKEND_URL = "https://email-syncing-backend.vercel.app";
+const BACKEND_URL = "https://email-syncing-backend.onrender.com/";
 
 let summaryCache = null;
 let cacheTime = 0;

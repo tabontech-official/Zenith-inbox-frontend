@@ -35,7 +35,7 @@ const userId = localStorage.getItem("userid");
   const payload = { ...form, userId };
 
   const res = await apiFetch(
-    "https://email-syncing-backend.vercel.app/auth/saveSmtpConnection",
+    "https://email-syncing-backend.onrender.com//auth/saveSmtpConnection",
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },

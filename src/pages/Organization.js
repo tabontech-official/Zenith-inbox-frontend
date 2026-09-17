@@ -97,7 +97,7 @@ const Organization = () => {
       if (!userId) return;
       const token = localStorage.getItem("usertoken");
       const res = await axios.get(
-        `https://email-syncing-backend.vercel.app/getAllEmailsData/${userId}`,
+        `https://email-syncing-backend.onrender.com//getAllEmailsData/${userId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -141,12 +141,12 @@ const Organization = () => {
       let res;
       try {
         res = await axios.get(
-          `https://email-syncing-backend.vercel.app/scenario/user/${userId}`,
+          `https://email-syncing-backend.onrender.com//scenario/user/${userId}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
       } catch (e) {
         res = await axios.get(
-          `https://email-syncing-backend.vercel.app/scenario/getScenariosByUser/${userId}`,
+          `https://email-syncing-backend.onrender.com//scenario/getScenariosByUser/${userId}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
       }

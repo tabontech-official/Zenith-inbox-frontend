@@ -23,7 +23,7 @@ const AdminConnections = () => {
     const fetchConnections = async () => {
       try {
         const token = localStorage.getItem("usertoken");
-        const res = await apiFetch("https://email-syncing-backend.vercel.app/auth/connections", {
+        const res = await apiFetch("https://email-syncing-backend.onrender.com//auth/connections", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -230,7 +230,7 @@ export default AdminConnections;
 
 //       const token = localStorage.getItem("usertoken");
 
-//       const res = await apiFetch("https://email-syncing-backend.vercel.app/auth/connections", {
+//       const res = await apiFetch("https://email-syncing-backend.onrender.com//auth/connections", {
 //         headers: {
 //           Authorization: `Bearer ${token}`,
 //         },
@@ -315,7 +315,7 @@ export default AdminConnections;
 //       const token = localStorage.getItem("usertoken");
 
 //       const res = await apiFetch(
-//         `https://email-syncing-backend.vercel.app/auth/connection/${selectedConnection._id}`,
+//         `https://email-syncing-backend.onrender.com//auth/connection/${selectedConnection._id}`,
 //         {
 //           method: "DELETE",
 //           headers: {

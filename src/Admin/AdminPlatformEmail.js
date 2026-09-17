@@ -15,7 +15,7 @@ import PlatformAdminLayout from "./PlatformAdminLayout";
 import toast from "react-hot-toast";
 
 const API_BASE_URL =
-  "https://email-syncing-backend.vercel.app/admin/platform-email";
+  "https://email-syncing-backend.onrender.com//admin/platform-email";
 
 /*
  * The mailbox Replex Engine sends its own mail from — welcome mail,

@@ -5,7 +5,7 @@ import { apiFetch } from "./apiClient";
  * based on company knowledge from the company profile.
  */
 
-const BACKEND_URL = "https://email-syncing-backend.vercel.app";
+const BACKEND_URL = "https://email-syncing-backend.onrender.com/";
 
 /**
  * Fetch the company profile for the given user.

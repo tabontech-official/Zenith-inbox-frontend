@@ -97,7 +97,7 @@ const OthersScenariosPage = () => {
       if (userId) {
         try {
           const token = localStorage.getItem("usertoken");
-          const res = await apiFetch(`https://email-syncing-backend.vercel.app/scenario/user/${userId}`, {
+          const res = await apiFetch(`https://email-syncing-backend.onrender.com//scenario/user/${userId}`, {
             headers: { Authorization: `Bearer ${token}` }
           });
           const data = await res.json();
@@ -226,7 +226,7 @@ const OthersScenariosPage = () => {
   const fetchTestEmail = async () => {
     try {
       const res = await apiFetch(
-        `https://email-syncing-backend.vercel.app/mailhook/email/latest/${userId}`,
+        `https://email-syncing-backend.onrender.com//mailhook/email/latest/${userId}`,
       );
 
       const data = await res.json();
@@ -275,7 +275,7 @@ const OthersScenariosPage = () => {
     try {
       const token = localStorage.getItem("usertoken");
       const res = await apiFetch(
-        `https://email-syncing-backend.vercel.app/template/other/active?userId=${userId}`,
+        `https://email-syncing-backend.onrender.com//template/other/active?userId=${userId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -843,7 +843,7 @@ const OthersScenariosPage = () => {
 
       const token = localStorage.getItem("usertoken");
       const res = await apiFetch(
-        `https://email-syncing-backend.vercel.app/scenario/detail/${id}`,
+        `https://email-syncing-backend.onrender.com//scenario/detail/${id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const data = await res.json();
@@ -867,7 +867,7 @@ const OthersScenariosPage = () => {
     try {
       const token = localStorage.getItem("usertoken");
       const res = await apiFetch(
-        `https://email-syncing-backend.vercel.app/auth/getConnection/${localStorage.getItem(
+        `https://email-syncing-backend.onrender.com//auth/getConnection/${localStorage.getItem(
           "userid",
         )}`,
         { headers: { Authorization: `Bearer ${token}` } }
@@ -907,7 +907,7 @@ const OthersScenariosPage = () => {
   const fetchMailhooks = async () => {
     try {
       const res = await apiFetch(
-        `https://email-syncing-backend.vercel.app/mailhookcard/${localStorage.getItem(
+        `https://email-syncing-backend.onrender.com//mailhookcard/${localStorage.getItem(
           "userid",
         )}`,
       );
@@ -1004,8 +1004,8 @@ const OthersScenariosPage = () => {
     };
 
     const url = id
-      ? `https://email-syncing-backend.vercel.app/scenario/detail/${id}`
-      : `https://email-syncing-backend.vercel.app/scenario`;
+      ? `https://email-syncing-backend.onrender.com//scenario/detail/${id}`
+      : `https://email-syncing-backend.onrender.com//scenario`;
 
     const token = localStorage.getItem("usertoken");
     const res = await apiFetch(url, {
@@ -1335,7 +1335,7 @@ const OthersScenariosPage = () => {
       const userId = localStorage.getItem("userid");
 
       const res = await apiFetch(
-        "https://email-syncing-backend.vercel.app/template/save/other",
+        "https://email-syncing-backend.onrender.com//template/save/other",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

@@ -15,7 +15,7 @@ import PlatformAdminLayout from "./PlatformAdminLayout";
 import toast from "react-hot-toast";
 
 const API_BASE_URL =
-  "https://email-syncing-backend.vercel.app/admin/scenario-triggers";
+  "https://email-syncing-backend.onrender.com//admin/scenario-triggers";
 
 /*
  * Platform-wide trigger subjects for the built-in scenarios.

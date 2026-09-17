@@ -86,7 +86,7 @@ const LoginPage = () => {
 
     try {
       const response = await axios.post(
-        "https://email-syncing-backend.vercel.app/auth/google-login",
+        "https://email-syncing-backend.onrender.com//auth/google-login",
         { credential: credentialResponse.credential }
       );
 
@@ -127,7 +127,7 @@ const LoginPage = () => {
 
     try {
       const response = await axios.post(
-        "https://email-syncing-backend.vercel.app/auth/signIn",
+        "https://email-syncing-backend.onrender.com//auth/signIn",
         {
           email,
           password,

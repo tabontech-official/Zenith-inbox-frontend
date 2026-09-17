@@ -36,7 +36,7 @@ const MasterAdminStripe = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("usertoken");
-      const res = await apiFetch("https://email-syncing-backend.vercel.app/admin/stripe-config", {
+      const res = await apiFetch("https://email-syncing-backend.onrender.com//admin/stripe-config", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -71,7 +71,7 @@ const MasterAdminStripe = () => {
         payload.webhookSecret = newWebhookSecret.trim();
       }
 
-      const res = await apiFetch("https://email-syncing-backend.vercel.app/admin/stripe-config", {
+      const res = await apiFetch("https://email-syncing-backend.onrender.com//admin/stripe-config", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

@@ -84,7 +84,7 @@ import { scenarioBlockReason } from "../utils/connectionHealth";
 //     const userId = localStorage.getItem("userid");
 //     try {
 //       setLoading(true);
-//       const res = await apiFetch(`https://email-syncing-backend.vercel.app/scenario/user/${userId}`);
+//       const res = await apiFetch(`https://email-syncing-backend.onrender.com//scenario/user/${userId}`);
 //       const data = await res.json();
 //       setScenarios(Array.isArray(data) ? data : data.data || []);
 //     } catch (err) {
@@ -106,7 +106,7 @@ import { scenarioBlockReason } from "../utils/connectionHealth";
 //     if (!selectedScenario) return;
 //     try {
 //       await apiFetch(
-//         `https://email-syncing-backend.vercel.app/scenario/detail/${selectedScenario._id}`,
+//         `https://email-syncing-backend.onrender.com//scenario/detail/${selectedScenario._id}`,
 //         { method: "DELETE" },
 //       );
 //       setDeleteModalOpen(false);
@@ -586,7 +586,7 @@ const AllScenariosPage = () => {
       const token = localStorage.getItem("usertoken");
 
       const response = await apiFetch(
-        `https://email-syncing-backend.vercel.app/scenario/user/${currentUserId}`,
+        `https://email-syncing-backend.onrender.com//scenario/user/${currentUserId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -722,7 +722,7 @@ const AllScenariosPage = () => {
     try {
       const token = localStorage.getItem("usertoken");
       const res = await apiFetch(
-        `https://email-syncing-backend.vercel.app/scenario/detail/${scenario._id}`,
+        `https://email-syncing-backend.onrender.com//scenario/detail/${scenario._id}`,
         {
           method: "PUT",
           headers: {
@@ -802,7 +802,7 @@ const AllScenariosPage = () => {
     try {
       const token = localStorage.getItem("usertoken");
       await apiFetch(
-        `https://email-syncing-backend.vercel.app/scenario/detail/${selectedScenario._id}`,
+        `https://email-syncing-backend.onrender.com//scenario/detail/${selectedScenario._id}`,
         {
           method: "DELETE",
           headers: {

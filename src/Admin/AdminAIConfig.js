@@ -13,7 +13,7 @@ import {
 import PlatformAdminLayout from "./PlatformAdminLayout";
 import toast from "react-hot-toast";
 
-const API_BASE_URL = "https://email-syncing-backend.vercel.app/api/ai-config";
+const API_BASE_URL = "https://email-syncing-backend.onrender.com//api/ai-config";
 
 // Preset Free OpenRouter Models
 const OPENROUTER_FREE_MODELS = [

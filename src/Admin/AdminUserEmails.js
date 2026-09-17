@@ -14,7 +14,7 @@ import { apiFetch } from "../utils/apiClient";
 //     const fetchUserEmails = async () => {
 //       try {
 //         const res = await apiFetch(
-//           `https://email-syncing-backend.vercel.app/auth/email-tracking?userId=${userId}`
+//           `https://email-syncing-backend.onrender.com//auth/email-tracking?userId=${userId}`
 //         );
 //         const data = await res.json();
 
@@ -146,7 +146,7 @@ const AdminUserEmails = () => {
     const fetchUserEmails = async () => {
       try {
         const res = await apiFetch(
-          `https://email-syncing-backend.vercel.app/auth/email-tracking?userId=${userId}`,
+          `https://email-syncing-backend.onrender.com//auth/email-tracking?userId=${userId}`,
         );
         const data = await res.json();
         const userData = data.data?.[0];

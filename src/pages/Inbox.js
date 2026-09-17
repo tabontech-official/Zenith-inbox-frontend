@@ -49,7 +49,7 @@ import {
   FiChevronDown,
 } from "react-icons/fi";
 
-const API_BASE_URL = "https://email-syncing-backend.vercel.app/mailhook";
+const API_BASE_URL = "https://email-syncing-backend.onrender.com//mailhook";
 
 /*
  * Something to read while the mailbox is being assembled.
@@ -941,7 +941,7 @@ const Inbox = () => {
 
     const token = localStorage.getItem("usertoken");
     axios
-      .get(`https://email-syncing-backend.vercel.app/auth/getUsers/${userId}`, {
+      .get(`https://email-syncing-backend.onrender.com//auth/getUsers/${userId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

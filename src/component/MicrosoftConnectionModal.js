@@ -22,7 +22,7 @@ import useModalDismiss from "../hooks/useModalDismiss";
  */
 const API_BASE_URL =
   process.env.REACT_APP_API_BASE_URL ||
-  "https://email-syncing-backend.vercel.app";
+  "https://email-syncing-backend.onrender.com/";
 
 /*
  * NOTE: there are deliberately no SMTP/IMAP host or port fields in this

@@ -162,7 +162,7 @@ const SetupFlow = () => {
 
     const redirectURL = `/setup?step=5`;
 
-    const authURL = `https://email-syncing-backend.vercel.app/auth/google?userId=${userId}&redirect=${encodeURIComponent(
+    const authURL = `https://email-syncing-backend.onrender.com//auth/google?userId=${userId}&redirect=${encodeURIComponent(
       redirectURL,
     )}`;
 
@@ -188,7 +188,7 @@ const SetupFlow = () => {
      */
     const apiBase =
       process.env.REACT_APP_API_BASE_URL ||
-      "https://email-syncing-backend.vercel.app";
+      "https://email-syncing-backend.onrender.com/";
 
     const authURL = `${apiBase}/auth/outlook/connect?userId=${userId}&redirect=${encodeURIComponent(
       redirectURL,
@@ -202,7 +202,7 @@ const SetupFlow = () => {
   const saveSetupProgress = async (data = {}) => {
     try {
       const res = await apiFetch(
-        `https://email-syncing-backend.vercel.app/auth/setup/${user._id}`,
+        `https://email-syncing-backend.onrender.com//auth/setup/${user._id}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -239,7 +239,7 @@ const SetupFlow = () => {
 
     try {
       const res = await apiFetch(
-        `https://email-syncing-backend.vercel.app/auth/setup/${user._id}`,
+        `https://email-syncing-backend.onrender.com//auth/setup/${user._id}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -303,7 +303,7 @@ const SetupFlow = () => {
 
       try {
         const res = await apiFetch(
-          `https://email-syncing-backend.vercel.app/mailhook/verification/${user._id}`,
+          `https://email-syncing-backend.onrender.com//mailhook/verification/${user._id}`,
         );
         const data = await res.json();
 
@@ -405,7 +405,7 @@ const SetupFlow = () => {
       setLoadingMailhookEmails(true);
 
       const res = await apiFetch(
-        `https://email-syncing-backend.vercel.app/mailhook/verification/${user._id}`,
+        `https://email-syncing-backend.onrender.com//mailhook/verification/${user._id}`,
       );
 
       const data = await res.json();
@@ -462,7 +462,7 @@ const SetupFlow = () => {
   const fetchValidateEmail = async () => {
     try {
       const res = await apiFetch(
-        `https://email-syncing-backend.vercel.app/mailhook/validateTest/${user._id}`,
+        `https://email-syncing-backend.onrender.com//mailhook/validateTest/${user._id}`,
       );
       const data = await res.json();
 
@@ -510,7 +510,7 @@ const SetupFlow = () => {
 
       // 📨 Send request to backend
       const res = await apiFetch(
-        `https://email-syncing-backend.vercel.app/mailhook/validate-forwarding/${user._id}`,
+        `https://email-syncing-backend.onrender.com//mailhook/validate-forwarding/${user._id}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -616,7 +616,7 @@ const SetupFlow = () => {
       try {
         if (!user?._id) return;
         const res = await apiFetch(
-          `https://email-syncing-backend.vercel.app/auth/setup/${user._id}`,
+          `https://email-syncing-backend.onrender.com//auth/setup/${user._id}`,
         );
         const data = await res.json();
         if (data.success) setSetupProgress(data.data);
@@ -724,7 +724,7 @@ const SetupFlow = () => {
 
       try {
         const res = await apiFetch(
-          `https://email-syncing-backend.vercel.app/mailhook/validateTest/${user._id}`,
+          `https://email-syncing-backend.onrender.com//mailhook/validateTest/${user._id}`,
         );
         const data = await res.json();
 

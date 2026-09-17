@@ -4,7 +4,7 @@ import toast from "react-hot-toast";
 import { FiEye, FiEyeOff, FiMail, FiServer, FiX } from "react-icons/fi";
 import useModalDismiss from "../hooks/useModalDismiss";
 
-const API_BASE_URL = "https://email-syncing-backend.vercel.app";
+const API_BASE_URL = "https://email-syncing-backend.onrender.com/";
 
 const initialForm = {
   name: "My Email Connection",

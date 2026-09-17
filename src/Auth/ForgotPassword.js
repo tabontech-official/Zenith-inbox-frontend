@@ -18,7 +18,7 @@ import { apiFetch } from "../utils/apiClient";
 
 //     setLoading(true);
 //     try {
-//       const res = await apiFetch("https://email-syncing-backend.vercel.app/auth/forgot-password", {
+//       const res = await apiFetch("https://email-syncing-backend.onrender.com//auth/forgot-password", {
 //         method: "POST",
 //         headers: { "Content-Type": "application/json" },
 //         body: JSON.stringify({ email }),
@@ -105,7 +105,7 @@ const ForgotPassword = () => {
 
     try {
       const res = await apiFetch(
-        "https://email-syncing-backend.vercel.app/auth/forgot-password",
+        "https://email-syncing-backend.onrender.com//auth/forgot-password",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

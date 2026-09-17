@@ -30,7 +30,7 @@ const MasterAdminUsers = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("usertoken");
-      let url = `https://email-syncing-backend.vercel.app/admin/users?search=${encodeURIComponent(search)}`;
+      let url = `https://email-syncing-backend.onrender.com//admin/users?search=${encodeURIComponent(search)}`;
       if (selectedPlanFilter !== "all") {
         url += `&plan=${selectedPlanFilter}`;
       }
@@ -51,7 +51,7 @@ const MasterAdminUsers = () => {
   const handleToggleLock = async (userItem) => {
     try {
       const token = localStorage.getItem("usertoken");
-      const res = await apiFetch(`https://email-syncing-backend.vercel.app/admin/users/${userItem._id}/lock`, {
+      const res = await apiFetch(`https://email-syncing-backend.onrender.com//admin/users/${userItem._id}/lock`, {
         method: "PUT",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -78,7 +78,7 @@ const MasterAdminUsers = () => {
     if (!selectedUser) return;
     try {
       const token = localStorage.getItem("usertoken");
-      const res = await apiFetch(`https://email-syncing-backend.vercel.app/admin/users/${selectedUser._id}/plan`, {
+      const res = await apiFetch(`https://email-syncing-backend.onrender.com//admin/users/${selectedUser._id}/plan`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

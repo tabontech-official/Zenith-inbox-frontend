@@ -110,7 +110,7 @@ const TemplateModal = ({
       if (editingTemplateId) {
         // Update existing template
         res = await apiFetch(
-          `https://email-syncing-backend.vercel.app/template/update/${editingTemplateId}`,
+          `https://email-syncing-backend.onrender.com//template/update/${editingTemplateId}`,
           {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
@@ -125,7 +125,7 @@ const TemplateModal = ({
       } else {
         // Create new template
         res = await apiFetch(
-          "https://email-syncing-backend.vercel.app/template/save/other",
+          "https://email-syncing-backend.onrender.com//template/save/other",
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
