@@ -3236,7 +3236,7 @@ const Inbox = () => {
         fetchPendingCount();
       }}
       onRepliesProcessed={() => {
-        fetchEmails();
+        fetchEmails(false);
         fetchPendingCount();
       }}
     />
