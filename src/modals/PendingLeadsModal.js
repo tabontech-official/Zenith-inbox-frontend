@@ -30,8 +30,9 @@ const PendingLeadsModal = ({ isOpen, onClose, onRepliesProcessed }) => {
     setLoading(true);
     try {
       const res = await apiFetch(`${API_BASE_URL}/mailhook/pending-leads/${userId}`);
-      if (res && res.success) {
-        setLeads(res.data || []);
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setLeads(data.data || []);
       } else {
         setLeads([]);
       }
@@ -58,9 +59,10 @@ const PendingLeadsModal = ({ isOpen, onClose, onRepliesProcessed }) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ forceRun: true }),
       });
+      const data = await res.json();
 
-      if (res && res.success) {
-        toast.success(res.message || "Auto-reply sent successfully!");
+      if (res.ok && data.success) {
+        toast.success(data.message || "Auto-reply sent successfully!");
         setLeads((prev) => prev.filter((item) => item._id !== emailId));
         setSelectedIds((prev) => {
           const next = new Set(prev);
@@ -71,7 +73,7 @@ const PendingLeadsModal = ({ isOpen, onClose, onRepliesProcessed }) => {
           onRepliesProcessed();
         }
       } else {
-        toast.error(res?.message || "Failed to send auto-reply");
+        toast.error(data?.message || "Failed to send auto-reply");
       }
     } catch (err) {
       console.error("Error processing pending lead:", err);
@@ -92,16 +94,17 @@ const PendingLeadsModal = ({ isOpen, onClose, onRepliesProcessed }) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ emailIds: idsToProcess, userId }),
       });
+      const data = await res.json();
 
-      if (res && res.success) {
-        toast.success(`Processed ${res.sent || idsToProcess.length} email(s) successfully!`);
+      if (res.ok && data.success) {
+        toast.success(`Processed ${data.sent || idsToProcess.length} email(s) successfully!`);
         await fetchPendingLeads();
         setSelectedIds(new Set());
         if (onRepliesProcessed) {
           onRepliesProcessed();
         }
       } else {
-        toast.error(res?.message || "Failed to process batch");
+        toast.error(data?.message || "Failed to process batch");
       }
     } catch (err) {
       console.error("Batch processing error:", err);
