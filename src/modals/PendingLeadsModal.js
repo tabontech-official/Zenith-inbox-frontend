@@ -12,10 +12,8 @@ import {
   FiUser,
 } from "react-icons/fi";
 import toast from "react-hot-toast";
-import { apiFetch, getApiBaseUrl } from "../utils/apiClient";
+import { apiFetch, API_BASE_URL } from "../utils/apiClient";
 import useModalDismiss from "../hooks/useModalDismiss";
-
-const API_BASE_URL = getApiBaseUrl();
 
 const PendingLeadsModal = ({ isOpen, onClose, onRepliesProcessed }) => {
   const [leads, setLeads] = useState([]);

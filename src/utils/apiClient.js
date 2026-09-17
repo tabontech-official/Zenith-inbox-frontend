@@ -30,6 +30,8 @@ export const API_BASE_URL = (
   process.env.REACT_APP_API_BASE_URL || 'https://email-syncing-backend.onrender.com'
 ).replace(/\/$/, '');
 
+export const getApiBaseUrl = () => API_BASE_URL;
+
 /*
  * The hardcoded host that call sites still contain. Requests to it are
  * rewritten to API_BASE_URL so the env override works everywhere without
