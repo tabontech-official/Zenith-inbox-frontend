@@ -46,9 +46,11 @@ import {
   FiImage,
   FiLock,
   FiEdit3,
-  FiMaximize2,
   FiChevronDown,
+  FiType,
 } from "react-icons/fi";
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
 
 const API_BASE_URL = "https://email-syncing-backend.onrender.com/mailhook";
 
@@ -994,13 +996,30 @@ const Inbox = () => {
 
   const getLeadAddressForThread = (emailObj) => {
     if (!emailObj) return "";
+    if (emailObj.leadReplyAddress && !/partners@shopify\.com/i.test(emailObj.leadReplyAddress)) {
+      return emailObj.leadReplyAddress;
+    }
     const conversation = emailObj.replies || emailObj.conversation || [];
-    const incomingMsg = conversation.find((m) => m.direction === "incoming" || (m.senderAddress && m.senderAddress.includes("@")));
+    const incomingMsg = conversation.find(
+      (m) =>
+        (m.direction === "incoming" || (m.senderAddress && m.senderAddress.includes("@"))) &&
+        !/partners@shopify\.com/i.test(m.senderAddress || "")
+    );
     if (incomingMsg?.senderAddress) return incomingMsg.senderAddress;
-    if (emailObj.direction === "outgoing" && emailObj.recipientAddress) {
+    if (
+      emailObj.direction === "outgoing" &&
+      emailObj.recipientAddress &&
+      !/partners@shopify\.com/i.test(emailObj.recipientAddress)
+    ) {
       return emailObj.recipientAddress;
     }
-    return emailObj.latestSenderAddress || emailObj.senderAddress || emailObj.recipientAddress || "";
+    const candidate =
+      emailObj.latestSenderAddress ||
+      emailObj.senderAddress ||
+      emailObj.recipientAddress ||
+      "";
+    if (!/partners@shopify\.com/i.test(candidate)) return candidate;
+    return emailObj.leadReplyAddress || candidate;
   };
 
   const getNameFromAddress = (address = "", emailObj = null) => {
@@ -1516,8 +1535,48 @@ const Inbox = () => {
   };
   // ────────────────────────────────────────────────────────────────────────────
 
+  const replyQuillModules = {
+    toolbar: [
+      ["bold", "italic", "underline", "strike"],
+      [{ list: "ordered" }, { list: "bullet" }],
+      ["link"],
+      ["clean"],
+    ],
+  };
+
+  const handleInsertLink = () => {
+    const editor = replyTextRef.current?.getEditor?.();
+    if (!editor) return;
+    const range = editor.getSelection();
+    let selectedText = "";
+    if (range && range.length > 0) {
+      selectedText = editor.getText(range.index, range.length);
+    }
+    const url = window.prompt("Enter URL (e.g. https://theshopifyexperts.com):", "https://");
+    if (!url || url.trim() === "" || url.trim() === "https://") return;
+    const cleanUrl =
+      url.trim().startsWith("http://") ||
+      url.trim().startsWith("https://") ||
+      url.trim().startsWith("mailto:")
+        ? url.trim()
+        : `https://${url.trim()}`;
+
+    if (range && range.length > 0) {
+      editor.formatText(range.index, range.length, "link", cleanUrl);
+    } else {
+      const textToDisplay = window.prompt("Enter text to display for link:", selectedText || "link");
+      if (!textToDisplay) return;
+      const insertIndex = range ? range.index : editor.getLength();
+      editor.insertText(insertIndex, textToDisplay, "link", cleanUrl);
+    }
+  };
+
   const handleSendThreadReply = async () => {
-    if (!selectedEmail || (!replyText.trim() && selectedFiles.length === 0) || replySending) return;
+    const isReplyEmpty = !replyText
+      .replace(/<[^>]*>/g, "")
+      .replace(/&nbsp;/g, " ")
+      .trim();
+    if (!selectedEmail || (isReplyEmpty && selectedFiles.length === 0) || replySending) return;
 
     const message = replyText.trim();
     const userId = localStorage.getItem("userid");
@@ -2626,73 +2685,90 @@ const Inbox = () => {
                                 &lt;{senderEmailAddr}&gt;
                               </span>
                             </div>
-                            <button
-                              type="button"
-                              aria-expanded={isDetailsOpen}
-                              title={
-                                isDetailsOpen
-                                  ? "Hide details"
-                                  : "Show from, to and date"
-                              }
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setExpandedMsgDetails(
-                                  isDetailsOpen ? null : msg._id || mIdx
-                                );
-                              }}
-                              className="mt-0.5 flex w-fit items-center gap-1 rounded px-1 -ml-1 text-xs font-medium text-slate-500 transition hover:bg-slate-200/60 hover:text-slate-700 cursor-pointer"
-                            >
-                              to {recipientName}
-                              <FiChevronDown
-                                size={11}
-                                className={`text-slate-400 transition-transform ${
-                                  isDetailsOpen ? "rotate-180" : ""
-                                }`}
-                              />
-                            </button>
+                            {(() => {
+                              const msgCcList = Array.isArray(msg.cc)
+                                ? msg.cc.filter(Boolean)
+                                : typeof msg.cc === "string"
+                                ? msg.cc.split(",").map((s) => s.trim()).filter(Boolean)
+                                : [];
 
-                            {isDetailsOpen && (
-                              <dl className="mt-2 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 rounded-lg border border-slate-200 bg-white/80 px-3 py-2 text-[11px]">
-                                <dt className="font-semibold text-slate-400">
-                                  from
-                                </dt>
-                                <dd className="break-all text-slate-700">
-                                  {senderName && senderName !== senderEmailAddr
-                                    ? `${senderName} <${senderEmailAddr || "unknown"}>`
-                                    : senderEmailAddr || "unknown"}
-                                </dd>
+                              return (
+                                <>
+                                  <button
+                                    type="button"
+                                    aria-expanded={isDetailsOpen}
+                                    title={
+                                      isDetailsOpen
+                                        ? "Hide details"
+                                        : "Show from, to, cc and date"
+                                    }
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setExpandedMsgDetails(
+                                        isDetailsOpen ? null : msg._id || mIdx
+                                      );
+                                    }}
+                                    className="mt-0.5 flex w-fit items-center gap-1.5 rounded px-1 -ml-1 text-xs font-medium text-slate-500 transition hover:bg-slate-200/60 hover:text-slate-700 cursor-pointer flex-wrap"
+                                  >
+                                    <span>to {recipientName}</span>
+                                    {msgCcList.length > 0 && (
+                                      <span className="text-slate-500 font-normal">
+                                        (cc: {msgCcList.map((c) => cleanAddress(c)).join(", ")})
+                                      </span>
+                                    )}
+                                    <FiChevronDown
+                                      size={11}
+                                      className={`text-slate-400 transition-transform ${
+                                        isDetailsOpen ? "rotate-180" : ""
+                                      }`}
+                                    />
+                                  </button>
 
-                                <dt className="font-semibold text-slate-400">
-                                  to
-                                </dt>
-                                <dd className="break-all text-slate-700">
-                                  {recipientEmailAddr || "unknown"}
-                                </dd>
+                                  {isDetailsOpen && (
+                                    <dl className="mt-2 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 rounded-lg border border-slate-200 bg-white/80 px-3 py-2 text-[11px]">
+                                      <dt className="font-semibold text-slate-400">
+                                        from
+                                      </dt>
+                                      <dd className="break-all text-slate-700">
+                                        {senderName && senderName !== senderEmailAddr
+                                          ? `${senderName} <${senderEmailAddr || "unknown"}>`
+                                          : senderEmailAddr || "unknown"}
+                                      </dd>
 
-                                {(msg.cc || []).length > 0 && (
-                                  <>
-                                    <dt className="font-semibold text-slate-400">
-                                      cc
-                                    </dt>
-                                    <dd className="break-all text-slate-700">
-                                      {msg.cc.join(", ")}
-                                    </dd>
-                                  </>
-                                )}
+                                      <dt className="font-semibold text-slate-400">
+                                        to
+                                      </dt>
+                                      <dd className="break-all text-slate-700">
+                                        {recipientEmailAddr || "unknown"}
+                                      </dd>
 
-                                <dt className="font-semibold text-slate-400">
-                                  date
-                                </dt>
-                                <dd className="text-slate-700">{fullDateStr}</dd>
+                                      {msgCcList.length > 0 && (
+                                        <>
+                                          <dt className="font-semibold text-slate-400">
+                                            cc
+                                          </dt>
+                                          <dd className="break-all text-slate-700">
+                                            {msgCcList.join(", ")}
+                                          </dd>
+                                        </>
+                                      )}
 
-                                <dt className="font-semibold text-slate-400">
-                                  subject
-                                </dt>
-                                <dd className="break-words text-slate-700">
-                                  {msg.subject || selectedEmail.subject || "—"}
-                                </dd>
-                              </dl>
-                            )}
+                                      <dt className="font-semibold text-slate-400">
+                                        date
+                                      </dt>
+                                      <dd className="text-slate-700">{fullDateStr}</dd>
+
+                                      <dt className="font-semibold text-slate-400">
+                                        subject
+                                      </dt>
+                                      <dd className="break-words text-slate-700">
+                                        {msg.subject || selectedEmail.subject || "—"}
+                                      </dd>
+                                    </dl>
+                                  )}
+                                </>
+                              );
+                            })()}
                           </div>
                         </div>
 
@@ -2864,27 +2940,38 @@ const Inbox = () => {
                             </button>
                           </div>
 
-                          {/* Textarea Input */}
-                          <div className="p-4 flex flex-col gap-3">
-                            <textarea
+                          {/* Rich Text Editor Input */}
+                          <div className="p-3 flex flex-col gap-2 reply-box-editor">
+                            <ReactQuill
                               ref={replyTextRef}
-                              rows={4}
+                              theme="snow"
                               value={replyText}
-                              onChange={(e) => setReplyText(e.target.value)}
+                              onChange={(val) => setReplyText(val)}
+                              modules={replyQuillModules}
                               placeholder={`Hi ${replyFirstName},`}
-                              className="w-full text-sm text-[#202124] placeholder:text-slate-400 outline-none resize-none bg-transparent font-sans"
                             />
 
-                            {/* Ellipsis quoted text button */}
-                            <div className="flex items-center">
-                              <button
-                                type="button"
-                                className="px-2 py-0.5 rounded border border-slate-300 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold transition cursor-pointer"
-                                title="Show quoted text"
-                              >
-                                ...
-                              </button>
-                            </div>
+                            {/* Selected Files Chips */}
+                            {selectedFiles.length > 0 && (
+                              <div className="flex flex-wrap gap-2 px-1 pt-1">
+                                {selectedFiles.map((file, fIdx) => (
+                                  <div
+                                    key={fIdx}
+                                    className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs text-slate-700 shadow-2xs"
+                                  >
+                                    <FiPaperclip size={12} className="text-slate-400" />
+                                    <span className="max-w-[150px] truncate">{file.name}</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRemoveFile(fIdx)}
+                                      className="text-slate-400 hover:text-red-500"
+                                    >
+                                      <FiX size={12} />
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
 
                           {/* Bottom Toolbar Row (Gmail Style) */}
@@ -2896,7 +2983,11 @@ const Inbox = () => {
                                 <button
                                   type="button"
                                   onClick={handleSendThreadReply}
-                                  disabled={replySending || !replyText.trim()}
+                                  disabled={
+                                    replySending ||
+                                    (!replyText.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim() &&
+                                      selectedFiles.length === 0)
+                                  }
                                   className="h-9 bg-[#1a73e8] hover:bg-[#1557b0] text-white text-xs font-bold px-4 rounded-l-full flex items-center gap-1.5 transition disabled:opacity-50 cursor-pointer"
                                 >
                                   {replySending ? (
@@ -2908,7 +2999,11 @@ const Inbox = () => {
                                 <button
                                   type="button"
                                   onClick={handleSendThreadReply}
-                                  disabled={replySending || !replyText.trim()}
+                                  disabled={
+                                    replySending ||
+                                    (!replyText.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim() &&
+                                      selectedFiles.length === 0)
+                                  }
                                   className="h-9 bg-[#1a73e8] hover:bg-[#1557b0] text-white px-2 rounded-r-full border-l border-white/20 flex items-center justify-center transition disabled:opacity-50 cursor-pointer"
                                 >
                                   <FiChevronDown size={13} />
@@ -2928,8 +3023,9 @@ const Inbox = () => {
                                 <input ref={fileInputRef} type="file" className="hidden" multiple onChange={handleFileChange} />
                                 <button
                                   type="button"
+                                  onClick={handleInsertLink}
                                   className="p-2 rounded-full hover:bg-slate-200/60 hover:text-slate-800 transition cursor-pointer"
-                                  title="Insert link"
+                                  title="Insert link behind text"
                                 >
                                   <FiLink size={15} />
                                 </button>

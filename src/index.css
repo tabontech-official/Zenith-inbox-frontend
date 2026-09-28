@@ -247,6 +247,48 @@
 
 /*
 |--------------------------------------------------------------------------
+| Inbox Reply Box Quill Editor
+|--------------------------------------------------------------------------
+*/
+.reply-box-editor .ql-container {
+  border: none !important;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.reply-box-editor .ql-editor {
+  min-height: 100px;
+  max-height: 320px;
+  overflow-y: auto;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #202124;
+  padding: 8px 12px;
+}
+
+.reply-box-editor .ql-editor.ql-blank::before {
+  color: #94a3b8;
+  font-style: normal;
+  left: 12px;
+}
+
+.reply-box-editor .ql-toolbar {
+  border: none !important;
+  border-top: 1px solid #f1f5f9 !important;
+  padding: 6px 12px !important;
+  background-color: #f8fafc;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+}
+
+.reply-box-editor .ql-toolbar .ql-formats {
+  margin-right: 8px;
+}
+
+/*
+|--------------------------------------------------------------------------
 | Scenario flow connector
 |--------------------------------------------------------------------------
 |

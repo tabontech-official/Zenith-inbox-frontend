@@ -136,9 +136,9 @@ const renderEmailChain = (email, title = "Email", level = 0, domId = "") => {
               <p className="text-[11px] text-slate-500 mt-0.5">
                 to {recipient}
               </p>
-              {cc && cc.length > 0 && (
+              {cc && (Array.isArray(cc) ? cc.length > 0 : Boolean(cc)) && (
                 <p className="text-[11px] text-slate-400 mt-0.5">
-                  cc: {cc.join(", ")}
+                  cc: {(Array.isArray(cc) ? cc : [cc]).join(", ")}
                 </p>
               )}
             </div>
