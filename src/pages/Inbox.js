@@ -48,6 +48,7 @@ import {
   FiEdit3,
   FiChevronDown,
   FiType,
+  FiMaximize2,
 } from "react-icons/fi";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
@@ -1476,7 +1477,7 @@ const Inbox = () => {
     }
   };
 
-  const removeFile = (index) => {
+  const handleRemoveFile = (index) => {
     setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
   };
 

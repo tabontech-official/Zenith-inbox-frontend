@@ -48,6 +48,7 @@ import AdminUserEmails from "./Admin/AdminUserEmails";
 import VerifyTwoFactor from "./Auth/VerifyTwoFactor";
 import Terms from "./pages/Terms";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
+import CountlessOptionsPrivacyPolicy from "./pages/CountlessOptionsPrivacyPolicy";
 import AdminLandingPage from "./Admin/AdminLandingPage";
 import AdminScriptsPage from "./pages/Script";
 import DynamicScripts from "./pages/DynamicScripts";
@@ -183,6 +184,22 @@ function App() {
           <Route path="/login-verify/:token" element={<LoginVerify />} />
           <Route path="/verify-2fa" element={<VerifyTwoFactor />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route
+            path="/pages/countless-options-privary-policy"
+            element={<CountlessOptionsPrivacyPolicy />}
+          />
+          <Route
+            path="/pages/countless-options-privacy-policy"
+            element={<CountlessOptionsPrivacyPolicy />}
+          />
+          <Route
+            path="/countless-options-privacy-policy"
+            element={<CountlessOptionsPrivacyPolicy />}
+          />
+          <Route
+            path="/countless-options-privary-policy"
+            element={<CountlessOptionsPrivacyPolicy />}
+          />
           <Route path="/terms" element={<Terms />} />
 
           <Route
