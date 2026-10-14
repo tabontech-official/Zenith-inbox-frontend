@@ -123,12 +123,27 @@ export const handleSessionExpired = (reason = 'Your session has expired. Please 
 
   try {
     localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem('userid');
   } catch {
     /* ignore */
   }
 
-  const onLogin = window.location?.pathname === '/login';
-  if (!onLogin) {
+  const currentPath = window.location?.pathname || '';
+  const isPublicPage =
+    currentPath === '/login' ||
+    currentPath === '/register' ||
+    currentPath.includes('countless-options') ||
+    currentPath.includes('privacy-policy') ||
+    currentPath.includes('terms') ||
+    currentPath === '/' ||
+    currentPath === '/pricing' ||
+    currentPath === '/product' ||
+    currentPath === '/developer' ||
+    currentPath === '/talk-to-sales' ||
+    currentPath === '/reviews' ||
+    currentPath === '/resources';
+
+  if (!isPublicPage) {
     /* Let the current call stack unwind before navigating. */
     setTimeout(() => {
       window.location.href = '/login?session=expired';

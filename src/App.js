@@ -78,6 +78,24 @@ function App() {
           <Route path="/reviews" element={<FoldLandingPage />} />
           <Route path="/resources" element={<FooterLinksPage />} />
           <Route
+            path="/pages/countless-options-privary-policy"
+            element={<CountlessOptionsPrivacyPolicy />}
+          />
+          <Route
+            path="/pages/countless-options-privacy-policy"
+            element={<CountlessOptionsPrivacyPolicy />}
+          />
+          <Route
+            path="/countless-options-privacy-policy"
+            element={<CountlessOptionsPrivacyPolicy />}
+          />
+          <Route
+            path="/countless-options-privary-policy"
+            element={<CountlessOptionsPrivacyPolicy />}
+          />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route
             path="/login"
             element={
               <PublicRoute>
@@ -183,24 +201,7 @@ function App() {
           <Route path="/reset-password/:token" element={<ResetPassword />} />
           <Route path="/login-verify/:token" element={<LoginVerify />} />
           <Route path="/verify-2fa" element={<VerifyTwoFactor />} />
-          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-          <Route
-            path="/pages/countless-options-privary-policy"
-            element={<CountlessOptionsPrivacyPolicy />}
-          />
-          <Route
-            path="/pages/countless-options-privacy-policy"
-            element={<CountlessOptionsPrivacyPolicy />}
-          />
-          <Route
-            path="/countless-options-privacy-policy"
-            element={<CountlessOptionsPrivacyPolicy />}
-          />
-          <Route
-            path="/countless-options-privary-policy"
-            element={<CountlessOptionsPrivacyPolicy />}
-          />
-          <Route path="/terms" element={<Terms />} />
+
 
           <Route
             path="/scenarios/others/:id"
